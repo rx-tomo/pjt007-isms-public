@@ -1,0 +1,5606 @@
+{
+  "support": "専門サポートが全ステップで伴走",
+  "ai": {
+    "evaluation": {
+      "title": "AI リスク評価",
+      "evaluate": "評価開始",
+      "evaluating": "評価中...",
+      "impact": "影響度",
+      "likelihood": "発生可能性",
+      "rationale": "根拠",
+      "currentValue": "現在の値",
+      "suggestedValue": "提案値",
+      "accept": "採用",
+      "riskLevel": "リスクレベル",
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "最高",
+      "noEvaluation": "まだ評価がありません",
+      "error": "評価中にエラーが発生しました"
+    },
+    "usage": {
+      "title": "AI 使用状況",
+      "totalTokens": "総トークン数",
+      "totalRequests": "総リクエスト数",
+      "totalCost": "合計コスト",
+      "cacheHitRate": "キャッシュヒット率",
+      "errorRate": "エラー率",
+      "avgLatency": "平均レイテンシ",
+      "budgetProgress": "予算消化率",
+      "budgetUsed": "{used} / {budget} USD",
+      "period7d": "7日間",
+      "period30d": "30日間",
+      "period90d": "90日間",
+      "daily": "日別推移",
+      "byType": "種別内訳",
+      "noData": "データがありません",
+      "loading": "読み込み中...",
+      "error": "データの取得に失敗しました",
+      "riskIdentification": "リスク識別",
+      "riskAssessment": "リスク評価",
+      "treatmentSuggestion": "対策提案",
+      "tokens": "トークン",
+      "requests": "リクエスト",
+      "ms": "ms"
+    },
+    "settings": {
+      "title": "AI 設定",
+      "pageTitle": "AI設定",
+      "usagePageTitle": "AI使用状況ダッシュボード",
+      "enableAI": "AI機能を有効にする",
+      "enableAIDescription": "AI支援は後続の補助機能として、入力内容と採否を人が確認しながら利用します",
+      "features": "利用可能な機能",
+      "identify": "リスク識別",
+      "evaluate": "リスク評価",
+      "suggestTreatments": "対策提案",
+      "usageLimits": "使用量制限",
+      "monthlyLimit": "月間トークン上限",
+      "alertThresholds": "アラート閾値",
+      "currentUsage": "現在の使用状況",
+      "usageOf": "{used} / {limit} ({percent}%)",
+      "provider": "プロバイダー",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "saved": "設定を保存しました",
+      "saveError": "設定の保存に失敗しました",
+      "modelSettings": "AIモデル設定",
+      "model": "モデル",
+      "modelChangeNote": "モデルの変更は次回のAI分析から適用されます",
+      "saveModel": "保存",
+      "modelSaved": "AIモデル設定を保存しました",
+      "modelSaveError": "AIモデル設定の保存に失敗しました",
+      "dataHandling": "送信範囲と機密情報",
+      "allowExternalApi": "外部AI APIへの送信を許可",
+      "allowExternalApiDescription": "初期状態ではモック利用に留め、外部送信は明示的に許可した場合だけ有効にします",
+      "allowPersonalData": "個人情報の利用を許可",
+      "allowPersonalDataDescription": "氏名・メールなどは既定で除外し、必要時だけ人が確認して含めます",
+      "allowAttachmentBody": "添付ファイル本文の利用を許可",
+      "allowAttachmentBodyDescription": "添付本文は既定で送信対象外にし、要約やマスキングを前提に扱います"
+    },
+    "assistant": {
+      "title": "AI リスク分析アシスタント",
+      "analyze": "分析開始",
+      "analyzing": "分析中...",
+      "threats": "脅威",
+      "vulnerabilities": "脆弱性",
+      "treatments": "対策提案",
+      "accept": "採用",
+      "reject": "却下",
+      "likelihood": "発生可能性",
+      "severity": "深刻度",
+      "noSuggestions": "まだ提案がありません",
+      "error": "分析中にエラーが発生しました",
+      "treatmentTypes": {
+        "accept": "リスク受容",
+        "mitigate": "リスク軽減",
+        "transfer": "リスク移転",
+        "avoid": "リスク回避"
+      },
+      "likelihoodLevels": {
+        "1": "非常に低い",
+        "2": "低い",
+        "3": "中程度",
+        "4": "高い",
+        "5": "非常に高い"
+      },
+      "severityLevels": {
+        "1": "軽微",
+        "2": "小",
+        "3": "中",
+        "4": "大",
+        "5": "深刻"
+      },
+      "controlIds": "管理策ID",
+      "assetInfo": "資産情報",
+      "assetName": "資産名",
+      "assetType": "資産タイプ",
+      "description": "説明",
+      "department": "部門",
+      "inputScopeTitle": "この補助に使う情報",
+      "inputScopeDescription": "AI提案は下書きです。採用前に内容を確認・編集し、不要な個人情報や添付本文は送信しません。",
+      "scopeAssetName": "資産名",
+      "scopeAssetType": "資産タイプ",
+      "scopeDescription": "説明",
+      "scopeDepartment": "部門",
+      "editBeforeAccept": "採用前に編集"
+    }
+  },
+  "common": {
+    "appName": "ISMS Pilot",
+    "title": "ISMS Pilot",
+    "login": {
+      "title": "ログイン",
+      "subtitle": "アカウントにサインインしてください",
+      "signupLink": "アカウントを作成",
+      "submitting": "送信中"
+    },
+    "logout": "ログアウト",
+    "signup": "新規登録",
+    "documents": "文書管理",
+    "risks": "リスク管理",
+    "tasks": "タスク",
+    "audit": "監査",
+    "education": "教育・訓練",
+    "managementReviews": "マネジメントレビュー",
+    "suppliers": "サプライヤー管理",
+    "bcp": "事業継続計画",
+    "notifications": "通知",
+    "settings": "設定",
+    "language": "言語",
+    "japanese": "日本語",
+    "english": "English",
+    "chinese": "简体中文",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "devLogin": "開発ログイン",
+    "loading": "読み込み中",
+    "search": "検索",
+    "updatedAt": "更新日",
+    "name": "名前",
+    "role": "役割",
+    "loginTime": "ログイン時刻",
+    "currentUser": "現在のユーザー",
+    "riskAssessment": "リスクアセスメント",
+    "profile": "プロフィール",
+    "organization": "組織",
+    "users": "ユーザー管理",
+    "subscription": "サブスクリプション",
+    "home": "ホーム",
+    "skipToContent": "メインコンテンツへ移動",
+    "header": {
+      "greeting": "{name} さん",
+      "organizationLabel": "所属",
+      "roleLabel": "ロール"
+    },
+    "tenantSwitch": {
+      "label": "確認中のテナント",
+      "error": "テナントを切り替えられませんでした。",
+      "phases": {
+        "initial": "初回登録準備",
+        "surveillance": "継続運用"
+      }
+    },
+    "roles": {
+      "super_admin": "スーパー管理者",
+      "system_operator": "システム運営者",
+      "org_admin": "組織管理者",
+      "user": "メンバー",
+      "auditor": "監査員",
+      "approver": "承認者"
+    },
+    "department": {
+      "label": "部門",
+      "selectPlaceholder": "部門を選択",
+      "all": "全部門",
+      "noDepartment": "部門未設定",
+      "myDepartment": "自部門のみ",
+      "includingSubDepartments": "配下部門を含む"
+    },
+    "breadcrumbs": {
+      "home": "ホーム",
+      "documents": "文書管理",
+      "risks": "リスク管理",
+      "tasks": "タスク",
+      "audit": "監査",
+      "education": "教育・訓練",
+      "management_reviews": "マネジメントレビュー",
+      "suppliers": "サプライヤー管理",
+      "bcp": "事業継続計画",
+      "plans": "計画",
+      "settings": "設定",
+      "notifications": "通知",
+      "profile": "プロフィール",
+      "organization": "組織設定",
+      "users": "ユーザー管理",
+      "subscription": "サブスクリプション",
+      "new": "新規作成",
+      "list": "一覧",
+      "super_admin": "スーパー管理者",
+      "organizations": "テナント一覧",
+      "logs": "監査ログ",
+      "invitations": "招待管理",
+      "setup": "初期セットアップ"
+    },
+    "superAdminNav": {
+      "organizations": "テナント一覧",
+      "logs": "監査ログ",
+      "invitations": "招待管理",
+      "users": "ユーザー管理",
+      "serviceSettings": "サービス設定"
+    },
+    "stats": {
+      "progress": "進捗",
+      "overdueTasks": "期限切れタスク",
+      "pendingDocuments": "承認待ち文書",
+      "nextAudit": "次回監査",
+      "daysUnit": "日",
+      "activeUsers": "アクティブユーザー",
+      "openRisks": "未対応リスク"
+    },
+    "adminWelcome": "組織管理者として、運用状況と次に必要な対応を確認できます",
+    "quickActions": {
+      "title": "クイックアクション",
+      "addUser": "ユーザーを追加",
+      "organizationSettings": "組織設定",
+      "viewPendingApprovals": "承認待ち文書を確認"
+    },
+    "recentActivity": {
+      "title": "最近の活動",
+      "userLogin": "ユーザーログイン",
+      "documentApproved": "文書承認",
+      "riskIdentified": "新規リスク"
+    },
+    "compliance": {
+      "title": "監査・コンプライアンス状況",
+      "certificationStatus": "認証ステータス",
+      "valid": "有効",
+      "expiryDate": "有効期限",
+      "auditProgress": "監査進捗",
+      "correctiveActions": "是正処置",
+      "open": "未対応",
+      "inProgress": "対応中",
+      "completed": "完了"
+    },
+    "permissions": {
+      "document_read": "文書を見る",
+      "document_write": "文書を作成/編集",
+      "document_delete": "文書を削除",
+      "document_approve": "文書を承認",
+      "risk_read": "リスクを見る",
+      "risk_write": "リスクを作成/編集",
+      "risk_delete": "リスクを削除",
+      "risk_approve": "リスク評価を承認",
+      "task_read": "タスクを見る",
+      "task_write": "タスクを作成/編集",
+      "task_delete": "タスクを削除",
+      "task_assign": "タスクを割り当て",
+      "audit_read": "監査を見る",
+      "audit_write": "監査を作成/編集",
+      "audit_delete": "監査を削除",
+      "audit_execute": "監査を実行",
+      "user_read": "ユーザーを閲覧",
+      "user_write": "ユーザーを作成/編集",
+      "user_delete": "ユーザーを削除",
+      "user_invite": "ユーザーを招待",
+      "organization_read": "組織設定を閲覧",
+      "organization_write": "組織設定を編集",
+      "billing_read": "課金情報を閲覧",
+      "billing_write": "課金情報を管理"
+    },
+    "departmentScope": {
+      "locked": "あなたのロール設定により {department} 部門のデータのみ表示されています。",
+      "lockedMissing": "プロファイルに部門が登録されていないため、部門未割当てのデータのみ表示されます。"
+    },
+    "errors": {
+      "unexpected": "予期しないエラーが発生しました"
+    },
+    "fields": {
+      "email": "メールアドレス",
+      "password": "パスワード"
+    },
+    "save": "保存",
+    "saving": "保存中",
+    "cancel": "キャンセル",
+    "incidents": "インシデント",
+    "initialSetup": "初期セットアップ",
+    "retry": "再試行"
+  },
+  "auth": {
+    "common": {
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "devLogin": "開発ログイン"
+    },
+    "login": {
+      "title": "ログイン",
+      "description": "ISMS Managerにログインして、ISO27001認証取得の進捗を管理しましょう。",
+      "noAccount": "アカウントをお持ちでない方は",
+      "signupLink": "新規登録",
+      "submit": "ログイン",
+      "forgotPassword": "パスワードを忘れた方",
+      "ssoComingSoon": "シングルサインオン連携は近日公開予定です",
+      "ssoButton": "{provider} で続行",
+      "ssoHelp": "AUTH_SSO_PROVIDERS をセットするとボタン表示だけ先行確認できます (接続完了までは無効のままです)。"
+    },
+    "signup": {
+      "title": "新規登録",
+      "description": "ISMS Managerのアカウントを作成して、ISO27001認証取得の準備を始めましょう。",
+      "hasAccount": "すでにアカウントをお持ちの方は",
+      "loginLink": "ログイン",
+      "submit": "登録する",
+      "fullName": "氏名",
+      "organizationName": "組織名",
+      "confirmPassword": "パスワード（確認）",
+      "agreeToTerms": "利用規約に同意する",
+      "termsLink": "利用規約"
+    },
+    "verifyEmail": {
+      "title": "メールをご確認ください",
+      "description": "確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。",
+      "checkSpam": "メールが届かない場合は、迷惑メールフォルダもご確認ください。",
+      "didNotReceive": "メールが届かない場合は、しばらくお待ちいただくか、再度お試しください。",
+      "backToLogin": "ログインページへ戻る"
+    },
+    "errors": {
+      "passwordMismatch": "パスワードが一致しません",
+      "mustAgreeToTerms": "利用規約に同意する必要があります",
+      "signupFailed": "登録に失敗しました",
+      "unknownError": "予期しないエラーが発生しました",
+      "emailNotConfirmed": "メールアドレスの確認が完了していません。届いたメールのリンクから確認を行ってください。",
+      "invalidMfaCode": "認証コードが正しくありません。もう一度入力してください。",
+      "mfaVerificationFailed": "認証コードを確認できませんでした。再度お試しください。",
+      "mfaChallengeMissing": "認証要求が見つかりません。ページを再読み込みして再試行してください。",
+      "mfaChallengeExpired": "認証コードの有効期限が切れました。コードを再取得してください。",
+      "mfaChallengeFailed": "認証コードの生成に失敗しました。もう一度お試しください。"
+    },
+    "mfa": {
+      "header": "追加認証コードを入力してください",
+      "description": "認証アプリに表示されたワンタイムコードを入力します。開発環境では 000000 を利用できます。",
+      "codeLabel": "認証コード",
+      "submit": "コードを確認",
+      "sent": "認証コードを送信しました。{minutes} 分以内に入力してください。",
+      "sentDefault": "認証コードを送信しました。",
+      "sending": "送信中",
+      "expiresAt": "{time} まで有効です。"
+    },
+    "forgotPassword": {
+      "title": "パスワードをリセット",
+      "description": "登録済みのメールアドレスを入力してください。パスワードリセット用のリンクをお送りします。",
+      "submit": "リセットリンクを送信",
+      "backToLogin": "ログインページへ戻る",
+      "sentTitle": "メールを送信しました",
+      "sentDescription": "パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。",
+      "errors": {
+        "sendFailed": "リセットメールの送信に失敗しました。再度お試しください。"
+      }
+    },
+    "resetPassword": {
+      "title": "新しいパスワードを設定",
+      "description": "新しいパスワードを入力してください。",
+      "newPassword": "新しいパスワード",
+      "confirmPassword": "パスワード（確認）",
+      "submit": "パスワードを変更",
+      "completeTitle": "パスワードを変更しました",
+      "completeDescription": "パスワードが正常に変更されました。新しいパスワードでログインしてください。",
+      "goToLogin": "ログインへ",
+      "errors": {
+        "resetFailed": "パスワードの変更に失敗しました。再度お試しください。",
+        "invalidToken": "リセットリンクが無効または期限切れです。再度リセットをリクエストしてください。",
+        "passwordTooShort": "パスワードは8文字以上で入力してください。"
+      }
+    }
+  },
+  "signup": {
+    "title": "新規登録",
+    "description": "新しいアカウントを作成してください"
+  },
+  "login": {
+    "title": "ログイン",
+    "description": "アカウントにログインしてください"
+  },
+  "authInvite": {
+    "title": "招待を承認",
+    "description": "招待リンクから組織に参加します。",
+    "heading": "組織に参加する",
+    "subheading": "{organization} への参加を完了してください。",
+    "passwordHint": "8文字以上で英数字を組み合わせてください。",
+    "submit": "アカウントを作成して参加",
+    "submitting": "送信中",
+    "labels": {
+      "email": "メールアドレス",
+      "role": "ロール",
+      "invitedBy": "招待者",
+      "expiresAt": "有効期限",
+      "fullName": "氏名",
+      "password": "パスワード"
+    },
+    "errors": {
+      "title": "招待を完了できませんでした",
+      "missingToken": "招待トークンが見つかりません。リンクを再確認してください。",
+      "invalidToken": "招待リンクが無効です。管理者に新しい招待を依頼してください。",
+      "alreadyAccepted": "この招待は既に使用されています。",
+      "expired": "招待の有効期限が切れています。管理者に再招待を依頼してください。",
+      "generic": "招待情報を読み込めませんでした。時間をおいて再度お試しください。",
+      "accountExists": "このメールアドレスのアカウントは既に存在します。ログインを試してください。",
+      "signupFailed": "アカウントの作成に失敗しました。再度お試しください。",
+      "acceptFailed": "招待の承認処理に失敗しました。",
+      "fullNameRequired": "氏名を入力してください。",
+      "passwordTooShort": "パスワードは8文字以上で入力してください。"
+    }
+  },
+  "devLogin": {
+    "title": "開発用テナントログイン",
+    "description": "テナントを選び、その中のユーザーとしてログインして、seed済みの業務データを確認できます。",
+    "devOnlyFeature": "開発環境専用",
+    "note": "ヒント:",
+    "noteContent": " 作成されたテストユーザー／組織は Dev Login と local.db の user_profiles で確認・初期化できます。",
+    "mfaPanel": {
+      "title": "MFA / SSO 確認",
+      "description": ".env.local に AUTH_MFA_REQUIRED_ROLES / AUTH_MFA_DUMMY_CODE / NEXT_PUBLIC_AUTH_SSO_PROVIDERS を設定するとパスワード後の OTP 入力や IdP ラベル表示を確認できます。",
+      "mfaRoles": "MFA 対象ロール: {roles}。",
+      "mfaDisabled": "現在 MFA は有効化されていません。",
+      "ssoProviders": "設定済み IdP: {providers}。",
+      "ssoDisabled": "IdP はまだ登録されていません。",
+      "loadingConfig": "読み込み中",
+      "scriptHint": "MFA フロー確認コマンド: npm run qa:auth-mfa",
+      "planTracking": "Plan Tracking #8 で MFA/SSO の下地とログが整備されています。",
+      "linkLabel": "開発環境ガイドの MFA セクションを開く"
+    },
+    "selectRole": "ロールを選択",
+    "login": "選択ユーザーでログイン",
+    "loggingIn": "処理中",
+    "backToLogin": "通常ログインへ戻る",
+    "selectedRoleInfo": "選択したロール",
+    "selectedRoleDescription": "以下の資格情報は自動的に補完され、クリックだけで該当ロールとしてログインできます。",
+    "profileReset": {
+      "toggleLabel": "Dev Login プロファイルをリセットする",
+      "description": "ロールやテナントの保存済み選択をクリアし、デフォルト状態でログインします。"
+    },
+    "credentials": {
+      "email": "ログインに使用するメールアドレス",
+      "password": "開発用パスワード",
+      "hidden": "（自動入力されます）",
+      "autofillHint": "フォーム送信後に Better Auth へサインインし、ダッシュボードへ遷移します。"
+    },
+    "userSelector": {
+      "title": "ユーザー選択",
+      "description": "選択したテナントに含まれるユーザーから、確認したいロールと業務状態を選びます。",
+      "inputLabel": "メールアドレス",
+      "placeholder": "例: operator@example.com",
+      "hint": "メール形式で入力してください（dev+任意@example.com など自由に利用できます）。",
+      "selectLabel": "登録済みユーザーから選択",
+      "noneOption": "候補から選択",
+      "loading": "読み込み中",
+      "loadError": "ユーザー一覧の取得に失敗しました",
+      "empty": "このテナントにはまだユーザーが存在しません。まず System Operator でログインして追加してください。",
+      "unknownName": "氏名未設定",
+      "emptyEmail": "メールアドレス未入力"
+    },
+    "errors": {
+      "emailRequired": "メールアドレスを入力してください",
+      "emailInvalid": "メールアドレスの形式が正しくありません",
+      "userRequired": "ログインするユーザーを選択してください",
+      "tenantInactive": "このテナントは停止中のため、テナント内ユーザーではログインできません"
+    },
+    "superAdminEntry": {
+      "title": "Super Admin",
+      "description": "テナントに紐付かないプラットフォーム管理者としてログインします。",
+      "login": "Super Adminでログイン"
+    },
+    "capabilities": {
+      "title": "主な確認ポイント"
+    },
+    "tenantSelector": {
+      "title": "テナント選択",
+      "description": "seed済みの企業パターンから、確認したいテナントを先に選択します。",
+      "selectLabel": "対象テナント",
+      "noTenantOption": "テナントに紐付けずにログイン (Super Admin)",
+      "persistHint": "選択結果はブラウザに保存され、次回の Dev Login でも自動で反映されます。",
+      "loading": "読み込み中",
+      "loadError": "テナント一覧の取得に失敗しました。ページを更新して再試行してください。",
+      "reset": "選択をクリア",
+      "noTenantSummary": "このロールはテナントに紐付けずにログインします。画面遷移後に必要なテナントへ手動で切り替えてください。",
+      "selectionLog": "{name} を対象テナントとして Dev Login を実行します。",
+      "labels": {
+        "plan": "プラン",
+        "status": "ステータス",
+        "id": "テナントID",
+        "phase": "フェーズ",
+        "users": "ユーザー"
+      },
+      "userCount": "{count}名",
+      "phaseLabels": {
+        "initial": "初回登録準備",
+        "surveillance": "継続運用",
+        "unset": "未設定"
+      },
+      "planLabels": {
+        "trial": "トライアル",
+        "starter": "スターター",
+        "standard": "スタンダード",
+        "enterprise": "エンタープライズ"
+      },
+      "statusLabels": {
+        "active": "稼働中",
+        "inactive": "停止中",
+        "suspended": "一時停止",
+        "cancelled": "解約済み"
+      }
+    },
+    "permissionMatrix": {
+      "title": "権限オーバーライド",
+      "description": "ログイン前にモジュール権限を切り替えできます。変更内容は開発用のテストユーザーにのみ適用されます。",
+      "reset": "デフォルトに戻す",
+      "keys": {
+        "can_manage_documents": {
+          "label": "文書管理",
+          "description": "文書・カテゴリ・承認メタデータの作成と更新を許可します。"
+        },
+        "can_manage_risks": {
+          "label": "リスク管理",
+          "description": "リスク登録・評価・対応策の管理を許可します。"
+        },
+        "can_manage_tasks": {
+          "label": "タスク管理",
+          "description": "タスクの作成、進捗更新、コメント操作を許可します。"
+        },
+        "can_manage_audit": {
+          "label": "監査ワークスペース",
+          "description": "監査計画・チェックリスト・是正要求の操作を許可します。"
+        },
+        "can_manage_assets": {
+          "label": "情報資産",
+          "description": "情報資産台帳と付随するメタデータの管理を許可します。"
+        },
+        "can_manage_controls": {
+          "label": "管理策ライブラリ",
+          "description": "管理策カタログとリスク・対応策への割り当てを許可します。"
+        }
+      },
+      "history": {
+        "title": "最近のフェーズ更新",
+        "subtitle": "ISMS フェーズの変更履歴",
+        "manage": "フェーズ設定を管理",
+        "empty": "まだ履歴がありません。",
+        "source": {
+          "wizard": "ウィザード",
+          "settings": "設定",
+          "system": "システム"
+        }
+      },
+      "profileReset": {
+        "toggleLabel": "プロフィールを初期値にリセットする",
+        "description": "チェックすると氏名・部署・言語などの編集内容を無視して、シナリオ既定値でログインします。通常はオフのままにしてください。"
+      },
+      "user": {
+        "title": "マイワークスペース",
+        "subtitle": "担当タスク・必読文書・研修・改善提案をひと目で確認できます。",
+        "sections": {
+          "tasks": {
+            "title": "担当タスク",
+            "subtitle": "自分が次に対応すべき項目",
+            "cta": "タスクボードを開く",
+            "status": {
+              "todo": "未着手",
+              "inProgress": "進行中",
+              "review": "レビュー待ち"
+            },
+            "items": {
+              "policyReview": {
+                "title": "サプライヤーセキュリティチェックリスト更新",
+                "category": "文書メンテナンス",
+                "due": "締切: 明日 09:00"
+              },
+              "incidentDrill": {
+                "title": "インシデント訓練に参加",
+                "category": "運用体制",
+                "due": "締切: 金曜 14:00"
+              },
+              "awarenessSurvey": {
+                "title": "セキュリティ意識調査を提出",
+                "category": "教育・啓発",
+                "due": "提出済み・承認待ち"
+              }
+            }
+          },
+          "documents": {
+            "title": "必読文書",
+            "subtitle": "承認済みのポリシー",
+            "cta": "承認済み文書を開く",
+            "status": {
+              "pendingAck": "確認待ち",
+              "updated": "更新済み",
+              "acknowledged": "確認済み"
+            },
+            "items": {
+              "remoteWork": {
+                "title": "リモートワークセキュリティ標準",
+                "version": "処理中",
+                "due": "11月11日までに確認"
+              },
+              "vendorChecklist": {
+                "title": "ベンダーオンボーディングチェックリスト",
+                "version": "処理中",
+                "due": "11月15日までにレビュー"
+              },
+              "codeOfConduct": {
+                "title": "行動規範 (FY25)",
+                "version": "処理中",
+                "due": "10月30日 受付済み"
+              }
+            }
+          },
+          "training": {
+            "title": "研修モジュール",
+            "subtitle": "短時間で完了できる教材",
+            "cta": "研修ライブラリを開く",
+            "items": {
+              "phishing": {
+                "title": "フィッシング対応演習",
+                "due": "11月15日までに完了"
+              },
+              "incident": {
+                "title": "インシデント指揮ハンドブック",
+                "due": "11月20日までに完了"
+              },
+              "kaizen": {
+                "title": "継続的改善マイクロラーニング",
+                "due": "11月8日までに完了"
+              }
+            }
+          },
+          "improvements": {
+            "title": "改善アイデア",
+            "subtitle": "小さな気づきを共有",
+            "cta": "改善案を登録する",
+            "highlight": "Weekly Sync で Scheduled / Draft の項目を必ず確認し、ブロッカーを可視化します。",
+            "status": {
+              "draft": "下書き",
+              "scheduled": "実施予定",
+              "shipped": "完了"
+            },
+            "items": {
+              "handoffCleanup": {
+                "title": "ハンドオフテンプレートの整理",
+                "owner": "担当: 佐藤 (情シス)",
+                "eta": "予定: 11月12日"
+              },
+              "alertReduction": {
+                "title": "SOC 通知のノイズ削減",
+                "owner": "担当: 小林 (SecOps)",
+                "eta": "予定: 11月14日 下書き"
+              },
+              "awarenessPost": {
+                "title": "啓発ニュースレター投稿",
+                "owner": "担当: 西村 (GRC)",
+                "eta": "完了: 11月5日"
+              }
+            }
+          }
+        }
+      }
+    },
+    "securityReminder": "本番・検証環境では使用せず、必要に応じて local DB からテストデータを削除してください。",
+    "navigationHint": {
+      "title": "おすすめの確認ルート",
+      "body": "ログイン後は {route} を起点に、役割ごとの画面遷移を確認してください。"
+    },
+    "scenarios": {
+      "title": "テストシナリオ例",
+      "body": "以下の順番で確認すると、主要ユースケースを横断して評価できます。",
+      "items": {
+        "setup": "システム運営者で組織設定／RLS の挙動を確認",
+        "subscription": "組織管理者で課金・チーム管理・文書登録をウォークスルー",
+        "review": "承認者／監査員でレビュー系画面と権限ガードを確認"
+      }
+    },
+    "roles": {
+      "super_admin": {
+        "name": "スーパー管理者",
+        "summary": "テナント全体の作成・凍結・監査ログ確認を行うシナリオ",
+        "badge": "Super Admin",
+        "capabilities": [
+          "Drizzle/libSQL API でテナントの新規作成と初期化を検証",
+          "ロック／解除操作で audit_logs.scope=global の記録を確認",
+          "全テナント統計を API から取得し、今後の Super Admin UI を想定して評価"
+        ]
+      },
+      "system_operator": {
+        "name": "システム運営者",
+        "summary": "全組織を横断して設定を確認するシナリオ",
+        "badge": "System Operator",
+        "capabilities": [
+          "複数組織の設定切り替えを確認",
+          "RLS ポリシーの挙動・データ隔離を検証",
+          "初期セットアップやベースデータ投入をテスト"
+        ]
+      },
+      "org_admin": {
+        "name": "組織管理者",
+        "summary": "課金・ユーザー管理・ダッシュボードを確認",
+        "badge": "Org Admin",
+        "capabilities": [
+          "ダッシュボード統計・オンボーディング",
+          "ユーザー／ロール管理・サブスクリプション設定",
+          "書類・タスク・リスクを横断して操作"
+        ]
+      },
+      "user": {
+        "name": "一般ユーザー",
+        "summary": "担当タスク中心のワークフローを確認",
+        "badge": "Member",
+        "capabilities": [
+          "タスクの受け取り・進捗更新",
+          "関連文書／リスクの参照",
+          "通知・コメント機能の確認"
+        ]
+      },
+      "auditor": {
+        "name": "監査員",
+        "summary": "監査計画と是正措置のレビュー体験を確認",
+        "badge": "Auditor",
+        "capabilities": [
+          "監査チェックリスト・証跡アップロード",
+          "是正要求・フォローアップタスクの管理",
+          "ダッシュボードの監査ウィジェット"
+        ]
+      },
+      "approver": {
+        "name": "承認者",
+        "summary": "文書承認フローの確認に特化",
+        "badge": "Approver",
+        "capabilities": [
+          "承認待ち文書のレビュー",
+          "タスク／リスクの最終承認",
+          "通知・履歴の確認"
+        ]
+      }
+    }
+  },
+  "pricing": {
+    "title": "料金プラン",
+    "subtitle": "あなたの組織に最適なプランをお選びください",
+    "status": {
+      "trialing": "トライアル中",
+      "active": "有効",
+      "canceled": "キャンセル済み",
+      "incomplete": "未完了",
+      "incomplete_expired": "期限切れ",
+      "past_due": "支払い遅延",
+      "unpaid": "未払い"
+    },
+    "testModeNotice": "Stripe テストモードで動作中です。決済はモック画面で完結し、実際の請求は発生しません。"
+  },
+  "documents": {
+    "title": "文書管理",
+    "list_title": "文書一覧",
+    "create_new": "新規作成",
+    "upload": {
+      "title": "文書をアップロード",
+      "file": "ファイル",
+      "description": "説明",
+      "category": "カテゴリー",
+      "submit": "アップロード",
+      "cancel": "キャンセル"
+    },
+    "search_placeholder": "検索中",
+    "filter": {
+      "all": "すべて",
+      "policy": "方針",
+      "procedure": "手順書",
+      "template": "テンプレート",
+      "record": "記録"
+    },
+    "status": {
+      "draft": "下書き",
+      "in_review": "レビュー中",
+      "approved": "承認済み",
+      "obsolete": "廃止"
+    },
+    "table": {
+      "name": "文書名",
+      "type": "種類",
+      "status": "ステータス",
+      "updated": "更新日",
+      "version": "バージョン",
+      "actions": "操作"
+    },
+    "actions": {
+      "upload": "アップロード",
+      "fromTemplate": "テンプレートから作成",
+      "createFolder": "フォルダー作成",
+      "requestApproval": "承認依頼を送る",
+      "approve": "承認する",
+      "exportWord": "Word形式",
+      "exportPdf": "PDF形式",
+      "viewHistory": "バージョン履歴",
+      "downloadFile": "ファイルをダウンロード",
+      "deleteDocument": "文書を削除"
+    },
+    "storage": {
+      "title": "ストレージ使用量",
+      "summary": "{used} / {limit} を使用中",
+      "loadFailed": "ストレージ使用量を取得できませんでした",
+      "nearLimitBadge": "要容量確保",
+      "healthyBadge": "十分な空き容量",
+      "nearLimitDescription": "上限の80%を超えています。不要なファイルを整理するか、プランの見直しをご検討ください。"
+    },
+    "folders": {
+      "title": "フォルダ",
+      "create_new": "新規フォルダ",
+      "root": "ルート",
+      "delete": "フォルダーを削除",
+      "confirmDelete": "フォルダー「{name}」を削除してもよろしいですか？",
+      "createError": "フォルダーの作成に失敗しました",
+      "deleteError": "フォルダーの削除に失敗しました",
+      "newFolderPlaceholder": "フォルダー名を入力",
+      "nameRequired": "フォルダー名を入力してください"
+    },
+    "confirmations": {
+      "deleteDocument": "この文書を削除してもよろしいですか？"
+    },
+    "templates": {
+      "title": "ISMSテンプレート",
+      "description": "ISO 27001 に準拠したテンプレートから文書を作成できます",
+      "filters": {
+        "all": "すべて"
+      },
+      "categories": {
+        "policy": "方針",
+        "procedure": "手順書",
+        "form": "様式",
+        "checklist": "チェックリスト"
+      },
+      "isoReference": "ISO参照: {value}",
+      "isoReferenceUnknown": "ISO参照なし",
+      "useTemplate": "このテンプレートを使用",
+      "empty": "利用可能なテンプレートがありません",
+      "backToDocuments": "文書一覧に戻る",
+      "errors": {
+        "loadFailed": "テンプレートの読み込みに失敗しました"
+      },
+      "toast": {
+        "success": "テンプレートから文書を作成しました",
+        "error": "テンプレートの適用に失敗しました"
+      },
+      "modal": {
+        "title": "テンプレートから文書を作成",
+        "templateLabel": "選択したテンプレート: {name}",
+        "documentTitle": "文書タイトル",
+        "folderLabel": "保存先フォルダー",
+        "folderPlaceholder": "ルートに保存",
+        "submit": "文書を作成",
+        "submitting": "送信中",
+        "cancel": "キャンセル",
+        "errorTitleRequired": "タイトルを入力してください"
+      }
+    },
+    "editor": {
+      "title": "文書編集",
+      "document_title": "文書タイトル",
+      "description": "説明",
+      "content": "内容",
+      "save": "保存",
+      "save_draft": "下書き保存",
+      "submit_review": "レビュー依頼",
+      "approve": "承認",
+      "cancel": "キャンセル",
+      "helper": "Markdown ツールバーから見出し、箇条書き、チェックリスト、表などを挿入できます。右上のタブでプレビューを切り替えて整形を確認してください。",
+      "preview": {
+        "edit": "編集",
+        "live": "編集 + プレビュー",
+        "preview": "プレビュー"
+      },
+      "templatePanelTitle": "テンプレートから開始",
+      "templatePanelDescription": "テンプレートを選択するとタイトル・説明・カテゴリ・Markdown本文が自動で入力されます。",
+      "templateRefresh": "一覧を更新",
+      "templateLoading": "読み込み中",
+      "templateEmpty": "利用可能なテンプレートがありません",
+      "templateDescriptionFallback": "説明はありません",
+      "templateLoad": "このテンプレートを読み込む",
+      "templateSelected": "読み込み済み",
+      "templateSelectedMessage": "「{name}」のテンプレートを適用しました",
+      "templateClear": "テンプレートを解除",
+      "templateLoadError": "テンプレート一覧の取得に失敗しました",
+      "draftBanner": "途中の下書きが保存されています（{updatedAt}）",
+      "draftBannerTimestampMissing": "日時不明",
+      "draftSelectionLabel": "保存済みの下書きを選択",
+      "draftUntitledFallback": "無題の下書き",
+      "draftActions": {
+        "restore": "下書きを復元",
+        "discard": "保存を破棄"
+      }
+    },
+    "errors": {
+      "loadFailed": "文書情報の読み込みに失敗しました",
+      "createFailed": "文書の作成に失敗しました",
+      "organizationMissing": "組織情報が見つかりません",
+      "titleRequired": "タイトルは必須です",
+      "contentRequired": "本文は必須です",
+      "validationFailed": "入力内容が文字数制限を超えています",
+      "uploadFailed": "ファイルのアップロードに失敗しました",
+      "deleteFailed": "文書の削除に失敗しました",
+      "approvalRequestFailed": "承認依頼の送信に失敗しました",
+      "approvalFailed": "承認処理に失敗しました",
+      "downloadFailed": "ファイルのダウンロードに失敗しました",
+      "exportFailed": "文書のエクスポートに失敗しました"
+    },
+    "form": {
+      "category": "カテゴリー",
+      "folder": "フォルダー",
+      "folderPlaceholder": "フォルダーを選択（任意）",
+      "loadingFolders": "読み込み中",
+      "contentPlaceholder": "Markdown形式で本文を入力してください",
+      "remaining": "残り{count}文字",
+      "saving": "保存中",
+      "submitting": "送信中"
+    },
+    "messages": {
+      "created": "文書が作成されました",
+      "updated": "文書が更新されました",
+      "deleted": "文書が削除されました",
+      "upload_success": "ファイルがアップロードされました",
+      "upload_error": "アップロードに失敗しました",
+      "draftSaved": "下書きを保存しました",
+      "submittedForReview": "レビュー依頼を送信しました"
+    },
+    "allDocuments": "すべての文書",
+    "folderDocuments": "フォルダー内の文書",
+    "emptyState": "文書がありません",
+    "updatedAt": "{date}に更新",
+    "approval": {
+      "inReviewStatus": "承認待ち",
+      "stepLabel": "ステップ{step}",
+      "status": {
+        "pending": "未承認",
+        "approved": "承認済み",
+        "skipped": "省略",
+        "rejected": "差し戻し"
+      },
+      "modal": {
+        "title": "「{title}」の承認依頼",
+        "description": "各ステップの承認者を選択してください。同じ担当者を設定した場合は、一次承認を自動的に省略します。",
+        "step1Label": "ステップ1（一次承認）",
+        "step2Label": "ステップ2（最終承認）",
+        "selectPlaceholder": "ユーザーを選択",
+        "hint": "承認者は同一組織に所属している必要があります。最終承認者にはシステム管理者または組織管理者を指定してください。",
+        "submit": "承認依頼を送信",
+        "saving": "保存中",
+        "cancel": "キャンセル"
+      },
+      "approveModal": {
+        "title": "「{title}」を承認する",
+        "commentLabel": "承認コメント",
+        "commentPlaceholder": "必要に応じてメモを残せます",
+        "optional": "コメントは任意です。入力した内容は承認履歴に記録されます。",
+        "confirm": "承認する",
+        "processing": "処理中",
+        "cancel": "キャンセル"
+      },
+      "errors": {
+        "missingApprovers": "ステップ1とステップ2の承認者を選択してください"
+      },
+      "progress": {
+        "title": "承認進捗",
+        "stepComplete": "ステップ {current}/{total} 完了",
+        "stepPending": "ステップ {current}/{total} 承認待ち",
+        "notSubmitted": "未提出",
+        "approved": "承認済み",
+        "rejected": "却下"
+      }
+    },
+    "filters": {
+      "status": {
+        "label": "ステータス",
+        "all": "すべてのステータス"
+      },
+      "department": {
+        "label": "部門",
+        "all": "すべての部門",
+        "unassigned": "所属なし"
+      },
+      "active": {
+        "status": "ステータスで絞り込み: {status}",
+        "department": "部門で絞り込み: {department}"
+      },
+      "clear": "絞り込みを解除",
+      "clearAll": "すべての絞り込みを解除"
+    },
+    "categories": {
+      "general": "一般",
+      "policy": "方針",
+      "procedure": "手順書",
+      "record": "記録",
+      "template": "テンプレート"
+    },
+    "folder": {
+      "createTitle": "新しいフォルダー",
+      "name": "フォルダー名",
+      "create": "作成",
+      "cancel": "キャンセル",
+      "confirmDelete": "フォルダー「{name}」を削除しますか？この操作は元に戻せません。"
+    },
+    "versionHistory": {
+      "modalTitle": "「{title}」のバージョン履歴",
+      "createdAt": "{date} に作成",
+      "createdBy": "{name} による作成",
+      "changesLabel": "変更内容",
+      "download": "ダウンロード",
+      "downloading": "読み込み中",
+      "noFile": "ファイルなし",
+      "empty": "バージョン履歴がまだありません",
+      "close": "閉じる",
+      "loadFailed": "バージョン履歴の取得に失敗しました",
+      "downloadFailed": "バージョンファイルのダウンロードに失敗しました"
+    }
+  },
+  "nav": {
+    "features": "機能",
+    "pricing": "料金",
+    "testimonials": "導入事例",
+    "faq": "FAQ"
+  },
+  "landing": {
+    "hero": {
+      "title": "ISO27001認証取得を",
+      "titleHighlight": "シンプルに",
+      "subtitle": "ISMS Pilotは、初回登録準備と認証後の継続運用をつなげて支援するクラウドサービスです。",
+      "description": "経営者や管理責任者が、準備状況・未対応事項・承認待ち・証跡不足を把握しながら、担当者に依存しすぎないISMS運用へ近づけます。",
+      "cta": {
+        "startTrial": "14日間無料トライアル",
+        "watchDemo": "デモを見る",
+        "trial": "14日間無料トライアル",
+        "features": "機能を見る",
+        "newCertification": "初めて取得する",
+        "ongoingOperation": "継続運用中の方はこちら"
+      },
+      "trustIndicators": {
+        "secureEnvironment": "セキュアな環境",
+        "companiesDeployed": "100社以上の導入実績",
+        "customerSatisfaction": "顧客満足度95%"
+      },
+      "badge": "ISO/IEC 27001:2022対応",
+      "demo": {
+        "constructionProgress": "構築進捗",
+        "approvedDocuments": "承認済み文書",
+        "daysUntilAudit": "次回監査まで",
+        "daysUntilAuditValue": "45日"
+      }
+    },
+    "features": {
+      "title": "なぜISMS Pilotが選ばれるのか",
+      "subtitle": "コンサルタントに頼らず、自社で効率的にISMS構築・運用を実現",
+      "learnMore": "詳しく見る",
+      "allFeatures": "すべてのプランで全機能が利用可能",
+      "list": {
+        "documentManagement": {
+          "title": "スマートな文書管理",
+          "description": "ISMS文書テンプレートと版数管理で、常に最新の状態を維持。Word/Excel形式でのエクスポートも可能。"
+        },
+        "riskAssessment": {
+          "title": "直感的なリスク評価",
+          "description": "ドラッグ&ドロップでリスクを可視化。対策状況もひと目で把握できます。"
+        },
+        "taskManagement": {
+          "title": "タスク自動化",
+          "description": "認証取得に必要なタスクを自動生成。期限管理とリマインダーで漏れを防ぎます。"
+        },
+        "auditSupport": {
+          "title": "監査対応支援",
+          "description": "ISO27001要求事項に基づくチェックリストで、監査準備を効率化。"
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "3ステップで始めるISMS構築",
+      "steps": {
+        "setup": {
+          "number": "1",
+          "title": "組織情報を登録",
+          "description": "企業規模や業種に応じた最適なテンプレートを自動選択"
+        },
+        "build": {
+          "number": "2",
+          "title": "文書作成・リスク評価",
+          "description": "ガイドに従って必要文書を作成、リスクアセスメントを実施"
+        },
+        "maintain": {
+          "number": "3",
+          "title": "継続的な改善",
+          "description": "PDCAサイクルを回しながら、認証維持をサポート"
+        }
+      }
+    },
+    "pricing": {
+      "title": "シンプルで透明な料金体系",
+      "subtitle": "企業規模に応じて最適なプランをお選びください",
+      "popular": "人気プラン",
+      "allPlansInclude": "すべてのプランに含まれるもの：SSL証明書、99.9%稼働率SLA、24/7監視",
+      "cancelAnytime": "いつでもキャンセル可能",
+      "securePayment": "安全な決済",
+      "moneyBack": "返金保証",
+      "trial": {
+        "name": "無料トライアル",
+        "price": "¥0",
+        "duration": "14日間",
+        "features": [
+          "全機能利用可能",
+          "最大5ユーザー",
+          "メールサポート",
+          "クレジットカード不要"
+        ],
+        "cta": "今すぐ始める"
+      },
+      "starter": {
+        "name": "スタータープラン",
+        "price": "¥30,000",
+        "duration": "/月",
+        "features": [
+          "10ユーザーまで",
+          "文書管理・リスク評価",
+          "タスク管理",
+          "メールサポート",
+          "月次レポート"
+        ],
+        "cta": "トライアル開始"
+      },
+      "standard": {
+        "name": "スタンダードプラン",
+        "price": "¥80,000",
+        "duration": "/月",
+        "popular": true,
+        "features": [
+          "50ユーザーまで",
+          "全機能利用可能",
+          "優先サポート",
+          "カスタマイズ対応",
+          "API連携"
+        ],
+        "cta": "トライアル開始"
+      },
+      "enterprise": {
+        "name": "エンタープライズ",
+        "price": "お問い合わせ",
+        "duration": "",
+        "features": [
+          "無制限ユーザー",
+          "専任サポート",
+          "SLA保証",
+          "オンプレミス対応可",
+          "カスタム開発"
+        ],
+        "cta": "お問い合わせ"
+      }
+    },
+    "testimonials": {
+      "title": "導入企業の声",
+      "subtitle": "経営者・管理責任者が準備状況と運用状況を把握しやすい形に整えます",
+      "companies": "導入企業様（一部）",
+      "testimonial1": {
+        "quote": "準備状況と不足項目が見えるようになり、関係者への確認が進めやすくなりました。",
+        "author": "山田太郎",
+        "role": "IT部門責任者",
+        "company": "株式会社サンプルテック"
+      },
+      "testimonial2": {
+        "quote": "文書、リスク、監査、是正を同じ流れで確認でき、継続運用の見通しが立てやすくなりました。",
+        "author": "佐藤花子",
+        "role": "情報セキュリティ担当",
+        "company": "サンプルソフト株式会社"
+      }
+    },
+    "valueProps": {
+      "title": "なぜISMS Pilotを選ぶのか",
+      "item1": {
+        "title": "専門知識不要",
+        "description": "ISO27001の専門知識をチームで補いながら、必要な準備と運用状況を段階的に整理"
+      },
+      "item2": {
+        "title": "コスト削減",
+        "description": "外部支援に依存しすぎず、社内で確認できる情報と証跡を増やせます"
+      },
+      "item3": {
+        "title": "抜け漏れ確認",
+        "description": "文書、リスク、監査、是正をつなげて、次に確認すべき不足項目を見つけやすくします"
+      }
+    },
+    "process": {
+      "title": "3ステップで始める",
+      "subtitle": "初回登録準備から継続運用まで、状況に合わせて進めるプロセス",
+      "support": "専任サポートが全ステップをフォロー",
+      "step1": {
+        "title": "アカウント作成",
+        "time": "5分",
+        "description": "組織情報を入力して、14日間の無料トライアルを開始"
+      },
+      "step2": {
+        "title": "ISMS構築",
+        "time": "3-6ヶ月",
+        "description": "ガイドに従って文書作成、リスクアセスメント、内部監査を実施"
+      },
+      "step3": {
+        "title": "審査準備",
+        "time": "審査期間",
+        "description": "必要な文書や記録を審査準備パッケージとして整理し、不足確認と関係者レビューに使えます"
+      }
+    },
+    "faq": {
+      "title": "よくある質問",
+      "stillHaveQuestions": "まだご不明な点がありますか？",
+      "contactSupport": "サポートチームにお問い合わせ",
+      "items": {
+        "q1": {
+          "question": "ISO27001の認証取得にどれくらい時間がかかりますか？",
+          "answer": "企業規模や現状により異なります。ISMS Pilotでは、適用範囲、文書、リスク、管理策、監査準備を同じ流れで整理し、準備の抜け漏れを見つけやすくします。"
+        },
+        "q2": {
+          "question": "コンサルタントなしでも本当に認証取得できますか？",
+          "answer": "自社で準備を進めやすいよう、必要な情報、承認状態、不足証跡を見える化します。ただし、認証取得や審査での受理を保証するものではありません。"
+        },
+        "q3": {
+          "question": "既存の文書管理システムと連携できますか？",
+          "answer": "Word/Excel形式でのインポート・エクスポートに対応しています。スタンダードプラン以上ではAPI連携も可能です。"
+        },
+        "q4": {
+          "question": "セキュリティは大丈夫ですか？",
+          "answer": "データは暗号化され、権限に応じたアクセス制御で保護されます。自社バックアップや解約時の持ち出しに備えたエクスポートも用意しています。"
+        }
+      }
+    },
+    "cta": {
+      "title": "今すぐISMS構築を始めましょう",
+      "subtitle": "14日間の無料トライアルで、全機能をお試しください",
+      "button": "無料で始める",
+      "noCredit": "クレジットカード登録不要",
+      "noSetupFee": "初期費用無料",
+      "cancelAnytime": "いつでもキャンセル可能",
+      "support247": "24/7サポート"
+    },
+    "footer": {
+      "tagline": "成長する企業のISO27001認証取得をシンプルに",
+      "product": {
+        "title": "プロダクト",
+        "features": "機能",
+        "pricing": "料金",
+        "demo": "デモ"
+      },
+      "company": {
+        "title": "会社情報",
+        "about": "会社概要",
+        "contact": "お問い合わせ",
+        "privacy": "プライバシーポリシー",
+        "terms": "利用規約"
+      },
+      "support": {
+        "title": "サポート",
+        "help": "ヘルプセンター",
+        "docs": "ドキュメント",
+        "status": "システム状態"
+      },
+      "copyright": "© 2025 ISMS Manager. All rights reserved.",
+      "privacyPolicy": "プライバシーポリシー",
+      "termsOfService": "利用規約",
+      "cookiePolicy": "Cookieポリシー"
+    }
+  },
+  "risks": {
+    "title": "リスクアセスメント",
+    "description": "組織のリスクを特定・評価・管理します",
+    "search": "検索中",
+    "filterByCategory": "カテゴリで絞り込み",
+    "filterByStatus": "ステータスで絞り込み",
+    "filterByDepartment": "部門で絞り込み",
+    "filterByPeriod": "期間で絞り込み",
+    "filterDepartmentUnassigned": "所属なし",
+    "filterDepartmentActive": "部門で絞り込み: {department}",
+    "clearDepartmentFilter": "部門フィルターを解除",
+    "activeFilters": {
+      "status": "ステータスで絞り込み: {status}",
+      "clear": "絞り込みを解除"
+    },
+    "periodTag": {
+      "all": "全期間",
+      "clear": "期間フィルターを解除"
+    },
+    "emptyState": "リスクが登録されていません",
+    "emptyStateForPeriod": "{period} に該当するリスクは登録されていません",
+    "emptyStateForMatrix": "影響度 {impact} × 発生可能性 {likelihood} に該当するリスクは登録されていません",
+    "likelihood": "発生可能性",
+    "impact": "影響度",
+    "riskLevel": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "levels": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "list": {
+      "title": "リスク一覧",
+      "newRisk": "新規リスク登録",
+      "search": "検索中",
+      "filterByCategory": "カテゴリで絞り込み",
+      "filterByStatus": "ステータスで絞り込み",
+      "backToList": "リスト一覧に戻る",
+      "columns": {
+        "title": "リスクタイトル",
+        "category": "カテゴリ",
+        "impact": "影響度",
+        "likelihood": "発生可能性",
+        "riskScore": "リスクスコア",
+        "status": "ステータス",
+        "owner": "管理責任者",
+        "actions": "アクション"
+      },
+      "status": {
+        "identified": "特定済み",
+        "analyzing": "分析中",
+        "treating": "対応中",
+        "monitoring": "監視中",
+        "closed": "対応完了"
+      }
+    },
+    "actions": {
+      "newRisk": "新規リスク登録",
+      "treatments": "対応策",
+      "edit": "編集",
+      "delete": "削除",
+      "addTreatment": "対応策を追加",
+      "exportExcel": "Excelエクスポート",
+      "exportPdf": "PDFレポート",
+      "exporting": "エクスポート中"
+    },
+    "messages": {
+      "exportFailed": "エクスポートに失敗しました。時間をおいて再度お試しください。"
+    },
+    "status": {
+      "identified": "特定済み",
+      "analyzing": "分析中",
+      "treating": "対応中",
+      "monitoring": "監視中",
+      "closed": "対応完了"
+    },
+    "columns": {
+      "title": "リスクタイトル",
+      "category": "カテゴリ",
+      "impact": "影響度",
+      "likelihood": "発生可能性",
+      "riskScore": "リスクスコア",
+      "status": "ステータス",
+      "owner": "管理責任者",
+      "actions": "アクション"
+    },
+    "riskMatrix": {
+      "title": "リスクマトリックス",
+      "description": "各セルの上段はリスクスコア（影響度×発生可能性）、括弧内は該当リスク件数です。セルを選ぶと一覧と出力条件が絞り込まれます。",
+      "legend": {
+        "label": "凡例",
+        "high": "高リスク（15〜25）",
+        "medium": "中リスク（8〜14）",
+        "low": "低リスク（1〜7）"
+      },
+      "banner": "影響度 {impact} × 発生可能性 {likelihood} のリスクを表示中（{count} 件）",
+      "clear": "条件をクリア",
+      "cellLabel": "影響度 {impact} × 発生可能性 {likelihood}: {count} 件"
+    },
+    "detail": {
+      "riskDetails": "リスク詳細",
+      "lastUpdated": "最終更新",
+      "riskAssessment": "リスク評価",
+      "treatments": "対応策",
+      "treatmentStatus": "対応状況",
+      "treatmentCount": "対応策 {count} 件",
+      "noTreatments": "対応策が登録されていません",
+      "backToList": "リスク一覧に戻る",
+      "detailIntro": "リスクの背景と対応状況を確認し、優先順位を整理します。",
+      "noDescription": "詳細説明はまだ登録されていません",
+      "unassigned": "未割り当て",
+      "assets": {
+        "title": "関連資産",
+        "empty": "関連付けられた資産はありません。",
+        "classification": "区分",
+        "criticality": "重要度"
+      }
+    },
+    "operationalReadiness": {
+      "statuses": {
+        "ready": "準備済み",
+        "needs_attention": "要確認",
+        "not_ready": "未準備"
+      },
+      "residualAcceptance": {
+        "title": "残留リスク受容",
+        "description": "受容を選んだリスクについて、理由、責任者、完了状態が揃っているか確認します。",
+        "acceptedTreatments": "受容件数",
+        "readyAcceptances": "証跡あり",
+        "gaps": {
+          "no_acceptance": "受容として記録された対応策がありません。",
+          "missing_owner": "受容判断の責任者が未設定です。",
+          "missing_reason": "受容理由が対応内容に記録されていません。",
+          "missing_review_due_date": "残留リスクの再レビュー日が未設定です。",
+          "not_completed": "受容判断が完了状態になっていません。"
+        }
+      },
+      "evidenceVault": {
+        "title": "Evidence Vault 準備状況",
+        "description": "リスク対応策と管理策の紐づきから、審査提出用の証跡束に使える状態か確認します。",
+        "linkedControls": "管理策",
+        "treatmentsWithControls": "紐づき済み対応策",
+        "gaps": {
+          "no_treatments": "リスク対応策がまだ登録されていません。",
+          "no_controls": "証跡束の軸になる管理策が紐づいていません。",
+          "unlinked_treatments": "管理策に紐づいていない対応策があります。"
+        }
+      }
+    },
+    "errors": {
+      "loadFailed": "リスクの読み込みに失敗しました",
+      "createFailed": "リスクの作成に失敗しました",
+      "updateFailed": "リスクの更新に失敗しました",
+      "assetUpdateFailed": "関連資産の保存に失敗しました",
+      "taskUpdateFailed": "関連タスクの保存に失敗しました",
+      "notFound": "リスクが見つかりません"
+    },
+    "gapAnalysis": {
+      "title": "ギャップ分析",
+      "description": "リスクのカテゴリ別・ステータス別の分布を確認し、対応の抜け漏れを把握します。",
+      "exportTitle": "リスクギャップ分析",
+      "exportCsv": "CSVダウンロード",
+      "exportPdf": "PDFダウンロード",
+      "columns": {
+        "category": "カテゴリ",
+        "status": "ステータス",
+        "count": "件数"
+      },
+      "summary": {
+        "title": "サマリー",
+        "total": "総件数",
+        "open": "未対応",
+        "treating": "対応中"
+      },
+      "empty": "表示できるリスクがありません"
+    },
+    "form": {
+      "title": "リスク情報",
+      "editRisk": "リスク編集",
+      "riskTitle": "リスクタイトル",
+      "description": "リスクの詳細説明",
+      "category": "カテゴリ",
+      "impact": "影響度",
+      "likelihood": "発生可能性",
+      "riskScore": "リスクスコア",
+      "owner": "管理責任者",
+      "identifiedDate": "特定日",
+      "status": "ステータス",
+      "selectPlaceholder": "選択してください",
+      "save": "保存",
+      "saving": "保存中",
+      "cancel": "キャンセル",
+      "impactLevels": {
+        "1": "軽微",
+        "2": "小",
+        "3": "中",
+        "4": "大",
+        "5": "重大"
+      },
+      "likelihoodLevels": {
+        "1": "稀",
+        "2": "低",
+        "3": "中",
+        "4": "高",
+        "5": "極高"
+      },
+      "assets": {
+        "title": "関連する情報資産",
+        "search": "資産を検索",
+        "empty": "利用可能な資産がありません。",
+        "selectedCount": "選択済み: {count}件",
+        "classification": "区分",
+        "criticality": "重要度",
+        "noAssets": "資産が未登録です。",
+        "manageLink": "資産管理へ",
+        "owner": "責任者",
+        "department": "部門"
+      }
+    },
+    "treatment": {
+      "title": "リスク対応策",
+      "add": "対応策を追加",
+      "strategy": "対応方針",
+      "type": "対応方針",
+      "description": "対応内容",
+      "responsible": "実施責任者",
+      "dueDate": "期限",
+      "targetDate": "目標日",
+      "status": "進捗状況",
+      "cost": "予算",
+      "actualCost": "実績費用",
+      "effectiveness": "有効性評価",
+      "residualReviewDueDate": "残留リスク再レビュー日",
+      "strategies": {
+        "mitigate": "軽減",
+        "reduce": "低減",
+        "transfer": "移転",
+        "accept": "受容",
+        "avoid": "回避"
+      },
+      "types": {
+        "avoid": "回避",
+        "reduce": "低減",
+        "transfer": "移転",
+        "accept": "受容"
+      },
+      "statuses": {
+        "planned": "計画中",
+        "in_progress": "実施中",
+        "completed": "完了",
+        "cancelled": "中止"
+      },
+      "controls": {
+        "title": "関連する管理策",
+        "description": "ISO管理策を選択して対応策との整合性を明確にします。",
+        "searchPlaceholder": "検索中",
+        "allCategories": "すべてのカテゴリ",
+        "loading": "読み込み中",
+        "noResults": "管理策が見つかりませんでした",
+        "loadError": "管理策の取得に失敗しました。",
+        "selectedCount": "選択済み: {count} 件",
+        "assignedTitle": "紐づく管理策",
+        "unknown": "名称未設定",
+        "editLinks": "管理策リンクを編集",
+        "saveLinks": "リンクを保存",
+        "saving": "保存中",
+        "cancelEdit": "キャンセル",
+        "updateError": "管理策リンクの更新に失敗しました。"
+      },
+      "residualApproval": {
+        "title": "残留リスク受容の承認",
+        "statusLabel": "承認状態",
+        "submit": "受容承認を申請",
+        "submitting": "申請中...",
+        "rejectionReason": "却下理由: {reason}",
+        "statuses": {
+          "draft": "未申請",
+          "submitted": "承認待ち",
+          "approved": "承認済み",
+          "rejected": "却下済み"
+        }
+      },
+      "markCompleted": "完了にする",
+      "completing": "完了処理中..."
+    },
+    "edit": {
+      "tabs": {
+        "aria": "リスク編集タブ",
+        "details": "基本情報",
+        "assets": "関連資産",
+        "tasks": "関連タスク"
+      },
+      "assets": {
+        "description": "このリスクに紐付ける情報資産を選択し、保存してください。",
+        "save": "関連資産を保存",
+        "saving": "保存中"
+      },
+      "tasks": {
+        "description": "リスク対応に紐づく業務タスクを選択します。1タスクは1リスクにのみ紐付けられます。",
+        "searchPlaceholder": "検索中",
+        "empty": "表示できるタスクがありません。",
+        "locked": "別のリスクに紐付いているため選択できません。",
+        "helper": "チェックを入れて保存するとタスクの関連リスクが更新されます。",
+        "save": "関連タスクを保存",
+        "saving": "保存中"
+      }
+    },
+    "importCsv": "CSVインポート"
+  },
+  "tasks": {
+    "title": "タスク管理",
+    "list": {
+      "newTask": "新規タスク作成",
+      "editTask": "タスクを編集",
+      "search": "検索中",
+      "view": {
+        "kanban": "かんばん",
+        "list": "リスト",
+        "calendar": "カレンダー",
+        "gantt": "ガント"
+      },
+      "filters": {
+        "assignee": "担当者",
+        "status": "ステータス",
+        "priority": "優先度",
+        "category": "カテゴリ"
+      },
+      "activeFilters": {
+        "status": "ステータスで絞り込み: {status}",
+        "overdue": "期限超過タスクのみ表示中",
+        "personal": "自分の担当タスクのみ表示中",
+        "tag": "タグで絞り込み: {tag}",
+        "clear": "絞り込みを解除"
+      },
+      "status": {
+        "todo": "未着手",
+        "in_progress": "進行中",
+        "review": "レビュー",
+        "done": "完了",
+        "cancelled": "キャンセル"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "緊急"
+      },
+      "columns": {
+        "title": "タスク名",
+        "owner": "責任者",
+        "assignee": "担当者",
+        "completionCriteria": "完了条件",
+        "status": "ステータス",
+        "priority": "優先度",
+        "dueDate": "期限",
+        "progress": "進捗",
+        "actions": "操作"
+      },
+      "noTasks": "タスクがありません",
+      "noCompletionCriteria": "完了条件が未設定です",
+      "noDueDate": "期限未設定",
+      "exportCsv": "タスクをCSVで出力",
+      "exportingCsv": "CSVを出力中",
+      "exportFailed": "タスクCSVの出力に失敗しました。時間をおいて再度お試しください。",
+      "calendar": {
+        "today": "今日",
+        "previousMonth": "前の月",
+        "nextMonth": "次の月",
+        "totalTasks": "表示中のタスク数: {count}",
+        "empty": "タスクはありません",
+        "unscheduledHeading": "期限未設定のタスク"
+      },
+      "gantt": {
+        "summary": "表示期間: {from} 〜 {to}（期限付きタスク: {count}件）",
+        "taskColumn": "タスク",
+        "noScheduledTasks": "ガントチャートに表示できる期限付きタスクがありません",
+        "unscheduledHeading": "期限未設定のタスク",
+        "legend": {
+          "today": "今日"
+        }
+      }
+    },
+    "form": {
+      "title": "タスク詳細",
+      "editTask": "タスクの編集",
+      "helperText": "タスクの基本情報と関連リソースを入力してください。",
+      "taskTitle": "タスク名",
+      "description": "説明",
+      "category": "カテゴリ",
+      "assignee": "担当者",
+      "reporter": "作成者",
+      "status": "ステータス",
+      "priority": "優先度",
+      "dueDate": "期限",
+      "estimatedHours": "見積時間",
+      "actualHours": "実績時間",
+      "progress": "進捗率",
+      "relatedDocument": "関連文書",
+      "relatedRisk": "関連リスク",
+      "tags": "タグ",
+      "selectPlaceholder": "選択してください",
+      "none": "なし",
+      "save": "保存",
+      "saving": "保存中",
+      "cancel": "キャンセル"
+    },
+    "detail": {
+      "overview": "概要",
+      "activity": "アクティビティ",
+      "comments": "コメント",
+      "attachments": "添付ファイル",
+      "history": "変更履歴",
+      "subtasks": "サブタスク",
+      "addComment": "コメントを追加",
+      "addAttachment": "ファイルを添付",
+      "noComments": "コメントはありません",
+      "noAttachments": "添付ファイルはありません",
+      "noHistory": "変更履歴はありません"
+    },
+    "subtasks": {
+      "newPlaceholder": "サブタスクのタイトルを入力",
+      "addButton": "サブタスクを追加",
+      "creating": "作成中",
+      "empty": "サブタスクはまだありません",
+      "deleting": "削除中",
+      "confirmDelete": "このサブタスクを削除しますか？"
+    },
+    "tagEditor": {
+      "editButton": "タグを編集",
+      "loading": "読み込み中",
+      "selectedTitle": "選択済みタグ",
+      "noSelected": "タグはまだ設定されていません",
+      "availableTitle": "利用可能なタグ",
+      "noAvailable": "追加できるタグがありません",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "remove": "削除",
+      "createTitle": "新しいタグを作成",
+      "namePlaceholder": "タグ名を入力",
+      "colorLabel": "カラー",
+      "createButton": "タグを追加",
+      "creating": "作成中"
+    },
+    "actions": {
+      "edit": "編集",
+      "delete": "削除",
+      "duplicate": "複製",
+      "changeStatus": "ステータス変更",
+      "assign": "担当者を割り当て"
+    },
+    "confirmDelete": "このタスクを削除してもよろしいですか？",
+    "confirmDeleteAttachment": "この添付ファイルを削除してもよろしいですか？",
+    "errors": {
+      "loadFailed": "タスクの読み込みに失敗しました",
+      "createFailed": "タスクの作成に失敗しました",
+      "updateFailed": "タスクの更新に失敗しました",
+      "deleteFailed": "タスクの削除に失敗しました",
+      "uploadFailed": "アップロードに失敗しました",
+      "notFound": "タスクが見つかりません",
+      "loadTags": "タグの読み込みに失敗しました",
+      "saveTags": "タグの保存に失敗しました",
+      "createTag": "タグの作成に失敗しました",
+      "createSubtask": "サブタスクの作成に失敗しました",
+      "updateSubtask": "サブタスクの更新に失敗しました",
+      "deleteSubtask": "サブタスクの削除に失敗しました",
+      "permissionDenied": "この操作を実行する権限がありません"
+    },
+    "importCsv": "CSVインポート"
+  },
+  "audit": {
+    "title": "監査管理",
+    "checklist": {
+      "title": "監査チェックリスト",
+      "description": "ISO 27001 要求事項に基づいて監査項目を確認し、証跡、所見、不適合、次の対応を同じ流れで管理します。",
+      "loading": "読み込み中",
+      "planSummary": "監査チーム、担当割り当て、証跡の有無を確認しながら対応状況を更新してください。",
+      "empty": "表示できるチェックリストがありません。監査計画を選び、ISO要求事項から確認項目を生成してください。",
+      "filters": {
+        "assignee": "担当者で絞り込む",
+        "all": "すべて"
+      },
+      "fields": {
+        "status": "ステータス",
+        "result": "判定結果",
+        "resultPlaceholder": "結果を選択",
+        "assignee": "担当者",
+        "assigneePlaceholder": "担当者を選択",
+        "evidence": "証跡メモ",
+        "findings": "所見・コメント",
+        "evidenceDescriptionPlaceholder": "証跡の補足説明（任意）",
+        "ncType": "不適合の種別",
+        "ncDescription": "不適合の詳細"
+      },
+      "sections": {
+        "evidence": "証跡ファイル",
+        "evidenceDescription": "関連する証跡ファイルをアップロードし、後から確認できる補足説明を入力します。",
+        "nonconformity": "不適合登録",
+        "nonconformityDescription": "チェックリストに紐づく不適合を登録し、フォローアップを開始します。"
+      },
+      "status": {
+        "not_started": "未着手",
+        "in_progress": "進行中",
+        "completed": "完了"
+      },
+      "result": {
+        "conformity": "適合",
+        "minor_nc": "軽微な不適合",
+        "major_nc": "重大な不適合",
+        "observation": "観察事項",
+        "not_applicable": "適用除外"
+      },
+      "ncType": {
+        "major": "重大不適合",
+        "minor": "軽微不適合"
+      },
+      "ncStatus": {
+        "open": "未処理",
+        "in_progress": "対応中",
+        "resolved": "是正済み",
+        "verified": "検証済み",
+        "closed": "完了"
+      },
+      "actions": {
+        "backToPlan": "監査計画に戻る",
+        "save": "保存する",
+        "saving": "保存中",
+        "uploadEvidence": "証跡をアップロード",
+        "uploading": "読み込み中",
+        "viewEvidence": "閲覧",
+        "deleteEvidence": "削除",
+        "createNc": "不適合を登録",
+        "creatingNc": "作成中",
+        "view": "チェックリストを見る"
+      },
+      "labels": {
+        "manualItem": "手動追加項目",
+        "unknownUser": "担当者未設定",
+        "noDescription": "説明なし"
+      },
+      "toast": {
+        "loadFailed": "チェックリストの読み込みに失敗しました。",
+        "saveSuccess": "チェックリストを保存しました。",
+        "saveFailed": "チェックリストの保存に失敗しました。",
+        "fileRequired": "アップロードするファイルを選択してください。",
+        "profileRequired": "証跡をアップロードするにはユーザー情報が必要です。",
+        "evidenceUploaded": "証跡をアップロードしました。",
+        "evidenceFailed": "証跡のアップロードに失敗しました。",
+        "evidenceDeleted": "証跡を削除しました。",
+        "evidenceDeleteFailed": "証跡の削除に失敗しました。",
+        "ncDescriptionRequired": "不適合の内容を入力してください。",
+        "ncCreated": "不適合を登録しました。",
+        "ncFailed": "不適合の登録に失敗しました。",
+        "evidenceOpenFailed": "証跡ファイルの取得に失敗しました。"
+      },
+      "view": "監査チェックリストを見る"
+    },
+    "stats": {
+      "totalPlans": "監査計画総数",
+      "inProgress": "実施中",
+      "totalNonconformities": "不適合事項",
+      "openNCs": "未解決の不適合",
+      "checklistCompletion": "チェックリスト完了率",
+      "checklistCompletionHint": "{completed} / {total} 件完了",
+      "openCorrectiveActions": "是正処置の対応中",
+      "overdueCorrectiveActions": "期限超過: {count} 件",
+      "overdueNonconformities": "期限超過: {count} 件",
+      "periodHeaderTitle": "選択中の監査期間",
+      "periodHeaderAll": "全期間",
+      "progressBarAriaLabel": "監査ステータスの割合を示す進捗バー",
+      "followUpSummary": "フォローアップ状況",
+      "nonconformitySummary": "不適合ステータス内訳"
+    },
+    "plans": {
+      "title": "監査計画",
+      "description": "内部監査の計画、実施状況、報告、フォローアップを年次運用の流れで管理し、単段承認と次の対応を確認できます。",
+      "new": "新規監査計画",
+      "list": "監査計画一覧",
+      "noPlan": "監査計画が登録されていません。監査範囲、担当者、予定日を決めて最初の計画を作成してください",
+      "emptyStateForPeriod": "{period} の監査計画は登録されていません。期間を変えるか、新しい監査計画を作成してください",
+      "filters": {
+        "all": "すべて",
+        "period": "年度/四半期で絞り込む"
+      },
+      "columns": {
+        "title": "監査名",
+        "type": "種別",
+        "plannedDate": "予定日",
+        "leadAuditor": "主任監査員",
+        "progress": "進捗",
+        "followUp": "フォローアップ",
+        "status": "ステータス",
+        "actions": "操作"
+      },
+      "progress": {
+        "checklistCount": "{completed}/{total} 件のチェックリスト",
+        "ariaLabel": "{statusDescription}。{completed}/{total} 件のチェックリストが完了（{rate}%）。"
+      },
+      "followUpStatus": {
+        "labels": {
+          "completed": "是正完了",
+          "on_hold": "保留中",
+          "reopened": "再指摘あり"
+        },
+        "descriptions": {
+          "completed": "指摘はすべて是正済みです",
+          "on_hold": "実施中の監査で未完了の指摘があります",
+          "reopened": "完了後に未完了の指摘が残っておりフォローアップが必要です"
+        },
+        "openCount": "未完了の指摘: {count}件"
+      },
+      "status": {
+        "planning": "計画中",
+        "scheduled": "予定",
+        "in_progress": "実施中",
+        "completed": "完了",
+        "cancelled": "中止"
+      },
+      "activeFilters": {
+        "status": "ステータスで絞り込み: {status}",
+        "period": "{period} で絞り込み中",
+        "clear": "フィルターを解除"
+      }
+    },
+    "requirements": {
+      "title": "ISO要求事項管理",
+      "description": "ISO/IEC 27001 の要求事項を整理し、監査計画向けのチェックリストを準備します。",
+      "loading": "読み込み中",
+      "generate": {
+        "title": "チェックリストを一括生成",
+        "description": "適用する要求事項を選択し、監査計画にチェック項目を追加します。"
+      },
+      "listTitle": "要求事項一覧",
+      "fields": {
+        "select": "生成対象に含める",
+        "plan": "対象の監査計画",
+        "planPlaceholder": "監査計画を選択してください"
+      },
+      "actions": {
+        "updating": "更新中",
+        "markNotApplicable": "非適用にする",
+        "markApplicable": "適用にする",
+        "generating": "生成中",
+        "generate": "チェックリストを生成"
+      },
+      "toast": {
+        "loadFailed": "要求事項の読み込みに失敗しました。",
+        "markNotApplicable": "要求事項を非適用として保存しました。",
+        "markApplicable": "要求事項を適用として保存しました。",
+        "updateFailed": "適用可否の更新に失敗しました。",
+        "planRequired": "先に監査計画を選択してください。",
+        "requirementRequired": "生成する要求事項を 1 件以上選択してください。",
+        "generateSuccess": "チェックリストを生成しました。",
+        "generateFailed": "チェックリストの生成に失敗しました。"
+      }
+    },
+    "nonconformities": {
+      "title": "不適合管理",
+      "description": "監査で検出した不適合の原因、是正、再発防止、完了承認を追跡し、対応漏れを減らします。",
+      "list": "不適合一覧を開く",
+      "loading": "読み込み中",
+      "empty": "表示できる不適合はありません。監査チェックリストで所見が見つかったら、原因、対応期限、完了承認者を記録します。",
+      "filters": {
+        "title": "フィルター",
+        "status": "ステータス",
+        "type": "種別",
+        "all": "すべて"
+      },
+      "status": {
+        "open": "未処理",
+        "in_progress": "対応中",
+        "resolved": "是正済み",
+        "verified": "検証済み",
+        "closed": "完了"
+      },
+      "type": {
+        "major": "重大不適合",
+        "minor": "軽微不適合"
+      },
+      "labels": {
+        "relatedChecklist": "関連チェックリスト: {clause}"
+      },
+      "capaBoundary": {
+        "title": "CAPA / 監査不適合",
+        "description": "通常タスクではなく、監査不適合・是正処置として責任者、原因、再発防止、単段の完了承認を管理します。",
+        "ncNumber": "不適合番号"
+      },
+      "followUpSummary": {
+        "title": "有効性確認フォローアップ",
+        "empty": "この不適合に紐づくフォローアップはありません。",
+        "status": "状態: {status}",
+        "dueDate": "期限: {date}",
+        "assignee": "担当: {name}",
+        "createTitle": "このCAPAの有効性確認を追加"
+      },
+      "fields": {
+        "status": "ステータス",
+        "dueDate": "是正期限",
+        "resolutionDate": "是正完了日",
+        "verificationDate": "検証日",
+        "responsible": "責任者",
+        "rootCause": "原因",
+        "correctiveAction": "是正方針",
+        "preventiveAction": "再発防止"
+      },
+      "actions": {
+        "save": "更新を保存",
+        "saving": "保存中"
+      },
+      "toast": {
+        "loadFailed": "不適合の読み込みに失敗しました。",
+        "saveSuccess": "不適合情報を更新しました。",
+        "saveFailed": "不適合の更新に失敗しました。"
+      },
+      "correctiveActions": {
+        "title": "是正処置",
+        "count": "登録数: {count}",
+        "empty": "登録された是正処置はありません。監査で不適合が見つかったら、原因、対応内容、期限、完了承認者、確認すべき証跡を記録してください。",
+        "fields": {
+          "description": "対応内容",
+          "status": "ステータス",
+          "plannedDate": "実施予定日",
+          "completionDate": "完了日",
+          "responsible": "実施責任者",
+          "reviewer": "完了確認者",
+          "effectivenessReview": "有効性確認",
+          "approvalState": "完了承認状態"
+        },
+        "capaSummary": {
+          "badge": "CAPA是正処置",
+          "description": "監査不適合に紐づく是正処置として、単段の完了承認後に不適合を検証済みにします。",
+          "closureApprovalPending": "完了承認申請対象",
+          "verified": "CISO確認済み",
+          "inProgress": "是正処置を進行中"
+        },
+        "status": {
+          "planned": "計画中",
+          "in_progress": "実施中",
+          "completed": "完了",
+          "verified": "検証済み"
+        },
+        "actions": {
+          "create": "是正処置を追加",
+          "creating": "作成中",
+          "save": "更新を保存",
+          "saving": "保存中",
+          "submitClosure": "完了承認を申請",
+          "submittingClosure": "申請中"
+        },
+        "new": {
+          "title": "新しい是正処置を登録",
+          "description": "是正処置の内容、期限、確認に使う証跡を入力してください。",
+          "placeholder": "是正処置の対応内容を記載してください"
+        },
+        "toast": {
+          "descriptionRequired": "是正処置の内容を入力してください。",
+          "createSuccess": "是正処置を登録しました。",
+          "createFailed": "是正処置の登録に失敗しました。",
+          "updateSuccess": "是正処置を更新しました。",
+          "updateFailed": "是正処置の更新に失敗しました。",
+          "submitClosureSuccess": "是正完了の承認を申請しました。",
+          "submitClosureFailed": "是正完了承認の申請に失敗しました。"
+        }
+      }
+    },
+    "report": {
+      "title": "監査報告書",
+      "description": "監査報告書の主要項目を編集し、完了ステータスを更新します。",
+      "loading": "読み込み中",
+      "planSummary": "報告書と監査ステータスを更新し、完了条件を満たしてください。",
+      "fields": {
+        "status": "監査ステータス",
+        "executiveSummary": "エグゼクティブサマリー",
+        "scope": "監査範囲",
+        "methodology": "監査手法",
+        "positiveFindings": "肯定的所見",
+        "improvementOpportunities": "改善提案",
+        "conclusion": "総評",
+        "reportDate": "報告日",
+        "approvalStatus": "承認ステータス",
+        "approvedBy": "承認者"
+      },
+      "approvalStatuses": {
+        "draft": "下書き",
+        "submitted": "承認申請中",
+        "approved": "承認済み",
+        "rejected": "却下"
+      },
+      "actions": {
+        "backToPlan": "監査計画に戻る",
+        "save": "報告書を保存",
+        "saving": "保存中",
+        "submitApproval": "承認申請する",
+        "submittingApproval": "申請中",
+        "downloadPdf": "PDF をダウンロード",
+        "downloading": "読み込み中"
+      },
+      "toast": {
+        "loadFailed": "監査報告書の読み込みに失敗しました。",
+        "saveSuccess": "監査報告書を保存しました。",
+        "saveFailed": "監査報告書の保存に失敗しました。",
+        "submitSuccess": "監査報告書の承認申請を開始しました。",
+        "submitFailed": "監査報告書の承認申請に失敗しました。",
+        "saveBeforeSubmit": "先に監査報告書を保存してください。",
+        "downloadFailed": "PDF の生成に失敗しました。もう一度お試しください。",
+        "downloadUnavailable": "先に監査報告書を保存してください。"
+      }
+    },
+    "reports": {
+      "title": "監査報告書",
+      "description": "監査報告書のレビュー、編集、エクスポートを一元管理します。",
+      "generate": "報告書作成",
+      "stats": {
+        "total": "総数",
+        "completed": "承認済み",
+        "inProgress": "作成中"
+      },
+      "filters": {
+        "search": "検索中",
+        "status": "ステータスで絞り込み",
+        "period": "期間で絞り込み",
+        "type": "監査種別で絞り込み"
+      },
+      "typeLabels": {
+        "internal": "内部監査",
+        "external": "外部監査",
+        "certification": "認証監査",
+        "surveillance": "継続運用"
+      },
+      "banners": {
+        "type": "監査種別: {type}"
+      },
+      "badges": {
+        "completion": "完成度 {percent}%"
+      },
+      "table": {
+        "columns": {
+          "report": "監査計画 / 報告書",
+          "period": "監査期間",
+          "status": "ステータス",
+          "owner": "主任監査員 / 承認者",
+          "updated": "最終更新",
+          "actions": "操作"
+        },
+        "reportDate": "報告日: {date}",
+        "approvedBy": "承認者: {name}",
+        "awaitingApproval": "承認待ち"
+      },
+      "actions": {
+        "viewPlan": "計画を開く",
+        "editReport": "報告書を編集",
+        "downloadPdf": "PDF をダウンロード"
+      },
+      "empty": {
+        "title": "まだ報告書がありません",
+        "description": "監査計画を完了し、報告書を保存するとここに表示されます。",
+        "cta": "監査計画を作成"
+      },
+      "errors": {
+        "loadFailed": "監査報告書の取得に失敗しました。",
+        "downloadFailed": "PDF のダウンロードに失敗しました。"
+      }
+    },
+    "actions": {
+      "edit": "編集",
+      "execute": "実施",
+      "report": "報告書",
+      "view": "詳細"
+    },
+    "upcoming": {
+      "title": "次回監査予定"
+    },
+    "nextActions": {
+      "title": "次のアクション",
+      "description": "監査計画、チェックリスト、不適合、是正処置から、次に対応すべき項目をピックアップしています。",
+      "empty": "対応が必要な項目はありません。次回監査や証跡更新の時期に備えて、計画と担当者を確認しておきましょう。",
+      "types": {
+        "checklist": "チェックリスト",
+        "nonconformity": "不適合",
+        "corrective_action": "是正処置"
+      },
+      "priority": {
+        "high": "優先度: 高",
+        "medium": "優先度: 中",
+        "low": "優先度: 低"
+      },
+      "descriptions": {
+        "checklist": "残り {remaining} / {total} 件のチェック項目を完了し、必要な証跡を添付してください。",
+        "nonconformity": "期限が迫っている不適合の原因、対応期限、担当者を確認してください。",
+        "corrective_action": "計画した是正処置の進捗、証跡、完了承認の準備を確認してください。"
+      },
+      "labels": {
+        "dueDate": "期限: {date}",
+        "noDueDate": "期限情報なし",
+        "viewDetails": "詳細を表示",
+        "unnamedPlan": "名称未設定の監査計画"
+      }
+    },
+    "form": {
+      "basicInfo": "基本情報",
+      "title": "監査名",
+      "description": "説明",
+      "auditType": "監査種別",
+      "standard": "適用規格",
+      "schedule": "日程",
+      "plannedStartDate": "開始予定日",
+      "plannedEndDate": "終了予定日",
+      "auditTeam": "監査チーム",
+      "leadAuditor": "主任監査員",
+      "auditors": "監査員",
+      "cancel": "キャンセル",
+      "create": "作成",
+      "creating": "作成中",
+      "save": "保存",
+      "saving": "保存中"
+    },
+    "detail": {
+      "leadAuditorLabel": "主任監査員: {name}",
+      "unassigned": "未割り当て",
+      "schedule": {
+        "plannedRange": "予定期間",
+        "statusLabel": "ステータス",
+        "actualStart": "実施開始日",
+        "actualEnd": "実施終了日"
+      },
+      "sections": {
+        "overview": {
+          "badge": "監査概要",
+          "title": "監査計画概要",
+          "description": "監査の目的・期間・ステータスを確認し、実績情報を更新します。"
+        },
+        "team": {
+          "badge": "監査チーム",
+          "title": "チーム編成",
+          "description": "監査を担当するメンバーと役割を管理します。",
+          "countSuffix": "名",
+          "remove": "除外",
+          "roleLabel": "役割",
+          "roles": {
+            "lead": "主任監査員",
+            "auditor": "監査員",
+            "observer": "オブザーバー"
+          },
+          "empty": "監査チームがまだ編成されていません。メンバーを追加してください。",
+          "addTitle": "メンバーを追加",
+          "addUserLabel": "追加するユーザー",
+          "selectPlaceholder": "メンバーを選択",
+          "addRoleLabel": "割り当てる役割",
+          "addAction": "チームに追加",
+          "roleOptions": {
+            "system_operator": "システム管理者",
+            "org_admin": "組織管理者",
+            "auditor": "監査員",
+            "approver": "承認者",
+            "user": "一般ユーザー"
+          },
+          "duplicate": "このメンバーは既に監査チームに含まれています。"
+        },
+        "activity": {
+          "title": "更新履歴",
+          "description": "監査計画の作成・更新日時を確認できます。",
+          "createdAt": "作成日時",
+          "updatedAt": "最終更新"
+        }
+      }
+    },
+    "errors": {
+      "createFailed": "監査計画の作成に失敗しました",
+      "updateFailed": "監査計画の更新に失敗しました",
+      "loadFailed": "データの読み込みに失敗しました"
+    },
+    "accessDenied": {
+      "title": "監査機能へのアクセス権がありません",
+      "description": "監査員・組織管理者・システム管理者、または監査管理権限を付与されたユーザーのみが監査ワークスペースを利用できます。必要に応じて管理者に権限の付与を依頼してください。",
+      "permissionFetchFailed": "権限情報の取得に失敗しました。再読み込みしても改善しない場合は管理者へお問い合わせください。"
+    },
+    "followUp": {
+      "title": "フォローアップ",
+      "addNew": "新規追加",
+      "recordTitle": "タイトル",
+      "description": "説明",
+      "assignedTo": "担当者",
+      "dueDate": "期限",
+      "status": "ステータス",
+      "open": "未対応",
+      "inProgress": "対応中",
+      "completed": "完了",
+      "verified": "検証済み",
+      "closed": "クローズ",
+      "markComplete": "完了にする",
+      "markVerified": "検証済みにする",
+      "noRecords": "フォローアップはありません",
+      "selectAssignee": "担当者を選択",
+      "titlePlaceholder": "フォローアップのタイトルを入力",
+      "descriptionPlaceholder": "詳細を記入してください",
+      "saving": "保存中",
+      "creating": "作成中",
+      "toast": {
+        "createSuccess": "フォローアップを作成しました。",
+        "createFailed": "フォローアップの作成に失敗しました。",
+        "updateSuccess": "フォローアップを更新しました。",
+        "updateFailed": "フォローアップの更新に失敗しました。",
+        "titleRequired": "タイトルを入力してください。"
+      }
+    }
+  },
+  "home": {
+    "title": "ホーム",
+    "welcome": "ようこそ、{name} さん",
+    "adminWelcome": "組織管理者として、運用状況と次に必要な対応を確認できます",
+    "hero": {
+      "greeting": "{name} さん、お疲れさまです",
+      "subtitle": "{organization} の運用状況、承認待ち、次に進める対応をここで確認できます",
+      "plan": "契約プラン",
+      "nextBilling": "次回請求日",
+      "badges": {
+        "onboardingComplete": "オンボーディング完了",
+        "role": {
+          "system_operator": "システム運営者",
+          "org_admin": "組織管理者",
+          "user": "メンバー",
+          "auditor": "監査員",
+          "approver": "承認者"
+        }
+      }
+    },
+    "phaseSummary": {
+      "labels": {
+        "initial": "初回登録準備",
+        "surveillance": "継続運用"
+      },
+      "descriptions": {
+        "initial": "初回認証に向けて、体制、文書、リスク、管理策、タスクの準備状況を確認します。",
+        "surveillance": "認証後の年次運用に向けて、監査・是正処置・証跡更新の次アクションを追跡します。"
+      },
+      "status": {
+        "set": "{date} に更新",
+        "unset": "フェーズ未設定"
+      },
+      "cta": "フェーズ設定を開く",
+      "alert": "フェーズが未設定のため初回登録準備の指標を表示しています。"
+    },
+    "errors": {
+      "loadFailed": "ダッシュボード情報の読み込みに失敗しました。時間をおいて再度お試しください。",
+      "organizationNotFound": "所属組織が見つかりませんでした。サインインし直してください。"
+    },
+    "warnings": {
+      "title": "一部のデータを暫定表示しています",
+      "simulationActive": "QAモード: ダッシュボード統計のフェールセーフを検証しています。",
+      "sessionFallback": "QAモードで仮のユーザーセッションを使用しています。",
+      "organizationFallback": "QAモードで仮の組織情報を使用しています。",
+      "fallbackUserName": "QA テストユーザー",
+      "fallbackOrganizationName": "QA テスト組織",
+      "statsUnavailable": "ダッシュボード統計を取得できませんでした。暫定値を表示しています。"
+    },
+    "stats": {
+      "progress": "ISMS構築進捗",
+      "overdueTasks": "期限切れタスク",
+      "pendingDocuments": "承認待ち文書",
+      "nextAudit": "次回監査まで",
+      "daysUnit": "日",
+      "activeUsers": "アクティブユーザー",
+      "openRisks": "未対応リスク",
+      "documents": "文書数",
+      "activeTasks": "進行中タスク",
+      "auditsInProgress": "実施中の監査",
+      "approverPendingApprovals": "承認待ち",
+      "approverDueSoon": "期限が近い承認",
+      "usersHint": "運用に参加できる有効メンバー数",
+      "documentsHint": "レビュー待ち: {pending}件。公開前の判断待ちを確認できます",
+      "risksHint": "対応が必要なリスク件数と見直し対象",
+      "tasksHint": "期限超過: {overdue}件。担当者と次の対応を確認してください",
+      "auditsHint": "進行中または直近の監査と証跡確認の件数",
+      "approverPendingApprovalsHint": "単段承認で判断待ちの申請",
+      "approverDueSoonHint": "{hours}時間以内に確認したい申請",
+      "drilldown": {
+        "cta": "詳細を見る",
+        "users": "ユーザー管理画面を開く",
+        "documents": "文書一覧を開く",
+        "risks": "リスク一覧を開く",
+        "tasks": "タスク一覧を開く",
+        "audits": "監査ダッシュボードを開く",
+        "approvals": "承認待ち一覧を開く",
+        "dueApprovals": "期限が近い承認一覧を開く"
+      },
+      "actions": {
+        "users": "ユーザー管理を開く",
+        "documents": "文書一覧を確認",
+        "risks": "リスク台帳を開く",
+        "tasks": "タスクボードを確認",
+        "audits": "監査ワークスペースを開く"
+      }
+    },
+    "statusBreakdown": {
+      "title": "ステータス内訳",
+      "subtitle": "文書、リスク、タスクの滞留や次に見るべき状態を確認できます。",
+      "tasks": "タスク",
+      "documents": "文書",
+      "risks": "リスク",
+      "empty": "該当するデータがありません",
+      "chart": {
+        "summary": "{total, number}件を集計中",
+        "total": "合計",
+        "legend": "凡例",
+        "empty": "チャートなし",
+        "aria": "{module}のステータス分布"
+      },
+      "labels": {
+        "tasks": {
+          "todo": "未着手",
+          "in_progress": "進行中",
+          "review": "レビュー中",
+          "done": "完了",
+          "cancelled": "中止"
+        },
+        "documents": {
+          "draft": "下書き",
+          "in_review": "レビュー中",
+          "approved": "承認済み",
+          "obsolete": "廃止"
+        },
+        "risks": {
+          "identified": "特定済み",
+          "analyzing": "分析中",
+          "treating": "対応中",
+          "monitoring": "監視中",
+          "closed": "対応完了"
+        }
+      }
+    },
+    "quickActions": {
+      "title": "クイックアクション",
+      "addUser": "ユーザーを追加",
+      "organizationSettings": "組織設定",
+      "viewPendingApprovals": "承認待ち文書を確認"
+    },
+    "recentActivity": {
+      "title": "最近の活動",
+      "subtitle": "文書・リスク・ユーザーイベントと通知センターの更新から、最近の動きと次の確認先を見つけます。",
+      "empty": "まだ表示できる活動がありません。文書更新、承認依頼、リスク変更などが行われるとここに表示されます。",
+      "loadError": "活動ログを読み込めませんでした。通知センターで最新状況を確認してください。",
+      "unknownActor": "システム",
+      "unknownResource": "不明なリソース",
+      "filters": {
+        "all": "すべて",
+        "activity": "活動ログ",
+        "notifications": "通知"
+      },
+      "badges": {
+        "document": "文書",
+        "risk": "リスク",
+        "user": "ユーザー",
+        "system": "システム",
+        "notification": "通知"
+      },
+      "entries": {
+        "documentCreated": "{actor}が文書「{resource}」を作成しました",
+        "documentUpdated": "{actor}が文書「{resource}」を更新しました",
+        "documentApproved": "{actor}が文書「{resource}」を承認しました",
+        "documentApprovalRequested": "{actor}が文書「{resource}」の承認を依頼しました",
+        "riskCreated": "{actor}がリスク「{resource}」を登録しました",
+        "riskUpdated": "{actor}がリスク「{resource}」を更新しました",
+        "riskDeleted": "{actor}がリスク「{resource}」を削除しました",
+        "userInvited": "{actor}が{resource}宛てにメンバー招待を行いました",
+        "phaseChanged": "{actor}がISMSフェーズを{phase}に更新しました"
+      }
+    },
+    "compliance": {
+      "title": "監査・コンプライアンス状況",
+      "certificationStatus": "認証ステータス",
+      "valid": "有効",
+      "expiryDate": "有効期限",
+      "auditProgress": "監査進捗",
+      "correctiveActions": "是正処置",
+      "open": "未対応",
+      "inProgress": "対応中",
+      "completed": "完了"
+    },
+    "subscription": {
+      "title": "契約プラン",
+      "subtitle": "課金状況、更新タイミング、解約時のデータ持ち出し準備を確認できます",
+      "plan": "プラン",
+      "statusLabel": "ステータス",
+      "nextBilling": "次回課金日",
+      "trialPlan": "トライアル",
+      "trialRemains": "トライアル終了予定",
+      "status": {
+        "trialing": "トライアル中",
+        "active": "有効",
+        "canceled": "キャンセル済み",
+        "past_due": "支払い遅延",
+        "unpaid": "未払い",
+        "incomplete": "未完了",
+        "incomplete_expired": "期限切れ"
+      },
+      "manageHint": "契約内容はサブスクリプション設定から編集できます",
+      "manageCta": "設定を開く",
+      "mockMode": {
+        "description": "Stripe のテストキーが未設定のため、現在はモックモードで動作しています。テスト用の Price ID を設定すると Checkout を確認できます。",
+        "statusLabel": "モックモードで表示中",
+        "cta": "テスト環境を設定"
+      }
+    },
+    "controls": {
+      "title": "管理策ライブラリ",
+      "description": "ISO/IEC 27001 Annex A の管理策を検索・整理し、リスク対応策に紐づけるためのマスタを管理します。",
+      "actions": {
+        "create": "管理策を追加",
+        "edit": "編集",
+        "delete": "削除",
+        "openWizard": "附属書Aから追加",
+        "confirmDelete": "{title} を削除しますか？この操作は元に戻せません。"
+      },
+      "filters": {
+        "search": "検索",
+        "searchPlaceholder": "検索中",
+        "category": "カテゴリ",
+        "allCategories": "すべてのカテゴリ"
+      },
+      "table": {
+        "columns": {
+          "title": "管理策",
+          "category": "カテゴリ",
+          "controlCode": "管理策番号",
+          "updatedAt": "最終更新",
+          "actions": "操作"
+        },
+        "empty": "登録された管理策がありません"
+      },
+      "form": {
+        "createTitle": "新規管理策",
+        "editTitle": "管理策を編集",
+        "fields": {
+          "title": "管理策タイトル",
+          "category": "カテゴリ",
+          "controlCode": "管理策番号",
+          "controlCodePlaceholder": "処理中",
+          "description": "詳細説明",
+          "tags": "タグ",
+          "tagsPlaceholder": "例：アクセス管理, テレワーク",
+          "tagsHint": "カンマ区切りで複数のタグを入力できます。"
+        },
+        "actions": {
+          "cancel": "キャンセル",
+          "save": "保存",
+          "saving": "保存中"
+        }
+      },
+      "errors": {
+        "loadFailed": "管理策の読み込みに失敗しました。",
+        "saveFailed": "管理策の保存に失敗しました。",
+        "deleteFailed": "管理策の削除に失敗しました。",
+        "required": "タイトルとカテゴリは必須です。"
+      },
+      "messages": {
+        "created": "管理策「{title}」を作成しました。",
+        "updated": "管理策「{title}」を更新しました。",
+        "deleted": "管理策「{title}」を削除しました。"
+      },
+      "noAccess": {
+        "title": "管理策ライブラリへのアクセス権がありません",
+        "description": "この機能を利用するには管理者または管理策管理の権限が必要です。",
+        "back": "ホームに戻る"
+      },
+      "wizard": {
+        "title": "Annex A 管理策ウィザード",
+        "description": "推奨テンプレートを選択して一括登録できます。",
+        "searchPlaceholder": "キーワードで絞り込む",
+        "badges": {
+          "existing": "登録済み"
+        },
+        "states": {
+          "loading": "読み込み中",
+          "empty": "一致するテンプレートがありません。"
+        },
+        "modeSection": {
+          "title": "適用モード"
+        },
+        "modes": {
+          "insert": "新規のみ追加（既存は維持）",
+          "restore": "未登録のテンプレートだけ補完",
+          "overwrite": "既存テンプレートを上書き"
+        },
+        "actions": {
+          "cancel": "キャンセル",
+          "apply": "管理策を登録",
+          "applying": "適用中"
+        },
+        "errors": {
+          "loadFailed": "テンプレートの読み込みに失敗しました。",
+          "selectOne": "少なくとも1つのテンプレートを選択してください。",
+          "seedFailed": "管理策の追加に失敗しました。"
+        },
+        "messages": {
+          "successInsert": "管理策を追加しました（{created} 件）。",
+          "successOverwrite": "管理策を追加/更新しました（追加 {created} 件・更新 {updated} 件）。"
+        },
+        "selectedLabel": "選択中: {count} 件"
+      }
+    },
+    "organization": {
+      "title": "組織情報",
+      "subtitle": "ISMS の適用範囲や組織属性を整理しましょう",
+      "name": "組織名",
+      "employeeRange": "従業員数区分",
+      "industry": "業種",
+      "notSet": "未設定"
+    },
+    "phaseWizard": {
+      "badge": "ISMSフェーズ",
+      "title": "現在のフェーズを選択してください",
+      "description": "オンボーディングと KPI を適切な状態に切り替えるため、初回登録準備か継続運用かを選びましょう。",
+      "helper": "フェーズは設定画面からいつでも変更できます。",
+      "submit": "フェーズを確定する",
+      "submitting": "送信中",
+      "validation": "フェーズを選択してください。",
+      "error": "フェーズの更新に失敗しました。時間をおいて再度お試しください。",
+      "initial": {
+        "label": "初回登録準備",
+        "description": "認証取得前または初年度の導入段階です。"
+      },
+      "surveillance": {
+        "label": "継続運用",
+        "description": "すでに認証済みで、年次の維持監査を回しています。"
+      }
+    },
+    "insights": {
+      "title": "注目ポイント",
+      "subtitle": "次に着手すると効果的なアクションを提案します",
+      "empty": "現在、特にアラートはありません。直近の活動を継続してください。",
+      "items": {
+        "noDocuments": "まだ文書が登録されていません。まずは重要な規程や手順書をアップロードしましょう。",
+        "documentsInReview": "レビュー待ちの文書が {count} 件あります。承認を進めて公開を完了しましょう。",
+        "tasksOverload": "進行中のタスクが {count} 件あります。優先度を見直して滞留を防ぎましょう。",
+        "tasksOverdue": "期限超過のタスクが {count} 件あります。担当者とスケジュールを再調整してください。",
+        "noRisks": "リスクが未登録です。業務ヒアリングからリスク特定を始めましょう。",
+        "upcomingAudits": "進行中または予定中の監査が {count} 件あります。チェックリストと証跡の準備状況を確認しましょう。",
+        "trialCountdown": "トライアルが {date} に終了します。プランの選定と決済設定を進めてください。"
+      }
+    },
+    "onboardingChecklist": {
+      "badge": "初期設定",
+      "title": "オンボーディング進捗",
+      "description": "経営者・管理責任者が準備状況、未対応事項、承認待ち、証跡不足、次に進める画面を把握できるよう主要ステップを一覧にしました。",
+      "phases": {
+        "initial": "初回登録準備",
+        "surveillance": "継続運用"
+      },
+      "lastUpdated": "最終更新: {date}",
+      "phaseMissing": "フェーズが未設定です。フェーズを選択すると KPI とチェックリストが切り替わります。",
+      "phaseMissingCta": "設定を開く",
+      "loading": {
+        "title": "オンボーディング進捗を集計しています",
+        "description": "最新の組織データを取得して、各ステップの状態を更新しています。"
+      },
+      "unavailable": {
+        "title": "オンボーディング進捗を取得できませんでした",
+        "description": "権限やネットワーク状態を確認し、ダッシュボードを再読み込みしてください。",
+        "retry": "再読み込み",
+        "settings": "組織設定を開く"
+      },
+      "rateLabel": "達成率",
+      "summary": "{completed}/{total} ステップ完了",
+      "filters": {
+        "status": {
+          "label": "ステータス",
+          "all": "すべて",
+          "completed": "完了",
+          "inProgress": "進行中",
+          "notStarted": "未開始",
+          "empty": "選択中のステータスに該当するステップはありません。"
+        },
+        "period": {
+          "label": "年度"
+        }
+      },
+      "statusLabels": {
+        "completed": "完了",
+        "in_progress": "進行中",
+        "not_started": "未開始"
+      },
+      "completedAt": "{date} に完了",
+      "phasesTitle": "ISMS フェーズ概要",
+      "status": {
+        "complete": "完了",
+        "pending": "未完了"
+      },
+      "steps": {
+        "profile": {
+          "title": "組織プロフィールを整備",
+          "description": "業種・従業員数区分・認証状況などの基本情報を入力してレポートの前提を揃えます。",
+          "pending": "基本情報の未入力項目があります。",
+          "complete": "組織プロフィールは最新です。",
+          "action": "プロフィールを編集"
+        },
+        "team": {
+          "title": "管理者と担当者を招待",
+          "description": "Org Admin や担当者を少なくとも2名招待し、権限設定を整備します。",
+          "pending": "アクティブメンバー {count}/{target} 名",
+          "complete": "アクティブメンバー {count} 名",
+          "action": "ユーザー管理を開く"
+        },
+        "structure": {
+          "title": "体制ロールを割り当て",
+          "description": "ISMS 体制の責任範囲を定義し、担当者・管理者へ紐づけます。",
+          "pending": "割当済みロール {count}/{target} 件",
+          "complete": "割当済みロール {count} 件",
+          "action": "体制設定を開く"
+        },
+        "departments": {
+          "title": "部門構成を登録",
+          "description": "責任の割り当て先となる部門を作成し、担当範囲を明確にします。",
+          "pending": "登録済み部門 {count}/{target} 件",
+          "complete": "登録済み部門 {count} 件",
+          "action": "組織設定を開く"
+        },
+        "scope": {
+          "title": "ISMS適用範囲を確定",
+          "description": "対象となる拠点・システム・プロセス・除外事項を記録して適用範囲を明示します。",
+          "pending": "登録済みスコープ項目 {count}/{target} 件",
+          "complete": "登録済みスコープ項目 {count} 件",
+          "action": "適用範囲を編集"
+        },
+        "documents": {
+          "title": "必須文書を登録",
+          "description": "規程や手順書などレビューが必要な文書をアップロードして公開準備を進めます。",
+          "pending": "登録済み文書 {count}/{target} 件",
+          "complete": "登録済み文書 {count} 件",
+          "action": "文書一覧を開く"
+        },
+        "tasks": {
+          "title": "確認タスクを整備",
+          "description": "各部門が規格要求をチェックできるようタスクを作成し、担当者を割り当てます。",
+          "pending": "作成済みタスク {count}/{target} 件",
+          "complete": "作成済みタスク {count} 件",
+          "action": "タスクを確認"
+        },
+        "risks": {
+          "title": "初回リスクアセスメントを開始",
+          "description": "少なくとも1件のリスクを登録し、初期評価と対応方針を記録します。",
+          "pending": "登録済みリスク {count}/{target} 件",
+          "complete": "登録済みリスク {count} 件",
+          "action": "リスク評価を開始"
+        },
+        "phase_scope_review": {
+          "title": "適用範囲と部門を再確認",
+          "description": "フェーズごとに ISMS 適用範囲と部門割り当てが最新か確認します。",
+          "pending": "確認済みスコープ {count}/{target} 件",
+          "complete": "確認済みスコープ {count} 件",
+          "action": "組織設定を開く"
+        },
+        "phase_risk_cycle": {
+          "title": "主要リスクを再評価",
+          "description": "少なくとも1件のリスクを当年度の情報で更新します。",
+          "pending": "更新済みリスク {count}/{target} 件",
+          "complete": "更新済みリスク {count} 件",
+          "action": "リスク一覧を開く"
+        },
+        "phase_task_followup": {
+          "title": "是正処置タスクを追跡",
+          "description": "指摘事項に対する是正タスクが進行中またはレビュー待ちであることを確認します。",
+          "pending": "フォローアップ {count}/{target} 件",
+          "complete": "フォローアップ {count} 件",
+          "action": "レビュータスクを確認"
+        },
+        "phase_audit_readiness": {
+          "title": "監査進行状況を維持",
+          "description": "認証後の年次運用に備え、内部監査、指摘、不適合、是正の状況を継続して追跡します。",
+          "pending": "監査進行/完了 {count}/{target} 件",
+          "complete": "監査進行/完了 {count} 件",
+          "action": "監査ダッシュボードを開く"
+        },
+        "phase_management_review": {
+          "title": "マネジメントレビューの証跡を残す",
+          "description": "ポリシーや議事録などレビュー証跡を最新化します。",
+          "pending": "更新済み証跡 {count}/{target} 件",
+          "complete": "更新済み証跡 {count} 件",
+          "action": "文書一覧を開く"
+        }
+      },
+      "history": {
+        "title": "フェーズ変更履歴",
+        "subtitle": "直近のフェーズ切り替えを監査用に記録しています。",
+        "manage": "フェーズを管理",
+        "empty": "まだフェーズ変更は記録されていません。",
+        "source": {
+          "wizard": "セットアップウィザード",
+          "settings": "組織設定",
+          "system": "システム"
+        }
+      }
+    },
+    "actionRow": {
+      "cta": "開く",
+      "notifications": {
+        "title": "通知センターを確認",
+        "description": "未読アラートと最新の更新状況をひと目で把握。"
+      },
+      "settings": {
+        "title": "設定を開く",
+        "description": "通知設定や組織情報を調整し、運用担当者が迷わない状態にします。",
+        "badge": "設定"
+      }
+    },
+    "notificationPreview": {
+      "title": "最新の通知",
+      "subtitle": "文書・タスク・リスク・監査に関する直近のアラートをまとめています。",
+      "empty": "現在表示できる通知はありません。すべて対応済みです。",
+      "viewAll": "通知センターを開く",
+      "managePreferences": "通知設定を調整",
+      "unreadLabel": "{count, plural, =0 {未読なし} other {未読 {count} 件}}"
+    },
+    "quickLinks": {
+      "title": "ショートカット",
+      "subtitle": "ロールに合わせてよく使う画面へすばやくアクセス",
+      "cta": "移動する",
+      "items": {
+        "superAdmin": {
+          "organizations": {
+            "title": "テナント一覧を確認",
+            "description": "プラン・状態・ロック可否を横断的に点検"
+          },
+          "audit": {
+            "title": "全体監査ログをレビュー",
+            "description": "scope=global/tenant を切り替えて証跡をチェック"
+          }
+        },
+        "systemOperator": {
+          "settings": {
+            "title": "組織設定をチェック",
+            "description": "テナントごとのポリシーや権限を確認・調整"
+          },
+          "policies": {
+            "title": "RLS/セキュリティ設定",
+            "description": "Row Level Security や共通設定の挙動を検証"
+          }
+        },
+        "orgAdmin": {
+          "members": {
+            "title": "メンバーとロール管理",
+            "description": "ユーザー招待やロール付与を行います"
+          },
+          "billing": {
+            "title": "サブスクリプション管理",
+            "description": "契約プランや支払い情報を確認"
+          },
+          "documents": {
+            "title": "基準文書の整備",
+            "description": "テンプレートを基に文書を登録・更新"
+          }
+        },
+        "member": {
+          "tasks": {
+            "title": "担当タスクを更新",
+            "description": "期限と進捗を最新の状態に保ちます"
+          },
+          "documents": {
+            "title": "必要な文書を参照",
+            "description": "業務に必要な手順書やガイドを確認"
+          },
+          "training": {
+            "title": "教育・訓練を受講",
+            "description": "対象になっている教育と受講状況を確認"
+          }
+        },
+        "auditor": {
+          "workspace": {
+            "title": "監査ワークスペース",
+            "description": "担当監査の計画・チェックリスト・証跡をまとめて確認"
+          },
+          "correctiveActions": {
+            "title": "是正処置フォロー",
+            "description": "不適合対応のレビュー待ちタスクに直接移動"
+          }
+        },
+        "approver": {
+          "pendingDocuments": {
+            "title": "承認待ちを確認",
+            "description": "承認キューで未処理の申請をまとめて確認"
+          },
+          "reviewTasks": {
+            "title": "期限が近い承認",
+            "description": "対応期限が近い申請を優先して確認"
+          }
+        }
+      }
+    },
+    "roleDashboards": {
+      "auditor": {
+        "title": "監査ワークスペース",
+        "subtitle": "担当中の監査計画、不適合、証跡、次に必要な対応をここで追跡します。",
+        "viewWorkspace": "監査ワークスペースを開く",
+        "statusLabels": {
+          "planning": "計画中",
+          "fieldwork": "現地調査",
+          "reporting": "報告準備",
+          "followUp": "フォローアップ"
+        },
+        "sections": {
+          "assignedAudits": {
+            "title": "担当監査計画",
+            "subtitle": "タイムラインと次のチェックポイントを把握しましょう。",
+            "manageLink": "計画一覧を見る",
+            "columns": {
+              "name": "監査名",
+              "period": "期間",
+              "status": "ステータス",
+              "nextStep": "次のアクション"
+            },
+            "items": {
+              "quarterly": {
+                "name": "ISO 27001 内部監査（第3四半期）",
+                "period": "7月1日〜9月30日",
+                "nextStep": "証跡サンプリングを完了する"
+              },
+              "supplier": {
+                "name": "サプライヤーセキュリティスポット監査",
+                "period": "8月12日〜8月23日",
+                "nextStep": "関係者とのキックオフ議題を確定する"
+              }
+            }
+          },
+          "findings": {
+            "title": "未解決の指摘",
+            "subtitle": "対応が必要な是正処置を優先度順に確認します。",
+            "manageLink": "指摘を確認",
+            "items": {
+              "critical": {
+                "label": "重大 / 主要",
+                "description": "即時の封じ込めが必要です"
+              },
+              "minor": {
+                "label": "軽微",
+                "description": "担当者と期限をフォローします"
+              },
+              "recommendation": {
+                "label": "推奨事項",
+                "description": "改善アクションを計画します"
+              }
+            }
+          },
+          "checklistProgress": {
+            "title": "チェックリスト進捗",
+            "subtitle": "現地調査中の確認状況を把握します。",
+            "manageLink": "チェックリストを開く",
+            "items": {
+              "isoClauses": {
+                "label": "ISO 27001 必須要求事項",
+                "status": "32項目中24項目を確認"
+              },
+              "annexSampling": {
+                "label": "附属書A 管理策サンプリング",
+                "status": "24管理策中18件を検証"
+              },
+              "followUp": {
+                "label": "前回監査フォローアップ",
+                "status": "11件中5件をクローズ"
+              }
+            }
+          },
+          "reports": {
+            "title": "今後の納品物",
+            "subtitle": "報告期限と関係者セッションを整理しましょう。",
+            "openLink": "開く",
+            "cta": "新しい報告書を作成",
+            "items": {
+              "draftReport": {
+                "title": "内部監査ドラフト報告書",
+                "description": "現地調査での所見と未対応事項をまとめます。",
+                "due": "期限: 9月18日"
+              },
+              "closingMeeting": {
+                "title": "クロージングミーティング準備",
+                "description": "経営陣の回答を収集し、議題を確定します。",
+                "due": "期限: 9月23日"
+              },
+              "followUpPlan": {
+                "title": "是正処置フォローアップ計画",
+                "description": "担当者と目標完了日を調整します。",
+                "due": "期限: 9月30日"
+              }
+            }
+          }
+        }
+      },
+      "admin": {
+        "title": "管理者ダッシュボード",
+        "subtitle": "組織全体のKPI、滞留、今日確認する対応を把握します",
+        "viewAll": "すべて表示",
+        "sections": {
+          "kpi": {
+            "title": "主要パフォーマンス指標",
+            "pendingApprovals": "承認待ち",
+            "activeUsers": "有効ユーザー",
+            "openRisks": "オープンリスク",
+            "overdueTasks": "期限超過タスク"
+          },
+          "priorityActions": {
+            "title": "今日確認すること",
+            "subtitle": "期限、承認、教育、リスクの中から優先度の高い確認事項をまとめます。",
+            "empty": "今すぐ確認が必要な項目はありません。",
+            "items": {
+              "overdueTasks": {
+                "title": "期限超過タスクを確認",
+                "description": "{count} 件の期限超過タスクがあります。担当者と期限を見直してください。"
+              },
+              "pendingApprovals": {
+                "title": "承認待ちを処理",
+                "description": "{count} 件の承認待ち文書があります。判断待ちを減らしてください。"
+              },
+              "educationFollowUp": {
+                "title": "教育・訓練をフォロー",
+                "description": "{count} 件の教育計画にフォローが必要です。未受講や記録不足を確認してください。"
+              },
+              "openRisks": {
+                "title": "オープンリスクを確認",
+                "description": "{count} 件の未クローズリスクがあります。対応状況を見直してください。"
+              }
+            }
+          },
+          "operationalCadence": {
+            "title": "週次・月次で回すこと",
+            "subtitle": "日々の確認だけでなく、ISMS運用で定期的に見る画面へ進めます。",
+            "items": {
+              "weeklyTasks": {
+                "cadence": "週次",
+                "title": "レビュー待ちタスクを確認",
+                "description": "{count} 件のレビュー待ちタスクを確認し、止まっている作業を進めます。",
+                "metric": "レビュー待ち"
+              },
+              "monthlyRisks": {
+                "cadence": "月次",
+                "title": "対応中リスクを見直す",
+                "description": "{count} 件の対応中リスクを確認し、対応策の進み具合を見直します。",
+                "metric": "対応中"
+              },
+              "auditReview": {
+                "cadence": "監査期",
+                "title": "内部監査の進行を確認",
+                "description": "{count} 件の実施中監査を確認し、指摘、不適合、是正処置の進み具合を見ます。",
+                "metric": "実施中"
+              },
+              "managementReview": {
+                "cadence": "年次",
+                "title": "マネジメントレビューを準備",
+                "description": "{count} 件の予定中レビューを開き、経営層へ報告する議題、記録、アクションを整理します。",
+                "metric": "予定中"
+              }
+            }
+          },
+          "recentActivity": {
+            "title": "最近のアクティビティ",
+            "subtitle": "組織内の直近の動き",
+            "cta": "アクティビティログを見る",
+            "items": {
+              "userJoined": {
+                "title": "新メンバー参加",
+                "detail": "田中太郎がチームに参加しました",
+                "time": "2時間前"
+              },
+              "docApproved": {
+                "title": "文書承認完了",
+                "detail": "情報セキュリティポリシー v2.0 が承認されました",
+                "time": "5時間前"
+              },
+              "riskEscalated": {
+                "title": "リスクエスカレーション",
+                "detail": "外部委託先管理リスクが高に変更されました",
+                "time": "1日前"
+              }
+            }
+          },
+          "educationFollowUp": {
+            "title": "教育・訓練フォローアップ",
+            "subtitle": "期限超過、未完了、受講記録不足の教育計画を確認します。",
+            "cta": "教育計画を確認",
+            "metrics": {
+              "followUp": "要フォロー",
+              "overdue": "期限超過",
+              "pendingRecords": "未完了記録"
+            },
+            "status": {
+              "overdue": "期限超過",
+              "needsRecord": "記録確認"
+            },
+            "itemSummary": "合格 {passed} 件 / 記録 {records} 件 / 有効ユーザー {users} 名",
+            "empty": "現在、ホームでフォローすべき教育計画はありません。"
+          }
+        }
+      },
+      "approver": {
+        "title": "承認者ワークスペース",
+        "subtitle": "承認待ち・エスカレーション・SLA 期限をまとめて確認できます。",
+        "helperFallback": "処理中",
+        "lastUpdated": "最終更新 {value}",
+        "loading": "読み込み中",
+        "error": "承認メトリクスの取得に失敗しました。ページを更新してください。",
+        "cards": {
+          "pending": {
+            "badge": "要対応",
+            "label": "承認待ち",
+            "helper": "{count} 件の依頼が承認待ちです",
+            "cta": "承認キューを開く"
+          },
+          "history": {
+            "badge": "完了",
+            "label": "最近の承認履歴",
+            "helper": "直近 {days} 日で {count} 件を処理",
+            "cta": "履歴を表示"
+          },
+          "due": {
+            "badge": "期限接近",
+            "label": "SLA 期限が近い",
+            "helper": "{hours} 時間以上経過した依頼 {count} 件",
+            "cta": "期限順に確認"
+          },
+          "escalation": {
+            "badge": "エスカレーション",
+            "label": "エスカレーション候補",
+            "helper": "{hours} 時間超過の依頼 {count} 件",
+            "cta": "優先度順に対応"
+          }
+        }
+      },
+      "user": {
+        "title": "マイダッシュボード",
+        "subtitle": "あなたのタスク、担当文書、受講中の教育をまとめて確認できます。",
+        "summary": {
+          "tasks": "マイタスク",
+          "documents": "担当文書",
+          "training": "未完了の教育"
+        },
+        "sections": {
+          "priorityActions": {
+            "title": "今日やること",
+            "subtitle": "教育、タスク、文書のうち、今確認すべきものへすぐ進めます。",
+            "items": {
+              "training": {
+                "title": "教育・訓練を進める",
+                "description": "未完了の教育が {count} 件あります。対象教育を開いて受講状況を更新してください。"
+              },
+              "tasks": {
+                "title": "担当タスクを更新",
+                "description": "{count} 件の担当タスクを確認し、進捗や期限を更新してください。"
+              },
+              "documents": {
+                "title": "必読文書を確認",
+                "description": "確認待ちまたは更新ありの文書が {count} 件あります。"
+              }
+            }
+          },
+          "tasks": {
+            "title": "マイタスク",
+            "subtitle": "あなたに割り当てられたタスク一覧です。",
+            "cta": "すべてのタスクを見る",
+            "status": {
+              "todo": "未着手",
+              "inProgress": "進行中",
+              "review": "レビュー中"
+            },
+            "items": {
+              "policyReview": {
+                "title": "情報セキュリティポリシーのレビュー",
+                "category": "ポリシー管理",
+                "due": "期限: 4月15日"
+              },
+              "incidentDrill": {
+                "title": "インシデント対応訓練",
+                "category": "教育・訓練",
+                "due": "期限: 4月30日"
+              },
+              "awarenessSurvey": {
+                "title": "セキュリティ意識調査の提出",
+                "category": "コンプライアンス",
+                "due": "期限: 5月10日"
+              }
+            }
+          },
+          "documents": {
+            "title": "必読文書",
+            "subtitle": "確認すべき承認済み文書です。",
+            "cta": "承認済み文書を見る",
+            "status": {
+              "pendingAck": "確認待ち",
+              "updated": "更新あり",
+              "acknowledged": "確認済み"
+            },
+            "items": {
+              "remoteWork": {
+                "title": "リモートワークセキュリティガイドライン",
+                "version": "v2.1",
+                "due": "確認期限: 4月20日"
+              },
+              "vendorChecklist": {
+                "title": "委託先管理チェックリスト",
+                "version": "v1.3",
+                "due": "確認期限: 4月25日"
+              },
+              "codeOfConduct": {
+                "title": "情報セキュリティ行動規範",
+                "version": "v3.0",
+                "due": "確認期限: 完了"
+              }
+            }
+          },
+          "training": {
+            "title": "教育・研修",
+            "subtitle": "受講中の教育モジュールです。",
+            "cta": "教育一覧を見る",
+            "dueDate": "期限: {date}",
+            "noDueDate": "期限未設定",
+            "items": {
+              "phishing": {
+                "title": "フィッシング対策トレーニング",
+                "due": "期限: 4月30日"
+              },
+              "incident": {
+                "title": "インシデント対応基礎",
+                "due": "期限: 5月15日"
+              },
+              "kaizen": {
+                "title": "継続的改善ワークショップ",
+                "due": "期限: 5月31日"
+              }
+            }
+          },
+          "improvements": {
+            "title": "改善活動",
+            "subtitle": "チームで取り組んでいる改善施策です。",
+            "cta": "改善一覧を見る",
+            "highlight": "継続的改善（PDCA）は ISMS の中核です。小さな改善も積み重ねが大切です。",
+            "status": {
+              "draft": "下書き",
+              "scheduled": "予定",
+              "shipped": "完了"
+            },
+            "items": {
+              "handoffCleanup": {
+                "title": "引き継ぎドキュメント整理",
+                "owner": "担当: 田中",
+                "eta": "予定: 4月末"
+              },
+              "alertReduction": {
+                "title": "アラート削減プロジェクト",
+                "owner": "担当: 佐藤",
+                "eta": "予定: 5月中旬"
+              },
+              "awarenessPost": {
+                "title": "セキュリティ啓発記事の投稿",
+                "owner": "担当: 鈴木",
+                "eta": "予定: 完了済み"
+              }
+            }
+          }
+        }
+      }
+    },
+    "onboarding": {
+      "successTitle": "{name} さん、アカウント設定が完了しました",
+      "successDescription": "次のステップとしてダッシュボードでガイドに沿って初期設定を進めてください。"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "tabs": {
+      "organization": "組織設定",
+      "users": "ユーザー管理",
+      "profile": "プロファイル",
+      "controls": "管理策ライブラリ",
+      "subscription": "サブスクリプション",
+      "security": "セキュリティ",
+      "notifications": "通知設定",
+      "integrations": "連携設定",
+      "assets": "資産管理",
+      "ai": "AI設定",
+      "structure": "体制管理"
+    },
+    "organization": {
+      "title": "組織設定",
+      "description": "組織の基本情報を管理します",
+      "fields": {
+        "name": "組織名",
+        "nameEn": "組織名（英語）",
+        "nameHelp": "正式な組織名を入力してください",
+        "code": "組織コード",
+        "codeHelp": "組織を識別する一意のコード",
+        "industry": "業種",
+        "industryPlaceholder": "例：ITサービス業",
+        "industryHelp": "主要な事業分野を選択してください",
+        "size": "従業員数",
+        "sizeHelp": "現在の従業員数を選択してください",
+        "employeeCount": "従業員数",
+        "employeeCountPlaceholder": "選択してください",
+        "certificationStatus": "ISO認証状況",
+        "certificationStatusPlaceholder": "選択してください",
+        "address": "所在地",
+        "addressHelp": "本社の住所",
+        "phone": "電話番号",
+        "email": "代表メールアドレス",
+        "website": "ウェブサイト",
+        "timezone": "タイムゾーン",
+        "fiscalYear": "会計年度開始月",
+        "logo": "組織ロゴ",
+        "logoHelp": "推奨サイズ: 200x50px（PNG、JPG）",
+        "plan": "プラン",
+        "status": "ステータス",
+        "trialEnds": "トライアル終了日"
+      },
+      "sections": {
+        "basic": "基本情報",
+        "basicDescription": "組織の基本的な情報を設定します",
+        "subscription": "サブスクリプション",
+        "subscriptionDescription": "現在のプランと契約状況"
+      },
+      "authSettings": {
+        "title": "認証ステータス",
+        "description": "MFA が強制されているロールとログイン画面に表示される IdP を確認できます。",
+        "loading": "読み込み中",
+        "mfaLabel": "MFA 強制対象",
+        "mfaRoles": "MFA を強制するロール: {roles}。",
+        "mfaDisabled": "現在 MFA は無効です。",
+        "ssoLabel": "SSO プロバイダー",
+        "ssoProviders": "設定済み IdP: {providers}。",
+        "ssoDisabled": "まだ IdP は設定されていません。",
+        "hint": ".env.local に AUTH_MFA_REQUIRED_ROLES / NEXT_PUBLIC_AUTH_SSO_PROVIDERS を設定し、サーバーを再起動してください。",
+        "linkLabel": "開発環境ガイド（MFA セクション）"
+      },
+      "notificationChannels": {
+        "title": "外部通知チャネル",
+        "description": "Slack/Teams Webhook を通知種別ごとに登録し、外部チャネルへ配信します。",
+        "subtitle": "通知センター → 外部アラート",
+        "emptyMessage": "外部通知チャネルは未設定です。Slack / Teams などを登録するとタスクや審査の通知を転送できます。",
+        "form": {
+          "title": "外部チャネルを追加",
+          "editTitle": "既存チャネルを編集"
+        },
+        "fields": {
+          "notificationType": "通知種別",
+          "channelType": "送信先",
+          "webhookUrl": "Webhook URL",
+          "isEnabled": "有効化",
+          "lastStatus": "最終ステータス",
+          "lastAttempt": "最終試行",
+          "failures": "連続失敗",
+          "enabled": "ステータス"
+        },
+        "actions": {
+          "saving": "保存中",
+          "save": "保存",
+          "cancelEdit": "編集をキャンセル",
+          "confirmDelete": "このチャネルを削除してもよろしいですか？",
+          "edit": "編集",
+          "disable": "無効化",
+          "enable": "有効化",
+          "delete": "削除",
+          "viewLogs": "送信履歴"
+        },
+        "messages": {
+          "saved": "チャネルを保存しました。",
+          "saveFailed": "保存に失敗しました。もう一度お試しください。",
+          "noLogs": "まだ送信履歴がありません。",
+          "loading": "読み込み中",
+          "emptyMessage": "登録された外部チャネルがありません。"
+        },
+        "notificationTypes": {
+          "taskReminder": "タスクリマインダー",
+          "documentApproval": "文書承認",
+          "auditSchedule": "監査スケジュール",
+          "riskAlert": "リスクアラート",
+          "system": "システム通知",
+          "info": "情報通知"
+        },
+        "channelTypes": {
+          "slack": "Slack",
+          "teams": "Teams",
+          "custom": "汎用Webhook"
+        },
+        "states": {
+          "enabled": "有効",
+          "disabled": "無効"
+        },
+        "customWebhook": {
+          "payloadTemplate": "ペイロードテンプレート（JSON）",
+          "placeholdersHelp": "テンプレート内で以下のプレースホルダが使用できます:",
+          "customHeaders": "カスタムHTTPヘッダ",
+          "headersHelp": "認証ヘッダなど追加のHTTPヘッダをキー・バリュー形式で指定できます。",
+          "headerKeyPlaceholder": "ヘッダ名（例: Authorization）",
+          "headerValuePlaceholder": "値（例: Bearer xxx）",
+          "addHeader": "ヘッダを追加",
+          "removeHeader": "ヘッダを削除",
+          "invalidJson": "ペイロードテンプレートのJSON形式が不正です。"
+        }
+      },
+      "phase": {
+        "title": "ISMSフェーズ",
+        "description": "初回登録準備か継続運用かを選択すると、オンボーディングや KPI が切り替わります。",
+        "current": "現在のフェーズ:",
+        "notSet": "未設定",
+        "save": "フェーズを保存",
+        "saving": "保存中",
+        "success": "フェーズを更新しました。",
+        "error": "フェーズの更新に失敗しました。時間をおいて再度お試しください。",
+        "validation": "フェーズを選択してください。",
+        "permission": "ISMSフェーズの変更はシステムオペレーターのみ実行できます。",
+        "options": {
+          "initial": {
+            "label": "初回登録準備",
+            "description": "認証取得前または初年度の導入段階です。"
+          },
+          "implementation": {
+            "label": "実装フェーズ",
+            "description": "ISMSの管理策、証跡、運用体制を整備している段階です。"
+          },
+          "surveillance": {
+            "label": "継続運用",
+            "description": "既に認証済みで、維持監査を回しています。"
+          }
+        }
+      },
+      "phaseHistory": {
+        "title": "フェーズ変更履歴",
+        "description": "ISMSフェーズの更新は監査ログとして保存され、責任者がいつでも確認できます。",
+        "count": "最新 {total} 件",
+        "empty": "まだフェーズ変更の履歴はありません。",
+        "sources": {
+          "wizard": "セットアップウィザード",
+          "settings": "組織設定",
+          "system": "システム"
+        }
+      },
+      "certificationStatus": {
+        "certified": "ISO27001認証取得済み",
+        "inProgress": "認証取得中",
+        "planning": "認証取得予定",
+        "notPlanned": "予定なし"
+      },
+      "plans": {
+        "trial": "トライアル",
+        "starter": "スタータープラン",
+        "standard": "スタンダードプラン",
+        "enterprise": "エンタープライズプラン"
+      },
+      "status": {
+        "active": "アクティブ",
+        "trialing": "トライアル中",
+        "past_due": "支払い遅延",
+        "canceled": "キャンセル済み",
+        "incomplete": "未完了"
+      },
+      "actions": {
+        "save": "保存",
+        "saving": "保存中",
+        "cancel": "キャンセル",
+        "uploadLogo": "ロゴをアップロード",
+        "removeLogo": "ロゴを削除"
+      },
+      "backup": {
+        "title": "データエクスポート",
+        "description": "文書、リスク、タスク、情報資産、教育・訓練、内部監査、是正、マネジメントレビューのデータと取得できる証跡ファイルをZIP形式でまとめてダウンロードできます。解約時の持ち出しや自社バックアップに備えて定期的に取得してください。",
+        "action": "ZIPエクスポートを実行",
+        "exporting": "エクスポート中",
+        "success": "バックアップファイルを作成しました。ダウンロードをご確認ください。",
+        "error": "エクスポートに失敗しました。時間をおいて再度お試しください。"
+      },
+      "dataTransfer": {
+        "title": "データエクスポート / インポート",
+        "description": "ISMS 適用範囲、部門、体制ロール、ユーザー、管理策、情報資産をまとめてZIPで取り扱えます。テナント間の移行や初期セットアップに利用してください。",
+        "exportAction": "現在のデータをエクスポート",
+        "exporting": "エクスポート中",
+        "templateAction": "テンプレートをダウンロード",
+        "importAction": "ZIPをインポート",
+        "importing": "インポート中",
+        "importSuccess": "インポートが完了しました",
+        "importError": "インポートに失敗しました。内容をご確認ください。",
+        "exportError": "エクスポートに失敗しました",
+        "hint": "ZIPには isms_scope / departments / project_roles / project_assignments / users / iso_controls / information_assets の各CSVを含めてください。",
+        "resultTitle": "インポート結果",
+        "counts": "処理 {processed} 件（追加 {created} / 更新 {updated} / スキップ {skipped}）",
+        "sections": {
+          "scope": "ISMS適用範囲",
+          "departments": "部門",
+          "users": "ユーザー",
+          "roles": "体制ロール",
+          "assignments": "体制アサイン",
+          "controls": "管理策",
+          "assets": "情報資産"
+        }
+      },
+      "messages": {
+        "saved": "組織設定を保存しました",
+        "saveError": "保存中にエラーが発生しました",
+        "logoUploaded": "ロゴをアップロードしました",
+        "logoRemoved": "ロゴを削除しました"
+      },
+      "success": {
+        "saved": "設定を保存しました",
+        "scopeSaved": "ISMS適用範囲を保存しました",
+        "departmentsSaved": "部門情報を保存しました",
+        "structureSaved": "体制ロールを更新しました",
+        "structureRoleCreated": "体制ロールを作成しました",
+        "structureRoleDeleted": "体制ロールを削除しました",
+        "structureAssignmentsSaved": "体制の割当を更新しました",
+        "structureRolesSeeded": "推奨ロールを登録しました"
+      },
+      "errors": {
+        "loadFailed": "組織情報の読み込みに失敗しました",
+        "saveFailed": "保存に失敗しました",
+        "scopeSaveFailed": "ISMS適用範囲の保存に失敗しました",
+        "departmentsSaveFailed": "部門情報の保存に失敗しました",
+        "structureLoadFailed": "体制ロールの読み込みに失敗しました",
+        "structureSaveFailed": "体制ロールの保存に失敗しました",
+        "structureDeleteFailed": "体制ロールの削除に失敗しました",
+        "structureAssignmentFailed": "体制の割当に失敗しました",
+        "structureRoleValidation": "ロールキーと名称を入力してください"
+      },
+      "ismsScope": {
+        "title": "ISMS適用範囲",
+        "description": "ISO 27001認証の適用範囲を定義します。認証取得に必要な物理的な場所、ITシステム、部門、プロセスを管理し、適用除外項目を明確化します。",
+        "physicalLocations": "物理的な場所",
+        "addPhysicalLocation": "オフィス、データセンター等を追加",
+        "itSystems": "ITシステム",
+        "addItSystem": "管理対象のシステムを追加",
+        "departments": "対象部門",
+        "addDepartment": "部門名を追加",
+        "processes": "業務プロセス",
+        "addProcess": "プロセス名を追加",
+        "exclusions": "適用除外",
+        "addExclusion": "除外する項目を追加",
+        "scopeNote": "ISMS適用範囲は認証審査において重要な要素です。適切に定義し、定期的に見直しを行ってください。"
+      },
+      "departments": {
+        "title": "部門管理",
+        "description": "説明",
+        "addDepartment": "部門を追加",
+        "newDepartment": "新規部門",
+        "editDepartment": "部門編集",
+        "departmentName": "部門名",
+        "departmentNamePlaceholder": "例：情報システム部",
+        "departmentNameEn": "部門名（英語）",
+        "departmentNameEnPlaceholder": "例：Information Systems Department",
+        "parentDepartment": "上位部門",
+        "noParent": "なし（トップレベル）",
+        "departmentManager": "部門責任者",
+        "departmentManagerPlaceholder": "例：山田太郎",
+        "memberCount": "所属人数",
+        "manager": "責任者",
+        "descriptionPlaceholder": "部門の役割や責任範囲などを記載",
+        "noDepartments": "部門が登録されていません",
+        "noDepartmentsHint": "「部門を追加」ボタンから新しい部門を登録してください",
+        "edit": "編集",
+        "delete": "削除",
+        "create": "作成",
+        "update": "更新",
+        "cancel": "キャンセル"
+      },
+      "structure": {
+        "title": "体制ロール管理",
+        "description": "ISMS 体制の役割と担当者を整理し、責任範囲を明確にします。",
+        "summary": {
+          "title": "オンボーディング必須ロールの進捗",
+          "description": "必須ロールに担当者を割り当てると、オンボーディングの「体制構築」ステップが完了します。",
+          "status": {
+            "complete": "オンボーディング準備完了",
+            "incomplete": "未割当の必須ロールがあります",
+            "progress": "必須ロール {assigned}/{total} 件に担当者を割当済み",
+            "noRequired": "必須ロールがまだ設定されていません"
+          },
+          "items": {
+            "required": {
+              "label": "必須ロール数",
+              "helper": "{count, plural, =0{ロール編集画面で「必須」を有効にするとオンボーディングで追跡できます} one{必須ロールは # 件} other{必須ロールは # 件}}"
+            },
+            "covered": {
+              "label": "必須ロールの割当",
+              "helper": "{assigned, plural, =0{まだ担当者が割り当てられていません} one{担当者が # 名割り当て済み} other{担当者が # 名割り当て済み}}",
+              "noRequired": "少なくとも 1 件のロールを必須として設定してください"
+            },
+            "assignments": {
+              "label": "割当件数",
+              "helper": "{count, plural, =0{まだ割当は作成されていません} one{割当は # 件} other{割当は # 件}}",
+              "optional": "任意ロールのカバレッジ: {assigned}/{total}",
+              "optionalNone": "任意ロールは未設定です"
+            }
+          }
+        },
+        "actions": {
+          "create": "ロールを追加",
+          "edit": "編集",
+          "delete": "削除",
+          "assign": "担当者を設定",
+          "cancel": "キャンセル",
+          "save": "保存",
+          "saving": "保存中"
+        },
+        "empty": {
+          "title": "体制ロールを登録しましょう",
+          "description": "ISMS 管理責任者や情報セキュリティ責任者など主要ロールを定義します。",
+          "action": "最初のロールを作成"
+        },
+        "roleForm": {
+          "titleCreate": "体制ロールを作成",
+          "titleEdit": "体制ロールを編集",
+          "fields": {
+            "key": "ロールキー",
+            "name": "ロール名",
+            "nameEn": "ロール名（英語）",
+            "displayOrder": "表示順",
+            "description": "説明",
+            "responsibilities": "主な責務",
+            "isRequired": "オンボーディングで必須として扱う"
+          },
+          "help": {
+            "key": "半角英数字・ハイフン・アンダースコアのみ使用できます。",
+            "responsibilities": "1 行につき 1 つの責務を入力してください。"
+          },
+          "placeholders": {
+            "name": "例: ISMS 管理責任者",
+            "responsibilities": "例: 内部監査の調整"
+          }
+        },
+        "requiredBadge": "必須",
+        "assignedTitle": "割当メンバー",
+        "unassigned": "まだ担当者が割り当てられていません",
+        "pendingInvitation": "招待中",
+        "assignment": {
+          "title": "「{name}」の担当者を設定",
+          "description": "有効なユーザーまたは承諾待ちの招待を選択します。",
+          "members": "有効ユーザー",
+          "noMembers": "利用可能なユーザーがいません",
+          "invitations": "承諾待ちの招待",
+          "noInvitations": "承諾待ちの招待はありません",
+          "save": "割当を保存",
+          "saving": "保存中"
+        },
+        "confirmDelete": "ロール「{name}」を削除しますか？",
+        "wizard": {
+          "title": "推奨ロールを一括登録",
+          "description": "ISMS体制に必要な推奨ロールを選択して一括登録します。",
+          "steps": {
+            "selection": "ロール選択",
+            "confirmation": "確認",
+            "result": "完了"
+          },
+          "search": {
+            "placeholder": "ロールを検索"
+          },
+          "selection": {
+            "count": "{selected}/{total} 件を選択中"
+          },
+          "badge": {
+            "required": "必須"
+          },
+          "actions": {
+            "selectAll": "すべて選択",
+            "deselectAll": "選択解除",
+            "submit": "登録する",
+            "submitting": "登録中..."
+          },
+          "existingWarning": {
+            "title": "既に {count} 件のロールが登録されています",
+            "description": "既存のロールキーと同じものは上書きされず、スキップされます。"
+          },
+          "confirmation": {
+            "description": "以下のロールを登録します。既存のキーと重複するものはスキップされます。",
+            "rolesWillBeCreated": "件のロールを登録",
+            "existingWillBeSkipped": "既存のキーと重複するロールはスキップされます"
+          },
+          "result": {
+            "title": "登録が完了しました",
+            "description": "推奨ロールの登録が完了しました。",
+            "inserted": "新規登録",
+            "skipped": "スキップ",
+            "editHint": "登録したロールは体制ロール管理画面で編集できます。"
+          },
+          "errors": {
+            "noSelection": "登録するロールを選択してください",
+            "submitFailed": "ロールの登録に失敗しました"
+          },
+          "cta": {
+            "openWizard": "推奨ロールを読み込む"
+          }
+        }
+      }
+    },
+    "users": {
+      "title": "ユーザー管理",
+      "description": "組織のユーザーとその権限を管理します",
+      "success": {
+        "invitedWithEmail": "{email} に招待メールを送信しました。",
+        "permissionsUpdated": "{name} の権限とスコープを更新しました。"
+      },
+      "errors": {
+        "loadFailed": "ユーザー一覧の読み込みに失敗しました。",
+        "inviteFailed": "ユーザーの招待に失敗しました。",
+        "emailSendFailed": "招待メールの送信に失敗しました。再度お試しください。",
+        "emailConfigMissing": "招待メールサービスが未設定です。システム管理者に連絡してください。",
+        "permissionLoadFailed": "モジュール権限の読み込みに失敗しました。",
+        "permissionSaveFailed": "モジュール権限の保存に失敗しました。"
+      },
+      "filters": {
+        "department": {
+          "label": "部門",
+          "all": "すべての部門",
+          "unassigned": "所属なし",
+          "active": "部門で絞り込み: {department}",
+          "clear": "部門フィルターを解除",
+          "empty": "条件に一致するユーザーがいません"
+        }
+      },
+      "actions": {
+        "invite": "ユーザーを招待",
+        "activate": "有効化",
+        "deactivate": "無効化",
+        "permissions": "権限を設定"
+      },
+      "list": {
+        "title": "ユーザー一覧",
+        "search": "検索中",
+        "filter": {
+          "all": "すべて",
+          "active": "アクティブ",
+          "inactive": "非アクティブ",
+          "pending": "招待中"
+        },
+        "columns": {
+          "name": "氏名",
+          "email": "メールアドレス",
+          "role": "ロール",
+          "department": "部署",
+          "projectRoles": "体制ロール",
+          "status": "ステータス",
+          "lastLogin": "最終ログイン",
+          "actions": "操作"
+        },
+        "actions": {
+          "edit": "編集",
+          "delete": "削除",
+          "activate": "有効化",
+          "deactivate": "無効化",
+          "resendInvite": "招待を再送信"
+        }
+      },
+      "form": {
+        "title": "ユーザー情報",
+        "addUser": "ユーザーを追加",
+        "editUser": "ユーザーを編集",
+        "fields": {
+          "email": "メールアドレス",
+          "emailHelp": "ログインに使用するメールアドレス",
+          "firstName": "名",
+          "lastName": "姓",
+          "role": "ロール",
+          "roleHelp": "ユーザーの権限レベルを設定",
+          "department": "部署",
+          "departmentHelp": "所属部署を選択",
+          "position": "役職",
+          "phone": "電話番号",
+          "sendInvite": "招待メールを送信"
+        },
+        "roles": {
+          "admin": "管理者",
+          "adminHelp": "すべての機能にアクセス可能",
+          "manager": "マネージャー",
+          "managerHelp": "文書の承認、ユーザー管理が可能",
+          "user": "一般ユーザー",
+          "userHelp": "文書の閲覧・編集が可能",
+          "viewer": "閲覧者",
+          "viewerHelp": "文書の閲覧のみ可能"
+        },
+        "actions": {
+          "save": "保存",
+          "cancel": "キャンセル",
+          "delete": "ユーザーを削除"
+        }
+      },
+      "invite": {
+        "title": "メンバーを招待",
+        "email": "メールアドレス",
+        "role": "デフォルトロール",
+        "projectRoles": "体制ロールを割り当て",
+        "projectRolesDescription": "招待と同時に割り当てる体制ロールを選択してください。",
+        "sending": "送信中",
+        "send": "招待メールを送信",
+        "cancel": "キャンセル",
+        "errors": {
+          "systemOperatorOnly": "システム運営者ロールの招待は、既存のシステム運営者のみが実行できます。"
+        },
+        "systemOperatorHint": "このロールはテナント全体の設定を変更できます。信頼できるメンバーにのみ付与してください。",
+        "systemOperatorDisabledHint": "システム運営者ロールは既存のシステム運営者に依頼して付与してください。"
+      },
+      "messages": {
+        "userAdded": "ユーザーを追加しました",
+        "userUpdated": "ユーザー情報を更新しました",
+        "userDeleted": "ユーザーを削除しました",
+        "inviteSent": "招待メールを送信しました",
+        "error": "エラーが発生しました"
+      },
+      "projectRoles": {
+        "title": "体制ロール",
+        "description": "モジュール権限に加えて、体制ごとの責任を付与します。",
+        "empty": "体制ロールがありません。組織設定でロールを作成してください。",
+        "none": "未割り当て"
+      },
+      "permissions": {
+        "modalTitle": "{name} のモジュール権限を設定",
+        "modalDescription": "ロールで付与される基本権限に加えて、モジュール単位のアクセスを切り替えます。",
+        "rolesSection": {
+          "title": "ベースロール",
+          "description": "テナント全体での基本ロールを 1 つ選択してください。右側でモジュール権限を個別に調整できます。",
+          "systemOperatorDisabled": "System Operator は既存のシステム運営者またはスーパー管理者のみが付与できます。",
+          "selfOrgAdminLocked": "自分の組織管理者ロールは解除できません。",
+          "systemOperatorLastGuard": "最後のシステム運営者のためロールを変更できません。まず別のシステム運営者を追加してください。"
+        },
+        "roleDescriptions": {
+          "system_operator": "テナント設定やユーザー管理など全機能を操作します。",
+          "org_admin": "日々の運用設定とユーザー管理を担当します。",
+          "auditor": "監査計画・チェックリスト・証跡の確認を行います。",
+          "approver": "文書やリスク対応の承認を行います。",
+          "user": "文書・タスクなど標準機能を利用します。"
+        },
+        "modulesTitle": "モジュール権限",
+        "modulesDescription": "必要なモジュールだけ個別にアクセスを許可できます。",
+        "documents": {
+          "title": "文書管理",
+          "description": "文書の作成・編集・公開を許可します。"
+        },
+        "risks": {
+          "title": "リスク管理",
+          "description": "リスク登録や評価更新、対応策の編集を許可します。"
+        },
+        "tasks": {
+          "title": "タスク管理",
+          "description": "タスクの作成・担当者割当・進捗更新を許可します。"
+        },
+        "audit": {
+          "title": "監査ワークスペース",
+          "description": "監査計画の作成や所見・是正処置の管理を許可します。"
+        },
+        "assets": {
+          "title": "情報資産台帳",
+          "description": "リスクアセスメント前の資産登録・編集を許可します。"
+        },
+        "controls": {
+          "title": "Annex A 管理策",
+          "description": "ISO 27001 Annex A 管理策の参照・割当を許可します。"
+        },
+        "departmentScope": {
+          "title": "閲覧可能な部門",
+          "description": "選択した部門に所属するメンバーの文書・リスク・タスクにアクセスできるようにします。",
+          "empty": "まだ部門が登録されていません。組織設定から部門を作成してください。"
+        },
+        "save": "権限を保存",
+        "saving": "保存中",
+        "cancel": "キャンセル"
+      },
+      "invitations": {
+        "title": "招待状況",
+        "subtitle": "未受諾のユーザー招待を確認・管理できます。",
+        "badge": "件の招待",
+        "empty": "現在、保留中の招待はありません。",
+        "actions": {
+          "copy": "メールをコピー",
+          "cancel": "招待をキャンセル",
+          "resend": "再送信",
+          "resending": "再送信中..."
+        },
+        "labels": {
+          "role": "ロール: {role}",
+          "invitedAt": "送信: {date}",
+          "expiresAt": "期限: {date}"
+        },
+        "messages": {
+          "cancelSuccess": "招待をキャンセルしました。",
+          "cancelError": "招待のキャンセルに失敗しました。",
+          "resendSuccess": "招待を再送信しました。",
+          "resendError": "招待の再送信に失敗しました。"
+        }
+      },
+      "confirmations": {
+        "deleteUser": "このユーザーを削除してもよろしいですか？",
+        "deactivateUser": "このユーザーを無効化してもよろしいですか？"
+      },
+      "table": {
+        "name": "氏名",
+        "email": "メール",
+        "role": "権限",
+        "department": "部門",
+        "projectRoles": "プロジェクトロール",
+        "status": "ステータス",
+        "joinedAt": "参加日",
+        "actions": "操作"
+      },
+      "roles": {
+        "system_operator": "システム運営者",
+        "org_admin": "組織管理者",
+        "auditor": "監査員",
+        "approver": "承認者",
+        "user": "メンバー"
+      },
+      "status": {
+        "active": "アクティブ",
+        "inactive": "無効"
+      }
+    },
+    "assets": {
+      "title": "情報資産管理",
+      "description": "組織の情報資産を管理し、リスク評価と連携します。",
+      "actions": {
+        "edit": "編集",
+        "delete": "削除",
+        "backToHome": "ホームへ戻る",
+        "importCsv": "CSV取込",
+        "importing": "インポート中",
+        "exportCsv": "CSV出力",
+        "exportingCsv": "エクスポート中",
+        "downloadTemplate": "テンプレートDL",
+        "downloadingTemplate": "読み込み中"
+      },
+      "importModes": {
+        "label": "取り込みモード",
+        "insert": "新規のみ追加（重複はエラー）",
+        "upsert": "既存を更新 / 未登録を追加",
+        "replace": "全件置換（バックアップを保存）",
+        "replaceRestricted": "※「全件置換」モードはシステム運営者のみ利用可能です"
+      },
+      "form": {
+        "createTitle": "資産を登録",
+        "editTitle": "資産を編集",
+        "fields": {
+          "name": "資産名",
+          "assetType": "資産タイプ",
+          "classification": "区分",
+          "criticality": "重要度",
+          "owner": "管理責任者",
+          "location": "設置場所／保管場所",
+          "status": "利用状況",
+          "description": "説明"
+        },
+        "placeholders": {
+          "name": "例：顧客情報データベース",
+          "location": "例：東京本社データセンター"
+        },
+        "actions": {
+          "create": "登録する",
+          "update": "更新する",
+          "cancel": "キャンセル"
+        }
+      },
+      "table": {
+        "title": "登録済み資産",
+        "description": "最新の資産一覧と属性を確認できます。",
+        "searchPlaceholder": "資産名・区分・責任者などを検索",
+        "empty": "まだ資産が登録されていません。",
+        "noResults": "\"{keyword}\" に一致する資産は見つかりません。",
+        "headers": {
+          "name": "資産名",
+          "type": "タイプ",
+          "classification": "区分",
+          "criticality": "重要度",
+          "owner": "責任者",
+          "status": "利用状況",
+          "updatedAt": "最終更新"
+        }
+      },
+      "messages": {
+        "created": "資産を登録しました。",
+        "updated": "資産を更新しました。",
+        "deleted": "資産を削除しました。",
+        "loadFailed": "資産情報の読み込みに失敗しました。",
+        "saveFailed": "資産の保存に失敗しました。",
+        "deleteFailed": "資産の削除に失敗しました。",
+        "importSuccess": "CSV から {count} 件の情報資産を取り込みました。ジョブID: {jobId}。",
+        "importSuccessWithUpsert": "CSV 取込完了: 追加 {insertCount} 件、更新 {upsertCount} 件。ジョブID: {jobId}。",
+        "importFailed": "CSVの取り込みに失敗しました。フォーマットを確認してください。",
+        "exportSuccess": "検索結果 {count} 件を CSV に書き出しました。",
+        "exportFailed": "CSV の出力に失敗しました。時間をおいて再度お試しください。",
+        "templateDownloaded": "CSV テンプレートをダウンロードしました。",
+        "templateFailed": "テンプレートのダウンロードに失敗しました。",
+        "forbidden": "資産の管理権限がありません。",
+        "importPartial": "{successCount} 件の取込に成功しましたが、{errorCount} 行でエラーが発生しました。ジョブID: {jobId}.{details}",
+        "importPartialWithUpsert": "追加 {insertCount} 件、更新 {upsertCount} 件の取込に成功しましたが、{errorCount} 行でエラーが発生しました。ジョブID: {jobId}.{details}",
+        "importErrorLine": "行 {line}: {message}",
+        "importFailedWithReason": "CSV 取込に失敗しました: {reason}",
+        "importErrorPreview": " 先頭のエラー: {details}",
+        "accessDenied": "アクセス権限がありません",
+        "organizationNotResolved": "組織情報を取得できませんでした。ログイン状態を確認してください。",
+        "goHome": "ホームへ戻る"
+      },
+      "confirmation": {
+        "delete": "この資産を削除してもよろしいですか？"
+      },
+      "labels": {
+        "types": {
+          "hardware": "ハードウェア",
+          "software": "ソフトウェア",
+          "data": "データ／情報",
+          "service": "サービス",
+          "facility": "設備",
+          "personnel": "人員",
+          "other": "その他"
+        },
+        "classification": {
+          "restricted": "機密",
+          "internal": "社内限定",
+          "public": "公開"
+        },
+        "criticality": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        },
+        "status": {
+          "in_use": "運用中",
+          "retired": "廃止",
+          "planned": "導入予定"
+        },
+        "ownerUnset": "未設定"
+      }
+    },
+    "profile": {
+      "title": "プロファイル設定",
+      "description": "個人情報と設定を管理します",
+      "sections": {
+        "personal": "個人情報",
+        "security": "セキュリティ",
+        "securityDescription": "パスワードやセキュリティ設定を管理します",
+        "preferences": "個人設定",
+        "basic": "基本情報",
+        "basicDescription": "基本的なプロフィール情報を更新します"
+      },
+      "fields": {
+        "fullName": "氏名",
+        "fullNameEn": "氏名（英語）",
+        "department": "部署",
+        "position": "役職",
+        "phone": "電話番号",
+        "language": "言語設定",
+        "email": "メールアドレス",
+        "currentPassword": "現在のパスワード",
+        "newPassword": "新しいパスワード",
+        "confirmPassword": "パスワード確認"
+      },
+      "actions": {
+        "saving": "保存中",
+        "save": "保存",
+        "changePassword": "パスワード変更",
+        "changing": "処理中",
+        "change": "変更",
+        "cancel": "キャンセル"
+      },
+      "personal": {
+        "title": "個人情報",
+        "fields": {
+          "firstName": "名",
+          "lastName": "姓",
+          "fullName": "氏名",
+          "fullNameEn": "氏名（英語）",
+          "email": "メールアドレス",
+          "emailHelp": "ログイン用のメールアドレス（変更不可）",
+          "phone": "電話番号",
+          "department": "部署",
+          "position": "役職",
+          "language": "言語設定",
+          "bio": "自己紹介",
+          "avatar": "プロフィール画像",
+          "avatarHelp": "推奨サイズ: 150x150px（JPG、PNG）"
+        },
+        "actions": {
+          "uploadAvatar": "画像をアップロード",
+          "removeAvatar": "画像を削除",
+          "save": "保存",
+          "saving": "保存中",
+          "cancel": "キャンセル"
+        }
+      },
+      "security": {
+        "title": "セキュリティ設定",
+        "password": {
+          "title": "パスワード変更",
+          "current": "現在のパスワード",
+          "new": "新しいパスワード",
+          "confirm": "新しいパスワード（確認）",
+          "requirements": "パスワードは8文字以上で、大文字・小文字・数字を含む必要があります",
+          "change": "パスワードを変更"
+        },
+        "twoFactor": {
+          "title": "2段階認証",
+          "description": "アカウントのセキュリティを強化します",
+          "status": "ステータス",
+          "enabled": "有効",
+          "disabled": "無効",
+          "enable": "2段階認証を有効にする",
+          "disable": "2段階認証を無効にする"
+        },
+        "sessions": {
+          "title": "アクティブセッション",
+          "description": "現在ログイン中のデバイス",
+          "current": "現在のセッション",
+          "lastActive": "最終アクティブ",
+          "revoke": "セッションを無効化"
+        }
+      },
+      "preferences": {
+        "title": "個人設定",
+        "fields": {
+          "language": "表示言語",
+          "timezone": "タイムゾーン",
+          "dateFormat": "日付形式",
+          "theme": "テーマ",
+          "themeOptions": {
+            "light": "ライト",
+            "dark": "ダーク",
+            "system": "システム設定に従う"
+          },
+          "notifications": {
+            "title": "通知設定",
+            "email": "メール通知を受け取る",
+            "browser": "ブラウザ通知を受け取る",
+            "mobile": "モバイル通知を受け取る"
+          }
+        },
+        "actions": {
+          "save": "設定を保存",
+          "cancel": "キャンセル"
+        }
+      },
+      "success": {
+        "saved": "プロファイル設定を保存しました",
+        "passwordChanged": "パスワードを変更しました"
+      },
+      "messages": {
+        "profileUpdated": "プロファイルを更新しました",
+        "passwordChanged": "パスワードを変更しました",
+        "passwordError": "パスワードの変更に失敗しました",
+        "twoFactorEnabled": "2段階認証を有効にしました",
+        "twoFactorDisabled": "2段階認証を無効にしました",
+        "preferencesUpdated": "設定を保存しました",
+        "avatarUploaded": "プロフィール画像をアップロードしました",
+        "avatarRemoved": "プロフィール画像を削除しました",
+        "sessionRevoked": "セッションを無効化しました"
+      },
+      "errors": {
+        "loadFailed": "プロフィール情報の読み込みに失敗しました",
+        "saveFailed": "設定の保存に失敗しました",
+        "incorrectPassword": "現在のパスワードが正しくありません",
+        "passwordMismatch": "新しいパスワードが一致しません",
+        "passwordTooWeak": "パスワードが要件を満たしていません",
+        "passwordTooShort": "パスワードは6文字以上で入力してください",
+        "passwordChangeFailed": "パスワードの変更に失敗しました。再度お試しください。",
+        "uploadFailed": "アップロードに失敗しました"
+      }
+    },
+    "subscription": {
+      "title": "サブスクリプション管理",
+      "description": "現在のプランや利用状況を確認できます",
+      "currentPlan": {
+        "title": "現在のプラン"
+      },
+      "fields": {
+        "planName": "プラン名",
+        "status": "ステータス",
+        "currentPeriod": "現在の請求期間",
+        "price": "料金",
+        "trialEnd": "トライアル終了日"
+      },
+      "status": {
+        "active": "アクティブ",
+        "trialing": "トライアル中",
+        "past_due": "支払い遅延",
+        "canceled": "キャンセル済み",
+        "incomplete": "未完了"
+      },
+      "perMonth": "月",
+      "cancelScheduled": "サブスクリプションは{date}にキャンセルされます",
+      "noSubscription": "アクティブなサブスクリプションがありません",
+      "usage": {
+        "title": "利用状況",
+        "users": "ユーザー数",
+        "documents": "文書数",
+        "storage": "ストレージ使用量"
+      },
+      "features": {
+        "title": "プランに含まれる機能"
+      },
+      "actions": {
+        "manageBilling": "請求情報を管理",
+        "changePlan": "プランを変更",
+        "selectPlan": "プランを選択",
+        "processing": "処理中"
+      },
+      "messages": {
+        "portalSynced": "Stripeポータルの変更内容を反映しました"
+      },
+      "errors": {
+        "loadFailed": "サブスクリプション情報の読み込みに失敗しました",
+        "portalFailed": "請求ポータルの作成に失敗しました",
+        "portalSyncFailed": "Stripeポータルから最新情報の取得に失敗しました"
+      },
+      "dataExport": {
+        "title": "データ管理",
+        "description": "契約終了後、データは{days}日間保持されます。文書、リスク、監査、是正など主要業務データと取得できる証跡ファイルは早めにZIPで取得してください。",
+        "export": {
+          "button": "データをエクスポート",
+          "label": "現在のISMS運用データと取得できる証跡ファイルをZIP形式でダウンロード",
+          "formats": "含まれるデータ: 文書、リスク、タスク、情報資産、教育・訓練、内部監査、是正、マネジメントレビュー、README、metadata、ファイルmanifest",
+          "loading": "準備中...",
+          "success": "エクスポートが完了しました"
+        },
+        "cancelled": {
+          "status": "キャンセル済み",
+          "cancelledAt": "キャンセル日: {date}",
+          "deleteAt": "データ自動削除日: {date}",
+          "daysRemaining": "残り {days} 日",
+          "reimportNote": "エクスポートしたデータは同じ形式で再インポート可能です（{days}日以内）"
+        },
+        "errors": {
+          "exportFailed": "エクスポートに失敗しました。時間をおいて再度お試しください。",
+          "unauthorized": "このアクションの実行権限がありません"
+        },
+        "cancel": "キャンセル",
+        "scope": {
+          "title": "契約終了時の標準出力",
+          "body": "CSVと組織バックアップZIPで、主要業務データ一式と取得可能な添付・証跡ファイルを持ち出せます。"
+        },
+        "externalFiles": {
+          "title": "外部ファイル例外",
+          "body": "外部システム管理ファイルや取得できない添付は、manifestに取得可否・未取得理由・責任境界を記録します。"
+        },
+        "schedule": {
+          "status": "削除状態",
+          "retentionUntil": "保持期限",
+          "deletionScheduledAt": "削除予定日",
+          "statusValues": {
+            "active": "通常利用中",
+            "retention": "30日保持中",
+            "early_requested": "早期削除受付済み",
+            "scheduled": "削除予定",
+            "processing": "削除処理中",
+            "deleted": "削除完了",
+            "failed": "削除失敗"
+          }
+        },
+        "earlyDelete": {
+          "button": "早期削除を依頼",
+          "confirm": "30日保持を待たずに早期削除を依頼します。実行前にサポートまたは権限者が確認します。",
+          "reasonPlaceholder": "依頼理由や希望日を入力してください",
+          "success": "早期削除リクエストを受け付けました",
+          "error": "早期削除リクエストに失敗しました"
+        },
+        "recovery": {
+          "title": "復旧責任",
+          "body": "初期商用ではベストエフォート復旧です。RTO/RPOの数値保証は上位プランまたは個別SLAで後日定義します。"
+        },
+        "evidence": {
+          "title": "削除受付・実行証跡",
+          "request": "受付: {status}（{date}）",
+          "run": "実行: {result}（{date}）"
+        },
+        "requestStatus": {
+          "requested": "受付済み",
+          "confirmed": "確認済み",
+          "scheduled": "実行予定",
+          "processing": "処理中",
+          "completed": "完了",
+          "failed": "失敗",
+          "cancelled": "取消"
+        },
+        "runResult": {
+          "success": "完了",
+          "partial_failure": "一部失敗",
+          "failed": "失敗"
+        }
+      },
+      "testModeNotice": "Stripe テストモードで動作中です。請求ポータルはモック画面に遷移し、実際の請求は発生しません。"
+    },
+    "notifications": {
+      "title": "通知設定",
+      "description": "通知の受信方法と通知タイプを管理します",
+      "generalSettings": "基本設定",
+      "emailNotifications": "メール通知",
+      "emailNotificationsDesc": "重要な通知をメールで受信します",
+      "appNotifications": "アプリ内通知",
+      "appNotificationsDesc": "アプリケーション内で通知を表示します",
+      "notificationTypes": "通知タイプ",
+      "taskReminders": "タスクリマインダー",
+      "taskRemindersDesc": "タスクの期限が近づいたときに通知を受信します",
+      "documentApprovals": "文書承認依頼",
+      "documentApprovalsDesc": "文書の承認が必要なときに通知を受信します",
+      "auditSchedules": "監査スケジュール",
+      "auditSchedulesDesc": "予定された監査に関する通知を受信します",
+      "riskAlerts": "リスクアラート",
+      "riskAlertsDesc": "リスクレベルが変更されたときに通知を受信します",
+      "timingSettings": "タイミング設定",
+      "reminderDays": "リマインダー日数",
+      "reminderDaysDesc": "期限の何日前に通知を受信するか設定します",
+      "savedSuccessfully": "通知設定を保存しました"
+    },
+    "controls": {
+      "title": "管理策ライブラリ",
+      "description": "ISO 27001 附属書Aの管理策と社内タグを整理・編集します。",
+      "noAccess": {
+        "title": "管理策を編集する権限がありません",
+        "description": "組織管理者にアクセス権限の付与を依頼するか、権限を持つロールに切り替えてください。",
+        "back": "ホームに戻る"
+      },
+      "actions": {
+        "create": "管理策を追加",
+        "edit": "編集",
+        "delete": "削除",
+        "openWizard": "附属書Aから追加",
+        "confirmDelete": "「{title}」を削除しますか？この操作は元に戻せません。"
+      },
+      "errors": {
+        "loadFailed": "管理策の読み込みに失敗しました。",
+        "loadSoaFailed": "適用管理策判断の準備状況の読み込みに失敗しました。",
+        "loadSoaVersionsFailed": "適用管理策判断版の読み込みに失敗しました。",
+        "saveFailed": "管理策の保存に失敗しました。",
+        "saveSoaFailed": "適用管理策判断の保存に失敗しました。",
+        "submitSoaFailed": "適用管理策判断の承認申請に失敗しました。",
+        "submitSoaVersionReviewFailed": "適用管理策判断版のレビュー申請に失敗しました。",
+        "publishSoaVersionFailed": "適用管理策判断版の発行に失敗しました。",
+        "deleteFailed": "管理策の削除に失敗しました。",
+        "required": "管理策名とカテゴリーは必須です。"
+      },
+      "messages": {
+        "created": "「{title}」を作成しました。",
+        "updated": "「{title}」を更新しました。",
+        "deleted": "「{title}」を削除しました。"
+      },
+      "filters": {
+        "search": "キーワード検索",
+        "searchPlaceholder": "名称・タグ・コードで検索",
+        "category": "カテゴリー",
+        "allCategories": "すべてのカテゴリー"
+      },
+      "table": {
+        "columns": {
+          "title": "管理策",
+          "category": "カテゴリー",
+          "controlCode": "管理策コード",
+          "updatedAt": "最終更新",
+          "actions": "操作"
+        },
+        "empty": "条件に一致する管理策はありません。"
+      },
+      "soa": {
+        "title": "適用管理策判断の準備状況",
+        "description": "管理策ごとに適用するかどうかと理由を残し、一般に適用宣言書として扱われる内容を判断版として確認します。リスク対応や証跡の状況も見ながら、説明できる判断に整えます。",
+        "actions": {
+          "refresh": "更新",
+          "loading": "更新中",
+          "saveDecision": "判断を保存",
+          "saving": "保存中",
+          "submitApproval": "承認申請",
+          "submitting": "申請中",
+          "submitVersionReview": "最新版をレビュー申請",
+          "publishVersion": "適用管理策の判断版を発行",
+          "publishingVersion": "発行中"
+        },
+        "summary": {
+          "total": "登録済み管理策",
+          "linked": "リスク対応策あり",
+          "ready": "完了証跡あり",
+          "unlinked": "未紐づけ"
+        },
+        "table": {
+          "control": "管理策",
+          "status": "適用状況",
+          "links": "関連リスク",
+          "evidence": "証跡準備",
+          "decision": "正式判断",
+          "actions": "操作"
+        },
+        "status": {
+          "linked": "適用候補",
+          "unlinked": "要確認"
+        },
+        "links": {
+          "risks": "関連リスク {count} 件",
+          "treatments": "対応策 {count} 件"
+        },
+        "evidence": {
+          "ready": "完了対応策 {count} 件",
+          "notReady": "完了証跡なし"
+        },
+        "decision": {
+          "status": {
+            "notReviewed": "未判断",
+            "applicable": "適用",
+            "notApplicable": "適用除外"
+          },
+          "applicabilityReason": "適用理由・根拠（リスクや運用との関係）",
+          "exclusionReason": "適用除外理由（対象外とする根拠）",
+          "reviewedAt": "判断日: {date}"
+        },
+        "messages": {
+          "saved": "「{title}」の適用管理策判断を保存しました。",
+          "submitted": "「{title}」の適用管理策判断を承認申請しました。",
+          "versionPublished": "適用管理策判断 v{version} を発行しました。",
+          "versionReviewSubmitted": "適用管理策判断 v{version} をレビュー申請しました。"
+        },
+        "version": {
+          "none": "発行済みの適用管理策判断版はまだありません。",
+          "latest": "最新の適用管理策判断: v{version} / 管理策 {count} 件 / 発行日時 {date}",
+          "changeSummaryLabel": "今回の版の改訂理由",
+          "changeSummaryPlaceholder": "例: 審査前レビューでアクセス制御の適用理由を見直したため",
+          "latestChangeSummary": "改訂理由: {summary}",
+          "diffSummary": "前版との差分: 追加 {added} 件 / 削除 {removed} 件 / 変更 {changed} 件",
+          "reviewRejectionReason": "版レビュー却下理由: {reason}",
+          "reviewStatus": {
+            "draft": "版レビュー状態: 下書き",
+            "submitted": "版レビュー状態: 申請中",
+            "approved": "版レビュー状態: 承認済み",
+            "rejected": "版レビュー状態: 却下"
+          }
+        },
+        "approval": {
+          "rejectionReason": "却下理由: {reason}",
+          "status": {
+            "draft": "承認状態: 下書き",
+            "submitted": "承認状態: 申請中",
+            "approved": "承認状態: 承認済み",
+            "rejected": "承認状態: 却下"
+          }
+        },
+        "states": {
+          "loading": "読み込み中",
+          "empty": "適用管理策の判断に使える管理策がありません。管理策を登録し、適用するかどうか、理由、関連するリスク対応を残してください。"
+        }
+      },
+      "form": {
+        "createTitle": "管理策を追加",
+        "editTitle": "管理策を編集",
+        "fields": {
+          "title": "管理策名",
+          "category": "カテゴリー",
+          "controlCode": "管理策コード",
+          "controlCodePlaceholder": "例: A.5.1",
+          "description": "説明",
+          "tags": "タグ",
+          "tagsPlaceholder": "例: アクセス制御, 監査",
+          "tagsHint": "カンマ区切りで複数タグを入力します。"
+        },
+        "actions": {
+          "cancel": "キャンセル",
+          "save": "保存する",
+          "saving": "保存中"
+        }
+      },
+      "wizard": {
+        "title": "Annex A 管理策ウィザード",
+        "description": "推奨テンプレートを選択して一括登録できます。",
+        "searchPlaceholder": "キーワードで絞り込む",
+        "badges": {
+          "existing": "登録済み"
+        },
+        "states": {
+          "loading": "読み込み中",
+          "empty": "一致するテンプレートがありません。"
+        },
+        "modeSection": {
+          "title": "適用モード"
+        },
+        "modes": {
+          "insert": "新規のみ追加（既存は維持）",
+          "restore": "未登録のテンプレートだけ補完",
+          "overwrite": "既存テンプレートを上書き"
+        },
+        "actions": {
+          "cancel": "キャンセル",
+          "apply": "管理策を登録",
+          "applying": "適用中"
+        },
+        "errors": {
+          "loadFailed": "テンプレートの読み込みに失敗しました。",
+          "selectOne": "少なくとも1つのテンプレートを選択してください。",
+          "seedFailed": "管理策の追加に失敗しました。"
+        },
+        "messages": {
+          "successInsert": "管理策を追加しました（{created} 件）。",
+          "successOverwrite": "管理策を追加/更新しました（追加 {created} 件・更新 {updated} 件）。"
+        },
+        "selectedLabel": "選択中: {count} 件"
+      }
+    },
+    "structure": {
+      "title": "体制管理",
+      "ciso": "CISO",
+      "selectCiso": "CISOを選択",
+      "currentCiso": "現在のCISO",
+      "noCiso": "CISO未設定",
+      "snapshot": "スナップショット",
+      "saveSnapshot": "スナップショットを保存",
+      "snapshotName": "スナップショット名",
+      "snapshotNamePlaceholder": "例: 2026年Q1体制",
+      "snapshotHistory": "スナップショット履歴",
+      "compare": "比較",
+      "noSnapshots": "スナップショットはありません",
+      "added": "追加",
+      "removed": "削除",
+      "changed": "変更",
+      "saveSuccess": "スナップショットを保存しました",
+      "cisoUpdated": "CISOを更新しました",
+      "cisoCleared": "CISOの設定を解除しました",
+      "loadError": "データの読み込みに失敗しました",
+      "saveError": "保存に失敗しました",
+      "noMembers": "組織メンバーが見つかりません",
+      "selectForCompare": "比較するスナップショットを2つ選択してください",
+      "comparisonResult": "比較結果",
+      "noChanges": "変更はありません",
+      "createdAt": "作成日時",
+      "createdBy": "作成者",
+      "bulkAssignment": "体制ロール一括割当",
+      "selectRole": "ロールを選択",
+      "securityManager": "セキュリティ管理者",
+      "auditCommittee": "監査委員",
+      "ismsPromoter": "ISMS推進委員",
+      "selectAll": "全選択",
+      "deselectAll": "全解除",
+      "assignSelected": "{count}名に割当",
+      "assignSuccess": "ロールを割り当てました",
+      "assignError": "ロール割当に失敗しました"
+    },
+    "setup": {
+      "title": "初期セットアップ",
+      "description": "CSVファイルで初期データを一括登録します",
+      "auditUnits": "監査対象ユニット",
+      "uploadCsv": "CSVファイルを選択",
+      "downloadTemplate": "テンプレートをダウンロード",
+      "preview": "プレビュー",
+      "importData": "インポート実行",
+      "importing": "インポート中...",
+      "importSuccess": "インポートが完了しました",
+      "importError": "インポートに失敗しました",
+      "result": "インポート結果",
+      "created": "作成",
+      "updated": "更新",
+      "skipped": "スキップ",
+      "errors": "エラー",
+      "noFile": "ファイルが選択されていません",
+      "name": "名称",
+      "unitType": "種別",
+      "site": "拠点",
+      "process": "プロセス",
+      "invalidUnitType": "無効な種別です（site または process）",
+      "nameMissing": "名称が必要です",
+      "columnDescription": "説明",
+      "sections": {
+        "organizationData": {
+          "title": "組織データ一括",
+          "description": "ZIPファイルで組織データを一括インポートします",
+          "link": "組織設定へ移動"
+        },
+        "auditUnits": {
+          "title": "監査対象ユニット",
+          "description": "監査対象のユニット（拠点・プロセス）をCSVで登録します"
+        },
+        "risks": {
+          "title": "リスク台帳",
+          "description": "リスク情報をCSVで一括登録します"
+        },
+        "tasks": {
+          "title": "タスク",
+          "description": "タスクをCSVで一括登録します"
+        },
+        "assets": {
+          "title": "情報資産",
+          "description": "情報資産の管理ページからCSVインポートできます",
+          "link": "資産管理へ移動"
+        }
+      },
+      "status": {
+        "notStarted": "未実施",
+        "completed": "完了",
+        "itemsRegistered": "{count}件登録済み"
+      }
+    },
+    "appearance": {
+      "title": "外観",
+      "description": "アプリのテーマを選択してください",
+      "themeLight": "ライト",
+      "themeDark": "ダーク",
+      "themeLiquidGlass": "リキッドグラス"
+    }
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "すべて既読にする",
+    "clearAll": "すべて削除",
+    "empty": "通知はありません",
+    "openNotifications": "通知を開く",
+    "markAsRead": "既読にする",
+    "markAllAsRead": "すべて既読にする",
+    "loading": "読み込み中",
+    "noNotifications": "通知はありません",
+    "noUnreadNotifications": "未読の通知はありません",
+    "noArchivedNotifications": "アーカイブされた通知はありません",
+    "viewDetails": "詳細を見る",
+    "viewAll": "すべての通知を見る",
+    "settings": "通知設定",
+    "archive": "アーカイブ",
+    "type": {
+      "task_reminder": "タスクリマインダー",
+      "document_approval": "文書承認",
+      "audit_schedule": "監査スケジュール",
+      "risk_alert": "リスクアラート",
+      "system": "システム",
+      "info": "お知らせ"
+    },
+    "filter": {
+      "all": "すべて",
+      "unread": "未読",
+      "archived": "アーカイブ済み"
+    },
+    "views": {
+      "approvals": {
+        "active": "承認に関係する通知のみ表示中",
+        "clear": "すべての通知へ戻る"
+      }
+    },
+    "settingsPage": {
+      "title": "通知設定",
+      "description": "通知の受信方法を管理します",
+      "channels": {
+        "title": "通知チャネル",
+        "email": "メール通知",
+        "app": "アプリ内通知"
+      },
+      "types": {
+        "title": "通知タイプ",
+        "taskReminders": "タスクリマインダー",
+        "documentApprovals": "文書承認",
+        "auditSchedules": "監査スケジュール",
+        "riskAlerts": "リスクアラート"
+      },
+      "timing": {
+        "title": "タイミング",
+        "reminderDays": "期限前の通知日数"
+      },
+      "save": "設定を保存",
+      "saving": "保存中",
+      "saved": "設定を保存しました"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "緊急"
+    }
+  },
+  "superAdmin": {
+    "organizations": {
+      "badge": "スーパー管理者",
+      "title": "テナントと監査のオペレーション",
+      "description": "全テナントの作成・ロック・グローバル監査ログをこの画面で管理します。",
+      "loadingGuard": "読み込み中",
+      "errors": {
+        "loadTenants": "テナント一覧の取得に失敗しました。",
+        "loadDeletedTenants": "削除済みテナント一覧の取得に失敗しました。",
+        "createFailed": "テナントのプロビジョニングに失敗しました。",
+        "createValidation": "テナント名と System Operator のメールアドレスは必須です。",
+        "lockFailed": "テナントのロック状態を更新できませんでした。",
+        "loadAudits": "監査ログの取得に失敗しました。"
+      },
+      "viewMode": {
+        "active": "アクティブ",
+        "deleted": "削除済み"
+      },
+      "tenants": {
+        "title": "テナント一覧",
+        "subtitle": "この環境に登録されているすべてのテナントです。",
+        "refresh": "一覧を再読み込み",
+        "refreshing": "処理中",
+        "loading": "読み込み中",
+        "empty": "まだテナントが登録されていません。",
+        "emptyDeleted": "削除済みのテナントはありません。",
+        "created": "{date} に作成",
+        "plan": {
+          "trial": "トライアル",
+          "starter": "スターター",
+          "standard": "スタンダード",
+          "enterprise": "エンタープライズ"
+        },
+        "status": {
+          "active": "稼働中",
+          "inactive": "停止中",
+          "suspended": "ロック中",
+          "cancelled": "解約済み",
+          "locked": "ロック中",
+          "deleted": "削除済み"
+        },
+        "columns": {
+          "name": "テナント",
+          "plan": "プラン / 状態",
+          "ismsPhase": "ISMSフェーズ",
+          "trialEnds": "トライアル終了",
+          "deletedAt": "削除日時",
+          "audits": "監査ログ",
+          "actions": "操作"
+        },
+        "ismsPhase": {
+          "initial": "初回登録準備",
+          "surveillance": "継続運用",
+          "unset": "未設定"
+        },
+        "audits": {
+          "total": "件",
+          "last": "最終ログ {date}"
+        },
+        "actions": {
+          "lock": "ロック",
+          "unlock": "ロック解除"
+        }
+      },
+      "create": {
+        "title": "テナントをプロビジョニング",
+        "subtitle": "組織レコードと初期 System Operator アカウントを作成します。",
+        "fields": {
+          "name": "テナント名",
+          "plan": "プラン",
+          "status": "ステータス",
+          "trialDays": "トライアル日数（日）",
+          "operatorEmail": "System Operator のメールアドレス",
+          "operatorName": "表示名（任意）",
+          "locale": "優先言語"
+        },
+        "helpTexts": {
+          "name": "監査ログやテナント一覧に表示される名前です。",
+          "plan": "最初のプランはテナント詳細からいつでも変更できます。",
+          "status": "最初の状態を稼働中かロック済みにしてから、必要であればロック操作を実行してください。",
+          "trialDays": "0〜365 の整数でトライアル期間を指定します。",
+          "operatorEmail": "このメールは System Operator のログインに使われ、既存アカウントと重複できません。"
+        },
+        "planOptions": {
+          "trial": "トライアル",
+          "starter": "スターター",
+          "standard": "スタンダード",
+          "enterprise": "エンタープライズ"
+        },
+        "actions": {
+          "submit": "テナントを作成",
+          "creating": "作成中"
+        },
+        "success": "{name} を作成しました。",
+        "credentials": {
+          "title": "初期 System Operator 情報",
+          "description": "この情報は再表示されません。安全な経路で共有してください。",
+          "linkedTitle": "既存 System Operator をリンクしました",
+          "linkedDescription": "このメールは他のテナントで利用中のため、既存アカウントを新しいテナントへリンクしました。パスワードは再表示されません。",
+          "email": "メールアドレス",
+          "password": "一時パスワード",
+          "passwordLinkedLabel": "パスワード",
+          "passwordLinkedValue": "既存アカウントを利用します（再発行不要）",
+          "copy": "コピー"
+        }
+      },
+      "lock": {
+        "prompt": "{name} をロックします。理由（任意）を入力してください。"
+      },
+      "tenantActions": {
+        "delete": "削除",
+        "restore": "復元",
+        "cancel": "キャンセル",
+        "reasonLabel": "理由（任意）",
+        "reasonPlaceholder": "削除または復元の理由を入力...",
+        "reasonHelp": "この情報は監査ログに記録されます。",
+        "deleteDialog": {
+          "title": "テナントを削除",
+          "description": "{name} を削除しますか？このテナントは削除済み一覧に移動し、後から復元できます。",
+          "confirm": "削除する",
+          "confirming": "削除中..."
+        },
+        "restoreDialog": {
+          "title": "テナントを復元",
+          "description": "{name} を復元しますか？このテナントはアクティブ一覧に戻ります。",
+          "confirm": "復元する",
+          "confirming": "復元中..."
+        },
+        "deleteSuccess": "{name} を削除しました。",
+        "restoreSuccess": "{name} を復元しました。",
+        "errors": {
+          "deleteFailed": "テナントの削除に失敗しました。",
+          "restoreFailed": "テナントの復元に失敗しました。",
+          "unknown": "予期しないエラーが発生しました。"
+        }
+      },
+      "audit": {
+        "title": "グローバル監査タイムライン",
+        "subtitle": "global scope で記録された横断操作のログです。",
+        "refresh": "ログを再読み込み",
+        "refreshing": "処理中",
+        "columns": {
+          "timestamp": "タイムスタンプ",
+          "organization": "組織",
+          "action": "アクション",
+          "actor": "実行者",
+          "notes": "詳細"
+        },
+        "scope": {
+          "global": "グローバル",
+          "tenant": "テナント"
+        },
+        "loading": "読み込み中",
+        "empty": "選択したスコープのログはありません。",
+        "loadMore": "さらに読み込む",
+        "noMore": "これ以上のログはありません",
+        "unknownOrg": "紐付いていない組織"
+      },
+      "settings": {
+        "badge": "サービス設定",
+        "title": "サービス設定と検証ポイント",
+        "description": "Super Admin はテナント横断の機能フラグや Edge Function を管理します。以下のハンドブックをもとに、環境ごとの前提条件を整えてください。",
+        "sections": {
+          "featureFlags": {
+            "title": "フィーチャーフラグ / Edge Config",
+            "items": [
+              {
+                "title": "NEXT_PUBLIC_ENABLE_SUPER_ADMIN",
+                "body": "Super Admin UI を有効化するフロントエンドフラグです。オフの場合は Dev Login にロールが表示されません。"
+              },
+              {
+                "title": "NEXT_PUBLIC_APP_URL",
+                "body": "アプリのベースURLです。ローカル検証では `http://localhost:3007` を指定します。"
+              },
+              {
+                "title": "TURSO_DATABASE_URL / TURSO_AUTH_TOKEN",
+                "body": "Turso Cloud を使う場合のDB接続情報です。ローカル検証では `file:local.db` を使います。"
+              }
+            ]
+          },
+          "runtime": {
+            "title": "運用チェックリスト",
+            "items": [
+              {
+                "title": "DB connection",
+                "body": "`npm run db:seed` を実行し、local.db または Turso に接続できることを確認します。"
+              },
+              {
+                "title": "Audit log query",
+                "body": "Drizzle/libSQL 経由で `audit_logs` を確認し、運用ログが記録されていることを確認します。"
+              },
+              {
+                "title": "QA スモークテスト",
+                "body": "`npm run e2e:super-admin` を実行し、Dev Login → テナント作成 → ロック/解除 → 監査ログ確認まで自動化します。"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "invitations": {
+      "badge": "招待管理",
+      "title": "招待と受諾ステータス",
+      "subtitle": "送信済みの招待メールを一覧し、期限・受諾状況を確認して必要であればスーパー管理者が代わりに処理できます。",
+      "actions": {
+        "refresh": "一覧を再読み込み",
+        "refreshing": "処理中",
+        "deleteSelected": "選択した招待を削除",
+        "deleting": "削除中",
+        "accept": "受諾処理",
+        "accepting": "処理中",
+        "loadMore": "さらに読み込む",
+        "loadingMore": "読み込み中"
+      },
+      "summary": {
+        "total": "総招待数",
+        "pending": "未受諾",
+        "accepted": "受諾済み"
+      },
+      "table": {
+        "columns": {
+          "email": "送信先メール",
+          "organization": "テナント",
+          "role": "ロール",
+          "invitedBy": "招待者",
+          "status": "ステータス",
+          "timestamps": "タイムスタンプ",
+          "actions": "操作"
+        },
+        "labels": {
+          "created": "作成",
+          "expires": "期限",
+          "accepted": "受諾"
+        },
+        "unknownOrg": "不明なテナント"
+      },
+      "status": {
+        "pending": "未受諾",
+        "accepted": "受諾済み",
+        "expired": "期限切れ"
+      },
+      "messages": {
+        "loading": "読み込み中",
+        "empty": "表示できる招待がありません。",
+        "noMore": "これ以上の招待はありません。",
+        "loadError": "招待一覧の取得に失敗しました。",
+        "acceptError": "受諾処理に失敗しました。",
+        "acceptSuccess": "招待を受諾済みに更新しました。",
+        "passwordNotice": "仮パスワード: {password}",
+        "deleteError": "招待の削除に失敗しました。",
+        "deleteSuccess": "{count}件の招待を削除しました。"
+      }
+    },
+    "users": {
+      "badge": "super admin 専用",
+      "title": "ユーザー作成（super_admin / system_operator）",
+      "description": "SaaS 運営者として、スーパー管理者とテナントのシステム運営者を直接追加できます。system_operator を作成する場合は対象テナントを選択してください。",
+      "form": {
+        "email": "メールアドレス",
+        "role": "ロール",
+        "organization": "テナント",
+        "locale": "言語",
+        "roleHint": "system_operator はテナント指定が必須です。super_admin の場合はテナント不要です。",
+        "submit": "ユーザーを作成",
+        "creating": "作成中"
+      },
+      "roles": {
+        "super_admin": "スーパー管理者",
+        "system_operator": "システム運営者"
+      },
+      "messages": {
+        "created": "{email} を {role} として作成しました。",
+        "passwordIssued": "一時パスワード: {password}",
+        "validation": "メールアドレスとロールを入力してください。system_operator にはテナントを指定してください。",
+        "loadOrgsFailed": "テナント一覧の取得に失敗しました。",
+        "createFailed": "ユーザーの作成に失敗しました。"
+      }
+    },
+    "health": {
+      "status": {
+        "primary": "プライマリ",
+        "standby": "スタンバイ"
+      },
+      "panel": {
+        "title": "Edge Function のヘルス",
+        "queueLabel": "キュー長",
+        "failoverLabel": "フェイルオーバー状態",
+        "lastDeployLabel": "最終展開",
+        "lastChecked": "最終チェック {timestamp}",
+        "queue": "キュー長: {queueLength}",
+        "failover": "フェイルオーバー状態: {failoverState}",
+        "lastDeploy": "最終展開: {lastDeployAt}",
+        "unknown": "不明"
+      },
+      "banner": {
+        "failure": {
+          "title": "tenant-admin のヘルスチェックに失敗",
+          "body": "キュー {queueLength}、フェイルオーバー状態 {failoverState}、最終展開 {lastDeployAt} です。"
+        },
+        "standby": {
+          "title": "tenant-admin がスタンバイで稼働中",
+          "body": "フェイルオーバー状態が {failoverState}、キュー {queueLength} です。再切り替え前に展開を確認してください。"
+        },
+        "cta": "Super Admin Runbook を確認する"
+      }
+    }
+  },
+  "incidents": {
+    "title": "インシデント一覧",
+    "description": "発生したインシデントを一覧で確認できます。",
+    "new": "インシデント登録",
+    "newTitle": "インシデント登録",
+    "newDescription": "初動情報を登録し、対応状況を追跡します。",
+    "loading": "読み込み中...",
+    "empty": "インシデントはまだ登録されていません。",
+    "backToList": "一覧へ戻る",
+    "table": {
+      "title": "タイトル",
+      "severity": "重大度",
+      "status": "ステータス",
+      "approval": "承認状態",
+      "occurredAt": "発生日時"
+    },
+    "form": {
+      "title": "タイトル",
+      "description": "概要",
+      "severity": "重大度",
+      "occurredAt": "発生日時",
+      "approver": "承認担当者",
+      "autoApprover": "自動選択（ルールに従う）",
+      "approverHint": "未選択の場合は案件別エスカレーションルールで承認者を決定します。",
+      "cancel": "キャンセル",
+      "save": "登録",
+      "saving": "登録中..."
+    },
+    "detail": {
+      "occurredAt": "発生日時",
+      "createdAt": "登録日時",
+      "approvalDueAt": "承認期限",
+      "description": "詳細",
+      "noDescription": "詳細は未入力です。"
+    },
+    "approvalStatus": {
+      "none": "未申請",
+      "pending": "承認待ち",
+      "approved": "承認済み",
+      "rejected": "却下",
+      "expired": "期限超過"
+    },
+    "severity": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "status": {
+      "draft": "下書き",
+      "in_progress": "対応中",
+      "resolved": "解決",
+      "closed": "クローズ"
+    },
+    "errors": {
+      "loadFailed": "インシデントの読み込みに失敗しました。",
+      "saveFailed": "インシデントの保存に失敗しました。",
+      "notFound": "インシデントが見つかりません。",
+      "organizationMissing": "組織情報が取得できません。"
+    },
+    "links": {
+      "title": "関連リンク",
+      "addLink": "リンクを追加",
+      "task": "タスク",
+      "risk": "リスク",
+      "asset": "資産",
+      "noLinks": "リンクはありません",
+      "selectTarget": "対象を選択",
+      "remove": "削除"
+    }
+  },
+  "approvals": {
+    "title": "承認キュー",
+    "pending": "承認待ち",
+    "approved": "承認済み",
+    "rejected": "却下済み",
+    "all": "すべて",
+    "status": "ステータス",
+    "revert": "差し戻し",
+    "revertReason": "差し戻し理由",
+    "revertConfirm": "この承認を差し戻しますか？",
+    "revertSuccess": "差し戻しました",
+    "revertError": "差し戻しに失敗しました",
+    "reverted": "差し戻し済み",
+    "revertedAt": "差し戻し日時",
+    "revertedBy": "差し戻し者",
+    "revertReasonPlaceholder": "差し戻し理由（必須）",
+    "revertModalTitle": "承認の差し戻し",
+    "revertModalDescription": "この承認を差し戻しますか？差し戻し理由を入力してください。",
+    "cancel": "キャンセル",
+    "processing": "処理中...",
+    "empty": "承認待ちはありません。",
+    "emptyFiltered": "該当するリクエストはありません。"
+  },
+  "bcp": {
+    "title": "事業継続計画（BCP）",
+    "description": "事業継続計画の策定・管理・訓練記録を行います。",
+    "new": "新規BCP作成",
+    "newTitle": "BCP新規作成",
+    "newDescription": "事業継続計画を新規作成します。",
+    "loading": "読み込み中...",
+    "empty": "BCPはまだ作成されていません。",
+    "backToList": "一覧へ戻る",
+    "table": {
+      "title": "計画名",
+      "status": "ステータス",
+      "version": "バージョン",
+      "updatedAt": "最終更新",
+      "scope": "スコープ"
+    },
+    "form": {
+      "title": "計画名",
+      "scope": "対象範囲（スコープ）",
+      "version": "バージョン",
+      "status": "ステータス",
+      "cancel": "キャンセル",
+      "save": "保存",
+      "saving": "保存中..."
+    },
+    "detail": {
+      "planInfo": "計画情報",
+      "scope": "対象範囲",
+      "version": "バージョン",
+      "createdAt": "作成日時",
+      "updatedAt": "最終更新",
+      "lastReviewedAt": "最終レビュー日",
+      "nextReviewDate": "次回レビュー予定",
+      "noScope": "スコープは未設定です。",
+      "edit": "編集",
+      "delete": "削除",
+      "confirmDelete": "この計画を削除しますか？関連するシナリオ・訓練記録・復旧目標もすべて削除されます。"
+    },
+    "status": {
+      "draft": "下書き",
+      "active": "有効",
+      "under_review": "レビュー中",
+      "archived": "アーカイブ"
+    },
+    "scenarios": {
+      "title": "想定シナリオ",
+      "add": "シナリオ追加",
+      "empty": "シナリオはまだ登録されていません。",
+      "scenarioType": "シナリオ種別",
+      "impactLevel": "影響度",
+      "likelihood": "発生可能性",
+      "responseProcedure": "対応手順",
+      "noResponse": "対応手順は未設定です。"
+    },
+    "scenarioType": {
+      "natural_disaster": "自然災害",
+      "cyber_attack": "サイバー攻撃",
+      "system_failure": "システム障害",
+      "pandemic": "パンデミック",
+      "supply_chain": "サプライチェーン途絶",
+      "power_outage": "停電",
+      "other": "その他"
+    },
+    "impactLevel": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "likelihood": {
+      "rare": "極めて稀",
+      "unlikely": "低い",
+      "possible": "あり得る",
+      "likely": "高い",
+      "almost_certain": "ほぼ確実"
+    },
+    "drills": {
+      "title": "訓練記録",
+      "add": "訓練追加",
+      "empty": "訓練記録はまだありません。",
+      "scheduledDate": "予定日",
+      "conductedDate": "実施日",
+      "participants": "参加者",
+      "result": "結果",
+      "findings": "発見事項・課題"
+    },
+    "drillStatus": {
+      "planned": "計画中",
+      "in_progress": "実施中",
+      "completed": "完了",
+      "cancelled": "中止"
+    },
+    "recovery": {
+      "title": "復旧目標（RTO/RPO）",
+      "add": "復旧目標追加",
+      "empty": "復旧目標はまだ設定されていません。",
+      "targetSystem": "対象システム",
+      "rtoHours": "RTO（時間）",
+      "rpoHours": "RPO（時間）",
+      "priority": "優先度",
+      "notes": "備考"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "errors": {
+      "loadFailed": "データの読み込みに失敗しました。",
+      "saveFailed": "保存に失敗しました。",
+      "deleteFailed": "削除に失敗しました。",
+      "organizationMissing": "組織情報が取得できません。"
+    },
+    "export": {
+      "title": "エクスポート",
+      "button": "JSONエクスポート"
+    }
+  },
+  "managementReview": {
+    "title": "マネジメントレビュー",
+    "description": "ISO 27001 マネジメントレビュー会議の計画・記録・是正措置を管理します。",
+    "list": {
+      "title": "マネジメントレビュー一覧",
+      "empty": "マネジメントレビューがありません。",
+      "emptyForStatus": "{status} のマネジメントレビューはありません。",
+      "createNew": "新規レビュー作成",
+      "filters": {
+        "title": "レビュー状態で確認",
+        "subtitle": "予定、進行中、完了などの状態ごとに年次レビューを確認できます。",
+        "status": "状態",
+        "allStatuses": "すべての状態",
+        "activeStatus": "{status} のレビューのみ表示中"
+      },
+      "summary": {
+        "title": "状態別レビュー件数",
+        "all": "すべて",
+        "unit": "レビュー"
+      }
+    },
+    "detail": {
+      "title": "レビュー詳細",
+      "agenda": "議題",
+      "participants": "参加者",
+      "location": "場所",
+      "minutes": "議事録",
+      "conclusions": "結論・決定事項",
+      "reviewDate": "レビュー日",
+      "items": "レビュー項目",
+      "actions": "アクションアイテム",
+      "export": "エクスポート",
+      "delete": "削除",
+      "deleteConfirm": "このマネジメントレビューを削除しますか？",
+      "edit": "編集",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "back": "一覧に戻る"
+    },
+    "new": {
+      "title": "新規マネジメントレビュー",
+      "titleLabel": "タイトル",
+      "titlePlaceholder": "レビュー会議のタイトルを入力",
+      "reviewDateLabel": "レビュー日",
+      "statusLabel": "ステータス",
+      "locationLabel": "場所",
+      "locationPlaceholder": "開催場所を入力",
+      "agendaLabel": "議題",
+      "agendaPlaceholder": "議題を入力（改行で複数追加可能）",
+      "create": "作成",
+      "cancel": "キャンセル"
+    },
+    "status": {
+      "planned": "計画中",
+      "scheduled": "予定",
+      "in_progress": "実施中",
+      "completed": "完了",
+      "cancelled": "中止"
+    },
+    "itemType": {
+      "input": "入力情報",
+      "discussion": "議論事項",
+      "decision": "決定事項",
+      "output": "アウトプット"
+    },
+    "item": {
+      "add": "項目を追加",
+      "title": "項目名",
+      "description": "説明",
+      "relatedArea": "関連領域",
+      "sortOrder": "表示順",
+      "delete": "削除",
+      "empty": "レビュー項目がありません。"
+    },
+    "action": {
+      "add": "アクション追加",
+      "title": "アクション名",
+      "description": "説明",
+      "assignee": "担当者",
+      "dueDate": "期限",
+      "status": "ステータス",
+      "completedAt": "完了日",
+      "delete": "削除",
+      "empty": "アクションアイテムがありません。"
+    },
+    "actionStatus": {
+      "open": "未着手",
+      "in_progress": "対応中",
+      "completed": "完了",
+      "overdue": "期限超過",
+      "cancelled": "中止"
+    },
+    "relatedArea": {
+      "risk": "リスク",
+      "audit": "監査",
+      "incident": "インシデント",
+      "policy": "ポリシー",
+      "other": "その他"
+    },
+    "errors": {
+      "loadFailed": "マネジメントレビューの読み込みに失敗しました。",
+      "saveFailed": "マネジメントレビューの保存に失敗しました。",
+      "notFound": "マネジメントレビューが見つかりません。",
+      "organizationMissing": "組織情報が取得できません。"
+    }
+  },
+  "suppliers": {
+    "title": "サプライヤー管理",
+    "description": "外部委託先のセキュリティ評価・契約管理・モニタリングを行います。",
+    "new": "サプライヤー登録",
+    "newTitle": "新規サプライヤー登録",
+    "newDescription": "サプライヤー情報を登録します。",
+    "loading": "読み込み中...",
+    "empty": "サプライヤーはまだ登録されていません。",
+    "backToList": "一覧へ戻る",
+    "detail": "サプライヤー詳細",
+    "edit": "編集",
+    "delete": "削除",
+    "deleteConfirm": "このサプライヤーを削除してもよろしいですか？",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "table": {
+      "name": "サプライヤー名",
+      "type": "種類",
+      "status": "ステータス",
+      "riskLevel": "リスクレベル",
+      "contactName": "担当者",
+      "contactEmail": "メール",
+      "createdAt": "登録日"
+    },
+    "form": {
+      "name": "サプライヤー名",
+      "type": "種類",
+      "contactName": "担当者名",
+      "contactEmail": "メールアドレス",
+      "contactPhone": "電話番号",
+      "website": "ウェブサイト",
+      "description": "説明",
+      "status": "ステータス",
+      "riskLevel": "リスクレベル"
+    },
+    "type": {
+      "cloud_service": "クラウドサービス",
+      "outsourcing": "外部委託",
+      "consulting": "コンサルティング",
+      "hardware": "ハードウェア",
+      "software": "ソフトウェア",
+      "other": "その他"
+    },
+    "status": {
+      "active": "有効",
+      "inactive": "無効",
+      "under_review": "審査中",
+      "terminated": "終了"
+    },
+    "riskLevel": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "assessments": {
+      "title": "セキュリティ評価",
+      "new": "評価を追加",
+      "empty": "評価はまだ登録されていません。",
+      "assessmentDate": "評価日",
+      "assessor": "評価者",
+      "overallScore": "総合スコア",
+      "result": "結果",
+      "findings": "所見",
+      "nextAssessmentDate": "次回評価日",
+      "resultValues": {
+        "pass": "合格",
+        "fail": "不合格",
+        "conditional": "条件付き合格",
+        "pending": "評価中"
+      }
+    },
+    "contracts": {
+      "title": "契約情報",
+      "new": "契約を追加",
+      "empty": "契約はまだ登録されていません。",
+      "contractNumber": "契約番号",
+      "contractTitle": "契約名",
+      "startDate": "開始日",
+      "endDate": "終了日",
+      "slaDetails": "SLA詳細",
+      "securityRequirements": "セキュリティ要件",
+      "status": "ステータス",
+      "statusValues": {
+        "draft": "下書き",
+        "active": "有効",
+        "expired": "期限切れ",
+        "terminated": "終了"
+      }
+    },
+    "incidents": {
+      "title": "サプライヤーインシデント",
+      "new": "インシデントを追加",
+      "empty": "インシデントはまだ登録されていません。"
+    },
+    "errors": {
+      "loadFailed": "サプライヤー情報の読み込みに失敗しました。",
+      "createFailed": "サプライヤーの登録に失敗しました。",
+      "updateFailed": "サプライヤーの更新に失敗しました。",
+      "deleteFailed": "サプライヤーの削除に失敗しました。"
+    },
+    "export": {
+      "title": "エクスポート",
+      "description": "サプライヤー情報をエクスポートします。"
+    }
+  },
+  "examination": {
+    "submissionBundle": {
+      "title": "審査準備パッケージ",
+      "description": "初回審査登録に向けて、適用範囲、体制、文書、資産、リスク、適用管理策の判断、初期タスクを審査準備パッケージとして整理します。審査での受理や認証取得は保証せず、提出前の準備状況、不足、次の対応を確認しやすくします。",
+      "organizationLine": "{name} / フェーズ: {phase} / ロール: {role}",
+      "reviewNotice": {
+        "title": "審査準備を支援する確認資料です",
+        "body": "このパッケージは、審査準備や内部レビューに必要な証跡を整理するものです。ISO 27001の認証取得や審査での受理を保証するものではありませんが、提出前に確認したい情報、不足、次の対応を把握しやすくします。"
+      },
+      "actions": {
+        "refresh": "再読み込み",
+        "downloadZip": "ZIPをダウンロード",
+        "downloadingZip": "ZIPを準備中...",
+        "downloadPdf": "PDFをダウンロード",
+        "downloadingPdf": "PDFを準備中..."
+      },
+      "readiness": {
+        "label": "提出準備状況",
+        "readyItems": "準備済み",
+        "gapItems": "不足項目",
+        "generatedAt": "生成日時",
+        "latestSoa": "最新の適用管理策判断",
+        "soaVersion": "v{version}",
+        "noSoa": "未発行",
+        "status": {
+          "ready": "提出前に確認したい資料を一通り確認できます",
+          "ready_with_gaps": "不足または確認待ちがあり、先に整える項目があります"
+        }
+      },
+      "nextAction": {
+        "eyebrow": "次に進めること",
+        "gapTitle": "まず「{item}」を整えましょう",
+        "gapFallback": "不足項目の詳細を確認し、関連する画面で証跡、担当者、判断理由を更新してください。",
+        "openTarget": "関連画面を開く",
+        "readyTitle": "審査準備パッケージを出力できます",
+        "readyDescription": "準備済みの証跡をPDFまたはZIPで出力し、経営者・管理責任者の確認や関係者レビューに使えます。審査での受理を保証するものではありません。"
+      },
+      "items": {
+        "countAndSources": "{count}件 / {sources}",
+        "evidence": "証跡",
+        "gaps": "不足・確認事項",
+        "nextAction": "次に行うこと:",
+        "openRelated": "関連画面を開く",
+        "none": "なし",
+        "noGaps": "不足は検出されていません",
+        "status": {
+          "ready": "準備済み",
+          "missing": "不足",
+          "needs_review": "要確認"
+        }
+      },
+      "messages": {
+        "refreshed": "審査準備パッケージを再読み込みしました",
+        "downloaded": "審査準備パッケージZIPをダウンロードしました",
+        "pdfDownloaded": "審査準備パッケージPDFをダウンロードしました"
+      },
+      "errors": {
+        "loadFailed": "審査準備パッケージを読み込めませんでした",
+        "downloadFailed": "審査準備パッケージZIPをダウンロードできませんでした",
+        "pdfDownloadFailed": "審査準備パッケージPDFをダウンロードできませんでした"
+      },
+      "noAccess": {
+        "title": "審査準備パッケージを表示できません",
+        "description": "組織管理者、システム運営者、監査員のいずれかでアクセスしてください。",
+        "back": "ホームへ戻る"
+      }
+    }
+  },
+  "education": {
+    "title": "教育・訓練管理",
+    "description": "ISO 27001に基づく教育・訓練計画の管理",
+    "plans": {
+      "title": "教育計画一覧",
+      "empty": "教育計画がまだありません",
+      "create": "新規教育計画",
+      "edit": "教育計画を編集",
+      "delete": "教育計画を削除",
+      "deleteConfirm": "この教育計画を削除してもよろしいですか？",
+      "detail": "教育計画詳細"
+    },
+    "form": {
+      "title": "タイトル",
+      "titlePlaceholder": "教育計画のタイトルを入力",
+      "description": "説明",
+      "descriptionPlaceholder": "教育計画の説明を入力",
+      "targetAudience": "対象者",
+      "targetAudiencePlaceholder": "対象者を選択",
+      "startDate": "開始日",
+      "endDate": "終了日",
+      "status": "ステータス",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "creating": "作成中...",
+      "updating": "更新中..."
+    },
+    "status": {
+      "draft": "下書き",
+      "scheduled": "予定",
+      "in_progress": "実施中",
+      "completed": "完了",
+      "cancelled": "キャンセル"
+    },
+    "records": {
+      "title": "受講記録",
+      "empty": "受講記録がまだありません",
+      "add": "受講記録を追加",
+      "attendee": "受講者",
+      "attendedAt": "受講日時",
+      "completedAt": "完了日時",
+      "score": "スコア",
+      "result": "結果",
+      "feedback": "フィードバック",
+      "resultValues": {
+        "pending": "未完了",
+        "passed": "合格",
+        "failed": "不合格",
+        "incomplete": "未修了"
+      }
+    },
+    "materials": {
+      "title": "教材・資料",
+      "empty": "教材がまだありません",
+      "add": "教材を追加",
+      "attachExisting": "既存教材を追加",
+      "attachExistingTitle": "教材ライブラリから追加",
+      "attachExistingDescription": "組織で作成済みの教材をこの教育計画へ紐づけます。",
+      "attachSelected": "選択した教材を追加",
+      "noReusableMaterials": "追加できる既存教材はありません。",
+      "edit": "編集",
+      "update": "教材を更新",
+      "delete": "削除",
+      "deleteConfirm": "教材「{title}」を削除しますか？この教材を使っている教育計画からも外れます。",
+      "name": "教材名",
+      "type": "種類",
+      "url": "URL",
+      "description": "説明",
+      "summary": "{total}件の教材がこの教育計画に紐づいています。",
+      "typeValues": {
+        "document": "文書",
+        "video": "動画",
+        "slide": "スライド",
+        "link": "リンク",
+        "other": "その他"
+      }
+    },
+    "stats": {
+      "totalPlans": "計画数",
+      "totalRecords": "受講記録数",
+      "completionRate": "修了率",
+      "averageScore": "平均スコア",
+      "attentionRecords": "要確認"
+    },
+    "targetCoverage": {
+      "title": "対象者カバレッジ",
+      "descriptionWithLabel": "対象者: {label}。対象者指定から候補を読み取り、受講記録と照合して記録漏れの目安を表示します。",
+      "descriptionFallback": "対象者の指定が未整理のため、組織内の有効ユーザーを暫定対象として受講記録の有無を表示します。",
+      "total": "対象者",
+      "recorded": "記録済み",
+      "missing": "未記録",
+      "missingPreview": "未記録の候補"
+    },
+    "targetAssignment": {
+      "title": "対象者を選択",
+      "description": "この教育計画の対象者を、全社員、ロール、部門、ユーザー単位で選びます。保存後は対象者カバレッジに反映されます。",
+      "edit": "対象者を編集",
+      "selectAll": "有効ユーザーを全員選択",
+      "save": "対象者を保存",
+      "modes": {
+        "all": "全社員",
+        "role": "ロール",
+        "department": "部門",
+        "users": "ユーザー"
+      },
+      "allDescription": "組織内の有効ユーザー {count} 名を対象にします。",
+      "roleLabel": "対象ロール",
+      "departmentLabel": "対象部門"
+    },
+    "myCompletion": {
+      "title": "自分の受講状況",
+      "description": "教材を確認し、教育内容を理解したら受講完了として記録します。",
+      "notTargetDescription": "この教育計画は現在、あなたの対象教育として設定されていません。",
+      "completedDescription": "この教育は受講完了として記録されています。",
+      "completedAt": "完了日時: {date}",
+      "feedback": "メモ",
+      "feedbackPlaceholder": "確認した内容や補足があれば入力",
+      "complete": "受講完了として記録",
+      "saving": "記録中..."
+    },
+    "nextAction": {
+      "add_records": {
+        "title": "受講記録を追加してください",
+        "description": "この教育計画にはまだ受講記録がありません。対象者の受講結果を追加すると、教育証跡として確認できます。"
+      },
+      "follow_up": {
+        "title": "未完了または不合格の受講者を確認してください",
+        "description": "{total}件中{passed}件が合格済みです。{issues}件は未完了、不合格、または未修了のため、追加フォローが必要です。"
+      },
+      "review_overdue": {
+        "title": "期限超過の教育記録を確認してください",
+        "description": "終了日を過ぎています。{total}件中{passed}件が合格済みで、{issues}件に追加確認が必要です。"
+      },
+      "ready": {
+        "title": "教育証跡として確認できる状態です",
+        "description": "{total}件の受講記録があり、修了率は{completionRate}%です。必要に応じて審査準備資料へ含められます。"
+      }
+    },
+    "export": {
+      "title": "エクスポート",
+      "description": "教育計画をCSV形式でエクスポートします。"
+    },
+    "filters": {
+      "followUpActive": "要フォローの教育計画のみ表示中",
+      "followUpEmpty": "要フォローの教育計画はありません。",
+      "clear": "絞り込みを解除"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "404 — ページが見つかりません",
+      "description": "お探しのページは存在しないか、移動または削除された可能性があります。",
+      "backHome": "ホームへ戻る",
+      "backTop": "トップページへ"
+    },
+    "unexpectedError": {
+      "title": "予期しないエラーが発生しました",
+      "description": "問題が発生しました。もう一度お試しいただくか、問題が続く場合はサポートにご連絡ください。",
+      "retry": "再試行",
+      "backHome": "ホームへ戻る"
+    },
+    "globalError": {
+      "title": "アプリケーションエラー",
+      "description": "致命的なエラーが発生しました。ページを再読み込みしてください。",
+      "reload": "再読み込み"
+    }
+  }
+}

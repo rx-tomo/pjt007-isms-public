@@ -1,0 +1,81 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/playwright-report/
+/.trace-debug/
+/test-results/
+/test-results/**/*.webm
+/playwright-report/
+tests/vrt/__screenshots__/
+
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+current_issues.json
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# MCP configuration (contains sensitive tokens)
+.mcp.json
+
+*storybook.log
+storybook-static
+dist-tests/
+dist/
+
+# SQLite local development database
+local.db
+local.db-wal
+local.db-shm
+
+# Local file storage (dev mode)
+.storage/
+
+# Local skill artifacts
+*.skill
+
+# Local agent worktrees
+.worktrees/
+
+# Public snapshot excludes internal QA harnesses and project automation config.
+tests/
+/config/
+.storybook/
+stories/
+playwright*.config.ts
+vitest.config.ts
+tsconfig.tests.json

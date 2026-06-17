@@ -1,0 +1,5606 @@
+{
+  "support": "专业支持全程陪伴每一步",
+  "ai": {
+    "evaluation": {
+      "title": "AI 风险评估",
+      "evaluate": "开始评估",
+      "evaluating": "评估中...",
+      "impact": "影响程度",
+      "likelihood": "发生可能性",
+      "rationale": "依据",
+      "currentValue": "当前值",
+      "suggestedValue": "建议值",
+      "accept": "采纳",
+      "riskLevel": "风险等级",
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "极高",
+      "noEvaluation": "暂无评估",
+      "error": "评估时发生错误"
+    },
+    "usage": {
+      "title": "AI 使用情况",
+      "totalTokens": "总 Token 数",
+      "totalRequests": "总请求数",
+      "totalCost": "总成本",
+      "cacheHitRate": "缓存命中率",
+      "errorRate": "错误率",
+      "avgLatency": "平均延迟",
+      "budgetProgress": "预算使用率",
+      "budgetUsed": "{used} / {budget} USD",
+      "period7d": "7天",
+      "period30d": "30天",
+      "period90d": "90天",
+      "daily": "每日趋势",
+      "byType": "按类型统计",
+      "noData": "暂无数据",
+      "loading": "加载中...",
+      "error": "获取数据失败",
+      "riskIdentification": "风险识别",
+      "riskAssessment": "风险评估",
+      "treatmentSuggestion": "处置建议",
+      "tokens": "Token",
+      "requests": "请求",
+      "ms": "ms"
+    },
+    "settings": {
+      "title": "AI 设置",
+      "pageTitle": "AI设置",
+      "usagePageTitle": "AI使用情况仪表盘",
+      "enableAI": "启用AI功能",
+      "enableAIDescription": "AI支持作为后续辅助功能使用，输入内容和采纳结果需由人工确认",
+      "features": "可用功能",
+      "identify": "风险识别",
+      "evaluate": "风险评估",
+      "suggestTreatments": "处置建议",
+      "usageLimits": "用量限制",
+      "monthlyLimit": "每月 Token 上限",
+      "alertThresholds": "告警阈值",
+      "currentUsage": "当前使用情况",
+      "usageOf": "{used} / {limit} ({percent}%)",
+      "provider": "服务提供商",
+      "save": "保存",
+      "cancel": "取消",
+      "saved": "设置已保存",
+      "saveError": "保存设置失败",
+      "modelSettings": "AI模型设置",
+      "model": "模型",
+      "modelChangeNote": "模型变更将从下次AI分析开始生效",
+      "saveModel": "保存",
+      "modelSaved": "AI模型设置已保存",
+      "modelSaveError": "保存AI模型设置失败",
+      "dataHandling": "发送范围与机密信息",
+      "allowExternalApi": "允许发送到外部AI API",
+      "allowExternalApiDescription": "默认使用模拟模式；只有明确允许后才启用外部发送",
+      "allowPersonalData": "允许使用个人信息",
+      "allowPersonalDataDescription": "姓名、邮箱等默认排除，只有人工确认后才可包含",
+      "allowAttachmentBody": "允许使用附件正文",
+      "allowAttachmentBodyDescription": "附件正文默认不发送，使用前需要摘要或脱敏"
+    },
+    "assistant": {
+      "title": "AI 风险分析助手",
+      "analyze": "开始分析",
+      "analyzing": "分析中...",
+      "threats": "威胁",
+      "vulnerabilities": "脆弱性",
+      "treatments": "处置建议",
+      "accept": "采纳",
+      "reject": "拒绝",
+      "likelihood": "发生可能性",
+      "severity": "严重程度",
+      "noSuggestions": "暂无建议",
+      "error": "分析时发生错误",
+      "treatmentTypes": {
+        "accept": "风险接受",
+        "mitigate": "风险缓解",
+        "transfer": "风险转移",
+        "avoid": "风险规避"
+      },
+      "likelihoodLevels": {
+        "1": "极低",
+        "2": "低",
+        "3": "中等",
+        "4": "高",
+        "5": "极高"
+      },
+      "severityLevels": {
+        "1": "轻微",
+        "2": "较小",
+        "3": "中等",
+        "4": "较大",
+        "5": "严重"
+      },
+      "controlIds": "控制措施ID",
+      "assetInfo": "资产信息",
+      "assetName": "资产名称",
+      "assetType": "资产类型",
+      "description": "说明",
+      "department": "部门",
+      "inputScopeTitle": "此辅助使用的信息",
+      "inputScopeDescription": "AI建议只是草稿。采纳前请审核和编辑；个人信息和附件正文默认不发送。",
+      "scopeAssetName": "资产名称",
+      "scopeAssetType": "资产类型",
+      "scopeDescription": "说明",
+      "scopeDepartment": "部门",
+      "editBeforeAccept": "采纳前编辑"
+    }
+  },
+  "common": {
+    "appName": "ISMS Pilot",
+    "title": "ISMS Pilot",
+    "login": {
+      "title": "登录",
+      "subtitle": "请登录您的账户",
+      "signupLink": "创建账户",
+      "submitting": "提交中"
+    },
+    "logout": "退出登录",
+    "signup": "注册",
+    "documents": "文件管理",
+    "risks": "风险管理",
+    "tasks": "任务",
+    "audit": "审核",
+    "education": "教育与培训",
+    "managementReviews": "管理评审",
+    "suppliers": "供应商管理",
+    "bcp": "业务连续性计划",
+    "notifications": "通知",
+    "settings": "设置",
+    "language": "语言",
+    "japanese": "日本語",
+    "english": "English",
+    "chinese": "简体中文",
+    "email": "邮箱地址",
+    "password": "密码",
+    "devLogin": "开发登录",
+    "loading": "加载中",
+    "search": "搜索",
+    "updatedAt": "更新日期",
+    "name": "姓名",
+    "role": "角色",
+    "loginTime": "登录时间",
+    "currentUser": "当前用户",
+    "riskAssessment": "风险评估",
+    "profile": "个人资料",
+    "organization": "组织",
+    "users": "用户管理",
+    "subscription": "订阅",
+    "home": "首页",
+    "skipToContent": "跳转至主要内容",
+    "header": {
+      "greeting": "{name}",
+      "organizationLabel": "所属",
+      "roleLabel": "角色"
+    },
+    "tenantSwitch": {
+      "label": "当前查看的组织",
+      "error": "切换组织失败。",
+      "phases": {
+        "initial": "初次认证准备",
+        "surveillance": "年度持续运行"
+      }
+    },
+    "roles": {
+      "super_admin": "超级管理员",
+      "system_operator": "系统运营者",
+      "org_admin": "组织管理员",
+      "user": "成员",
+      "auditor": "审核员",
+      "approver": "审批人"
+    },
+    "department": {
+      "label": "部门",
+      "selectPlaceholder": "请选择部门",
+      "all": "全部部门",
+      "noDepartment": "未设置部门",
+      "myDepartment": "仅本部门",
+      "includingSubDepartments": "包含下属部门"
+    },
+    "breadcrumbs": {
+      "home": "首页",
+      "documents": "文件管理",
+      "risks": "风险管理",
+      "tasks": "任务",
+      "audit": "审核",
+      "education": "教育与培训",
+      "management_reviews": "管理评审",
+      "suppliers": "供应商管理",
+      "bcp": "业务连续性计划",
+      "plans": "计划",
+      "settings": "设置",
+      "notifications": "通知",
+      "profile": "个人资料",
+      "organization": "组织设置",
+      "users": "用户管理",
+      "subscription": "订阅",
+      "new": "新建",
+      "list": "列表",
+      "super_admin": "Super Admin",
+      "organizations": "组织列表",
+      "logs": "审计日志",
+      "invitations": "邀请管理",
+      "setup": "初始设置"
+    },
+    "superAdminNav": {
+      "organizations": "组织列表",
+      "logs": "审计日志",
+      "invitations": "邀请管理",
+      "users": "用户管理",
+      "serviceSettings": "服务设置"
+    },
+    "stats": {
+      "progress": "进度",
+      "overdueTasks": "逾期任务",
+      "pendingDocuments": "待批准文件",
+      "nextAudit": "下次审核",
+      "daysUnit": "天",
+      "activeUsers": "活跃用户",
+      "openRisks": "未处置风险"
+    },
+    "adminWelcome": "以组织管理员身份查看运行状况和下一步需要处理的事项",
+    "quickActions": {
+      "title": "快捷操作",
+      "addUser": "添加用户",
+      "organizationSettings": "组织设置",
+      "viewPendingApprovals": "查看待批准文件"
+    },
+    "recentActivity": {
+      "title": "最近活动",
+      "userLogin": "用户登录",
+      "documentApproved": "文件批准",
+      "riskIdentified": "新增风险"
+    },
+    "compliance": {
+      "title": "审核与合规状况",
+      "certificationStatus": "认证状态",
+      "valid": "有效",
+      "expiryDate": "有效期至",
+      "auditProgress": "审核进度",
+      "correctiveActions": "纠正措施",
+      "open": "未处理",
+      "inProgress": "处理中",
+      "completed": "已完成"
+    },
+    "permissions": {
+      "document_read": "查看文件",
+      "document_write": "创建/编辑文件",
+      "document_delete": "删除文件",
+      "document_approve": "批准文件",
+      "risk_read": "查看风险",
+      "risk_write": "创建/编辑风险",
+      "risk_delete": "删除风险",
+      "risk_approve": "批准风险评估",
+      "task_read": "查看任务",
+      "task_write": "创建/编辑任务",
+      "task_delete": "删除任务",
+      "task_assign": "分配任务",
+      "audit_read": "查看审核",
+      "audit_write": "创建/编辑审核",
+      "audit_delete": "删除审核",
+      "audit_execute": "执行审核",
+      "user_read": "查看用户",
+      "user_write": "创建/编辑用户",
+      "user_delete": "删除用户",
+      "user_invite": "邀请用户",
+      "organization_read": "查看组织设置",
+      "organization_write": "编辑组织设置",
+      "billing_read": "查看账单信息",
+      "billing_write": "管理账单信息"
+    },
+    "departmentScope": {
+      "locked": "根据您的角色设置，仅显示 {department} 部门的数据。",
+      "lockedMissing": "由于个人资料中未登记部门，仅显示未分配部门的数据。"
+    },
+    "errors": {
+      "unexpected": "发生意外错误"
+    },
+    "fields": {
+      "email": "邮箱地址",
+      "password": "密码"
+    },
+    "save": "保存",
+    "saving": "保存中",
+    "cancel": "取消",
+    "incidents": "安全事件",
+    "initialSetup": "初始设置",
+    "retry": "重试"
+  },
+  "auth": {
+    "common": {
+      "email": "邮箱地址",
+      "password": "密码",
+      "devLogin": "开发登录"
+    },
+    "login": {
+      "title": "登录",
+      "description": "登录ISMS Manager，管理ISO27001认证进度。",
+      "noAccount": "还没有账户？",
+      "signupLink": "注册",
+      "submit": "登录",
+      "forgotPassword": "忘记密码",
+      "ssoComingSoon": "单点登录集成即将推出",
+      "ssoButton": "使用 {provider} 继续",
+      "ssoHelp": "设置 AUTH_SSO_PROVIDERS 后可先行确认按钮显示（在完成接入前保持禁用状态）。"
+    },
+    "signup": {
+      "title": "注册",
+      "description": "创建ISMS Manager账户，开始ISO27001认证准备。",
+      "hasAccount": "已有账户？",
+      "loginLink": "登录",
+      "submit": "注册",
+      "fullName": "姓名",
+      "organizationName": "组织名称",
+      "confirmPassword": "确认密码",
+      "agreeToTerms": "同意服务条款",
+      "termsLink": "服务条款"
+    },
+    "verifyEmail": {
+      "title": "请查收邮件",
+      "description": "确认邮件已发送。请点击邮件中的链接完成注册。",
+      "checkSpam": "如未收到邮件，请同时检查垃圾邮件文件夹。",
+      "didNotReceive": "如未收到邮件，请稍候片刻或重新尝试。",
+      "backToLogin": "返回登录页"
+    },
+    "errors": {
+      "passwordMismatch": "两次输入的密码不一致",
+      "mustAgreeToTerms": "需要同意服务条款",
+      "signupFailed": "注册失败",
+      "unknownError": "发生意外错误",
+      "emailNotConfirmed": "邮箱地址尚未完成验证。请通过收到的邮件中的链接进行验证。",
+      "invalidMfaCode": "验证码不正确。请重新输入。",
+      "mfaVerificationFailed": "验证码校验失败。请重试。",
+      "mfaChallengeMissing": "未找到验证请求。请刷新页面后重试。",
+      "mfaChallengeExpired": "验证码已过期。请重新获取验证码。",
+      "mfaChallengeFailed": "验证码生成失败。请重试。"
+    },
+    "mfa": {
+      "header": "请输入附加验证码",
+      "description": "请输入身份验证器应用中显示的一次性验证码。开发环境下可使用 000000。",
+      "codeLabel": "验证码",
+      "submit": "验证",
+      "sent": "验证码已发送。请在 {minutes} 分钟内输入。",
+      "sentDefault": "验证码已发送。",
+      "sending": "发送中",
+      "expiresAt": "有效期至 {time}。"
+    },
+    "forgotPassword": {
+      "title": "重置密码",
+      "description": "请输入已注册的邮箱地址，我们将向您发送密码重置链接。",
+      "submit": "发送重置链接",
+      "backToLogin": "返回登录页",
+      "sentTitle": "邮件已发送",
+      "sentDescription": "密码重置链接已通过邮件发送。请查收邮件。",
+      "errors": {
+        "sendFailed": "重置邮件发送失败。请重试。"
+      }
+    },
+    "resetPassword": {
+      "title": "设置新密码",
+      "description": "请输入新密码。",
+      "newPassword": "新密码",
+      "confirmPassword": "确认密码",
+      "submit": "更改密码",
+      "completeTitle": "密码已更改",
+      "completeDescription": "密码已成功更改。请使用新密码登录。",
+      "goToLogin": "前往登录",
+      "errors": {
+        "resetFailed": "密码更改失败。请重试。",
+        "invalidToken": "重置链接无效或已过期。请重新申请重置。",
+        "passwordTooShort": "密码长度至少为8个字符。"
+      }
+    }
+  },
+  "signup": {
+    "title": "注册",
+    "description": "请创建新账号"
+  },
+  "login": {
+    "title": "登录",
+    "description": "请登录您的账号"
+  },
+  "authInvite": {
+    "title": "接受邀请",
+    "description": "通过邀请链接加入组织。",
+    "heading": "加入组织",
+    "subheading": "请完成加入 {organization} 的流程。",
+    "passwordHint": "请使用8位以上字母和数字的组合。",
+    "submit": "创建账号并加入",
+    "submitting": "提交中",
+    "labels": {
+      "email": "邮箱地址",
+      "role": "角色",
+      "invitedBy": "邀请人",
+      "expiresAt": "有效期至",
+      "fullName": "姓名",
+      "password": "密码"
+    },
+    "errors": {
+      "title": "无法完成邀请",
+      "missingToken": "未找到邀请令牌。请重新确认链接。",
+      "invalidToken": "邀请链接无效。请联系管理员重新发送邀请。",
+      "alreadyAccepted": "该邀请已被使用。",
+      "expired": "邀请已过期。请联系管理员重新发送邀请。",
+      "generic": "无法读取邀请信息。请稍后重试。",
+      "accountExists": "该邮箱地址的账号已存在。请尝试登录。",
+      "signupFailed": "账号创建失败。请重试。",
+      "acceptFailed": "邀请接受处理失败。",
+      "fullNameRequired": "请输入姓名。",
+      "passwordTooShort": "密码长度须为8位以上。"
+    }
+  },
+  "devLogin": {
+    "title": "开发用租户登录",
+    "description": "先选择租户，再以该租户内的用户登录，确认已写入的业务数据。",
+    "devOnlyFeature": "仅限开发环境",
+    "note": "提示:",
+    "noteContent": " 创建的测试用户／组织可在 Dev Login と local.db の user_profiles 中查看和初始化。",
+    "mfaPanel": {
+      "title": "MFA / SSO 验证",
+      "description": "在 .env.local 中设置 AUTH_MFA_REQUIRED_ROLES / AUTH_MFA_DUMMY_CODE / NEXT_PUBLIC_AUTH_SSO_PROVIDERS 后，可验证密码后的 OTP 输入及 IdP 标签显示。",
+      "mfaRoles": "MFA 适用角色: {roles}。",
+      "mfaDisabled": "当前未启用 MFA。",
+      "ssoProviders": "已配置的 IdP: {providers}。",
+      "ssoDisabled": "尚未注册 IdP。",
+      "loadingConfig": "加载中",
+      "scriptHint": "MFA 流程验证命令: npm run qa:auth-mfa",
+      "planTracking": "Plan Tracking #8 已搭建 MFA/SSO 的基础与日志。",
+      "linkLabel": "打开开发环境指南的 MFA 章节"
+    },
+    "selectRole": "选择角色",
+    "login": "以所选用户登录",
+    "loggingIn": "处理中",
+    "backToLogin": "返回常规登录",
+    "selectedRoleInfo": "已选角色",
+    "selectedRoleDescription": "以下凭据将自动填充，只需点击即可以该角色登录。",
+    "profileReset": {
+      "toggleLabel": "重置 Dev Login 配置文件",
+      "description": "清除已保存的角色和租户选择，以默认状态登录。"
+    },
+    "credentials": {
+      "email": "用于登录的邮箱地址",
+      "password": "开发用密码",
+      "hidden": "（自动填充）",
+      "autofillHint": "提交表单后将登录 Better Auth 并跳转至仪表盘。"
+    },
+    "userSelector": {
+      "title": "选择用户",
+      "description": "从所选租户内选择用户，以确认该角色和业务状态。",
+      "inputLabel": "邮箱地址",
+      "placeholder": "例: operator@example.com",
+      "hint": "请输入邮箱格式（如 dev+任意@example.com 等均可使用）。",
+      "selectLabel": "从已注册用户中选择",
+      "noneOption": "从候选中选择",
+      "loading": "加载中",
+      "loadError": "获取用户列表失败",
+      "empty": "此租户尚无用户。请先以 System Operator 登录并添加。",
+      "unknownName": "姓名未设置",
+      "emptyEmail": "邮箱地址未填写"
+    },
+    "errors": {
+      "emailRequired": "请输入邮箱地址",
+      "emailInvalid": "邮箱地址格式不正确",
+      "userRequired": "请选择要登录的用户",
+      "tenantInactive": "此租户已暂停，无法以租户内用户登录"
+    },
+    "superAdminEntry": {
+      "title": "Super Admin",
+      "description": "以不关联租户的平台管理员身份登录。",
+      "login": "以Super Admin登录"
+    },
+    "capabilities": {
+      "title": "主要验证要点"
+    },
+    "tenantSelector": {
+      "title": "选择租户",
+      "description": "先从已写入的企业样例中选择要确认的租户。",
+      "selectLabel": "目标租户",
+      "noTenantOption": "不关联租户登录 (Super Admin)",
+      "persistHint": "选择结果将保存在浏览器中，下次 Dev Login 时自动生效。",
+      "loading": "加载中",
+      "loadError": "获取租户列表失败。请刷新页面后重试。",
+      "reset": "清除选择",
+      "noTenantSummary": "此角色将不关联租户登录。页面跳转后请手动切换至所需租户。",
+      "selectionLog": "将以 {name} 作为目标租户执行 Dev Login。",
+      "labels": {
+        "plan": "套餐",
+        "status": "状态",
+        "id": "租户ID",
+        "phase": "阶段",
+        "users": "用户"
+      },
+      "userCount": "{count} 名用户",
+      "phaseLabels": {
+        "initial": "首次认证准备",
+        "surveillance": "持续运营",
+        "unset": "未设置"
+      },
+      "planLabels": {
+        "trial": "试用版",
+        "starter": "入门版",
+        "standard": "标准版",
+        "enterprise": "企业版"
+      },
+      "statusLabels": {
+        "active": "运行中",
+        "inactive": "已停止",
+        "suspended": "已暂停",
+        "cancelled": "已退订"
+      }
+    },
+    "permissionMatrix": {
+      "title": "权限覆盖",
+      "description": "可在登录前切换模块权限。变更内容仅应用于开发用测试用户。",
+      "reset": "恢复默认",
+      "keys": {
+        "can_manage_documents": {
+          "label": "文件管理",
+          "description": "允许创建和更新文件、类别及审批元数据。"
+        },
+        "can_manage_risks": {
+          "label": "风险管理",
+          "description": "允许管理风险登记、评估及处置措施。"
+        },
+        "can_manage_tasks": {
+          "label": "任务管理",
+          "description": "允许创建任务、更新进度及操作评论。"
+        },
+        "can_manage_audit": {
+          "label": "审核工作区",
+          "description": "允许操作审核计划、检查表及纠正要求。"
+        },
+        "can_manage_assets": {
+          "label": "信息资产",
+          "description": "允许管理信息资产台账及其附带元数据。"
+        },
+        "can_manage_controls": {
+          "label": "控制措施库",
+          "description": "允许管理控制措施目录及其与风险、处置措施的关联。"
+        }
+      },
+      "history": {
+        "title": "最近的阶段更新",
+        "subtitle": "ISMS 阶段变更历史",
+        "manage": "管理阶段设置",
+        "empty": "暂无历史记录。",
+        "source": {
+          "wizard": "向导",
+          "settings": "设置",
+          "system": "系统"
+        }
+      },
+      "profileReset": {
+        "toggleLabel": "将个人资料重置为初始值",
+        "description": "勾选后将忽略姓名、部门、语言等编辑内容，以场景默认值登录。通常请保持关闭。"
+      },
+      "user": {
+        "title": "我的工作区",
+        "subtitle": "一目了然地查看负责任务、必读文件、培训及改进建议。",
+        "sections": {
+          "tasks": {
+            "title": "负责任务",
+            "subtitle": "自己接下来需要处理的事项",
+            "cta": "打开任务看板",
+            "status": {
+              "todo": "未开始",
+              "inProgress": "进行中",
+              "review": "待评审"
+            },
+            "items": {
+              "policyReview": {
+                "title": "更新供应商安全检查表",
+                "category": "文件维护",
+                "due": "截止: 明天 09:00"
+              },
+              "incidentDrill": {
+                "title": "参加安全事件演练",
+                "category": "运行体系",
+                "due": "截止: 周五 14:00"
+              },
+              "awarenessSurvey": {
+                "title": "提交安全意识调查",
+                "category": "教育与宣贯",
+                "due": "已提交·待批准"
+              }
+            }
+          },
+          "documents": {
+            "title": "必读文件",
+            "subtitle": "已批准的方针",
+            "cta": "打开已批准文件",
+            "status": {
+              "pendingAck": "待确认",
+              "updated": "已更新",
+              "acknowledged": "已确认"
+            },
+            "items": {
+              "remoteWork": {
+                "title": "远程办公安全标准",
+                "version": "处理中",
+                "due": "请于11月11日前确认"
+              },
+              "vendorChecklist": {
+                "title": "供应商入驻检查表",
+                "version": "处理中",
+                "due": "请于11月15日前评审"
+              },
+              "codeOfConduct": {
+                "title": "行为准则 (FY25)",
+                "version": "处理中",
+                "due": "10月30日 已受理"
+              }
+            }
+          },
+          "training": {
+            "title": "培训模块",
+            "subtitle": "可在短时间内完成的教材",
+            "cta": "打开培训库",
+            "items": {
+              "phishing": {
+                "title": "钓鱼应对演练",
+                "due": "请于11月15日前完成"
+              },
+              "incident": {
+                "title": "安全事件指挥手册",
+                "due": "请于11月20日前完成"
+              },
+              "kaizen": {
+                "title": "持续改进微课程",
+                "due": "请于11月8日前完成"
+              }
+            }
+          },
+          "improvements": {
+            "title": "改进想法",
+            "subtitle": "分享小的发现",
+            "cta": "登记改进方案",
+            "highlight": "在 Weekly Sync 中务必确认 Scheduled / Draft 项目，使阻碍因素可视化。",
+            "status": {
+              "draft": "草稿",
+              "scheduled": "计划实施",
+              "shipped": "已完成"
+            },
+            "items": {
+              "handoffCleanup": {
+                "title": "整理交接模板",
+                "owner": "负责人: 佐藤 (信息系统)",
+                "eta": "计划: 11月12日"
+              },
+              "alertReduction": {
+                "title": "降低 SOC 通知噪音",
+                "owner": "负责人: 小林 (SecOps)",
+                "eta": "计划: 11月14日 草稿"
+              },
+              "awarenessPost": {
+                "title": "发布安全意识通讯",
+                "owner": "负责人: 西村 (GRC)",
+                "eta": "完成: 11月5日"
+              }
+            }
+          }
+        }
+      }
+    },
+    "securityReminder": "请勿在生产·验证环境中使用，必要时请通过 local DB 删除测试数据。",
+    "navigationHint": {
+      "title": "推荐的验证路线",
+      "body": "登录后请以 {route} 为起点，确认各角色的页面跳转流程。"
+    },
+    "scenarios": {
+      "title": "测试场景示例",
+      "body": "按以下顺序验证，可跨主要用例进行评估。",
+      "items": {
+        "setup": "以系统运营者身份确认组织设置／RLS 的行为",
+        "subscription": "以组织管理员身份演练计费、团队管理、文件登记",
+        "review": "以审批人／审核员身份确认评审类页面及权限防护"
+      }
+    },
+    "roles": {
+      "super_admin": {
+        "name": "超级管理员",
+        "summary": "创建·冻结所有租户并查看审计日志的场景",
+        "badge": "Super Admin",
+        "capabilities": [
+          "通过 Drizzle/libSQL API 验证租户的新建与初始化",
+          "通过锁定／解锁操作确认 audit_logs.scope=global 的记录",
+          "通过 API 获取所有租户统计，并结合未来的 Super Admin UI 进行评估"
+        ]
+      },
+      "system_operator": {
+        "name": "系统运营者",
+        "summary": "跨所有组织确认设置的场景",
+        "badge": "System Operator",
+        "capabilities": [
+          "确认多组织间的设置切换",
+          "验证 RLS 策略的行为及数据隔离",
+          "测试初始设置及基础数据导入"
+        ]
+      },
+      "org_admin": {
+        "name": "组织管理员",
+        "summary": "确认计费、用户管理及仪表盘",
+        "badge": "Org Admin",
+        "capabilities": [
+          "仪表盘统计·入门引导",
+          "用户／角色管理·订阅设置",
+          "跨文件、任务、风险进行操作"
+        ]
+      },
+      "user": {
+        "name": "普通用户",
+        "summary": "确认以负责任务为中心的工作流",
+        "badge": "Member",
+        "capabilities": [
+          "接收任务·更新进度",
+          "查看相关文件／风险",
+          "确认通知·评论功能"
+        ]
+      },
+      "auditor": {
+        "name": "审核员",
+        "summary": "确认审核计划与纠正措施的评审体验",
+        "badge": "Auditor",
+        "capabilities": [
+          "审核检查表·证据上传",
+          "管理纠正要求·跟踪验证任务",
+          "仪表盘的审核小组件"
+        ]
+      },
+      "approver": {
+        "name": "审批人",
+        "summary": "专注于确认文件审批流程",
+        "badge": "Approver",
+        "capabilities": [
+          "评审待批准文件",
+          "任务／风险的最终批准",
+          "确认通知·历史记录"
+        ]
+      }
+    }
+  },
+  "pricing": {
+    "title": "价格套餐",
+    "subtitle": "请选择最适合您组织的套餐",
+    "status": {
+      "trialing": "试用中",
+      "active": "生效",
+      "canceled": "已取消",
+      "incomplete": "未完成",
+      "incomplete_expired": "已过期",
+      "past_due": "付款逾期",
+      "unpaid": "未付款"
+    },
+    "testModeNotice": "正在以 Stripe 测试模式运行。结账将在模拟页面完成，不会产生实际扣款。"
+  },
+  "documents": {
+    "title": "文件管理",
+    "list_title": "文件列表",
+    "create_new": "新建",
+    "upload": {
+      "title": "上传文件",
+      "file": "文件",
+      "description": "说明",
+      "category": "类别",
+      "submit": "上传",
+      "cancel": "取消"
+    },
+    "search_placeholder": "搜索中",
+    "filter": {
+      "all": "全部",
+      "policy": "方针",
+      "procedure": "程序文件",
+      "template": "模板",
+      "record": "记录"
+    },
+    "status": {
+      "draft": "草稿",
+      "in_review": "评审中",
+      "approved": "已批准",
+      "obsolete": "已废止"
+    },
+    "table": {
+      "name": "文件名称",
+      "type": "类型",
+      "status": "状态",
+      "updated": "更新日期",
+      "version": "版本",
+      "actions": "操作"
+    },
+    "actions": {
+      "upload": "上传",
+      "fromTemplate": "从模板创建",
+      "createFolder": "创建文件夹",
+      "requestApproval": "发送审批申请",
+      "approve": "批准",
+      "exportWord": "Word格式",
+      "exportPdf": "PDF格式",
+      "viewHistory": "版本历史",
+      "downloadFile": "下载文件",
+      "deleteDocument": "删除文件"
+    },
+    "storage": {
+      "title": "存储用量",
+      "summary": "已使用 {used} / {limit}",
+      "loadFailed": "无法获取存储用量",
+      "nearLimitBadge": "需释放容量",
+      "healthyBadge": "剩余容量充足",
+      "nearLimitDescription": "已超过上限的80%。请整理不需要的文件，或考虑调整套餐。"
+    },
+    "folders": {
+      "title": "文件夹",
+      "create_new": "新建文件夹",
+      "root": "根目录",
+      "delete": "删除文件夹",
+      "confirmDelete": "确定要删除文件夹「{name}」吗？",
+      "createError": "创建文件夹失败",
+      "deleteError": "删除文件夹失败",
+      "newFolderPlaceholder": "请输入文件夹名称",
+      "nameRequired": "请输入文件夹名称"
+    },
+    "confirmations": {
+      "deleteDocument": "确定要删除此文件吗？"
+    },
+    "templates": {
+      "title": "ISMS模板",
+      "description": "可基于符合 ISO 27001 的模板创建文件",
+      "filters": {
+        "all": "全部"
+      },
+      "categories": {
+        "policy": "方针",
+        "procedure": "程序文件",
+        "form": "表单",
+        "checklist": "检查表"
+      },
+      "isoReference": "ISO参照: {value}",
+      "isoReferenceUnknown": "无ISO参照",
+      "useTemplate": "使用此模板",
+      "empty": "没有可用的模板",
+      "backToDocuments": "返回文件列表",
+      "errors": {
+        "loadFailed": "加载模板失败"
+      },
+      "toast": {
+        "success": "已从模板创建文件",
+        "error": "应用模板失败"
+      },
+      "modal": {
+        "title": "从模板创建文件",
+        "templateLabel": "已选模板: {name}",
+        "documentTitle": "文件标题",
+        "folderLabel": "保存目标文件夹",
+        "folderPlaceholder": "保存至根目录",
+        "submit": "创建文件",
+        "submitting": "提交中",
+        "cancel": "取消",
+        "errorTitleRequired": "请输入标题"
+      }
+    },
+    "editor": {
+      "title": "编辑文件",
+      "document_title": "文件标题",
+      "description": "说明",
+      "content": "内容",
+      "save": "保存",
+      "save_draft": "保存草稿",
+      "submit_review": "提交评审",
+      "approve": "批准",
+      "cancel": "取消",
+      "helper": "可通过 Markdown 工具栏插入标题、项目符号、检查表、表格等。请使用右上方的标签页切换预览以确认排版。",
+      "preview": {
+        "edit": "编辑",
+        "live": "编辑 + 预览",
+        "preview": "预览"
+      },
+      "templatePanelTitle": "从模板开始",
+      "templatePanelDescription": "选择模板后，标题、说明、类别及 Markdown 正文将自动填充。",
+      "templateRefresh": "刷新列表",
+      "templateLoading": "加载中",
+      "templateEmpty": "没有可用的模板",
+      "templateDescriptionFallback": "暂无说明",
+      "templateLoad": "加载此模板",
+      "templateSelected": "已加载",
+      "templateSelectedMessage": "已应用「{name}」模板",
+      "templateClear": "取消模板",
+      "templateLoadError": "获取模板列表失败",
+      "draftBanner": "已保存未完成的草稿（{updatedAt}）",
+      "draftBannerTimestampMissing": "日期时间不明",
+      "draftSelectionLabel": "选择已保存的草稿",
+      "draftUntitledFallback": "无标题草稿",
+      "draftActions": {
+        "restore": "恢复草稿",
+        "discard": "丢弃保存内容"
+      }
+    },
+    "errors": {
+      "loadFailed": "加载文件信息失败",
+      "createFailed": "创建文件失败",
+      "organizationMissing": "未找到组织信息",
+      "titleRequired": "标题为必填项",
+      "contentRequired": "正文为必填项",
+      "validationFailed": "输入内容超出字数限制",
+      "uploadFailed": "上传文件失败",
+      "deleteFailed": "删除文件失败",
+      "approvalRequestFailed": "发送审批申请失败",
+      "approvalFailed": "批准处理失败",
+      "downloadFailed": "下载文件失败",
+      "exportFailed": "导出文件失败"
+    },
+    "form": {
+      "category": "类别",
+      "folder": "文件夹",
+      "folderPlaceholder": "选择文件夹（可选）",
+      "loadingFolders": "加载中",
+      "contentPlaceholder": "请以 Markdown 格式输入正文",
+      "remaining": "剩余{count}字",
+      "saving": "保存中",
+      "submitting": "提交中"
+    },
+    "messages": {
+      "created": "文件已创建",
+      "updated": "文件已更新",
+      "deleted": "文件已删除",
+      "upload_success": "文件已上传",
+      "upload_error": "上传失败",
+      "draftSaved": "草稿已保存",
+      "submittedForReview": "已提交评审申请"
+    },
+    "allDocuments": "所有文件",
+    "folderDocuments": "文件夹内的文件",
+    "emptyState": "暂无文件",
+    "updatedAt": "更新于{date}",
+    "approval": {
+      "inReviewStatus": "待批准",
+      "stepLabel": "步骤{step}",
+      "status": {
+        "pending": "未批准",
+        "approved": "已批准",
+        "skipped": "已跳过",
+        "rejected": "已退回"
+      },
+      "modal": {
+        "title": "「{title}」的审批申请",
+        "description": "请为各步骤选择审批人。如设置为同一负责人，将自动跳过一级审批。",
+        "step1Label": "步骤1（一级审批）",
+        "step2Label": "步骤2（最终审批）",
+        "selectPlaceholder": "选择用户",
+        "hint": "审批人须属于同一组织。最终审批人请指定系统管理员或组织管理员。",
+        "submit": "发送审批申请",
+        "saving": "保存中",
+        "cancel": "取消"
+      },
+      "approveModal": {
+        "title": "批准「{title}」",
+        "commentLabel": "批准意见",
+        "commentPlaceholder": "可按需留下备注",
+        "optional": "意见为可选项。输入的内容将记录在审批历史中。",
+        "confirm": "批准",
+        "processing": "处理中",
+        "cancel": "取消"
+      },
+      "errors": {
+        "missingApprovers": "请选择步骤1和步骤2的审批人"
+      },
+      "progress": {
+        "title": "审批进度",
+        "stepComplete": "步骤 {current}/{total} 已完成",
+        "stepPending": "步骤 {current}/{total} 待批准",
+        "notSubmitted": "未提交",
+        "approved": "已批准",
+        "rejected": "已驳回"
+      }
+    },
+    "filters": {
+      "status": {
+        "label": "状态",
+        "all": "所有状态"
+      },
+      "department": {
+        "label": "部门",
+        "all": "所有部门",
+        "unassigned": "无所属"
+      },
+      "active": {
+        "status": "按状态筛选: {status}",
+        "department": "按部门筛选: {department}"
+      },
+      "clear": "清除筛选",
+      "clearAll": "清除所有筛选"
+    },
+    "categories": {
+      "general": "一般",
+      "policy": "方针",
+      "procedure": "程序文件",
+      "record": "记录",
+      "template": "模板"
+    },
+    "folder": {
+      "createTitle": "新文件夹",
+      "name": "文件夹名称",
+      "create": "创建",
+      "cancel": "取消",
+      "confirmDelete": "确定删除文件夹「{name}」吗？此操作无法撤销。"
+    },
+    "versionHistory": {
+      "modalTitle": "「{title}」的版本历史",
+      "createdAt": "创建于 {date}",
+      "createdBy": "由 {name} 创建",
+      "changesLabel": "变更内容",
+      "download": "下载",
+      "downloading": "加载中",
+      "noFile": "无文件",
+      "empty": "暂无版本历史",
+      "close": "关闭",
+      "loadFailed": "获取版本历史失败",
+      "downloadFailed": "下载版本文件失败"
+    }
+  },
+  "nav": {
+    "features": "功能",
+    "pricing": "价格",
+    "testimonials": "客户案例",
+    "faq": "FAQ"
+  },
+  "landing": {
+    "hero": {
+      "title": "让ISO27001认证",
+      "titleHighlight": "更简单",
+      "subtitle": "ISMS Pilot帮助企业贯通首次认证准备与认证后的年度持续运行。",
+      "description": "经营者和管理负责人可以查看准备状况、未处理事项、待审批事项和证据缺口，减少对单一负责人经验的依赖。",
+      "cta": {
+        "startTrial": "14天免费试用",
+        "watchDemo": "观看演示",
+        "trial": "14天免费试用",
+        "features": "查看功能",
+        "newCertification": "首次申请认证",
+        "ongoingOperation": "已认证，持续运营中"
+      },
+      "trustIndicators": {
+        "secureEnvironment": "安全可靠的环境",
+        "companiesDeployed": "100余家企业的应用实践",
+        "customerSatisfaction": "客户满意度95%"
+      },
+      "badge": "支持ISO/IEC 27001:2022",
+      "demo": {
+        "constructionProgress": "构建进度",
+        "approvedDocuments": "已批准文件",
+        "daysUntilAudit": "距下次审核",
+        "daysUntilAuditValue": "45天"
+      }
+    },
+    "features": {
+      "title": "为什么选择ISMS Pilot",
+      "subtitle": "让经营者和管理负责人更容易掌握准备与运行状况",
+      "learnMore": "了解更多",
+      "allFeatures": "所有套餐均可使用全部功能",
+      "list": {
+        "documentManagement": {
+          "title": "智能文件管理",
+          "description": "通过ISMS文件模板与版本管理，始终保持文件最新状态，并支持导出为Word/Excel格式。"
+        },
+        "riskAssessment": {
+          "title": "直观的风险评估",
+          "description": "拖放操作即可实现风险可视化，处置状态一目了然。"
+        },
+        "taskManagement": {
+          "title": "任务自动化",
+          "description": "自动生成认证所需任务，通过截止日期管理与提醒功能避免遗漏。"
+        },
+        "auditSupport": {
+          "title": "审核应对支持",
+          "description": "基于ISO27001要求的检查清单，高效完成审核准备。"
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "3步开启ISMS构建",
+      "steps": {
+        "setup": {
+          "number": "1",
+          "title": "登记组织信息",
+          "description": "根据企业规模与行业自动匹配最合适的模板"
+        },
+        "build": {
+          "number": "2",
+          "title": "编制文件、评估风险",
+          "description": "按照引导编制所需文件并实施风险评估"
+        },
+        "maintain": {
+          "number": "3",
+          "title": "持续改进",
+          "description": "通过PDCA循环，支持认证的持续维持"
+        }
+      }
+    },
+    "pricing": {
+      "title": "简单透明的价格体系",
+      "subtitle": "请根据企业规模选择最合适的套餐",
+      "popular": "热门套餐",
+      "allPlansInclude": "所有套餐均包含：SSL证书、99.9%可用性SLA、24/7监控",
+      "cancelAnytime": "可随时取消",
+      "securePayment": "安全支付",
+      "moneyBack": "退款保障",
+      "trial": {
+        "name": "免费试用",
+        "price": "¥0",
+        "duration": "14天",
+        "features": [
+          "可使用全部功能",
+          "最多5个用户",
+          "邮件支持",
+          "无需信用卡"
+        ],
+        "cta": "立即开始"
+      },
+      "starter": {
+        "name": "入门套餐",
+        "price": "¥30,000",
+        "duration": "/月",
+        "features": [
+          "最多10个用户",
+          "文件管理与风险评估",
+          "任务管理",
+          "邮件支持",
+          "月度报告"
+        ],
+        "cta": "开始试用"
+      },
+      "standard": {
+        "name": "标准套餐",
+        "price": "¥80,000",
+        "duration": "/月",
+        "popular": true,
+        "features": [
+          "最多50个用户",
+          "可使用全部功能",
+          "优先支持",
+          "支持定制",
+          "API集成"
+        ],
+        "cta": "开始试用"
+      },
+      "enterprise": {
+        "name": "企业版",
+        "price": "请联系我们",
+        "duration": "",
+        "features": [
+          "用户数不限",
+          "专属支持",
+          "SLA保障",
+          "支持本地化部署",
+          "定制开发"
+        ],
+        "cta": "联系我们"
+      }
+    },
+    "testimonials": {
+      "title": "客户的声音",
+      "subtitle": "让经营者和管理负责人更容易掌握准备与运行状况",
+      "companies": "部分客户企业",
+      "testimonial1": {
+        "quote": "准备状况和缺口变得清晰后，与相关人员的确认更容易推进。",
+        "author": "山田太郎",
+        "role": "IT部门负责人",
+        "company": "示例科技股份有限公司"
+      },
+      "testimonial2": {
+        "quote": "文件、风险、审核和纠正措施可以在同一流程中确认，年度运行更容易规划。",
+        "author": "佐藤花子",
+        "role": "信息安全负责人",
+        "company": "示例软件股份有限公司"
+      }
+    },
+    "valueProps": {
+      "title": "为什么选择ISMS Pilot",
+      "item1": {
+        "title": "无需专业知识",
+        "description": "团队可以在补充ISO27001知识的同时，分步骤整理所需准备和运行状况"
+      },
+      "item2": {
+        "title": "降低成本",
+        "description": "减少对外部支持的过度依赖，让信息和证据在公司内部可见"
+      },
+      "item3": {
+        "title": "缺口可视化",
+        "description": "连接文件、风险、审核和纠正措施，更容易发现下一步需要确认的缺口"
+      }
+    },
+    "process": {
+      "title": "3步轻松开始",
+      "subtitle": "适用于首次认证准备和认证后的持续运行",
+      "support": "专属支持团队全程协助",
+      "step1": {
+        "title": "创建账户",
+        "time": "5分钟",
+        "description": "输入组织信息，开启14天免费试用"
+      },
+      "step2": {
+        "title": "构建ISMS",
+        "time": "3-6个月",
+        "description": "按照引导编制文件、实施风险评估与内部审核"
+      },
+      "step3": {
+        "title": "准备审核",
+        "time": "审核期间",
+        "description": "将所需文件与记录整理为审核准备资料包，用于缺口确认和相关人员评审"
+      }
+    },
+    "faq": {
+      "title": "常见问题",
+      "stillHaveQuestions": "还有其他疑问吗？",
+      "contactSupport": "联系支持团队",
+      "items": {
+        "q1": {
+          "question": "获得ISO27001认证需要多长时间？",
+          "answer": "时间因企业规模和现状而异。ISMS Pilot可将适用范围、文件、风险、控制措施和审核准备放在同一流程中整理，帮助发现准备缺口。"
+        },
+        "q2": {
+          "question": "不依赖咨询顾问真的能获得认证吗？",
+          "answer": "ISMS Pilot会让必要信息、审批状态和缺失证据更容易查看，帮助团队自行推进准备。但它不保证取得认证或被审核机构受理。"
+        },
+        "q3": {
+          "question": "可以与现有的文件管理系统集成吗？",
+          "answer": "支持Word/Excel格式的导入与导出。标准套餐及以上版本还支持API集成。"
+        },
+        "q4": {
+          "question": "安全性有保障吗？",
+          "answer": "数据经过加密，并通过基于角色的访问控制进行保护。导出功能也可用于自社备份和解约时的数据带出。"
+        }
+      }
+    },
+    "cta": {
+      "title": "立即开始构建您的ISMS",
+      "subtitle": "通过14天免费试用，体验全部功能",
+      "button": "免费开始",
+      "noCredit": "无需登记信用卡",
+      "noSetupFee": "免初装费",
+      "cancelAnytime": "可随时取消",
+      "support247": "24/7支持"
+    },
+    "footer": {
+      "tagline": "让成长型企业的ISO27001认证更简单",
+      "product": {
+        "title": "产品",
+        "features": "功能",
+        "pricing": "价格",
+        "demo": "演示"
+      },
+      "company": {
+        "title": "公司信息",
+        "about": "公司简介",
+        "contact": "联系我们",
+        "privacy": "隐私政策",
+        "terms": "服务条款"
+      },
+      "support": {
+        "title": "支持",
+        "help": "帮助中心",
+        "docs": "文档",
+        "status": "系统状态"
+      },
+      "copyright": "© 2025 ISMS Manager. All rights reserved.",
+      "privacyPolicy": "隐私政策",
+      "termsOfService": "服务条款",
+      "cookiePolicy": "Cookie政策"
+    }
+  },
+  "risks": {
+    "title": "风险评估",
+    "description": "识别、评估和管理组织的风险",
+    "search": "搜索中",
+    "filterByCategory": "按类别筛选",
+    "filterByStatus": "按状态筛选",
+    "filterByDepartment": "按部门筛选",
+    "filterByPeriod": "按期间筛选",
+    "filterDepartmentUnassigned": "无所属",
+    "filterDepartmentActive": "按部门筛选: {department}",
+    "clearDepartmentFilter": "清除部门筛选",
+    "activeFilters": {
+      "status": "按状态筛选: {status}",
+      "clear": "清除筛选"
+    },
+    "periodTag": {
+      "all": "全部期间",
+      "clear": "清除期间筛选"
+    },
+    "emptyState": "尚未登记风险",
+    "emptyStateForPeriod": "{period} 内没有符合条件的风险",
+    "emptyStateForMatrix": "影响程度 {impact} × 可能性 {likelihood} 没有符合条件的风险",
+    "likelihood": "可能性",
+    "impact": "影响程度",
+    "riskLevel": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "levels": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "list": {
+      "title": "风险列表",
+      "newRisk": "登记新风险",
+      "search": "搜索中",
+      "filterByCategory": "按类别筛选",
+      "filterByStatus": "按状态筛选",
+      "backToList": "返回列表",
+      "columns": {
+        "title": "风险标题",
+        "category": "类别",
+        "impact": "影响程度",
+        "likelihood": "可能性",
+        "riskScore": "风险分值",
+        "status": "状态",
+        "owner": "管理责任人",
+        "actions": "操作"
+      },
+      "status": {
+        "identified": "已识别",
+        "analyzing": "分析中",
+        "treating": "处置中",
+        "monitoring": "监控中",
+        "closed": "处置完成"
+      }
+    },
+    "actions": {
+      "newRisk": "登记新风险",
+      "treatments": "处置措施",
+      "edit": "编辑",
+      "delete": "删除",
+      "addTreatment": "添加处置措施",
+      "exportExcel": "导出Excel",
+      "exportPdf": "PDF报告",
+      "exporting": "导出中"
+    },
+    "messages": {
+      "exportFailed": "导出失败。请稍后重试。"
+    },
+    "status": {
+      "identified": "已识别",
+      "analyzing": "分析中",
+      "treating": "处置中",
+      "monitoring": "监控中",
+      "closed": "处置完成"
+    },
+    "columns": {
+      "title": "风险标题",
+      "category": "类别",
+      "impact": "影响程度",
+      "likelihood": "可能性",
+      "riskScore": "风险分值",
+      "status": "状态",
+      "owner": "管理责任人",
+      "actions": "操作"
+    },
+    "riskMatrix": {
+      "title": "风险矩阵",
+      "description": "每个单元格上方为风险分值（影响程度×可能性），括号内为对应风险数量。选择单元格后，列表和导出条件将相应筛选。",
+      "legend": {
+        "label": "图例",
+        "high": "高风险（15〜25）",
+        "medium": "中风险（8〜14）",
+        "low": "低风险（1〜7）"
+      },
+      "banner": "正在显示影响程度 {impact} × 可能性 {likelihood} 的风险（{count} 项）",
+      "clear": "清除条件",
+      "cellLabel": "影响程度 {impact} × 可能性 {likelihood}: {count} 项"
+    },
+    "detail": {
+      "riskDetails": "风险详情",
+      "lastUpdated": "最后更新",
+      "riskAssessment": "风险评估",
+      "treatments": "处置措施",
+      "treatmentStatus": "处置状况",
+      "treatmentCount": "处置措施 {count} 项",
+      "noTreatments": "尚未登记处置措施",
+      "backToList": "返回风险列表",
+      "detailIntro": "确认风险的背景及处置状况，梳理优先级。",
+      "noDescription": "尚未登记详细说明",
+      "unassigned": "未分配",
+      "assets": {
+        "title": "相关资产",
+        "empty": "没有关联的资产。",
+        "classification": "分类",
+        "criticality": "重要程度"
+      }
+    },
+    "operationalReadiness": {
+      "statuses": {
+        "ready": "已就绪",
+        "needs_attention": "需确认",
+        "not_ready": "未就绪"
+      },
+      "residualAcceptance": {
+        "title": "剩余风险接受",
+        "description": "确认选择接受的风险是否已具备理由、责任人及完成状态。",
+        "acceptedTreatments": "接受数量",
+        "readyAcceptances": "有证据",
+        "gaps": {
+          "no_acceptance": "没有记录为接受的处置措施。",
+          "missing_owner": "未设置接受决定的责任人。",
+          "missing_reason": "接受理由未记录在处置内容中。",
+          "missing_review_due_date": "未设置剩余风险的再评审日期。",
+          "not_completed": "接受决定尚未处于完成状态。"
+        }
+      },
+      "evidenceVault": {
+        "title": "Evidence Vault 准备状况",
+        "description": "根据风险处置措施与控制措施的关联，确认是否可用于提交审核的证据包。",
+        "linkedControls": "控制措施",
+        "treatmentsWithControls": "已关联的处置措施",
+        "gaps": {
+          "no_treatments": "尚未登记风险处置措施。",
+          "no_controls": "未关联作为证据包主轴的控制措施。",
+          "unlinked_treatments": "存在未关联控制措施的处置措施。"
+        }
+      }
+    },
+    "errors": {
+      "loadFailed": "加载风险失败",
+      "createFailed": "创建风险失败",
+      "updateFailed": "更新风险失败",
+      "assetUpdateFailed": "保存相关资产失败",
+      "taskUpdateFailed": "保存相关任务失败",
+      "notFound": "未找到风险"
+    },
+    "gapAnalysis": {
+      "title": "差距分析",
+      "description": "查看风险按类别·状态的分布，掌握处置的遗漏情况。",
+      "exportTitle": "风险差距分析",
+      "exportCsv": "下载CSV",
+      "exportPdf": "下载PDF",
+      "columns": {
+        "category": "类别",
+        "status": "状态",
+        "count": "数量"
+      },
+      "summary": {
+        "title": "汇总",
+        "total": "总数",
+        "open": "未处置",
+        "treating": "处置中"
+      },
+      "empty": "没有可显示的风险"
+    },
+    "form": {
+      "title": "风险信息",
+      "editRisk": "编辑风险",
+      "riskTitle": "风险标题",
+      "description": "风险详细说明",
+      "category": "类别",
+      "impact": "影响程度",
+      "likelihood": "可能性",
+      "riskScore": "风险分值",
+      "owner": "管理责任人",
+      "identifiedDate": "识别日期",
+      "status": "状态",
+      "selectPlaceholder": "请选择",
+      "save": "保存",
+      "saving": "保存中",
+      "cancel": "取消",
+      "impactLevels": {
+        "1": "轻微",
+        "2": "小",
+        "3": "中",
+        "4": "大",
+        "5": "重大"
+      },
+      "likelihoodLevels": {
+        "1": "罕见",
+        "2": "低",
+        "3": "中",
+        "4": "高",
+        "5": "极高"
+      },
+      "assets": {
+        "title": "相关信息资产",
+        "search": "搜索资产",
+        "empty": "没有可用的资产。",
+        "selectedCount": "已选择: {count}项",
+        "classification": "分类",
+        "criticality": "重要程度",
+        "noAssets": "尚未登记资产。",
+        "manageLink": "前往资产管理",
+        "owner": "责任人",
+        "department": "部门"
+      }
+    },
+    "treatment": {
+      "title": "风险处置措施",
+      "add": "添加处置措施",
+      "strategy": "处置方针",
+      "type": "处置方针",
+      "description": "处置内容",
+      "responsible": "实施责任人",
+      "dueDate": "截止日期",
+      "targetDate": "目标日期",
+      "status": "进度状况",
+      "cost": "预算",
+      "actualCost": "实际费用",
+      "effectiveness": "有效性评价",
+      "residualReviewDueDate": "剩余风险再评审日期",
+      "strategies": {
+        "mitigate": "缓解",
+        "reduce": "降低",
+        "transfer": "转移",
+        "accept": "接受",
+        "avoid": "规避"
+      },
+      "types": {
+        "avoid": "规避",
+        "reduce": "降低",
+        "transfer": "转移",
+        "accept": "接受"
+      },
+      "statuses": {
+        "planned": "计划中",
+        "in_progress": "实施中",
+        "completed": "已完成",
+        "cancelled": "已中止"
+      },
+      "controls": {
+        "title": "相关控制措施",
+        "description": "选择ISO控制措施，明确其与处置措施的一致性。",
+        "searchPlaceholder": "搜索中",
+        "allCategories": "所有类别",
+        "loading": "加载中",
+        "noResults": "未找到控制措施",
+        "loadError": "获取控制措施失败。",
+        "selectedCount": "已选择: {count} 项",
+        "assignedTitle": "已关联的控制措施",
+        "unknown": "名称未设置",
+        "editLinks": "编辑控制措施关联",
+        "saveLinks": "保存关联",
+        "saving": "保存中",
+        "cancelEdit": "取消",
+        "updateError": "更新控制措施关联失败。"
+      },
+      "residualApproval": {
+        "title": "剩余风险接受的批准",
+        "statusLabel": "批准状态",
+        "submit": "提交接受审批申请",
+        "submitting": "提交中...",
+        "rejectionReason": "驳回理由: {reason}",
+        "statuses": {
+          "draft": "未申请",
+          "submitted": "待批准",
+          "approved": "已批准",
+          "rejected": "已驳回"
+        }
+      },
+      "markCompleted": "标记为完成",
+      "completing": "完成处理中..."
+    },
+    "edit": {
+      "tabs": {
+        "aria": "风险编辑标签页",
+        "details": "基本信息",
+        "assets": "相关资产",
+        "tasks": "相关任务"
+      },
+      "assets": {
+        "description": "请选择要关联到此风险的信息资产并保存。",
+        "save": "保存相关资产",
+        "saving": "保存中"
+      },
+      "tasks": {
+        "description": "选择与风险处置相关的业务任务。1个任务只能关联1个风险。",
+        "searchPlaceholder": "搜索中",
+        "empty": "没有可显示的任务。",
+        "locked": "已关联其他风险，无法选择。",
+        "helper": "勾选并保存后，任务的关联风险将被更新。",
+        "save": "保存相关任务",
+        "saving": "保存中"
+      }
+    },
+    "importCsv": "导入CSV"
+  },
+  "tasks": {
+    "title": "任务管理",
+    "list": {
+      "newTask": "新建任务",
+      "editTask": "编辑任务",
+      "search": "搜索中",
+      "view": {
+        "kanban": "看板",
+        "list": "列表",
+        "calendar": "日历",
+        "gantt": "甘特图"
+      },
+      "filters": {
+        "assignee": "负责人",
+        "status": "状态",
+        "priority": "优先级",
+        "category": "类别"
+      },
+      "activeFilters": {
+        "status": "按状态筛选：{status}",
+        "overdue": "仅显示逾期任务",
+        "personal": "仅显示我负责的任务",
+        "tag": "按标签筛选：{tag}",
+        "clear": "清除筛选"
+      },
+      "status": {
+        "todo": "未开始",
+        "in_progress": "进行中",
+        "review": "评审中",
+        "done": "已完成",
+        "cancelled": "已取消"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "紧急"
+      },
+      "columns": {
+        "title": "任务名称",
+        "owner": "责任人",
+        "assignee": "负责人",
+        "completionCriteria": "完成条件",
+        "status": "状态",
+        "priority": "优先级",
+        "dueDate": "截止日期",
+        "progress": "进度",
+        "actions": "操作"
+      },
+      "noTasks": "暂无任务",
+      "noCompletionCriteria": "未设置完成条件",
+      "noDueDate": "未设置截止日期",
+      "exportCsv": "导出任务CSV",
+      "exportingCsv": "正在导出CSV",
+      "exportFailed": "任务CSV导出失败。请稍后重试。",
+      "calendar": {
+        "today": "今天",
+        "previousMonth": "上个月",
+        "nextMonth": "下个月",
+        "totalTasks": "当前显示任务数：{count}",
+        "empty": "暂无任务",
+        "unscheduledHeading": "未设置截止日期的任务"
+      },
+      "gantt": {
+        "summary": "显示期间：{from} 至 {to}（含截止日期的任务：{count}个）",
+        "taskColumn": "任务",
+        "noScheduledTasks": "没有可在甘特图中显示的含截止日期的任务",
+        "unscheduledHeading": "未设置截止日期的任务",
+        "legend": {
+          "today": "今天"
+        }
+      }
+    },
+    "form": {
+      "title": "任务详情",
+      "editTask": "编辑任务",
+      "helperText": "请输入任务的基本信息及相关资源。",
+      "taskTitle": "任务名称",
+      "description": "说明",
+      "category": "类别",
+      "assignee": "负责人",
+      "reporter": "创建者",
+      "status": "状态",
+      "priority": "优先级",
+      "dueDate": "截止日期",
+      "estimatedHours": "预计工时",
+      "actualHours": "实际工时",
+      "progress": "进度",
+      "relatedDocument": "相关文件",
+      "relatedRisk": "相关风险",
+      "tags": "标签",
+      "selectPlaceholder": "请选择",
+      "none": "无",
+      "save": "保存",
+      "saving": "保存中",
+      "cancel": "取消"
+    },
+    "detail": {
+      "overview": "概览",
+      "activity": "动态",
+      "comments": "评论",
+      "attachments": "附件",
+      "history": "变更历史",
+      "subtasks": "子任务",
+      "addComment": "添加评论",
+      "addAttachment": "添加附件",
+      "noComments": "暂无评论",
+      "noAttachments": "暂无附件",
+      "noHistory": "暂无变更历史"
+    },
+    "subtasks": {
+      "newPlaceholder": "请输入子任务标题",
+      "addButton": "添加子任务",
+      "creating": "创建中",
+      "empty": "暂无子任务",
+      "deleting": "删除中",
+      "confirmDelete": "确定删除该子任务吗？"
+    },
+    "tagEditor": {
+      "editButton": "编辑标签",
+      "loading": "加载中",
+      "selectedTitle": "已选标签",
+      "noSelected": "尚未设置标签",
+      "availableTitle": "可用标签",
+      "noAvailable": "没有可添加的标签",
+      "moveUp": "上移",
+      "moveDown": "下移",
+      "remove": "移除",
+      "createTitle": "创建新标签",
+      "namePlaceholder": "请输入标签名称",
+      "colorLabel": "颜色",
+      "createButton": "添加标签",
+      "creating": "创建中"
+    },
+    "actions": {
+      "edit": "编辑",
+      "delete": "删除",
+      "duplicate": "复制",
+      "changeStatus": "更改状态",
+      "assign": "分配负责人"
+    },
+    "confirmDelete": "确定要删除该任务吗？",
+    "confirmDeleteAttachment": "确定要删除该附件吗？",
+    "errors": {
+      "loadFailed": "任务加载失败",
+      "createFailed": "任务创建失败",
+      "updateFailed": "任务更新失败",
+      "deleteFailed": "任务删除失败",
+      "uploadFailed": "上传失败",
+      "notFound": "未找到任务",
+      "loadTags": "标签加载失败",
+      "saveTags": "标签保存失败",
+      "createTag": "标签创建失败",
+      "createSubtask": "子任务创建失败",
+      "updateSubtask": "子任务更新失败",
+      "deleteSubtask": "子任务删除失败",
+      "permissionDenied": "您没有执行此操作的权限"
+    },
+    "importCsv": "CSV导入"
+  },
+  "audit": {
+    "title": "审核管理",
+    "checklist": {
+      "title": "审核检查清单",
+      "description": "依据 ISO 27001 要求确认审核项目，并在同一流程中管理证据、发现项、不符合项和下一步操作。",
+      "loading": "加载中",
+      "planSummary": "请在确认审核团队、负责人分配和证据有无的同时更新处理状态。",
+      "empty": "暂无可显示的检查清单。请先选择审核计划，并从 ISO 要求生成检查项。",
+      "filters": {
+        "assignee": "按负责人筛选",
+        "all": "全部"
+      },
+      "fields": {
+        "status": "状态",
+        "result": "判定结果",
+        "resultPlaceholder": "选择结果",
+        "assignee": "负责人",
+        "assigneePlaceholder": "选择负责人",
+        "evidence": "证据备注",
+        "findings": "发现与意见",
+        "evidenceDescriptionPlaceholder": "证据补充说明（可选）",
+        "ncType": "不符合项类型",
+        "ncDescription": "不符合项详情"
+      },
+      "sections": {
+        "evidence": "证据文件",
+        "evidenceDescription": "上传相关证据文件，并填写后续可复核的补充说明。",
+        "nonconformity": "登记不符合项",
+        "nonconformityDescription": "登记与检查清单关联的不符合项，并启动跟踪验证。"
+      },
+      "status": {
+        "not_started": "未开始",
+        "in_progress": "进行中",
+        "completed": "已完成"
+      },
+      "result": {
+        "conformity": "符合",
+        "minor_nc": "轻微不符合",
+        "major_nc": "严重不符合",
+        "observation": "观察项",
+        "not_applicable": "不适用"
+      },
+      "ncType": {
+        "major": "严重不符合项",
+        "minor": "轻微不符合项"
+      },
+      "ncStatus": {
+        "open": "未处理",
+        "in_progress": "处理中",
+        "resolved": "已纠正",
+        "verified": "已验证",
+        "closed": "已完成"
+      },
+      "actions": {
+        "backToPlan": "返回审核计划",
+        "save": "保存",
+        "saving": "保存中",
+        "uploadEvidence": "上传证据",
+        "uploading": "加载中",
+        "viewEvidence": "查看",
+        "deleteEvidence": "删除",
+        "createNc": "登记不符合项",
+        "creatingNc": "创建中",
+        "view": "查看检查清单"
+      },
+      "labels": {
+        "manualItem": "手动添加项",
+        "unknownUser": "未设置负责人",
+        "noDescription": "无说明"
+      },
+      "toast": {
+        "loadFailed": "检查清单加载失败。",
+        "saveSuccess": "检查清单已保存。",
+        "saveFailed": "检查清单保存失败。",
+        "fileRequired": "请选择要上传的文件。",
+        "profileRequired": "上传证据需要用户信息。",
+        "evidenceUploaded": "证据已上传。",
+        "evidenceFailed": "证据上传失败。",
+        "evidenceDeleted": "证据已删除。",
+        "evidenceDeleteFailed": "证据删除失败。",
+        "ncDescriptionRequired": "请输入不符合项内容。",
+        "ncCreated": "不符合项已登记。",
+        "ncFailed": "不符合项登记失败。",
+        "evidenceOpenFailed": "证据文件获取失败。"
+      },
+      "view": "查看审核检查清单"
+    },
+    "stats": {
+      "totalPlans": "审核计划总数",
+      "inProgress": "实施中",
+      "totalNonconformities": "不符合项",
+      "openNCs": "未解决的不符合项",
+      "checklistCompletion": "检查清单完成率",
+      "checklistCompletionHint": "已完成 {completed} / {total} 项",
+      "openCorrectiveActions": "处理中的纠正措施",
+      "overdueCorrectiveActions": "已逾期：{count} 项",
+      "overdueNonconformities": "已逾期：{count} 项",
+      "periodHeaderTitle": "当前选择的审核期间",
+      "periodHeaderAll": "全部期间",
+      "progressBarAriaLabel": "显示审核状态占比的进度条",
+      "followUpSummary": "跟踪验证状态",
+      "nonconformitySummary": "不符合项状态分布"
+    },
+    "plans": {
+      "title": "审核计划",
+      "description": "将内部审核计划、实施状况、报告、跟进、单步审批和下一步操作作为年度运行流程进行管理。",
+      "new": "新建审核计划",
+      "list": "审核计划列表",
+      "noPlan": "尚未登记审核计划。请先确定审核范围、负责人和计划日期并创建首个计划",
+      "emptyStateForPeriod": "{period} 暂无登记的审核计划。请切换期间或创建新的审核计划",
+      "filters": {
+        "all": "全部",
+        "period": "按年度/季度筛选"
+      },
+      "columns": {
+        "title": "审核名称",
+        "type": "类型",
+        "plannedDate": "计划日期",
+        "leadAuditor": "审核组长",
+        "progress": "进度",
+        "followUp": "跟踪验证",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "progress": {
+        "checklistCount": "{completed}/{total} 项检查清单",
+        "ariaLabel": "{statusDescription}。{completed}/{total} 项检查清单已完成（{rate}%）。"
+      },
+      "followUpStatus": {
+        "labels": {
+          "completed": "纠正完成",
+          "on_hold": "搁置中",
+          "reopened": "存在再次发现"
+        },
+        "descriptions": {
+          "completed": "所有发现项均已纠正",
+          "on_hold": "实施中的审核存在未完成的发现项",
+          "reopened": "完成后仍有未完成的发现项，需要跟踪验证"
+        },
+        "openCount": "未完成的发现项：{count} 项"
+      },
+      "status": {
+        "planning": "计划中",
+        "scheduled": "已排期",
+        "in_progress": "实施中",
+        "completed": "已完成",
+        "cancelled": "已中止"
+      },
+      "activeFilters": {
+        "status": "按状态筛选：{status}",
+        "period": "正在按 {period} 筛选",
+        "clear": "清除筛选"
+      }
+    },
+    "requirements": {
+      "title": "ISO 要求管理",
+      "description": "梳理 ISO/IEC 27001 要求，为审核计划准备检查清单。",
+      "loading": "加载中",
+      "generate": {
+        "title": "批量生成检查清单",
+        "description": "选择适用的要求，向审核计划添加检查项。"
+      },
+      "listTitle": "要求列表",
+      "fields": {
+        "select": "纳入生成范围",
+        "plan": "目标审核计划",
+        "planPlaceholder": "请选择审核计划"
+      },
+      "actions": {
+        "updating": "更新中",
+        "markNotApplicable": "设为不适用",
+        "markApplicable": "设为适用",
+        "generating": "生成中",
+        "generate": "生成检查清单"
+      },
+      "toast": {
+        "loadFailed": "要求加载失败。",
+        "markNotApplicable": "已将该要求保存为不适用。",
+        "markApplicable": "已将该要求保存为适用。",
+        "updateFailed": "适用性更新失败。",
+        "planRequired": "请先选择审核计划。",
+        "requirementRequired": "请至少选择 1 项要生成的要求。",
+        "generateSuccess": "检查清单已生成。",
+        "generateFailed": "检查清单生成失败。"
+      }
+    },
+    "nonconformities": {
+      "title": "不符合项管理",
+      "description": "跟踪审核发现项的原因、纠正措施、再发防止和完成审批，减少处理遗漏。",
+      "list": "打开不符合项列表",
+      "loading": "加载中",
+      "empty": "暂无可显示的不符合项。若在审核检查清单中发现问题，请记录原因、处理期限和完成审批人。",
+      "filters": {
+        "title": "筛选",
+        "status": "状态",
+        "type": "类型",
+        "all": "全部"
+      },
+      "status": {
+        "open": "未处理",
+        "in_progress": "处理中",
+        "resolved": "已纠正",
+        "verified": "已验证",
+        "closed": "已完成"
+      },
+      "type": {
+        "major": "严重不符合项",
+        "minor": "轻微不符合项"
+      },
+      "labels": {
+        "relatedChecklist": "关联检查清单：{clause}"
+      },
+      "capaBoundary": {
+        "title": "CAPA / 审核不符合项",
+        "description": "不同于普通任务，作为审核不符合项与纠正措施，管理责任人、原因、预防再发和单步完成批准。",
+        "ncNumber": "不符合项编号"
+      },
+      "followUpSummary": {
+        "title": "有效性确认跟踪验证",
+        "empty": "暂无与该不符合项关联的跟踪验证。",
+        "status": "状态：{status}",
+        "dueDate": "截止日期：{date}",
+        "assignee": "负责人：{name}",
+        "createTitle": "为该 CAPA 添加有效性确认"
+      },
+      "fields": {
+        "status": "状态",
+        "dueDate": "纠正期限",
+        "resolutionDate": "纠正完成日期",
+        "verificationDate": "验证日期",
+        "responsible": "责任人",
+        "rootCause": "原因",
+        "correctiveAction": "纠正方针",
+        "preventiveAction": "预防再发"
+      },
+      "actions": {
+        "save": "保存更新",
+        "saving": "保存中"
+      },
+      "toast": {
+        "loadFailed": "不符合项加载失败。",
+        "saveSuccess": "不符合项信息已更新。",
+        "saveFailed": "不符合项更新失败。"
+      },
+      "correctiveActions": {
+        "title": "纠正措施",
+        "count": "登记数：{count}",
+        "empty": "暂无登记的纠正措施。审核中发现不符合项后，请记录原因、措施、期限、完成审批人和需确认的证据。",
+        "fields": {
+          "description": "处理内容",
+          "status": "状态",
+          "plannedDate": "计划实施日期",
+          "completionDate": "完成日期",
+          "responsible": "实施责任人",
+          "reviewer": "完成确认人",
+          "effectivenessReview": "有效性确认",
+          "approvalState": "完成批准状态"
+        },
+        "capaSummary": {
+          "badge": "CAPA 纠正措施",
+          "description": "作为与审核不符合项关联的纠正措施，单步完成批准后将不符合项标记为已验证。",
+          "closureApprovalPending": "待提交完成审批",
+          "verified": "CISO 已确认",
+          "inProgress": "纠正措施进行中"
+        },
+        "status": {
+          "planned": "计划中",
+          "in_progress": "实施中",
+          "completed": "已完成",
+          "verified": "已验证"
+        },
+        "actions": {
+          "create": "添加纠正措施",
+          "creating": "创建中",
+          "save": "保存更新",
+          "saving": "保存中",
+          "submitClosure": "申请完成批准",
+          "submittingClosure": "申请中"
+        },
+        "new": {
+          "title": "登记新的纠正措施",
+          "description": "请输入纠正措施的内容、期限和用于完成确认的证据。",
+          "placeholder": "请填写纠正措施的处理内容"
+        },
+        "toast": {
+          "descriptionRequired": "请输入纠正措施内容。",
+          "createSuccess": "纠正措施已登记。",
+          "createFailed": "纠正措施登记失败。",
+          "updateSuccess": "纠正措施已更新。",
+          "updateFailed": "纠正措施更新失败。",
+          "submitClosureSuccess": "已提交纠正完成的批准申请。",
+          "submitClosureFailed": "纠正完成批准申请失败。"
+        }
+      }
+    },
+    "report": {
+      "title": "审核报告",
+      "description": "编辑审核报告的主要内容，并更新完成状态。",
+      "loading": "加载中",
+      "planSummary": "请更新报告和审核状态，以满足完成条件。",
+      "fields": {
+        "status": "审核状态",
+        "executiveSummary": "摘要概览",
+        "scope": "审核范围",
+        "methodology": "审核方法",
+        "positiveFindings": "正面发现",
+        "improvementOpportunities": "改进建议",
+        "conclusion": "总体结论",
+        "reportDate": "报告日期",
+        "approvalStatus": "批准状态",
+        "approvedBy": "审批人"
+      },
+      "approvalStatuses": {
+        "draft": "草稿",
+        "submitted": "审批中",
+        "approved": "已批准",
+        "rejected": "已退回"
+      },
+      "actions": {
+        "backToPlan": "返回审核计划",
+        "save": "保存报告",
+        "saving": "保存中",
+        "submitApproval": "提交审批",
+        "submittingApproval": "申请中",
+        "downloadPdf": "下载 PDF",
+        "downloading": "加载中"
+      },
+      "toast": {
+        "loadFailed": "审核报告加载失败。",
+        "saveSuccess": "审核报告已保存。",
+        "saveFailed": "审核报告保存失败。",
+        "submitSuccess": "已发起审核报告的审批申请。",
+        "submitFailed": "审核报告审批申请失败。",
+        "saveBeforeSubmit": "请先保存审核报告。",
+        "downloadFailed": "PDF 生成失败。请重试。",
+        "downloadUnavailable": "请先保存审核报告。"
+      }
+    },
+    "reports": {
+      "title": "审核报告",
+      "description": "统一管理审核报告的评审、编辑和导出。",
+      "generate": "创建报告",
+      "stats": {
+        "total": "总数",
+        "completed": "已批准",
+        "inProgress": "编写中"
+      },
+      "filters": {
+        "search": "搜索中",
+        "status": "按状态筛选",
+        "period": "按期间筛选",
+        "type": "按审核类型筛选"
+      },
+      "typeLabels": {
+        "internal": "内部审核",
+        "external": "外部审核",
+        "certification": "认证审核",
+        "surveillance": "年度持续运行"
+      },
+      "banners": {
+        "type": "审核类型：{type}"
+      },
+      "badges": {
+        "completion": "完成度 {percent}%"
+      },
+      "table": {
+        "columns": {
+          "report": "审核计划 / 报告",
+          "period": "审核期间",
+          "status": "状态",
+          "owner": "审核组长 / 审批人",
+          "updated": "最近更新",
+          "actions": "操作"
+        },
+        "reportDate": "报告日期：{date}",
+        "approvedBy": "审批人：{name}",
+        "awaitingApproval": "待批准"
+      },
+      "actions": {
+        "viewPlan": "打开计划",
+        "editReport": "编辑报告",
+        "downloadPdf": "下载 PDF"
+      },
+      "empty": {
+        "title": "暂无报告",
+        "description": "完成审核计划并保存报告后，将在此处显示。",
+        "cta": "创建审核计划"
+      },
+      "errors": {
+        "loadFailed": "审核报告获取失败。",
+        "downloadFailed": "PDF 下载失败。"
+      }
+    },
+    "actions": {
+      "edit": "编辑",
+      "execute": "实施",
+      "report": "报告",
+      "view": "详情"
+    },
+    "upcoming": {
+      "title": "下次审核安排"
+    },
+    "nextActions": {
+      "title": "后续行动",
+      "description": "根据审核计划、检查清单、不符合项和纠正措施，挑选出下一步需要处理的事项。",
+      "empty": "暂无需要处理的事项。请为下一次审核周期预先确认计划和证据负责人。",
+      "types": {
+        "checklist": "检查清单",
+        "nonconformity": "不符合项",
+        "corrective_action": "纠正措施"
+      },
+      "priority": {
+        "high": "优先级：高",
+        "medium": "优先级：中",
+        "low": "优先级：低"
+      },
+      "descriptions": {
+        "checklist": "请完成剩余 {remaining} / {total} 项检查项，并附上必要证据。",
+        "nonconformity": "请确认临近期限的不符合项的原因、期限和负责人。",
+        "corrective_action": "请确认已计划的纠正措施进度、证据和完成审批准备情况。"
+      },
+      "labels": {
+        "dueDate": "截止日期：{date}",
+        "noDueDate": "无期限信息",
+        "viewDetails": "查看详情",
+        "unnamedPlan": "未命名的审核计划"
+      }
+    },
+    "form": {
+      "basicInfo": "基本信息",
+      "title": "审核名称",
+      "description": "说明",
+      "auditType": "审核类型",
+      "standard": "适用标准",
+      "schedule": "日程",
+      "plannedStartDate": "计划开始日期",
+      "plannedEndDate": "计划结束日期",
+      "auditTeam": "审核团队",
+      "leadAuditor": "审核组长",
+      "auditors": "审核员",
+      "cancel": "取消",
+      "create": "创建",
+      "creating": "创建中",
+      "save": "保存",
+      "saving": "保存中"
+    },
+    "detail": {
+      "leadAuditorLabel": "审核组长：{name}",
+      "unassigned": "未分配",
+      "schedule": {
+        "plannedRange": "计划期间",
+        "statusLabel": "状态",
+        "actualStart": "实际开始日期",
+        "actualEnd": "实际结束日期"
+      },
+      "sections": {
+        "overview": {
+          "badge": "审核概览",
+          "title": "审核计划概览",
+          "description": "确认审核的目的、期间和状态，并更新实际信息。"
+        },
+        "team": {
+          "badge": "审核团队",
+          "title": "团队组成",
+          "description": "管理负责审核的成员及其角色。",
+          "countSuffix": "人",
+          "remove": "移除",
+          "roleLabel": "角色",
+          "roles": {
+            "lead": "审核组长",
+            "auditor": "审核员",
+            "observer": "观察员"
+          },
+          "empty": "尚未组建审核团队。请添加成员。",
+          "addTitle": "添加成员",
+          "addUserLabel": "要添加的用户",
+          "selectPlaceholder": "选择成员",
+          "addRoleLabel": "分配的角色",
+          "addAction": "添加到团队",
+          "roleOptions": {
+            "system_operator": "系统管理员",
+            "org_admin": "组织管理员",
+            "auditor": "审核员",
+            "approver": "审批人",
+            "user": "普通用户"
+          },
+          "duplicate": "该成员已在审核团队中。"
+        },
+        "activity": {
+          "title": "更新历史",
+          "description": "可查看审核计划的创建和更新时间。",
+          "createdAt": "创建时间",
+          "updatedAt": "最近更新"
+        }
+      }
+    },
+    "errors": {
+      "createFailed": "审核计划创建失败",
+      "updateFailed": "审核计划更新失败",
+      "loadFailed": "数据加载失败"
+    },
+    "accessDenied": {
+      "title": "无权访问审核功能",
+      "description": "仅审核员、组织管理员、系统管理员或被授予审核管理权限的用户可使用审核工作区。如有需要，请联系管理员授予权限。",
+      "permissionFetchFailed": "权限信息获取失败。如重新加载后仍未恢复，请联系管理员。"
+    },
+    "followUp": {
+      "title": "跟踪验证",
+      "addNew": "新增",
+      "recordTitle": "标题",
+      "description": "说明",
+      "assignedTo": "负责人",
+      "dueDate": "截止日期",
+      "status": "状态",
+      "open": "未处理",
+      "inProgress": "处理中",
+      "completed": "已完成",
+      "verified": "已验证",
+      "closed": "已关闭",
+      "markComplete": "标记为完成",
+      "markVerified": "标记为已验证",
+      "noRecords": "暂无跟踪验证",
+      "selectAssignee": "选择负责人",
+      "titlePlaceholder": "输入跟踪验证标题",
+      "descriptionPlaceholder": "请填写详细信息",
+      "saving": "保存中",
+      "creating": "创建中",
+      "toast": {
+        "createSuccess": "跟踪验证已创建。",
+        "createFailed": "跟踪验证创建失败。",
+        "updateSuccess": "跟踪验证已更新。",
+        "updateFailed": "跟踪验证更新失败。",
+        "titleRequired": "请输入标题。"
+      }
+    }
+  },
+  "home": {
+    "title": "首页",
+    "welcome": "欢迎，{name}",
+    "adminWelcome": "以组织管理员身份查看运行状况和下一步需要处理的事项",
+    "hero": {
+      "greeting": "{name}，您好",
+      "subtitle": "在此查看 {organization} 的运行状况、待审批事项和下一步操作",
+      "plan": "签约套餐",
+      "nextBilling": "下次账单日",
+      "badges": {
+        "onboardingComplete": "入门设置已完成",
+        "role": {
+          "system_operator": "系统运营者",
+          "org_admin": "组织管理员",
+          "user": "成员",
+          "auditor": "审核员",
+          "approver": "审批人"
+        }
+      }
+    },
+    "phaseSummary": {
+      "labels": {
+        "initial": "初次认证准备",
+        "surveillance": "年度持续运行"
+      },
+      "descriptions": {
+        "initial": "面向初次认证，确认体系、文件、风险、控制措施和任务的准备状况。",
+        "surveillance": "面向认证后的年度运行，跟踪审核、纠正措施和证据更新的下一步操作。"
+      },
+      "status": {
+        "set": "更新于 {date}",
+        "unset": "阶段未设置"
+      },
+      "cta": "打开阶段设置",
+      "alert": "由于阶段未设置，当前显示初次认证准备的指标。"
+    },
+    "errors": {
+      "loadFailed": "仪表盘信息加载失败，请稍后重试。",
+      "organizationNotFound": "未找到所属组织，请重新登录。"
+    },
+    "warnings": {
+      "title": "部分数据为临时显示",
+      "simulationActive": "QA模式：正在验证仪表盘统计的故障保护机制。",
+      "sessionFallback": "QA模式下正在使用临时用户会话。",
+      "organizationFallback": "QA模式下正在使用临时组织信息。",
+      "fallbackUserName": "QA 测试用户",
+      "fallbackOrganizationName": "QA 测试组织",
+      "statsUnavailable": "无法获取仪表盘统计，当前显示临时数值。"
+    },
+    "stats": {
+      "progress": "ISMS建设进度",
+      "overdueTasks": "逾期任务",
+      "pendingDocuments": "待批准文件",
+      "nextAudit": "距下次审核",
+      "daysUnit": "天",
+      "activeUsers": "活跃用户",
+      "openRisks": "未处置风险",
+      "documents": "文件数",
+      "activeTasks": "进行中任务",
+      "auditsInProgress": "实施中的审核",
+      "approverPendingApprovals": "待审批",
+      "approverDueSoon": "临近截止的审批",
+      "usersHint": "可参与ISMS运行的有效成员数",
+      "documentsHint": "待评审：{pending}件。可确认发布前等待判断的事项",
+      "risksHint": "仍需处置或复核的风险数量",
+      "tasksHint": "已逾期：{overdue}件。请确认负责人和下一步操作",
+      "auditsHint": "进行中或近期审核及证据确认的数量",
+      "approverPendingApprovalsHint": "等待单步审批的申请",
+      "approverDueSoonHint": "建议在{hours}小时内确认的申请",
+      "drilldown": {
+        "cta": "查看详情",
+        "users": "打开用户管理页面",
+        "documents": "打开文件列表",
+        "risks": "打开风险列表",
+        "tasks": "打开任务列表",
+        "audits": "打开审核仪表盘",
+        "approvals": "打开待审批列表",
+        "dueApprovals": "打开临近截止的审批列表"
+      },
+      "actions": {
+        "users": "打开用户管理",
+        "documents": "查看文件列表",
+        "risks": "打开风险台账",
+        "tasks": "查看任务看板",
+        "audits": "打开审核工作区"
+      }
+    },
+    "statusBreakdown": {
+      "title": "状态明细",
+      "subtitle": "确认文件、风险、任务中停滞或需要下一步评审的状态。",
+      "tasks": "任务",
+      "documents": "文件",
+      "risks": "风险",
+      "empty": "暂无相关数据",
+      "chart": {
+        "summary": "正在统计{total, number}件",
+        "total": "合计",
+        "legend": "图例",
+        "empty": "无图表",
+        "aria": "{module}的状态分布"
+      },
+      "labels": {
+        "tasks": {
+          "todo": "未开始",
+          "in_progress": "进行中",
+          "review": "评审中",
+          "done": "已完成",
+          "cancelled": "已中止"
+        },
+        "documents": {
+          "draft": "草稿",
+          "in_review": "评审中",
+          "approved": "已批准",
+          "obsolete": "已作废"
+        },
+        "risks": {
+          "identified": "已识别",
+          "analyzing": "分析中",
+          "treating": "处置中",
+          "monitoring": "监控中",
+          "closed": "处置完成"
+        }
+      }
+    },
+    "quickActions": {
+      "title": "快捷操作",
+      "addUser": "添加用户",
+      "organizationSettings": "组织设置",
+      "viewPendingApprovals": "查看待批准文件"
+    },
+    "recentActivity": {
+      "title": "最近活动",
+      "subtitle": "通过文件、风险、用户事件和通知更新，掌握最近变化及下一步确认位置。",
+      "empty": "暂无可显示的活动。文件更新、审批申请、风险变更等发生后将在此处显示。",
+      "loadError": "无法加载活动日志，请在通知中心查看最新状态。",
+      "unknownActor": "系统",
+      "unknownResource": "未知资源",
+      "filters": {
+        "all": "全部",
+        "activity": "活动日志",
+        "notifications": "通知"
+      },
+      "badges": {
+        "document": "文件",
+        "risk": "风险",
+        "user": "用户",
+        "system": "系统",
+        "notification": "通知"
+      },
+      "entries": {
+        "documentCreated": "{actor}创建了文件「{resource}」",
+        "documentUpdated": "{actor}更新了文件「{resource}」",
+        "documentApproved": "{actor}批准了文件「{resource}」",
+        "documentApprovalRequested": "{actor}提交了文件「{resource}」的审批申请",
+        "riskCreated": "{actor}登记了风险「{resource}」",
+        "riskUpdated": "{actor}更新了风险「{resource}」",
+        "riskDeleted": "{actor}删除了风险「{resource}」",
+        "userInvited": "{actor}向{resource}发送了成员邀请",
+        "phaseChanged": "{actor}将ISMS阶段更新为{phase}"
+      }
+    },
+    "compliance": {
+      "title": "审核与合规状况",
+      "certificationStatus": "认证状态",
+      "valid": "有效",
+      "expiryDate": "有效期至",
+      "auditProgress": "审核进度",
+      "correctiveActions": "纠正措施",
+      "open": "未处理",
+      "inProgress": "处理中",
+      "completed": "已完成"
+    },
+    "subscription": {
+      "title": "签约套餐",
+      "subtitle": "查看计费状态、续费时间以及解约时的数据导出准备。",
+      "plan": "套餐",
+      "statusLabel": "状态",
+      "nextBilling": "下次计费日",
+      "trialPlan": "试用",
+      "trialRemains": "试用预计结束",
+      "status": {
+        "trialing": "试用中",
+        "active": "有效",
+        "canceled": "已取消",
+        "past_due": "付款逾期",
+        "unpaid": "未付款",
+        "incomplete": "未完成",
+        "incomplete_expired": "已过期"
+      },
+      "manageHint": "可在订阅设置中修改签约内容",
+      "manageCta": "打开设置",
+      "mockMode": {
+        "description": "由于尚未配置 Stripe 测试密钥，当前以模拟模式运行。配置测试用 Price ID 后即可体验 Checkout。",
+        "statusLabel": "模拟模式显示中",
+        "cta": "配置测试环境"
+      }
+    },
+    "controls": {
+      "title": "控制措施库",
+      "description": "检索和整理 ISO/IEC 27001 附录A 的控制措施，管理用于关联风险处置措施的主数据。",
+      "actions": {
+        "create": "添加控制措施",
+        "edit": "编辑",
+        "delete": "删除",
+        "openWizard": "从附录A添加",
+        "confirmDelete": "确定删除 {title} 吗？此操作无法撤销。"
+      },
+      "filters": {
+        "search": "搜索",
+        "searchPlaceholder": "搜索中",
+        "category": "类别",
+        "allCategories": "所有类别"
+      },
+      "table": {
+        "columns": {
+          "title": "控制措施",
+          "category": "类别",
+          "controlCode": "控制措施编号",
+          "updatedAt": "最后更新",
+          "actions": "操作"
+        },
+        "empty": "暂无已登记的控制措施"
+      },
+      "form": {
+        "createTitle": "新建控制措施",
+        "editTitle": "编辑控制措施",
+        "fields": {
+          "title": "控制措施标题",
+          "category": "类别",
+          "controlCode": "控制措施编号",
+          "controlCodePlaceholder": "处理中",
+          "description": "详细说明",
+          "tags": "标签",
+          "tagsPlaceholder": "例如：访问管理, 远程办公",
+          "tagsHint": "可使用逗号分隔输入多个标签。"
+        },
+        "actions": {
+          "cancel": "取消",
+          "save": "保存",
+          "saving": "保存中"
+        }
+      },
+      "errors": {
+        "loadFailed": "控制措施加载失败。",
+        "saveFailed": "控制措施保存失败。",
+        "deleteFailed": "控制措施删除失败。",
+        "required": "标题和类别为必填项。"
+      },
+      "messages": {
+        "created": "已创建控制措施「{title}」。",
+        "updated": "已更新控制措施「{title}」。",
+        "deleted": "已删除控制措施「{title}」。"
+      },
+      "noAccess": {
+        "title": "没有控制措施库的访问权限",
+        "description": "使用此功能需要管理员或控制措施管理权限。",
+        "back": "返回首页"
+      },
+      "wizard": {
+        "title": "附录A 控制措施向导",
+        "description": "选择推荐模板即可批量登记。",
+        "searchPlaceholder": "按关键词筛选",
+        "badges": {
+          "existing": "已登记"
+        },
+        "states": {
+          "loading": "加载中",
+          "empty": "没有匹配的模板。"
+        },
+        "modeSection": {
+          "title": "应用模式"
+        },
+        "modes": {
+          "insert": "仅添加新项（保留现有项）",
+          "restore": "仅补全未登记的模板",
+          "overwrite": "覆盖现有模板"
+        },
+        "actions": {
+          "cancel": "取消",
+          "apply": "登记控制措施",
+          "applying": "应用中"
+        },
+        "errors": {
+          "loadFailed": "模板加载失败。",
+          "selectOne": "请至少选择1个模板。",
+          "seedFailed": "控制措施添加失败。"
+        },
+        "messages": {
+          "successInsert": "已添加控制措施（{created} 件）。",
+          "successOverwrite": "已添加/更新控制措施(添加 {created} 项、更新 {updated} 项)。"
+        },
+        "selectedLabel": "已选择：{count} 件"
+      }
+    },
+    "organization": {
+      "title": "组织信息",
+      "subtitle": "梳理 ISMS 的适用范围和组织属性",
+      "name": "组织名称",
+      "employeeRange": "员工人数区间",
+      "industry": "行业",
+      "notSet": "未设置"
+    },
+    "phaseWizard": {
+      "badge": "ISMS阶段",
+      "title": "请选择当前阶段",
+      "description": "为将入门引导和 KPI 切换到合适的状态，请选择初次认证准备或年度持续运行。",
+      "helper": "阶段可随时在设置页面中更改。",
+      "submit": "确定阶段",
+      "submitting": "提交中",
+      "validation": "请选择阶段。",
+      "error": "阶段更新失败，请稍后重试。",
+      "initial": {
+        "label": "初次认证准备",
+        "description": "处于获得认证前或首年度的导入阶段。"
+      },
+      "surveillance": {
+        "label": "年度持续运行",
+        "description": "已获得认证，正在开展年度监督审核。"
+      }
+    },
+    "insights": {
+      "title": "关注要点",
+      "subtitle": "为您推荐下一步行之有效的操作",
+      "empty": "当前没有特别的警报，请继续保持近期的活动。",
+      "items": {
+        "noDocuments": "尚未登记任何文件。请先上传重要的制度和程序文件。",
+        "documentsInReview": "有 {count} 件文件待评审。请推进批准以完成发布。",
+        "tasksOverload": "有 {count} 件进行中的任务。请重新审视优先级，避免积压。",
+        "tasksOverdue": "有 {count} 件逾期任务。请与负责人重新协调日程。",
+        "noRisks": "尚未登记风险。请从业务访谈开始进行风险识别。",
+        "upcomingAudits": "有 {count} 件进行中或计划中的审核。请确认检查表和证据的准备情况。",
+        "trialCountdown": "试用将于 {date} 结束。请尽快选定套餐并完成支付设置。"
+      }
+    },
+    "onboardingChecklist": {
+      "badge": "初始设置",
+      "title": "入门设置进度",
+      "description": "整理关键步骤，帮助经营者和管理负责人查看准备状况、未处理事项、待审批事项、证据缺口和下一步应打开的页面。",
+      "phases": {
+        "initial": "初次认证准备",
+        "surveillance": "年度持续运行"
+      },
+      "lastUpdated": "最后更新：{date}",
+      "phaseMissing": "阶段未设置。选择阶段后，KPI 和检查清单将随之切换。",
+      "phaseMissingCta": "打开设置",
+      "loading": {
+        "title": "正在统计入门设置进度",
+        "description": "正在获取最新的组织数据并更新各步骤的状态。"
+      },
+      "unavailable": {
+        "title": "无法获取入门设置进度",
+        "description": "请检查权限和网络状态后重新加载仪表盘。",
+        "retry": "重新加载",
+        "settings": "打开组织设置"
+      },
+      "rateLabel": "完成率",
+      "summary": "已完成 {completed}/{total} 个步骤",
+      "filters": {
+        "status": {
+          "label": "状态",
+          "all": "全部",
+          "completed": "已完成",
+          "inProgress": "进行中",
+          "notStarted": "未开始",
+          "empty": "没有符合所选状态的步骤。"
+        },
+        "period": {
+          "label": "年度"
+        }
+      },
+      "statusLabels": {
+        "completed": "已完成",
+        "in_progress": "进行中",
+        "not_started": "未开始"
+      },
+      "completedAt": "完成于 {date}",
+      "phasesTitle": "ISMS 阶段概览",
+      "status": {
+        "complete": "已完成",
+        "pending": "未完成"
+      },
+      "steps": {
+        "profile": {
+          "title": "完善组织档案",
+          "description": "输入行业、员工人数区间、认证状况等基本信息，统一报告的前提条件。",
+          "pending": "基本信息中存在未填写项。",
+          "complete": "组织档案为最新状态。",
+          "action": "编辑档案"
+        },
+        "team": {
+          "title": "邀请管理员和负责人",
+          "description": "邀请至少2名组织管理员或负责人，并完善权限设置。",
+          "pending": "活跃成员 {count}/{target} 名",
+          "complete": "活跃成员 {count} 名",
+          "action": "打开用户管理"
+        },
+        "structure": {
+          "title": "分配体系角色",
+          "description": "定义 ISMS 体系的职责范围，并关联到负责人和管理员。",
+          "pending": "已分配角色 {count}/{target} 件",
+          "complete": "已分配角色 {count} 件",
+          "action": "打开体系设置"
+        },
+        "departments": {
+          "title": "登记部门结构",
+          "description": "创建作为职责分配对象的部门，明确各自的负责范围。",
+          "pending": "已登记部门 {count}/{target} 件",
+          "complete": "已登记部门 {count} 件",
+          "action": "打开组织设置"
+        },
+        "scope": {
+          "title": "确定ISMS适用范围",
+          "description": "记录涉及的场所、系统、流程及排除事项，明确适用范围。",
+          "pending": "已登记适用范围项 {count}/{target} 件",
+          "complete": "已登记适用范围项 {count} 件",
+          "action": "编辑适用范围"
+        },
+        "documents": {
+          "title": "登记必备文件",
+          "description": "上传制度、程序文件等需要评审的文件，推进发布准备。",
+          "pending": "已登记文件 {count}/{target} 件",
+          "complete": "已登记文件 {count} 件",
+          "action": "打开文件列表"
+        },
+        "tasks": {
+          "title": "建立确认任务",
+          "description": "创建任务并分配负责人，使各部门能够核对标准要求。",
+          "pending": "已创建任务 {count}/{target} 件",
+          "complete": "已创建任务 {count} 件",
+          "action": "查看任务"
+        },
+        "risks": {
+          "title": "开始首次风险评估",
+          "description": "至少登记1项风险，并记录初步评估和处置方针。",
+          "pending": "已登记风险 {count}/{target} 件",
+          "complete": "已登记风险 {count} 件",
+          "action": "开始风险评估"
+        },
+        "phase_scope_review": {
+          "title": "复核适用范围与部门",
+          "description": "按阶段确认 ISMS 适用范围和部门分配是否为最新。",
+          "pending": "已确认适用范围 {count}/{target} 件",
+          "complete": "已确认适用范围 {count} 件",
+          "action": "打开组织设置"
+        },
+        "phase_risk_cycle": {
+          "title": "重新评估主要风险",
+          "description": "至少使用本年度信息更新1项风险。",
+          "pending": "已更新风险 {count}/{target} 件",
+          "complete": "已更新风险 {count} 件",
+          "action": "打开风险列表"
+        },
+        "phase_task_followup": {
+          "title": "跟踪纠正措施任务",
+          "description": "确认针对发现项的纠正任务处于进行中或待评审状态。",
+          "pending": "跟踪验证 {count}/{target} 件",
+          "complete": "跟踪验证 {count} 件",
+          "action": "查看评审任务"
+        },
+        "phase_audit_readiness": {
+          "title": "保持审核进行状态",
+          "description": "作为认证后的年度运行，持续跟踪内部审核、发现项、不符合项和纠正措施。",
+          "pending": "审核进行/完成 {count}/{target} 件",
+          "complete": "审核进行/完成 {count} 件",
+          "action": "打开审核仪表盘"
+        },
+        "phase_management_review": {
+          "title": "留存管理评审的证据",
+          "description": "更新方针、会议记录等评审证据至最新状态。",
+          "pending": "已更新证据 {count}/{target} 件",
+          "complete": "已更新证据 {count} 件",
+          "action": "打开文件列表"
+        }
+      },
+      "history": {
+        "title": "阶段变更历史",
+        "subtitle": "记录近期的阶段切换以备审核之用。",
+        "manage": "管理阶段",
+        "empty": "尚无阶段变更记录。",
+        "source": {
+          "wizard": "初始设置向导",
+          "settings": "组织设置",
+          "system": "系统"
+        }
+      }
+    },
+    "actionRow": {
+      "cta": "打开",
+      "notifications": {
+        "title": "查看通知中心",
+        "description": "一目了然掌握未读警报和最新更新状态。"
+      },
+      "settings": {
+        "title": "打开设置",
+        "description": "调整通知设置和组织信息，使运行负责人知道下一步该确认什么。",
+        "badge": "设置"
+      }
+    },
+    "notificationPreview": {
+      "title": "最新通知",
+      "subtitle": "汇总文件、任务、风险、审核相关的最新警报。",
+      "empty": "当前没有可显示的通知，所有事项均已处理。",
+      "viewAll": "打开通知中心",
+      "managePreferences": "调整通知设置",
+      "unreadLabel": "{count, plural, =0 {无未读} other {未读 {count} 件}}"
+    },
+    "quickLinks": {
+      "title": "快捷入口",
+      "subtitle": "按角色快速访问常用页面",
+      "cta": "前往",
+      "items": {
+        "superAdmin": {
+          "organizations": {
+            "title": "查看租户列表",
+            "description": "全面检查套餐、状态及锁定情况"
+          },
+          "audit": {
+            "title": "评审全局审计日志",
+            "description": "切换 scope=global/tenant 检查审计踪迹"
+          }
+        },
+        "systemOperator": {
+          "settings": {
+            "title": "检查组织设置",
+            "description": "查看和调整各租户的策略与权限"
+          },
+          "policies": {
+            "title": "RLS/安全设置",
+            "description": "验证 Row Level Security 及通用设置的行为"
+          }
+        },
+        "orgAdmin": {
+          "members": {
+            "title": "成员与角色管理",
+            "description": "进行用户邀请和角色授予"
+          },
+          "billing": {
+            "title": "订阅管理",
+            "description": "查看签约套餐和付款信息"
+          },
+          "documents": {
+            "title": "完善基准文件",
+            "description": "基于模板登记和更新文件"
+          }
+        },
+        "member": {
+          "tasks": {
+            "title": "更新负责任务",
+            "description": "保持截止日期和进度为最新状态"
+          },
+          "documents": {
+            "title": "查阅所需文件",
+            "description": "查看工作所需的程序文件和指南"
+          },
+          "training": {
+            "title": "参加教育与培训",
+            "description": "查看面向您的教育及参加情况"
+          }
+        },
+        "auditor": {
+          "workspace": {
+            "title": "审核工作区",
+            "description": "集中查看负责审核的计划、检查表和证据"
+          },
+          "correctiveActions": {
+            "title": "纠正措施跟进",
+            "description": "直接前往不符合项处理的待评审任务"
+          }
+        },
+        "approver": {
+          "pendingDocuments": {
+            "title": "查看待审批",
+            "description": "在审批队列中集中查看未处理的申请"
+          },
+          "reviewTasks": {
+            "title": "临近截止的审批",
+            "description": "优先确认临近处理期限的申请"
+          }
+        }
+      }
+    },
+    "roleDashboards": {
+      "auditor": {
+        "title": "审核工作区",
+        "subtitle": "在此跟踪负责中的审核计划、不符合项、证据和下一步需要处理的事项。",
+        "viewWorkspace": "打开审核工作区",
+        "statusLabels": {
+          "planning": "计划中",
+          "fieldwork": "现场审核",
+          "reporting": "报告准备",
+          "followUp": "跟踪验证"
+        },
+        "sections": {
+          "assignedAudits": {
+            "title": "负责的审核计划",
+            "subtitle": "掌握时间线和下一个检查点。",
+            "manageLink": "查看计划列表",
+            "columns": {
+              "name": "审核名称",
+              "period": "期间",
+              "status": "状态",
+              "nextStep": "下一步行动"
+            },
+            "items": {
+              "quarterly": {
+                "name": "ISO 27001 内部审核（第三季度）",
+                "period": "7月1日～9月30日",
+                "nextStep": "完成证据抽样"
+              },
+              "supplier": {
+                "name": "供应商安全专项审核",
+                "period": "8月12日～8月23日",
+                "nextStep": "确定与相关方的启动会议议题"
+              }
+            }
+          },
+          "findings": {
+            "title": "未解决的发现项",
+            "subtitle": "按优先级查看需要处理的纠正措施。",
+            "manageLink": "查看发现项",
+            "items": {
+              "critical": {
+                "label": "重大 / 主要",
+                "description": "需要立即采取遏制措施"
+              },
+              "minor": {
+                "label": "轻微",
+                "description": "跟进负责人和截止日期"
+              },
+              "recommendation": {
+                "label": "建议事项",
+                "description": "规划改进行动"
+              }
+            }
+          },
+          "checklistProgress": {
+            "title": "检查表进度",
+            "subtitle": "掌握现场审核期间的确认情况。",
+            "manageLink": "打开检查表",
+            "items": {
+              "isoClauses": {
+                "label": "ISO 27001 必要要求",
+                "status": "已确认32项中的24项"
+              },
+              "annexSampling": {
+                "label": "附录A 控制措施抽样",
+                "status": "已验证24项控制措施中的18件"
+              },
+              "followUp": {
+                "label": "上次审核跟踪验证",
+                "status": "已关闭11件中的5件"
+              }
+            }
+          },
+          "reports": {
+            "title": "近期交付物",
+            "subtitle": "梳理报告期限和相关方会议。",
+            "openLink": "打开",
+            "cta": "创建新报告",
+            "items": {
+              "draftReport": {
+                "title": "内部审核报告草稿",
+                "description": "汇总现场审核中的发现和未处理事项。",
+                "due": "截止：9月18日"
+              },
+              "closingMeeting": {
+                "title": "末次会议准备",
+                "description": "收集管理层回复并确定议题。",
+                "due": "截止：9月23日"
+              },
+              "followUpPlan": {
+                "title": "纠正措施跟踪验证计划",
+                "description": "与负责人协调目标完成日期。",
+                "due": "截止：9月30日"
+              }
+            }
+          }
+        }
+      },
+      "admin": {
+        "title": "管理员仪表盘",
+        "subtitle": "组织整体KPI、停滞事项和今日需确认的操作",
+        "viewAll": "查看全部",
+        "sections": {
+          "kpi": {
+            "title": "关键绩效指标",
+            "pendingApprovals": "待审批",
+            "activeUsers": "有效用户",
+            "openRisks": "未关闭风险",
+            "overdueTasks": "逾期任务"
+          },
+          "priorityActions": {
+            "title": "今日需确认事项",
+            "subtitle": "汇总截止日期、审批、教育、风险中优先级较高的确认事项。",
+            "empty": "当前没有需要立即确认的事项。",
+            "items": {
+              "overdueTasks": {
+                "title": "确认逾期任务",
+                "description": "有 {count} 件逾期任务。请重新审视负责人和截止日期。"
+              },
+              "pendingApprovals": {
+                "title": "处理待审批",
+                "description": "有 {count} 件待批准文件。请减少等待裁决的事项。"
+              },
+              "educationFollowUp": {
+                "title": "跟进教育与培训",
+                "description": "有 {count} 件教育计划需要跟进。请检查未参加和记录缺失的情况。"
+              },
+              "openRisks": {
+                "title": "确认未关闭风险",
+                "description": "有 {count} 件未关闭风险。请重新审视处置状况。"
+              }
+            }
+          },
+          "operationalCadence": {
+            "title": "每周、每月例行事项",
+            "subtitle": "除日常确认外，前往 ISMS 运行中需定期查看的页面。",
+            "items": {
+              "weeklyTasks": {
+                "cadence": "每周",
+                "title": "确认待评审任务",
+                "description": "确认 {count} 件待评审任务，推进停滞的工作。",
+                "metric": "待评审"
+              },
+              "monthlyRisks": {
+                "cadence": "每月",
+                "title": "复查处置中风险",
+                "description": "确认 {count} 件处置中风险，复查处置措施的进展。",
+                "metric": "处置中"
+              },
+              "auditReview": {
+                "cadence": "审核期",
+                "title": "确认内部审核进展",
+                "description": "确认 {count} 件实施中的审核，查看发现项、不符合项及纠正措施的进展。",
+                "metric": "实施中"
+              },
+              "managementReview": {
+                "cadence": "每年",
+                "title": "准备管理评审",
+                "description": "打开 {count} 件计划中的评审，整理向管理层汇报的议题、记录和行动。",
+                "metric": "计划中"
+              }
+            }
+          },
+          "recentActivity": {
+            "title": "最近活动",
+            "subtitle": "组织内的近期动态",
+            "cta": "查看活动日志",
+            "items": {
+              "userJoined": {
+                "title": "新成员加入",
+                "detail": "田中太郎已加入团队",
+                "time": "2小时前"
+              },
+              "docApproved": {
+                "title": "文件批准完成",
+                "detail": "信息安全方针 v2.0 已获批准",
+                "time": "5小时前"
+              },
+              "riskEscalated": {
+                "title": "风险升级",
+                "detail": "外部委托方管理风险已变更为高",
+                "time": "1天前"
+              }
+            }
+          },
+          "educationFollowUp": {
+            "title": "教育与培训跟进",
+            "subtitle": "检查已逾期、未完成、缺少参加记录的教育计划。",
+            "cta": "查看教育计划",
+            "metrics": {
+              "followUp": "需跟进",
+              "overdue": "已逾期",
+              "pendingRecords": "未完成记录"
+            },
+            "status": {
+              "overdue": "已逾期",
+              "needsRecord": "记录确认"
+            },
+            "itemSummary": "合格 {passed} 件 / 记录 {records} 件 / 有效用户 {users} 名",
+            "empty": "当前没有需要在首页跟进的教育计划。"
+          }
+        }
+      },
+      "approver": {
+        "title": "审批人工作区",
+        "subtitle": "集中查看待审批、升级事项和 SLA 期限。",
+        "helperFallback": "处理中",
+        "lastUpdated": "最后更新 {value}",
+        "loading": "加载中",
+        "error": "审批指标获取失败，请刷新页面。",
+        "cards": {
+          "pending": {
+            "badge": "需处理",
+            "label": "待审批",
+            "helper": "有 {count} 件请求等待审批",
+            "cta": "打开审批队列"
+          },
+          "history": {
+            "badge": "已完成",
+            "label": "最近审批历史",
+            "helper": "最近 {days} 天处理了 {count} 件",
+            "cta": "显示历史"
+          },
+          "due": {
+            "badge": "临近期限",
+            "label": "SLA 期限临近",
+            "helper": "已超过 {hours} 小时的请求 {count} 件",
+            "cta": "按期限顺序确认"
+          },
+          "escalation": {
+            "badge": "升级",
+            "label": "升级候选",
+            "helper": "超过 {hours} 小时的请求 {count} 件",
+            "cta": "按优先级处理"
+          }
+        }
+      },
+      "user": {
+        "title": "我的仪表盘",
+        "subtitle": "集中查看您的任务、负责文件和进行中的教育。",
+        "summary": {
+          "tasks": "我的任务",
+          "documents": "负责文件",
+          "training": "未完成的教育"
+        },
+        "sections": {
+          "priorityActions": {
+            "title": "今日待办",
+            "subtitle": "从教育、任务、文件中快速前往当前需要确认的事项。",
+            "items": {
+              "training": {
+                "title": "推进教育与培训",
+                "description": "有 {count} 件未完成的教育。请打开相关教育并更新参加状态。"
+              },
+              "tasks": {
+                "title": "更新负责任务",
+                "description": "请确认 {count} 件负责任务，并更新进度和截止日期。"
+              },
+              "documents": {
+                "title": "查看必读文件",
+                "description": "有 {count} 件待确认或已更新的文件。"
+              }
+            }
+          },
+          "tasks": {
+            "title": "我的任务",
+            "subtitle": "分配给您的任务列表。",
+            "cta": "查看所有任务",
+            "status": {
+              "todo": "未开始",
+              "inProgress": "进行中",
+              "review": "评审中"
+            },
+            "items": {
+              "policyReview": {
+                "title": "信息安全方针评审",
+                "category": "方针管理",
+                "due": "截止：4月15日"
+              },
+              "incidentDrill": {
+                "title": "安全事件响应演练",
+                "category": "教育与培训",
+                "due": "截止：4月30日"
+              },
+              "awarenessSurvey": {
+                "title": "提交安全意识调查",
+                "category": "合规",
+                "due": "截止：5月10日"
+              }
+            }
+          },
+          "documents": {
+            "title": "必读文件",
+            "subtitle": "需要确认的已批准文件。",
+            "cta": "查看已批准文件",
+            "status": {
+              "pendingAck": "待确认",
+              "updated": "有更新",
+              "acknowledged": "已确认"
+            },
+            "items": {
+              "remoteWork": {
+                "title": "远程办公安全指南",
+                "version": "v2.1",
+                "due": "确认期限：4月20日"
+              },
+              "vendorChecklist": {
+                "title": "委托方管理检查表",
+                "version": "v1.3",
+                "due": "确认期限：4月25日"
+              },
+              "codeOfConduct": {
+                "title": "信息安全行为准则",
+                "version": "v3.0",
+                "due": "确认期限：已完成"
+              }
+            }
+          },
+          "training": {
+            "title": "教育与研修",
+            "subtitle": "您正在参加的教育模块。",
+            "cta": "查看教育列表",
+            "dueDate": "截止：{date}",
+            "noDueDate": "截止日期未设置",
+            "items": {
+              "phishing": {
+                "title": "钓鱼攻击防范培训",
+                "due": "截止：4月30日"
+              },
+              "incident": {
+                "title": "安全事件响应基础",
+                "due": "截止：5月15日"
+              },
+              "kaizen": {
+                "title": "持续改进工作坊",
+                "due": "截止：5月31日"
+              }
+            }
+          },
+          "improvements": {
+            "title": "改进活动",
+            "subtitle": "团队正在推进的改进举措。",
+            "cta": "查看改进列表",
+            "highlight": "持续改进（PDCA）是 ISMS 的核心。小的改进也贵在积累。",
+            "status": {
+              "draft": "草稿",
+              "scheduled": "计划",
+              "shipped": "已完成"
+            },
+            "items": {
+              "handoffCleanup": {
+                "title": "交接文档整理",
+                "owner": "负责人：田中",
+                "eta": "预计：4月底"
+              },
+              "alertReduction": {
+                "title": "警报削减项目",
+                "owner": "负责人：佐藤",
+                "eta": "预计：5月中旬"
+              },
+              "awarenessPost": {
+                "title": "发布安全意识宣传文章",
+                "owner": "负责人：铃木",
+                "eta": "预计：已完成"
+              }
+            }
+          }
+        }
+      }
+    },
+    "onboarding": {
+      "successTitle": "{name}，您的账户设置已完成",
+      "successDescription": "下一步请在仪表盘中按照引导完成初始设置。"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "tabs": {
+      "organization": "组织设置",
+      "users": "用户管理",
+      "profile": "个人资料",
+      "controls": "控制措施库",
+      "subscription": "订阅",
+      "security": "安全",
+      "notifications": "通知设置",
+      "integrations": "集成设置",
+      "assets": "资产管理",
+      "ai": "AI设置",
+      "structure": "组织架构管理"
+    },
+    "organization": {
+      "title": "组织设置",
+      "description": "管理组织的基本信息",
+      "fields": {
+        "name": "组织名称",
+        "nameEn": "组织名称（英文）",
+        "nameHelp": "请输入正式的组织名称",
+        "code": "组织代码",
+        "codeHelp": "用于识别组织的唯一代码",
+        "industry": "行业",
+        "industryPlaceholder": "例：IT服务业",
+        "industryHelp": "请选择主要业务领域",
+        "size": "员工人数",
+        "sizeHelp": "请选择当前员工人数",
+        "employeeCount": "员工人数",
+        "employeeCountPlaceholder": "请选择",
+        "certificationStatus": "ISO认证状态",
+        "certificationStatusPlaceholder": "请选择",
+        "address": "所在地",
+        "addressHelp": "总部地址",
+        "phone": "电话号码",
+        "email": "联系邮箱",
+        "website": "网站",
+        "timezone": "时区",
+        "fiscalYear": "会计年度起始月",
+        "logo": "组织Logo",
+        "logoHelp": "推荐尺寸：200x50px（PNG、JPG）",
+        "plan": "套餐",
+        "status": "状态",
+        "trialEnds": "试用结束日期"
+      },
+      "sections": {
+        "basic": "基本信息",
+        "basicDescription": "设置组织的基本信息",
+        "subscription": "订阅",
+        "subscriptionDescription": "当前套餐与合同状态"
+      },
+      "authSettings": {
+        "title": "认证状态",
+        "description": "可查看强制启用 MFA 的角色以及登录页面显示的 IdP。",
+        "loading": "加载中",
+        "mfaLabel": "MFA 强制对象",
+        "mfaRoles": "强制启用 MFA 的角色：{roles}。",
+        "mfaDisabled": "MFA 当前已禁用。",
+        "ssoLabel": "SSO 提供商",
+        "ssoProviders": "已配置的 IdP：{providers}。",
+        "ssoDisabled": "尚未配置 IdP。",
+        "hint": "请在 .env.local 中设置 AUTH_MFA_REQUIRED_ROLES / NEXT_PUBLIC_AUTH_SSO_PROVIDERS 并重启服务器。",
+        "linkLabel": "开发环境指南（MFA 章节）"
+      },
+      "notificationChannels": {
+        "title": "外部通知渠道",
+        "description": "按通知类型注册 Slack/Teams Webhook，将通知推送到外部渠道。",
+        "subtitle": "通知中心 → 外部告警",
+        "emptyMessage": "尚未配置外部通知渠道。注册 Slack / Teams 等后，可转发任务和审核相关通知。",
+        "form": {
+          "title": "添加外部渠道",
+          "editTitle": "编辑现有渠道"
+        },
+        "fields": {
+          "notificationType": "通知类型",
+          "channelType": "发送目标",
+          "webhookUrl": "Webhook URL",
+          "isEnabled": "启用",
+          "lastStatus": "最近状态",
+          "lastAttempt": "最近尝试",
+          "failures": "连续失败",
+          "enabled": "状态"
+        },
+        "actions": {
+          "saving": "保存中",
+          "save": "保存",
+          "cancelEdit": "取消编辑",
+          "confirmDelete": "确定要删除此渠道吗？",
+          "edit": "编辑",
+          "disable": "禁用",
+          "enable": "启用",
+          "delete": "删除",
+          "viewLogs": "发送记录"
+        },
+        "messages": {
+          "saved": "渠道已保存。",
+          "saveFailed": "保存失败。请重试。",
+          "noLogs": "暂无发送记录。",
+          "loading": "加载中",
+          "emptyMessage": "暂无已注册的外部渠道。"
+        },
+        "notificationTypes": {
+          "taskReminder": "任务提醒",
+          "documentApproval": "文件审批",
+          "auditSchedule": "审核日程",
+          "riskAlert": "风险告警",
+          "system": "系统通知",
+          "info": "信息通知"
+        },
+        "channelTypes": {
+          "slack": "Slack",
+          "teams": "Teams",
+          "custom": "通用Webhook"
+        },
+        "states": {
+          "enabled": "已启用",
+          "disabled": "已禁用"
+        },
+        "customWebhook": {
+          "payloadTemplate": "Payload模板（JSON）",
+          "placeholdersHelp": "模板中可使用以下占位符：",
+          "customHeaders": "自定义HTTP头",
+          "headersHelp": "可以键值对形式指定认证头等附加HTTP头。",
+          "headerKeyPlaceholder": "头名称（例：Authorization）",
+          "headerValuePlaceholder": "值（例：Bearer xxx）",
+          "addHeader": "添加HTTP头",
+          "removeHeader": "删除HTTP头",
+          "invalidJson": "Payload模板的JSON格式无效。"
+        }
+      },
+      "phase": {
+        "title": "ISMS阶段",
+        "description": "选择初次认证准备或年度持续运行后，引导流程和 KPI 将随之切换。",
+        "current": "当前阶段：",
+        "notSet": "未设置",
+        "save": "保存阶段",
+        "saving": "保存中",
+        "success": "阶段已更新。",
+        "error": "阶段更新失败。请稍后重试。",
+        "validation": "请选择阶段。",
+        "permission": "只有系统运营员才能更改ISMS阶段。",
+        "options": {
+          "initial": {
+            "label": "初次认证准备",
+            "description": "处于取得认证之前或首年导入阶段。"
+          },
+          "implementation": {
+            "label": "实施阶段",
+            "description": "正在建设ISMS的控制措施、证据和运行体系。"
+          },
+          "surveillance": {
+            "label": "年度持续运行",
+            "description": "已取得认证，正在进行监督审核运转。"
+          }
+        }
+      },
+      "phaseHistory": {
+        "title": "阶段变更历史",
+        "description": "ISMS阶段的更新将作为审计日志保存，负责人可随时查看。",
+        "count": "最新 {total} 条",
+        "empty": "暂无阶段变更历史。",
+        "sources": {
+          "wizard": "设置向导",
+          "settings": "组织设置",
+          "system": "系统"
+        }
+      },
+      "certificationStatus": {
+        "certified": "已取得ISO27001认证",
+        "inProgress": "认证进行中",
+        "planning": "计划取得认证",
+        "notPlanned": "暂无计划"
+      },
+      "plans": {
+        "trial": "试用版",
+        "starter": "入门套餐",
+        "standard": "标准套餐",
+        "enterprise": "企业套餐"
+      },
+      "status": {
+        "active": "生效中",
+        "trialing": "试用中",
+        "past_due": "逾期未付",
+        "canceled": "已取消",
+        "incomplete": "未完成"
+      },
+      "actions": {
+        "save": "保存",
+        "saving": "保存中",
+        "cancel": "取消",
+        "uploadLogo": "上传Logo",
+        "removeLogo": "删除Logo"
+      },
+      "backup": {
+        "title": "数据导出",
+        "description": "可将文件、风险、任务、信息资产、教育与培训、内部审核、纠正措施、管理评审的数据及可获取的证据文件打包为ZIP格式下载。请定期获取，以备解约时带出或自社备份。",
+        "action": "执行ZIP导出",
+        "exporting": "导出中",
+        "success": "备份文件已创建。请查看下载内容。",
+        "error": "导出失败。请稍后重试。"
+      },
+      "dataTransfer": {
+        "title": "数据导出 / 导入",
+        "description": "可将 ISMS 适用范围、部门、架构角色、用户、控制措施、信息资产打包为ZIP统一处理。可用于租户间迁移或初始设置。",
+        "exportAction": "导出当前数据",
+        "exporting": "导出中",
+        "templateAction": "下载模板",
+        "importAction": "导入ZIP",
+        "importing": "导入中",
+        "importSuccess": "导入已完成",
+        "importError": "导入失败。请检查内容。",
+        "exportError": "导出失败",
+        "hint": "ZIP中请包含 isms_scope / departments / project_roles / project_assignments / users / iso_controls / information_assets 各CSV文件。",
+        "resultTitle": "导入结果",
+        "counts": "已处理 {processed} 条（新增 {created} / 更新 {updated} / 跳过 {skipped}）",
+        "sections": {
+          "scope": "ISMS适用范围",
+          "departments": "部门",
+          "users": "用户",
+          "roles": "架构角色",
+          "assignments": "架构分配",
+          "controls": "控制措施",
+          "assets": "信息资产"
+        }
+      },
+      "messages": {
+        "saved": "组织设置已保存",
+        "saveError": "保存时发生错误",
+        "logoUploaded": "Logo已上传",
+        "logoRemoved": "Logo已删除"
+      },
+      "success": {
+        "saved": "设置已保存",
+        "scopeSaved": "ISMS适用范围已保存",
+        "departmentsSaved": "部门信息已保存",
+        "structureSaved": "架构角色已更新",
+        "structureRoleCreated": "架构角色已创建",
+        "structureRoleDeleted": "架构角色已删除",
+        "structureAssignmentsSaved": "架构分配已更新",
+        "structureRolesSeeded": "推荐角色已注册"
+      },
+      "errors": {
+        "loadFailed": "组织信息加载失败",
+        "saveFailed": "保存失败",
+        "scopeSaveFailed": "ISMS适用范围保存失败",
+        "departmentsSaveFailed": "部门信息保存失败",
+        "structureLoadFailed": "架构角色加载失败",
+        "structureSaveFailed": "架构角色保存失败",
+        "structureDeleteFailed": "架构角色删除失败",
+        "structureAssignmentFailed": "架构分配失败",
+        "structureRoleValidation": "请输入角色键和名称"
+      },
+      "ismsScope": {
+        "title": "ISMS适用范围",
+        "description": "定义ISO 27001认证的适用范围。管理取得认证所需的物理场所、IT系统、部门和流程，并明确排除项。",
+        "physicalLocations": "物理场所",
+        "addPhysicalLocation": "添加办公室、数据中心等",
+        "itSystems": "IT系统",
+        "addItSystem": "添加纳入管理的系统",
+        "departments": "适用部门",
+        "addDepartment": "添加部门名称",
+        "processes": "业务流程",
+        "addProcess": "添加流程名称",
+        "exclusions": "排除项",
+        "addExclusion": "添加要排除的项目",
+        "scopeNote": "ISMS适用范围是认证审核中的重要要素。请妥善定义并定期评审。"
+      },
+      "departments": {
+        "title": "部门管理",
+        "description": "说明",
+        "addDepartment": "添加部门",
+        "newDepartment": "新建部门",
+        "editDepartment": "编辑部门",
+        "departmentName": "部门名称",
+        "departmentNamePlaceholder": "例：信息系统部",
+        "departmentNameEn": "部门名称（英文）",
+        "departmentNameEnPlaceholder": "例：Information Systems Department",
+        "parentDepartment": "上级部门",
+        "noParent": "无（顶级）",
+        "departmentManager": "部门负责人",
+        "departmentManagerPlaceholder": "例：山田太郎",
+        "memberCount": "成员人数",
+        "manager": "负责人",
+        "descriptionPlaceholder": "填写部门的职责和责任范围等",
+        "noDepartments": "暂无已注册的部门",
+        "noDepartmentsHint": "请通过“添加部门”按钮注册新部门",
+        "edit": "编辑",
+        "delete": "删除",
+        "create": "创建",
+        "update": "更新",
+        "cancel": "取消"
+      },
+      "structure": {
+        "title": "架构角色管理",
+        "description": "梳理 ISMS 体系的角色和负责人，明确责任范围。",
+        "summary": {
+          "title": "引导流程必备角色的进度",
+          "description": "为必备角色分配负责人后，引导流程中的“架构建设”步骤即告完成。",
+          "status": {
+            "complete": "引导准备已完成",
+            "incomplete": "存在未分配的必备角色",
+            "progress": "必备角色已分配负责人 {assigned}/{total} 个",
+            "noRequired": "尚未设置必备角色"
+          },
+          "items": {
+            "required": {
+              "label": "必备角色数",
+              "helper": "{count, plural, =0{在角色编辑页面启用“必备”后即可在引导流程中跟踪} one{必备角色共 # 个} other{必备角色共 # 个}}"
+            },
+            "covered": {
+              "label": "必备角色的分配",
+              "helper": "{assigned, plural, =0{尚未分配负责人} one{已分配负责人 # 名} other{已分配负责人 # 名}}",
+              "noRequired": "请至少将 1 个角色设置为必备"
+            },
+            "assignments": {
+              "label": "分配数量",
+              "helper": "{count, plural, =0{尚未创建分配} one{分配共 # 条} other{分配共 # 条}}",
+              "optional": "可选角色的覆盖率：{assigned}/{total}",
+              "optionalNone": "未设置可选角色"
+            }
+          }
+        },
+        "actions": {
+          "create": "添加角色",
+          "edit": "编辑",
+          "delete": "删除",
+          "assign": "设置负责人",
+          "cancel": "取消",
+          "save": "保存",
+          "saving": "保存中"
+        },
+        "empty": {
+          "title": "开始注册架构角色",
+          "description": "定义 ISMS 管理负责人、信息安全负责人等主要角色。",
+          "action": "创建第一个角色"
+        },
+        "roleForm": {
+          "titleCreate": "创建架构角色",
+          "titleEdit": "编辑架构角色",
+          "fields": {
+            "key": "角色键",
+            "name": "角色名称",
+            "nameEn": "角色名称（英文）",
+            "displayOrder": "显示顺序",
+            "description": "说明",
+            "responsibilities": "主要职责",
+            "isRequired": "在引导流程中作为必备角色处理"
+          },
+          "help": {
+            "key": "仅可使用半角字母数字、连字符和下划线。",
+            "responsibilities": "请每行输入一项职责。"
+          },
+          "placeholders": {
+            "name": "例：ISMS 管理负责人",
+            "responsibilities": "例：协调内部审核"
+          }
+        },
+        "requiredBadge": "必备",
+        "assignedTitle": "已分配成员",
+        "unassigned": "尚未分配负责人",
+        "pendingInvitation": "邀请中",
+        "assignment": {
+          "title": "设置“{name}”的负责人",
+          "description": "选择有效用户或待接受的邀请。",
+          "members": "有效用户",
+          "noMembers": "没有可用的用户",
+          "invitations": "待接受的邀请",
+          "noInvitations": "没有待接受的邀请",
+          "save": "保存分配",
+          "saving": "保存中"
+        },
+        "confirmDelete": "确定要删除角色“{name}”吗？",
+        "wizard": {
+          "title": "批量注册推荐角色",
+          "description": "选择ISMS体系所需的推荐角色并批量注册。",
+          "steps": {
+            "selection": "选择角色",
+            "confirmation": "确认",
+            "result": "完成"
+          },
+          "search": {
+            "placeholder": "搜索角色"
+          },
+          "selection": {
+            "count": "已选择 {selected}/{total} 个"
+          },
+          "badge": {
+            "required": "必备"
+          },
+          "actions": {
+            "selectAll": "全选",
+            "deselectAll": "取消选择",
+            "submit": "注册",
+            "submitting": "注册中..."
+          },
+          "existingWarning": {
+            "title": "已注册 {count} 个角色",
+            "description": "与现有角色键相同的角色不会被覆盖，将被跳过。"
+          },
+          "confirmation": {
+            "description": "将注册以下角色。与现有键重复的角色将被跳过。",
+            "rolesWillBeCreated": "个角色将被注册",
+            "existingWillBeSkipped": "与现有键重复的角色将被跳过"
+          },
+          "result": {
+            "title": "注册已完成",
+            "description": "推荐角色注册已完成。",
+            "inserted": "新增注册",
+            "skipped": "跳过",
+            "editHint": "已注册的角色可在架构角色管理页面编辑。"
+          },
+          "errors": {
+            "noSelection": "请选择要注册的角色",
+            "submitFailed": "角色注册失败"
+          },
+          "cta": {
+            "openWizard": "加载推荐角色"
+          }
+        }
+      }
+    },
+    "users": {
+      "title": "用户管理",
+      "description": "管理组织的用户及其权限",
+      "success": {
+        "invitedWithEmail": "已向 {email} 发送邀请邮件。",
+        "permissionsUpdated": "已更新 {name} 的权限和范围。"
+      },
+      "errors": {
+        "loadFailed": "用户列表加载失败。",
+        "inviteFailed": "用户邀请失败。",
+        "emailSendFailed": "邀请邮件发送失败。请重试。",
+        "emailConfigMissing": "邀请邮件服务未配置。请联系系统管理员。",
+        "permissionLoadFailed": "模块权限加载失败。",
+        "permissionSaveFailed": "模块权限保存失败。"
+      },
+      "filters": {
+        "department": {
+          "label": "部门",
+          "all": "所有部门",
+          "unassigned": "无所属",
+          "active": "按部门筛选：{department}",
+          "clear": "清除部门筛选",
+          "empty": "没有符合条件的用户"
+        }
+      },
+      "actions": {
+        "invite": "邀请用户",
+        "activate": "启用",
+        "deactivate": "禁用",
+        "permissions": "设置权限"
+      },
+      "list": {
+        "title": "用户列表",
+        "search": "搜索中",
+        "filter": {
+          "all": "全部",
+          "active": "生效中",
+          "inactive": "未生效",
+          "pending": "邀请中"
+        },
+        "columns": {
+          "name": "姓名",
+          "email": "邮箱地址",
+          "role": "角色",
+          "department": "部门",
+          "projectRoles": "架构角色",
+          "status": "状态",
+          "lastLogin": "最近登录",
+          "actions": "操作"
+        },
+        "actions": {
+          "edit": "编辑",
+          "delete": "删除",
+          "activate": "启用",
+          "deactivate": "禁用",
+          "resendInvite": "重新发送邀请"
+        }
+      },
+      "form": {
+        "title": "用户信息",
+        "addUser": "添加用户",
+        "editUser": "编辑用户",
+        "fields": {
+          "email": "邮箱地址",
+          "emailHelp": "用于登录的邮箱地址",
+          "firstName": "名",
+          "lastName": "姓",
+          "role": "角色",
+          "roleHelp": "设置用户的权限级别",
+          "department": "部门",
+          "departmentHelp": "选择所属部门",
+          "position": "职务",
+          "phone": "电话号码",
+          "sendInvite": "发送邀请邮件"
+        },
+        "roles": {
+          "admin": "管理员",
+          "adminHelp": "可访问所有功能",
+          "manager": "经理",
+          "managerHelp": "可批准文件、管理用户",
+          "user": "普通用户",
+          "userHelp": "可查看和编辑文件",
+          "viewer": "查看者",
+          "viewerHelp": "仅可查看文件"
+        },
+        "actions": {
+          "save": "保存",
+          "cancel": "取消",
+          "delete": "删除用户"
+        }
+      },
+      "invite": {
+        "title": "邀请成员",
+        "email": "邮箱地址",
+        "role": "默认角色",
+        "projectRoles": "分配架构角色",
+        "projectRolesDescription": "请选择在邀请时同时分配的架构角色。",
+        "sending": "发送中",
+        "send": "发送邀请邮件",
+        "cancel": "取消",
+        "errors": {
+          "systemOperatorOnly": "只有现有的系统运营员才能邀请系统运营员角色。"
+        },
+        "systemOperatorHint": "此角色可更改整个租户的设置。请仅授予可信赖的成员。",
+        "systemOperatorDisabledHint": "系统运营员角色请委托现有的系统运营员授予。"
+      },
+      "messages": {
+        "userAdded": "用户已添加",
+        "userUpdated": "用户信息已更新",
+        "userDeleted": "用户已删除",
+        "inviteSent": "邀请邮件已发送",
+        "error": "发生错误"
+      },
+      "projectRoles": {
+        "title": "架构角色",
+        "description": "在模块权限之外，授予按架构划分的职责。",
+        "empty": "暂无架构角色。请在组织设置中创建角色。",
+        "none": "未分配"
+      },
+      "permissions": {
+        "modalTitle": "设置 {name} 的模块权限",
+        "modalDescription": "在角色授予的基本权限之外，按模块切换访问权限。",
+        "rolesSection": {
+          "title": "基础角色",
+          "description": "请选择 1 个租户级的基础角色。可在右侧单独调整模块权限。",
+          "systemOperatorDisabled": "System Operator 只能由现有的系统运营员或超级管理员授予。",
+          "selfOrgAdminLocked": "无法解除自己的组织管理员角色。",
+          "systemOperatorLastGuard": "这是最后一名系统运营员，无法更改角色。请先添加其他系统运营员。"
+        },
+        "roleDescriptions": {
+          "system_operator": "可操作租户设置、用户管理等所有功能。",
+          "org_admin": "负责日常运营设置和用户管理。",
+          "auditor": "进行审核计划、检查表和证据的查验。",
+          "approver": "负责文件和风险处置的审批。",
+          "user": "使用文件、任务等标准功能。"
+        },
+        "modulesTitle": "模块权限",
+        "modulesDescription": "可仅对所需模块单独授予访问权限。",
+        "documents": {
+          "title": "文件管理",
+          "description": "允许创建、编辑和发布文件。"
+        },
+        "risks": {
+          "title": "风险管理",
+          "description": "允许登记风险、更新评估和编辑处置措施。"
+        },
+        "tasks": {
+          "title": "任务管理",
+          "description": "允许创建任务、分配负责人和更新进度。"
+        },
+        "audit": {
+          "title": "审核工作区",
+          "description": "允许创建审核计划以及管理发现项和纠正措施。"
+        },
+        "assets": {
+          "title": "信息资产台账",
+          "description": "允许在风险评估前登记和编辑资产。"
+        },
+        "controls": {
+          "title": "附录A 控制措施",
+          "description": "允许查阅和分配 ISO 27001 附录A 控制措施。"
+        },
+        "departmentScope": {
+          "title": "可查看的部门",
+          "description": "允许访问所选部门成员的文件、风险和任务。",
+          "empty": "尚未注册部门。请在组织设置中创建部门。"
+        },
+        "save": "保存权限",
+        "saving": "保存中",
+        "cancel": "取消"
+      },
+      "invitations": {
+        "title": "邀请状态",
+        "subtitle": "可查看和管理尚未接受的用户邀请。",
+        "badge": "条邀请",
+        "empty": "当前没有待处理的邀请。",
+        "actions": {
+          "copy": "复制邮箱",
+          "cancel": "取消邀请",
+          "resend": "重新发送",
+          "resending": "重新发送中..."
+        },
+        "labels": {
+          "role": "角色：{role}",
+          "invitedAt": "发送：{date}",
+          "expiresAt": "截止：{date}"
+        },
+        "messages": {
+          "cancelSuccess": "邀请已取消。",
+          "cancelError": "邀请取消失败。",
+          "resendSuccess": "邀请已重新发送。",
+          "resendError": "邀请重新发送失败。"
+        }
+      },
+      "confirmations": {
+        "deleteUser": "确定要删除此用户吗？",
+        "deactivateUser": "确定要禁用此用户吗？"
+      },
+      "table": {
+        "name": "姓名",
+        "email": "邮箱",
+        "role": "权限",
+        "department": "部门",
+        "projectRoles": "项目角色",
+        "status": "状态",
+        "joinedAt": "加入日期",
+        "actions": "操作"
+      },
+      "roles": {
+        "system_operator": "系统运营员",
+        "org_admin": "组织管理员",
+        "auditor": "审核员",
+        "approver": "审批人",
+        "user": "成员"
+      },
+      "status": {
+        "active": "生效中",
+        "inactive": "已禁用"
+      }
+    },
+    "assets": {
+      "title": "信息资产管理",
+      "description": "管理组织的信息资产，并与风险评估联动。",
+      "actions": {
+        "edit": "编辑",
+        "delete": "删除",
+        "backToHome": "返回首页",
+        "importCsv": "导入CSV",
+        "importing": "导入中",
+        "exportCsv": "导出CSV",
+        "exportingCsv": "导出中",
+        "downloadTemplate": "下载模板",
+        "downloadingTemplate": "加载中"
+      },
+      "importModes": {
+        "label": "导入模式",
+        "insert": "仅新增（重复报错）",
+        "upsert": "更新已有 / 新增未登记",
+        "replace": "全量替换（保存备份）",
+        "replaceRestricted": "※“全量替换”模式仅限系统运营员使用"
+      },
+      "form": {
+        "createTitle": "登记资产",
+        "editTitle": "编辑资产",
+        "fields": {
+          "name": "资产名称",
+          "assetType": "资产类型",
+          "classification": "分类",
+          "criticality": "重要程度",
+          "owner": "管理负责人",
+          "location": "放置场所／保管场所",
+          "status": "使用状态",
+          "description": "说明"
+        },
+        "placeholders": {
+          "name": "例：客户信息数据库",
+          "location": "例：东京总部数据中心"
+        },
+        "actions": {
+          "create": "登记",
+          "update": "更新",
+          "cancel": "取消"
+        }
+      },
+      "table": {
+        "title": "已登记资产",
+        "description": "可查看最新的资产列表及属性。",
+        "searchPlaceholder": "按资产名称、分类、负责人等搜索",
+        "empty": "尚未登记资产。",
+        "noResults": "未找到与 \"{keyword}\" 匹配的资产。",
+        "headers": {
+          "name": "资产名称",
+          "type": "类型",
+          "classification": "分类",
+          "criticality": "重要程度",
+          "owner": "负责人",
+          "status": "使用状态",
+          "updatedAt": "最近更新"
+        }
+      },
+      "messages": {
+        "created": "资产已登记。",
+        "updated": "资产已更新。",
+        "deleted": "资产已删除。",
+        "loadFailed": "资产信息加载失败。",
+        "saveFailed": "资产保存失败。",
+        "deleteFailed": "资产删除失败。",
+        "importSuccess": "已从 CSV 导入 {count} 条信息资产。任务ID：{jobId}。",
+        "importSuccessWithUpsert": "CSV 导入完成：新增 {insertCount} 条、更新 {upsertCount} 条。任务ID：{jobId}。",
+        "importFailed": "CSV导入失败。请检查格式。",
+        "exportSuccess": "已将 {count} 条搜索结果导出为 CSV。",
+        "exportFailed": "CSV 导出失败。请稍后重试。",
+        "templateDownloaded": "CSV 模板已下载。",
+        "templateFailed": "模板下载失败。",
+        "forbidden": "没有资产管理权限。",
+        "importPartial": "{successCount} 条导入成功，但有 {errorCount} 行发生错误。任务ID：{jobId}.{details}",
+        "importPartialWithUpsert": "新增 {insertCount} 条、更新 {upsertCount} 条导入成功，但有 {errorCount} 行发生错误。任务ID：{jobId}.{details}",
+        "importErrorLine": "第 {line} 行：{message}",
+        "importFailedWithReason": "CSV 导入失败：{reason}",
+        "importErrorPreview": " 前几条错误：{details}",
+        "accessDenied": "没有访问权限",
+        "organizationNotResolved": "无法获取组织信息。请检查登录状态。",
+        "goHome": "返回首页"
+      },
+      "confirmation": {
+        "delete": "确定要删除此资产吗？"
+      },
+      "labels": {
+        "types": {
+          "hardware": "硬件",
+          "software": "软件",
+          "data": "数据／信息",
+          "service": "服务",
+          "facility": "设施",
+          "personnel": "人员",
+          "other": "其他"
+        },
+        "classification": {
+          "restricted": "机密",
+          "internal": "内部限定",
+          "public": "公开"
+        },
+        "criticality": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        },
+        "status": {
+          "in_use": "使用中",
+          "retired": "已停用",
+          "planned": "计划引入"
+        },
+        "ownerUnset": "未设置"
+      }
+    },
+    "profile": {
+      "title": "个人资料设置",
+      "description": "管理个人信息和偏好设置",
+      "sections": {
+        "personal": "个人信息",
+        "security": "安全",
+        "securityDescription": "管理密码和安全设置",
+        "preferences": "个人偏好",
+        "basic": "基本信息",
+        "basicDescription": "更新基本的个人资料信息"
+      },
+      "fields": {
+        "fullName": "姓名",
+        "fullNameEn": "姓名（英文）",
+        "department": "部门",
+        "position": "职务",
+        "phone": "电话号码",
+        "language": "语言设置",
+        "email": "邮箱地址",
+        "currentPassword": "当前密码",
+        "newPassword": "新密码",
+        "confirmPassword": "确认密码"
+      },
+      "actions": {
+        "saving": "保存中",
+        "save": "保存",
+        "changePassword": "修改密码",
+        "changing": "处理中",
+        "change": "修改",
+        "cancel": "取消"
+      },
+      "personal": {
+        "title": "个人信息",
+        "fields": {
+          "firstName": "名",
+          "lastName": "姓",
+          "fullName": "姓名",
+          "fullNameEn": "姓名（英文）",
+          "email": "邮箱地址",
+          "emailHelp": "用于登录的邮箱地址（不可更改）",
+          "phone": "电话号码",
+          "department": "部门",
+          "position": "职务",
+          "language": "语言设置",
+          "bio": "自我介绍",
+          "avatar": "头像",
+          "avatarHelp": "推荐尺寸：150x150px（JPG、PNG）"
+        },
+        "actions": {
+          "uploadAvatar": "上传图片",
+          "removeAvatar": "删除图片",
+          "save": "保存",
+          "saving": "保存中",
+          "cancel": "取消"
+        }
+      },
+      "security": {
+        "title": "安全设置",
+        "password": {
+          "title": "修改密码",
+          "current": "当前密码",
+          "new": "新密码",
+          "confirm": "新密码（确认）",
+          "requirements": "密码须不少于8个字符，并包含大写字母、小写字母和数字",
+          "change": "修改密码"
+        },
+        "twoFactor": {
+          "title": "两步验证",
+          "description": "加强账户的安全性",
+          "status": "状态",
+          "enabled": "已启用",
+          "disabled": "已禁用",
+          "enable": "启用两步验证",
+          "disable": "禁用两步验证"
+        },
+        "sessions": {
+          "title": "活动会话",
+          "description": "当前已登录的设备",
+          "current": "当前会话",
+          "lastActive": "最近活动",
+          "revoke": "注销会话"
+        }
+      },
+      "preferences": {
+        "title": "个人偏好",
+        "fields": {
+          "language": "显示语言",
+          "timezone": "时区",
+          "dateFormat": "日期格式",
+          "theme": "主题",
+          "themeOptions": {
+            "light": "浅色",
+            "dark": "深色",
+            "system": "跟随系统设置"
+          },
+          "notifications": {
+            "title": "通知设置",
+            "email": "接收邮件通知",
+            "browser": "接收浏览器通知",
+            "mobile": "接收移动端通知"
+          }
+        },
+        "actions": {
+          "save": "保存设置",
+          "cancel": "取消"
+        }
+      },
+      "success": {
+        "saved": "个人资料设置已保存",
+        "passwordChanged": "密码已修改"
+      },
+      "messages": {
+        "profileUpdated": "个人资料已更新",
+        "passwordChanged": "密码已修改",
+        "passwordError": "密码修改失败",
+        "twoFactorEnabled": "两步验证已启用",
+        "twoFactorDisabled": "两步验证已禁用",
+        "preferencesUpdated": "设置已保存",
+        "avatarUploaded": "头像已上传",
+        "avatarRemoved": "头像已删除",
+        "sessionRevoked": "会话已注销"
+      },
+      "errors": {
+        "loadFailed": "个人资料信息加载失败",
+        "saveFailed": "设置保存失败",
+        "incorrectPassword": "当前密码不正确",
+        "passwordMismatch": "新密码不一致",
+        "passwordTooWeak": "密码不符合要求",
+        "passwordTooShort": "密码请输入不少于6个字符",
+        "passwordChangeFailed": "密码修改失败。请重试。",
+        "uploadFailed": "上传失败"
+      }
+    },
+    "subscription": {
+      "title": "订阅管理",
+      "description": "可查看当前套餐和使用情况",
+      "currentPlan": {
+        "title": "当前套餐"
+      },
+      "fields": {
+        "planName": "套餐名称",
+        "status": "状态",
+        "currentPeriod": "当前计费周期",
+        "price": "费用",
+        "trialEnd": "试用结束日期"
+      },
+      "status": {
+        "active": "生效中",
+        "trialing": "试用中",
+        "past_due": "逾期未付",
+        "canceled": "已取消",
+        "incomplete": "未完成"
+      },
+      "perMonth": "月",
+      "cancelScheduled": "订阅将于{date}取消",
+      "noSubscription": "没有生效中的订阅",
+      "usage": {
+        "title": "使用情况",
+        "users": "用户数",
+        "documents": "文件数",
+        "storage": "存储用量"
+      },
+      "features": {
+        "title": "套餐包含的功能"
+      },
+      "actions": {
+        "manageBilling": "管理账单信息",
+        "changePlan": "变更套餐",
+        "selectPlan": "选择套餐",
+        "processing": "处理中"
+      },
+      "messages": {
+        "portalSynced": "已同步Stripe门户的变更内容"
+      },
+      "errors": {
+        "loadFailed": "订阅信息加载失败",
+        "portalFailed": "账单门户创建失败",
+        "portalSyncFailed": "从Stripe门户获取最新信息失败"
+      },
+      "dataExport": {
+        "title": "数据管理",
+        "description": "合同结束后，数据将保留{days}天。如需带出文件、风险、审核、纠正措施及可取得的证据文件，请尽早导出ZIP。",
+        "export": {
+          "button": "导出数据",
+          "label": "以ZIP格式下载当前的ISMS运行数据及可获取的证据文件",
+          "formats": "包含的数据：文件、风险、任务、信息资产、教育与培训、内部审核、纠正措施、管理评审、README、metadata、文件manifest",
+          "loading": "准备中...",
+          "success": "导出已完成"
+        },
+        "cancelled": {
+          "status": "已取消",
+          "cancelledAt": "取消日期：{date}",
+          "deleteAt": "数据自动删除日期：{date}",
+          "daysRemaining": "剩余 {days} 天",
+          "reimportNote": "导出的数据可以相同格式重新导入（{days}天以内）"
+        },
+        "errors": {
+          "exportFailed": "导出失败。请稍后重试。",
+          "unauthorized": "没有执行此操作的权限"
+        },
+        "cancel": "取消",
+        "scope": {
+          "title": "合同结束时的标准导出",
+          "body": "CSV和组织备份ZIP涵盖主要业务数据以及可获取的附件和证据文件。"
+        },
+        "externalFiles": {
+          "title": "外部文件例外",
+          "body": "外部系统管理的文件和无法获取的附件，会在manifest中记录可否获取、原因和责任边界。"
+        },
+        "schedule": {
+          "status": "删除状态",
+          "retentionUntil": "保留期限",
+          "deletionScheduledAt": "计划删除日",
+          "statusValues": {
+            "active": "正常使用中",
+            "retention": "30天保留中",
+            "early_requested": "已受理提前删除",
+            "scheduled": "已计划",
+            "processing": "处理中",
+            "deleted": "已删除",
+            "failed": "失败"
+          }
+        },
+        "earlyDelete": {
+          "button": "申请提前删除",
+          "confirm": "申请在30天保留期结束前删除。执行前需要支持团队或授权人员确认。",
+          "reasonPlaceholder": "请输入申请理由或期望时间",
+          "success": "已受理提前删除请求",
+          "error": "提前删除请求失败"
+        },
+        "recovery": {
+          "title": "恢复责任",
+          "body": "初期商业服务采用尽力恢复。RTO/RPO数值保证将在更高计划或单独SLA中后续定义。"
+        },
+        "evidence": {
+          "title": "删除受理与执行证据",
+          "request": "受理：{status}（{date}）",
+          "run": "执行：{result}（{date}）"
+        },
+        "requestStatus": {
+          "requested": "已受理",
+          "confirmed": "已确认",
+          "scheduled": "已计划",
+          "processing": "处理中",
+          "completed": "完成",
+          "failed": "失败",
+          "cancelled": "取消"
+        },
+        "runResult": {
+          "success": "完成",
+          "partial_failure": "部分失败",
+          "failed": "失败"
+        }
+      },
+      "testModeNotice": "正在以 Stripe 测试模式运行。账单门户将打开模拟页面，不会产生实际扣款。"
+    },
+    "notifications": {
+      "title": "通知设置",
+      "description": "管理通知的接收方式和通知类型",
+      "generalSettings": "基本设置",
+      "emailNotifications": "邮件通知",
+      "emailNotificationsDesc": "通过邮件接收重要通知",
+      "appNotifications": "应用内通知",
+      "appNotificationsDesc": "在应用内显示通知",
+      "notificationTypes": "通知类型",
+      "taskReminders": "任务提醒",
+      "taskRemindersDesc": "任务临近截止日期时接收通知",
+      "documentApprovals": "文件审批请求",
+      "documentApprovalsDesc": "文件需要审批时接收通知",
+      "auditSchedules": "审核日程",
+      "auditSchedulesDesc": "接收与已安排审核相关的通知",
+      "riskAlerts": "风险告警",
+      "riskAlertsDesc": "风险等级发生变化时接收通知",
+      "timingSettings": "时间设置",
+      "reminderDays": "提醒天数",
+      "reminderDaysDesc": "设置在截止日期前几天接收通知",
+      "savedSuccessfully": "通知设置已保存"
+    },
+    "controls": {
+      "title": "控制措施库",
+      "description": "梳理和编辑 ISO 27001 附录A 的控制措施及内部标签。",
+      "noAccess": {
+        "title": "没有编辑控制措施的权限",
+        "description": "请向组织管理员申请授予访问权限，或切换到具有权限的角色。",
+        "back": "返回首页"
+      },
+      "actions": {
+        "create": "添加控制措施",
+        "edit": "编辑",
+        "delete": "删除",
+        "openWizard": "从附录A添加",
+        "confirmDelete": "确定要删除“{title}”吗？此操作无法撤销。"
+      },
+      "errors": {
+        "loadFailed": "控制措施加载失败。",
+        "loadSoaFailed": "适用控制措施决定的准备状态加载失败。",
+        "loadSoaVersionsFailed": "适用控制措施决定版本加载失败。",
+        "saveFailed": "控制措施保存失败。",
+        "saveSoaFailed": "适用控制措施决定保存失败。",
+        "submitSoaFailed": "适用控制措施决定的审批申请失败。",
+        "submitSoaVersionReviewFailed": "适用控制措施决定版本的评审申请失败。",
+        "publishSoaVersionFailed": "适用控制措施决定版本发布失败。",
+        "deleteFailed": "控制措施删除失败。",
+        "required": "控制措施名称和类别为必填项。"
+      },
+      "messages": {
+        "created": "“{title}”已创建。",
+        "updated": "“{title}”已更新。",
+        "deleted": "“{title}”已删除。"
+      },
+      "filters": {
+        "search": "关键词搜索",
+        "searchPlaceholder": "按名称、标签、代码搜索",
+        "category": "类别",
+        "allCategories": "所有类别"
+      },
+      "table": {
+        "columns": {
+          "title": "控制措施",
+          "category": "类别",
+          "controlCode": "控制措施代码",
+          "updatedAt": "最近更新",
+          "actions": "操作"
+        },
+        "empty": "没有符合条件的控制措施。"
+      },
+      "soa": {
+        "title": "适用控制措施决定的准备状态",
+        "description": "记录每项控制措施是否适用及其理由，并以版本形式确认通常作为适用声明书处理的内容。结合相关风险和证据准备状况，使判断理由可说明。",
+        "actions": {
+          "refresh": "刷新",
+          "loading": "刷新中",
+          "saveDecision": "保存决定",
+          "saving": "保存中",
+          "submitApproval": "审批申请",
+          "submitting": "申请中",
+          "submitVersionReview": "申请评审最新版本",
+          "publishVersion": "发布适用控制措施的决定版本",
+          "publishingVersion": "发布中"
+        },
+        "summary": {
+          "total": "已登记控制措施",
+          "linked": "有风险处置措施",
+          "ready": "有完成证据",
+          "unlinked": "未关联"
+        },
+        "table": {
+          "control": "控制措施",
+          "status": "适用状况",
+          "links": "相关风险",
+          "evidence": "证据准备",
+          "decision": "正式决定",
+          "actions": "操作"
+        },
+        "status": {
+          "linked": "适用候选",
+          "unlinked": "需确认"
+        },
+        "links": {
+          "risks": "相关风险 {count} 项",
+          "treatments": "处置措施 {count} 项"
+        },
+        "evidence": {
+          "ready": "已完成处置措施 {count} 项",
+          "notReady": "无完成证据"
+        },
+        "decision": {
+          "status": {
+            "notReviewed": "未决定",
+            "applicable": "适用",
+            "notApplicable": "不适用"
+          },
+          "applicabilityReason": "适用理由、依据（含相关风险或运行关系）",
+          "exclusionReason": "不适用理由（说明为何不在范围内）",
+          "reviewedAt": "决定日期：{date}"
+        },
+        "messages": {
+          "saved": "“{title}”的适用控制措施决定已保存。",
+          "submitted": "“{title}”的适用控制措施决定已提交审批申请。",
+          "versionPublished": "适用控制措施决定 v{version} 已发布。",
+          "versionReviewSubmitted": "适用控制措施决定 v{version} 已提交评审申请。"
+        },
+        "version": {
+          "none": "暂无已发布的适用控制措施决定版本。",
+          "latest": "最新的适用控制措施决定：v{version} / 控制措施 {count} 项 / 发布时间 {date}",
+          "changeSummaryLabel": "本版本的修订原因",
+          "changeSummaryPlaceholder": "例：在审核前评审中重新审视了访问控制的适用理由",
+          "latestChangeSummary": "修订原因：{summary}",
+          "diffSummary": "与上一版本的差异：新增 {added} 项 / 删除 {removed} 项 / 变更 {changed} 项",
+          "reviewRejectionReason": "版本评审驳回原因：{reason}",
+          "reviewStatus": {
+            "draft": "版本评审状态：草稿",
+            "submitted": "版本评审状态：申请中",
+            "approved": "版本评审状态：已批准",
+            "rejected": "版本评审状态：已驳回"
+          }
+        },
+        "approval": {
+          "rejectionReason": "驳回原因：{reason}",
+          "status": {
+            "draft": "审批状态：草稿",
+            "submitted": "审批状态：申请中",
+            "approved": "审批状态：已批准",
+            "rejected": "审批状态：已驳回"
+          }
+        },
+        "states": {
+          "loading": "加载中",
+          "empty": "暂无可用于适用控制措施判断的控制措施。请先登记控制措施，并记录是否适用、理由以及相关风险处置。"
+        }
+      },
+      "form": {
+        "createTitle": "添加控制措施",
+        "editTitle": "编辑控制措施",
+        "fields": {
+          "title": "控制措施名称",
+          "category": "类别",
+          "controlCode": "控制措施代码",
+          "controlCodePlaceholder": "例：A.5.1",
+          "description": "说明",
+          "tags": "标签",
+          "tagsPlaceholder": "例：访问控制, 审核",
+          "tagsHint": "可用逗号分隔输入多个标签。"
+        },
+        "actions": {
+          "cancel": "取消",
+          "save": "保存",
+          "saving": "保存中"
+        }
+      },
+      "wizard": {
+        "title": "附录A 控制措施向导",
+        "description": "选择推荐模板即可批量注册。",
+        "searchPlaceholder": "按关键词筛选",
+        "badges": {
+          "existing": "已注册"
+        },
+        "states": {
+          "loading": "加载中",
+          "empty": "没有匹配的模板。"
+        },
+        "modeSection": {
+          "title": "应用模式"
+        },
+        "modes": {
+          "insert": "仅新增（保留现有）",
+          "restore": "仅补充未注册的模板",
+          "overwrite": "覆盖现有模板"
+        },
+        "actions": {
+          "cancel": "取消",
+          "apply": "注册控制措施",
+          "applying": "应用中"
+        },
+        "errors": {
+          "loadFailed": "模板加载失败。",
+          "selectOne": "请至少选择1个模板。",
+          "seedFailed": "控制措施添加失败。"
+        },
+        "messages": {
+          "successInsert": "控制措施已添加（{created} 项）。",
+          "successOverwrite": "已添加/更新控制措施(新增 {created} 项、更新 {updated} 项)。"
+        },
+        "selectedLabel": "已选择：{count} 项"
+      }
+    },
+    "structure": {
+      "title": "组织架构管理",
+      "ciso": "CISO",
+      "selectCiso": "选择CISO",
+      "currentCiso": "当前CISO",
+      "noCiso": "未设置CISO",
+      "snapshot": "快照",
+      "saveSnapshot": "保存快照",
+      "snapshotName": "快照名称",
+      "snapshotNamePlaceholder": "例：2026年Q1架构",
+      "snapshotHistory": "快照历史",
+      "compare": "比较",
+      "noSnapshots": "暂无快照",
+      "added": "新增",
+      "removed": "删除",
+      "changed": "变更",
+      "saveSuccess": "快照已保存",
+      "cisoUpdated": "CISO已更新",
+      "cisoCleared": "CISO设置已解除",
+      "loadError": "数据加载失败",
+      "saveError": "保存失败",
+      "noMembers": "未找到组织成员",
+      "selectForCompare": "请选择2个要比较的快照",
+      "comparisonResult": "比较结果",
+      "noChanges": "无变更",
+      "createdAt": "创建时间",
+      "createdBy": "创建者",
+      "bulkAssignment": "架构角色批量分配",
+      "selectRole": "选择角色",
+      "securityManager": "安全管理员",
+      "auditCommittee": "审核委员",
+      "ismsPromoter": "ISMS推进委员",
+      "selectAll": "全选",
+      "deselectAll": "全部取消",
+      "assignSelected": "分配给{count}名成员",
+      "assignSuccess": "角色已分配",
+      "assignError": "角色分配失败"
+    },
+    "setup": {
+      "title": "初始设置",
+      "description": "通过CSV文件批量登记初始数据",
+      "auditUnits": "审核对象单元",
+      "uploadCsv": "选择CSV文件",
+      "downloadTemplate": "下载模板",
+      "preview": "预览",
+      "importData": "执行导入",
+      "importing": "导入中...",
+      "importSuccess": "导入已完成",
+      "importError": "导入失败",
+      "result": "导入结果",
+      "created": "创建",
+      "updated": "更新",
+      "skipped": "跳过",
+      "errors": "错误",
+      "noFile": "未选择文件",
+      "name": "名称",
+      "unitType": "类型",
+      "site": "站点",
+      "process": "流程",
+      "invalidUnitType": "无效的类型（site 或 process）",
+      "nameMissing": "名称为必填项",
+      "columnDescription": "说明",
+      "sections": {
+        "organizationData": {
+          "title": "组织数据批量",
+          "description": "通过ZIP文件批量导入组织数据",
+          "link": "前往组织设置"
+        },
+        "auditUnits": {
+          "title": "审核对象单元",
+          "description": "通过CSV登记审核对象单元(站点、流程)"
+        },
+        "risks": {
+          "title": "风险台账",
+          "description": "通过CSV批量登记风险信息"
+        },
+        "tasks": {
+          "title": "任务",
+          "description": "通过CSV批量登记任务"
+        },
+        "assets": {
+          "title": "信息资产",
+          "description": "可在信息资产管理页面进行CSV导入",
+          "link": "前往资产管理"
+        }
+      },
+      "status": {
+        "notStarted": "未实施",
+        "completed": "完成",
+        "itemsRegistered": "已登记{count}条"
+      }
+    },
+    "appearance": {
+      "title": "外观",
+      "description": "请选择应用主题",
+      "themeLight": "浅色",
+      "themeDark": "深色",
+      "themeLiquidGlass": "液态玻璃"
+    }
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "clearAll": "全部删除",
+    "empty": "暂无通知",
+    "openNotifications": "打开通知",
+    "markAsRead": "标为已读",
+    "markAllAsRead": "全部标为已读",
+    "loading": "加载中",
+    "noNotifications": "暂无通知",
+    "noUnreadNotifications": "暂无未读通知",
+    "noArchivedNotifications": "暂无已归档通知",
+    "viewDetails": "查看详情",
+    "viewAll": "查看全部通知",
+    "settings": "通知设置",
+    "archive": "归档",
+    "type": {
+      "task_reminder": "任务提醒",
+      "document_approval": "文件审批",
+      "audit_schedule": "审核日程",
+      "risk_alert": "风险告警",
+      "system": "系统",
+      "info": "公告"
+    },
+    "filter": {
+      "all": "全部",
+      "unread": "未读",
+      "archived": "已归档"
+    },
+    "views": {
+      "approvals": {
+        "active": "仅显示与审批相关的通知",
+        "clear": "返回全部通知"
+      }
+    },
+    "settingsPage": {
+      "title": "通知设置",
+      "description": "管理通知的接收方式",
+      "channels": {
+        "title": "通知渠道",
+        "email": "邮件通知",
+        "app": "应用内通知"
+      },
+      "types": {
+        "title": "通知类型",
+        "taskReminders": "任务提醒",
+        "documentApprovals": "文件审批",
+        "auditSchedules": "审核日程",
+        "riskAlerts": "风险告警"
+      },
+      "timing": {
+        "title": "时间设置",
+        "reminderDays": "截止日期前的提前通知天数"
+      },
+      "save": "保存设置",
+      "saving": "保存中",
+      "saved": "设置已保存"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "紧急"
+    }
+  },
+  "superAdmin": {
+    "organizations": {
+      "badge": "超级管理员",
+      "title": "租户与审计运维",
+      "description": "在此页面管理所有租户的创建、锁定及全局审计日志。",
+      "loadingGuard": "加载中",
+      "errors": {
+        "loadTenants": "租户列表获取失败。",
+        "loadDeletedTenants": "已删除租户列表获取失败。",
+        "createFailed": "租户开通失败。",
+        "createValidation": "租户名称和 System Operator 邮箱为必填项。",
+        "lockFailed": "租户锁定状态更新失败。",
+        "loadAudits": "审计日志获取失败。"
+      },
+      "viewMode": {
+        "active": "活跃",
+        "deleted": "已删除"
+      },
+      "tenants": {
+        "title": "租户列表",
+        "subtitle": "本环境中注册的所有租户。",
+        "refresh": "重新加载列表",
+        "refreshing": "处理中",
+        "loading": "加载中",
+        "empty": "尚未注册租户。",
+        "emptyDeleted": "暂无已删除的租户。",
+        "created": "创建于 {date}",
+        "plan": {
+          "trial": "试用",
+          "starter": "入门版",
+          "standard": "标准版",
+          "enterprise": "企业版"
+        },
+        "status": {
+          "active": "运行中",
+          "inactive": "已停用",
+          "suspended": "已锁定",
+          "cancelled": "已退订",
+          "locked": "已锁定",
+          "deleted": "已删除"
+        },
+        "columns": {
+          "name": "租户",
+          "plan": "套餐 / 状态",
+          "ismsPhase": "ISMS 阶段",
+          "trialEnds": "试用结束",
+          "deletedAt": "删除时间",
+          "audits": "审计日志",
+          "actions": "操作"
+        },
+        "ismsPhase": {
+          "initial": "初次认证准备",
+          "surveillance": "年度持续运行",
+          "unset": "未设置"
+        },
+        "audits": {
+          "total": "条",
+          "last": "最后日志 {date}"
+        },
+        "actions": {
+          "lock": "锁定",
+          "unlock": "解除锁定"
+        }
+      },
+      "create": {
+        "title": "开通租户",
+        "subtitle": "创建组织记录和初始 System Operator 账户。",
+        "fields": {
+          "name": "租户名称",
+          "plan": "套餐",
+          "status": "状态",
+          "trialDays": "试用天数（天）",
+          "operatorEmail": "System Operator 邮箱",
+          "operatorName": "显示名称（可选）",
+          "locale": "首选语言"
+        },
+        "helpTexts": {
+          "name": "将显示在审计日志和租户列表中的名称。",
+          "plan": "初始套餐可随时在租户详情中更改。",
+          "status": "请先将初始状态设为运行中或已锁定，再按需执行锁定操作。",
+          "trialDays": "以 0〜365 的整数指定试用期。",
+          "operatorEmail": "该邮箱用于 System Operator 登录，不能与现有账户重复。"
+        },
+        "planOptions": {
+          "trial": "试用",
+          "starter": "入门版",
+          "standard": "标准版",
+          "enterprise": "企业版"
+        },
+        "actions": {
+          "submit": "创建租户",
+          "creating": "创建中"
+        },
+        "success": "{name} 已创建。",
+        "credentials": {
+          "title": "初始 System Operator 信息",
+          "description": "该信息不会再次显示。请通过安全渠道共享。",
+          "linkedTitle": "已关联现有 System Operator",
+          "linkedDescription": "该邮箱已在其他租户使用，已将现有账户关联到新租户。密码不会再次显示。",
+          "email": "邮箱",
+          "password": "临时密码",
+          "passwordLinkedLabel": "密码",
+          "passwordLinkedValue": "使用现有账户（无需重新发放）",
+          "copy": "复制"
+        }
+      },
+      "lock": {
+        "prompt": "即将锁定 {name}。请输入原因（可选）。"
+      },
+      "tenantActions": {
+        "delete": "删除",
+        "restore": "恢复",
+        "cancel": "取消",
+        "reasonLabel": "原因（可选）",
+        "reasonPlaceholder": "输入删除或恢复的原因...",
+        "reasonHelp": "该信息将记录到审计日志。",
+        "deleteDialog": {
+          "title": "删除租户",
+          "description": "确定要删除 {name} 吗？该租户将移至已删除列表，之后可以恢复。",
+          "confirm": "删除",
+          "confirming": "删除中..."
+        },
+        "restoreDialog": {
+          "title": "恢复租户",
+          "description": "确定要恢复 {name} 吗？该租户将返回活跃列表。",
+          "confirm": "恢复",
+          "confirming": "恢复中..."
+        },
+        "deleteSuccess": "{name} 已删除。",
+        "restoreSuccess": "{name} 已恢复。",
+        "errors": {
+          "deleteFailed": "租户删除失败。",
+          "restoreFailed": "租户恢复失败。",
+          "unknown": "发生未知错误。"
+        }
+      },
+      "audit": {
+        "title": "全局审计时间线",
+        "subtitle": "以 global scope 记录的跨租户操作日志。",
+        "refresh": "重新加载日志",
+        "refreshing": "处理中",
+        "columns": {
+          "timestamp": "时间戳",
+          "organization": "组织",
+          "action": "操作",
+          "actor": "执行者",
+          "notes": "详情"
+        },
+        "scope": {
+          "global": "全局",
+          "tenant": "租户"
+        },
+        "loading": "加载中",
+        "empty": "所选范围内暂无日志。",
+        "loadMore": "加载更多",
+        "noMore": "没有更多日志",
+        "unknownOrg": "未关联的组织"
+      },
+      "settings": {
+        "badge": "服务设置",
+        "title": "服务设置与验证要点",
+        "description": "Super Admin 负责管理跨租户的功能开关和 Edge Function。请参照以下手册，准备好各环境的前提条件。",
+        "sections": {
+          "featureFlags": {
+            "title": "功能开关 / Edge Config",
+            "items": [
+              {
+                "title": "NEXT_PUBLIC_ENABLE_SUPER_ADMIN",
+                "body": "用于启用 Super Admin UI 的前端开关。关闭时 Dev Login 中不会显示该角色。"
+              },
+              {
+                "title": "NEXT_PUBLIC_APP_URL",
+                "body": "应用的基础 URL。本地开发使用 `http://localhost:3007`。"
+              },
+              {
+                "title": "TURSO_DATABASE_URL / TURSO_AUTH_TOKEN",
+                "body": "Turso Cloud 的数据库连接设置。本地开发使用 `file:local.db`。"
+              }
+            ]
+          },
+          "runtime": {
+            "title": "运维检查清单",
+            "items": [
+              {
+                "title": "DB connection",
+                "body": "运行 `npm run db:seed`，确认应用可以连接 local.db 或 Turso。"
+              },
+              {
+                "title": "Audit log query",
+                "body": "通过 Drizzle/libSQL 检查 `audit_logs`，确认运维事件已被记录。"
+              },
+              {
+                "title": "QA 冒烟测试",
+                "body": "执行 `npm run e2e:super-admin`，自动化完成 Dev Login → 创建租户 → 锁定/解锁 → 审计日志确认的流程。"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "invitations": {
+      "badge": "邀请管理",
+      "title": "邀请与接受状态",
+      "subtitle": "查看已发送的邀请邮件列表，确认期限和接受状态；如有需要，超级管理员可代为处理。",
+      "actions": {
+        "refresh": "重新加载列表",
+        "refreshing": "处理中",
+        "deleteSelected": "删除所选邀请",
+        "deleting": "删除中",
+        "accept": "接受处理",
+        "accepting": "处理中",
+        "loadMore": "加载更多",
+        "loadingMore": "加载中"
+      },
+      "summary": {
+        "total": "邀请总数",
+        "pending": "未接受",
+        "accepted": "已接受"
+      },
+      "table": {
+        "columns": {
+          "email": "收件邮箱",
+          "organization": "租户",
+          "role": "角色",
+          "invitedBy": "邀请人",
+          "status": "状态",
+          "timestamps": "时间戳",
+          "actions": "操作"
+        },
+        "labels": {
+          "created": "创建",
+          "expires": "期限",
+          "accepted": "接受"
+        },
+        "unknownOrg": "未知租户"
+      },
+      "status": {
+        "pending": "未接受",
+        "accepted": "已接受",
+        "expired": "已过期"
+      },
+      "messages": {
+        "loading": "加载中",
+        "empty": "暂无可显示的邀请。",
+        "noMore": "没有更多邀请。",
+        "loadError": "邀请列表获取失败。",
+        "acceptError": "接受处理失败。",
+        "acceptSuccess": "邀请已更新为已接受。",
+        "passwordNotice": "临时密码：{password}",
+        "deleteError": "邀请删除失败。",
+        "deleteSuccess": "已删除 {count} 条邀请。"
+      }
+    },
+    "users": {
+      "badge": "super admin 专用",
+      "title": "创建用户（super_admin / system_operator）",
+      "description": "作为 SaaS 运营方，可直接添加超级管理员和租户的系统运营者。创建 system_operator 时请选择目标租户。",
+      "form": {
+        "email": "邮箱",
+        "role": "角色",
+        "organization": "租户",
+        "locale": "语言",
+        "roleHint": "system_operator 必须指定租户。super_admin 无需指定租户。",
+        "submit": "创建用户",
+        "creating": "创建中"
+      },
+      "roles": {
+        "super_admin": "Super Admin",
+        "system_operator": "System Operator"
+      },
+      "messages": {
+        "created": "已将 {email} 创建为 {role}。",
+        "passwordIssued": "临时密码：{password}",
+        "validation": "请输入邮箱和角色。system_operator 需指定租户。",
+        "loadOrgsFailed": "租户列表获取失败。",
+        "createFailed": "用户创建失败。"
+      }
+    },
+    "health": {
+      "status": {
+        "primary": "主节点",
+        "standby": "备用节点"
+      },
+      "panel": {
+        "title": "Edge Function 健康状态",
+        "queueLabel": "队列长度",
+        "failoverLabel": "故障转移状态",
+        "lastDeployLabel": "最近部署",
+        "lastChecked": "最近检查 {timestamp}",
+        "queue": "队列长度：{queueLength}",
+        "failover": "故障转移状态：{failoverState}",
+        "lastDeploy": "最近部署：{lastDeployAt}",
+        "unknown": "未知"
+      },
+      "banner": {
+        "failure": {
+          "title": "tenant-admin 健康检查失败",
+          "body": "队列 {queueLength}，故障转移状态 {failoverState}，最近部署 {lastDeployAt}。"
+        },
+        "standby": {
+          "title": "tenant-admin 正以备用节点运行",
+          "body": "故障转移状态为 {failoverState}，队列 {queueLength}。重新切换前请确认部署。"
+        },
+        "cta": "查看 Super Admin Runbook"
+      }
+    }
+  },
+  "incidents": {
+    "title": "安全事件列表",
+    "description": "可查看已发生安全事件的列表。",
+    "new": "登记安全事件",
+    "newTitle": "登记安全事件",
+    "newDescription": "登记初步信息并跟踪处理进展。",
+    "loading": "加载中...",
+    "empty": "尚未登记安全事件。",
+    "backToList": "返回列表",
+    "table": {
+      "title": "标题",
+      "severity": "严重程度",
+      "status": "状态",
+      "approval": "审批状态",
+      "occurredAt": "发生时间"
+    },
+    "form": {
+      "title": "标题",
+      "description": "概述",
+      "severity": "严重程度",
+      "occurredAt": "发生时间",
+      "approver": "审批人",
+      "autoApprover": "自动选择（按规则）",
+      "approverHint": "未选择时，将按事件级升级规则确定审批人。",
+      "cancel": "取消",
+      "save": "登记",
+      "saving": "登记中..."
+    },
+    "detail": {
+      "occurredAt": "发生时间",
+      "createdAt": "登记时间",
+      "approvalDueAt": "审批期限",
+      "description": "详情",
+      "noDescription": "尚未填写详情。"
+    },
+    "approvalStatus": {
+      "none": "未申请",
+      "pending": "待审批",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "expired": "已逾期"
+    },
+    "severity": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "status": {
+      "draft": "草稿",
+      "in_progress": "处理中",
+      "resolved": "已解决",
+      "closed": "已关闭"
+    },
+    "errors": {
+      "loadFailed": "安全事件加载失败。",
+      "saveFailed": "安全事件保存失败。",
+      "notFound": "未找到安全事件。",
+      "organizationMissing": "无法获取组织信息。"
+    },
+    "links": {
+      "title": "相关链接",
+      "addLink": "添加链接",
+      "task": "任务",
+      "risk": "风险",
+      "asset": "资产",
+      "noLinks": "暂无链接",
+      "selectTarget": "选择对象",
+      "remove": "删除"
+    }
+  },
+  "approvals": {
+    "title": "审批队列",
+    "pending": "待审批",
+    "approved": "已批准",
+    "rejected": "已拒绝",
+    "all": "全部",
+    "status": "状态",
+    "revert": "退回",
+    "revertReason": "退回原因",
+    "revertConfirm": "确定退回该审批吗？",
+    "revertSuccess": "已退回",
+    "revertError": "退回失败",
+    "reverted": "已退回",
+    "revertedAt": "退回时间",
+    "revertedBy": "退回人",
+    "revertReasonPlaceholder": "退回原因（必填）",
+    "revertModalTitle": "退回审批",
+    "revertModalDescription": "确定退回该审批吗？请输入退回原因。",
+    "cancel": "取消",
+    "processing": "处理中...",
+    "empty": "暂无待审批内容。",
+    "emptyFiltered": "未找到符合条件的请求。"
+  },
+  "bcp": {
+    "title": "业务连续性计划（BCP）",
+    "description": "制定和管理业务连续性计划，并记录演练情况。",
+    "new": "新建BCP",
+    "newTitle": "新建BCP",
+    "newDescription": "新建业务连续性计划。",
+    "loading": "加载中...",
+    "empty": "尚未创建BCP。",
+    "backToList": "返回列表",
+    "table": {
+      "title": "计划名称",
+      "status": "状态",
+      "version": "版本",
+      "updatedAt": "最近更新",
+      "scope": "适用范围"
+    },
+    "form": {
+      "title": "计划名称",
+      "scope": "适用范围",
+      "version": "版本",
+      "status": "状态",
+      "cancel": "取消",
+      "save": "保存",
+      "saving": "保存中..."
+    },
+    "detail": {
+      "planInfo": "计划信息",
+      "scope": "适用范围",
+      "version": "版本",
+      "createdAt": "创建时间",
+      "updatedAt": "最近更新",
+      "lastReviewedAt": "最近评审日期",
+      "nextReviewDate": "下次评审日期",
+      "noScope": "尚未设置适用范围。",
+      "edit": "编辑",
+      "delete": "删除",
+      "confirmDelete": "确定删除该计划吗？相关的场景、演练记录和恢复目标也将全部删除。"
+    },
+    "status": {
+      "draft": "草稿",
+      "active": "生效",
+      "under_review": "评审中",
+      "archived": "已归档"
+    },
+    "scenarios": {
+      "title": "假设场景",
+      "add": "添加场景",
+      "empty": "尚未登记场景。",
+      "scenarioType": "场景类型",
+      "impactLevel": "影响程度",
+      "likelihood": "发生可能性",
+      "responseProcedure": "应对流程",
+      "noResponse": "尚未设置应对流程。"
+    },
+    "scenarioType": {
+      "natural_disaster": "自然灾害",
+      "cyber_attack": "网络攻击",
+      "system_failure": "系统故障",
+      "pandemic": "大规模疫情",
+      "supply_chain": "供应链中断",
+      "power_outage": "停电",
+      "other": "其他"
+    },
+    "impactLevel": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "likelihood": {
+      "rare": "极少发生",
+      "unlikely": "较低",
+      "possible": "可能发生",
+      "likely": "较高",
+      "almost_certain": "几乎必然"
+    },
+    "drills": {
+      "title": "演练记录",
+      "add": "添加演练",
+      "empty": "暂无演练记录。",
+      "scheduledDate": "计划日期",
+      "conductedDate": "实施日期",
+      "participants": "参加人员",
+      "result": "结果",
+      "findings": "发现事项与问题"
+    },
+    "drillStatus": {
+      "planned": "计划中",
+      "in_progress": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "recovery": {
+      "title": "恢复目标（RTO/RPO）",
+      "add": "添加恢复目标",
+      "empty": "尚未设置恢复目标。",
+      "targetSystem": "目标系统",
+      "rtoHours": "RTO（小时）",
+      "rpoHours": "RPO（小时）",
+      "priority": "优先级",
+      "notes": "备注"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "errors": {
+      "loadFailed": "数据加载失败。",
+      "saveFailed": "保存失败。",
+      "deleteFailed": "删除失败。",
+      "organizationMissing": "无法获取组织信息。"
+    },
+    "export": {
+      "title": "导出",
+      "button": "导出JSON"
+    }
+  },
+  "managementReview": {
+    "title": "管理评审",
+    "description": "管理 ISO 27001 管理评审会议的计划、记录和纠正措施。",
+    "list": {
+      "title": "管理评审列表",
+      "empty": "暂无管理评审。",
+      "emptyForStatus": "没有{status}的管理评审。",
+      "createNew": "新建评审",
+      "filters": {
+        "title": "按评审状态查看",
+        "subtitle": "可按计划、进行中、已完成等状态查看年度评审。",
+        "status": "状态",
+        "allStatuses": "全部状态",
+        "activeStatus": "仅显示{status}的评审"
+      },
+      "summary": {
+        "title": "各状态评审数量",
+        "all": "全部",
+        "unit": "项评审"
+      }
+    },
+    "detail": {
+      "title": "评审详情",
+      "agenda": "议题",
+      "participants": "参加人员",
+      "location": "地点",
+      "minutes": "会议纪要",
+      "conclusions": "结论与决议事项",
+      "reviewDate": "评审日期",
+      "items": "评审项目",
+      "actions": "行动项",
+      "export": "导出",
+      "delete": "删除",
+      "deleteConfirm": "确定删除该管理评审吗？",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "back": "返回列表"
+    },
+    "new": {
+      "title": "新建管理评审",
+      "titleLabel": "标题",
+      "titlePlaceholder": "请输入评审会议标题",
+      "reviewDateLabel": "评审日期",
+      "statusLabel": "状态",
+      "locationLabel": "地点",
+      "locationPlaceholder": "请输入举办地点",
+      "agendaLabel": "议题",
+      "agendaPlaceholder": "请输入议题（可换行添加多项）",
+      "create": "创建",
+      "cancel": "取消"
+    },
+    "status": {
+      "planned": "计划中",
+      "scheduled": "已排期",
+      "in_progress": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "itemType": {
+      "input": "输入信息",
+      "discussion": "讨论事项",
+      "decision": "决议事项",
+      "output": "输出"
+    },
+    "item": {
+      "add": "添加项目",
+      "title": "项目名称",
+      "description": "说明",
+      "relatedArea": "相关领域",
+      "sortOrder": "显示顺序",
+      "delete": "删除",
+      "empty": "暂无评审项目。"
+    },
+    "action": {
+      "add": "添加行动项",
+      "title": "行动项名称",
+      "description": "说明",
+      "assignee": "负责人",
+      "dueDate": "截止日期",
+      "status": "状态",
+      "completedAt": "完成日期",
+      "delete": "删除",
+      "empty": "暂无行动项。"
+    },
+    "actionStatus": {
+      "open": "未开始",
+      "in_progress": "处理中",
+      "completed": "已完成",
+      "overdue": "已逾期",
+      "cancelled": "已取消"
+    },
+    "relatedArea": {
+      "risk": "风险",
+      "audit": "审核",
+      "incident": "安全事件",
+      "policy": "方针",
+      "other": "其他"
+    },
+    "errors": {
+      "loadFailed": "管理评审加载失败。",
+      "saveFailed": "管理评审保存失败。",
+      "notFound": "未找到管理评审。",
+      "organizationMissing": "无法获取组织信息。"
+    }
+  },
+  "suppliers": {
+    "title": "供应商管理",
+    "description": "对外部委托方进行安全评估、合同管理和监控。",
+    "new": "登记供应商",
+    "newTitle": "新建供应商登记",
+    "newDescription": "登记供应商信息。",
+    "loading": "加载中...",
+    "empty": "尚未登记供应商。",
+    "backToList": "返回列表",
+    "detail": "供应商详情",
+    "edit": "编辑",
+    "delete": "删除",
+    "deleteConfirm": "确定删除该供应商吗？",
+    "save": "保存",
+    "cancel": "取消",
+    "table": {
+      "name": "供应商名称",
+      "type": "类型",
+      "status": "状态",
+      "riskLevel": "风险等级",
+      "contactName": "联系人",
+      "contactEmail": "邮箱",
+      "createdAt": "登记日期"
+    },
+    "form": {
+      "name": "供应商名称",
+      "type": "类型",
+      "contactName": "联系人姓名",
+      "contactEmail": "邮箱地址",
+      "contactPhone": "电话号码",
+      "website": "网站",
+      "description": "说明",
+      "status": "状态",
+      "riskLevel": "风险等级"
+    },
+    "type": {
+      "cloud_service": "云服务",
+      "outsourcing": "外部委托",
+      "consulting": "咨询服务",
+      "hardware": "硬件",
+      "software": "软件",
+      "other": "其他"
+    },
+    "status": {
+      "active": "生效",
+      "inactive": "停用",
+      "under_review": "评审中",
+      "terminated": "已终止"
+    },
+    "riskLevel": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "重大"
+    },
+    "assessments": {
+      "title": "安全评估",
+      "new": "添加评估",
+      "empty": "尚未登记评估。",
+      "assessmentDate": "评估日期",
+      "assessor": "评估人",
+      "overallScore": "综合评分",
+      "result": "结果",
+      "findings": "发现事项",
+      "nextAssessmentDate": "下次评估日期",
+      "resultValues": {
+        "pass": "合格",
+        "fail": "不合格",
+        "conditional": "有条件合格",
+        "pending": "评估中"
+      }
+    },
+    "contracts": {
+      "title": "合同信息",
+      "new": "添加合同",
+      "empty": "尚未登记合同。",
+      "contractNumber": "合同编号",
+      "contractTitle": "合同名称",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "slaDetails": "SLA详情",
+      "securityRequirements": "安全要求",
+      "status": "状态",
+      "statusValues": {
+        "draft": "草稿",
+        "active": "生效",
+        "expired": "已过期",
+        "terminated": "已终止"
+      }
+    },
+    "incidents": {
+      "title": "供应商安全事件",
+      "new": "添加安全事件",
+      "empty": "尚未登记安全事件。"
+    },
+    "errors": {
+      "loadFailed": "供应商信息加载失败。",
+      "createFailed": "供应商登记失败。",
+      "updateFailed": "供应商更新失败。",
+      "deleteFailed": "供应商删除失败。"
+    },
+    "export": {
+      "title": "导出",
+      "description": "导出供应商信息。"
+    }
+  },
+  "examination": {
+    "submissionBundle": {
+      "title": "审核准备资料包",
+      "description": "面向初次认证审核，将适用范围、组织体系、文件、资产、风险、适用控制措施的决定及初始任务整理为审核准备资料包。它不保证取得认证或被审核机构受理，但可帮助在提交前确认准备状况、缺口和下一步操作。",
+      "organizationLine": "{name} / 阶段: {phase} / 角色: {role}",
+      "reviewNotice": {
+        "title": "用于支持审核准备的确认资料",
+        "body": "本资料包用于整理审核准备和内部评审所需的证据。它不保证通过 ISO 27001 认证或在审核中被受理，但可帮助您在提交前确认所需信息、缺口和下一步操作。"
+      },
+      "actions": {
+        "refresh": "重新加载",
+        "downloadZip": "下载ZIP",
+        "downloadingZip": "正在准备ZIP...",
+        "downloadPdf": "下载PDF",
+        "downloadingPdf": "正在准备PDF..."
+      },
+      "readiness": {
+        "label": "提交准备情况",
+        "readyItems": "已就绪",
+        "gapItems": "缺口项",
+        "generatedAt": "生成时间",
+        "latestSoa": "最新的适用控制措施决定",
+        "soaVersion": "v{version}",
+        "noSoa": "未发布",
+        "status": {
+          "ready": "提交前需要确认的资料已可查看",
+          "ready_with_gaps": "存在缺口或待确认事项，提交前需要先完善"
+        }
+      },
+      "nextAction": {
+        "eyebrow": "下一步",
+        "gapTitle": "请先完善「{item}」",
+        "gapFallback": "请查看缺口项详情，并在相关页面更新证据、负责人或判断理由。",
+        "openTarget": "打开相关页面",
+        "readyTitle": "可输出审核准备资料包",
+        "readyDescription": "可将已就绪的证据导出为PDF或ZIP，用于经营者、管理负责人和相关人员评审。本资料不保证审核受理。"
+      },
+      "items": {
+        "countAndSources": "{count}项 / {sources}",
+        "evidence": "证据",
+        "gaps": "缺口与待确认事项",
+        "nextAction": "下一步操作:",
+        "openRelated": "打开相关页面",
+        "none": "无",
+        "noGaps": "未检测到缺口",
+        "status": {
+          "ready": "已就绪",
+          "missing": "缺失",
+          "needs_review": "待确认"
+        }
+      },
+      "messages": {
+        "refreshed": "已重新加载审核准备资料包",
+        "downloaded": "已下载审核准备资料包ZIP",
+        "pdfDownloaded": "已下载审核准备资料包PDF"
+      },
+      "errors": {
+        "loadFailed": "无法加载审核准备资料包",
+        "downloadFailed": "无法下载审核准备资料包ZIP",
+        "pdfDownloadFailed": "无法下载审核准备资料包PDF"
+      },
+      "noAccess": {
+        "title": "无法查看审核准备资料包",
+        "description": "请以组织管理员、系统运营者或审核员身份访问。",
+        "back": "返回首页"
+      }
+    }
+  },
+  "education": {
+    "title": "教育与培训管理",
+    "description": "基于ISO 27001的教育与培训计划管理",
+    "plans": {
+      "title": "教育计划列表",
+      "empty": "暂无教育计划",
+      "create": "新建教育计划",
+      "edit": "编辑教育计划",
+      "delete": "删除教育计划",
+      "deleteConfirm": "确定要删除该教育计划吗？",
+      "detail": "教育计划详情"
+    },
+    "form": {
+      "title": "标题",
+      "titlePlaceholder": "请输入教育计划标题",
+      "description": "说明",
+      "descriptionPlaceholder": "请输入教育计划说明",
+      "targetAudience": "对象人员",
+      "targetAudiencePlaceholder": "请选择对象人员",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "status": "状态",
+      "save": "保存",
+      "cancel": "取消",
+      "creating": "创建中...",
+      "updating": "更新中..."
+    },
+    "status": {
+      "draft": "草稿",
+      "scheduled": "已排期",
+      "in_progress": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "records": {
+      "title": "参训记录",
+      "empty": "暂无参训记录",
+      "add": "添加参训记录",
+      "attendee": "参训人员",
+      "attendedAt": "参训时间",
+      "completedAt": "完成时间",
+      "score": "得分",
+      "result": "结果",
+      "feedback": "反馈",
+      "resultValues": {
+        "pending": "未完成",
+        "passed": "合格",
+        "failed": "不合格",
+        "incomplete": "未结业"
+      }
+    },
+    "materials": {
+      "title": "教材与资料",
+      "empty": "暂无教材",
+      "add": "添加教材",
+      "attachExisting": "添加已有教材",
+      "attachExistingTitle": "从教材库添加",
+      "attachExistingDescription": "将组织内已创建的教材关联到此教育计划。",
+      "attachSelected": "添加所选教材",
+      "noReusableMaterials": "没有可添加的已有教材。",
+      "edit": "编辑",
+      "update": "更新教材",
+      "delete": "删除",
+      "deleteConfirm": "确定删除教材「{title}」吗？该教材也将从使用它的教育计划中移除。",
+      "name": "教材名称",
+      "type": "类型",
+      "url": "URL",
+      "description": "说明",
+      "summary": "此教育计划已关联{total}份教材。",
+      "typeValues": {
+        "document": "文件",
+        "video": "视频",
+        "slide": "幻灯片",
+        "link": "链接",
+        "other": "其他"
+      }
+    },
+    "stats": {
+      "totalPlans": "计划数",
+      "totalRecords": "参训记录数",
+      "completionRate": "结业率",
+      "averageScore": "平均得分",
+      "attentionRecords": "待确认"
+    },
+    "targetCoverage": {
+      "title": "对象人员覆盖情况",
+      "descriptionWithLabel": "对象人员：{label}。系统将根据对象人员设定读取候选名单，并与参训记录比对，显示可能遗漏的记录。",
+      "descriptionFallback": "由于尚未明确指定对象人员，暂以组织内的有效用户为对象，显示其参训记录情况。",
+      "total": "对象人员",
+      "recorded": "已记录",
+      "missing": "未记录",
+      "missingPreview": "未记录的候选人员"
+    },
+    "targetAssignment": {
+      "title": "选择对象人员",
+      "description": "可按全体员工、角色、部门或用户为单位选择此教育计划的对象人员。保存后将反映到对象人员覆盖情况中。",
+      "edit": "编辑对象人员",
+      "selectAll": "选择全部有效用户",
+      "save": "保存对象人员",
+      "modes": {
+        "all": "全体员工",
+        "role": "角色",
+        "department": "部门",
+        "users": "用户"
+      },
+      "allDescription": "将组织内 {count} 名有效用户设为对象。",
+      "roleLabel": "对象角色",
+      "departmentLabel": "对象部门"
+    },
+    "myCompletion": {
+      "title": "我的参训状态",
+      "description": "确认教材并理解教育内容后，可记录为参训完成。",
+      "notTargetDescription": "此教育计划目前未将您设为对象人员。",
+      "completedDescription": "此教育已记录为参训完成。",
+      "completedAt": "完成时间：{date}",
+      "feedback": "备注",
+      "feedbackPlaceholder": "如有确认内容或补充事项，请填写",
+      "complete": "记录为参训完成",
+      "saving": "记录中..."
+    },
+    "nextAction": {
+      "add_records": {
+        "title": "请添加参训记录",
+        "description": "此教育计划尚无参训记录。添加对象人员的参训结果后，可作为教育证据进行查阅。"
+      },
+      "follow_up": {
+        "title": "请确认未完成或不合格的参训人员",
+        "description": "共{total}条记录中{passed}条已合格。{issues}条为未完成、不合格或未结业，需要进一步跟进。"
+      },
+      "review_overdue": {
+        "title": "请确认已逾期的教育记录",
+        "description": "已超过结束日期。共{total}条记录中{passed}条已合格，{issues}条需要进一步确认。"
+      },
+      "ready": {
+        "title": "已可作为教育证据进行查阅",
+        "description": "共有{total}条参训记录，结业率为{completionRate}%。可根据需要纳入审核准备资料。"
+      }
+    },
+    "export": {
+      "title": "导出",
+      "description": "将教育计划导出为CSV格式。"
+    },
+    "filters": {
+      "followUpActive": "仅显示需跟进的教育计划",
+      "followUpEmpty": "没有需跟进的教育计划。",
+      "clear": "清除筛选"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "404 — 页面未找到",
+      "description": "您访问的页面不存在，或已被移动或删除。",
+      "backHome": "返回首页",
+      "backTop": "前往顶部"
+    },
+    "unexpectedError": {
+      "title": "发生意外错误",
+      "description": "出了点问题。请重试，或者如果问题持续存在，请联系支持团队。",
+      "retry": "重试",
+      "backHome": "返回首页"
+    },
+    "globalError": {
+      "title": "应用程序错误",
+      "description": "发生了严重错误。请重新加载页面。",
+      "reload": "重新加载"
+    }
+  }
+}

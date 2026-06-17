@@ -1,0 +1,19 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "master": false
+    }
+  },
+  "github": {
+    "enabled": true,
+    "autoAlias": false,
+    "silent": false
+  },
+  "crons": [
+    {
+      "path": "/api/cron/escalate-overdue-approvals",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

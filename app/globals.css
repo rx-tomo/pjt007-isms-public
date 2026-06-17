@@ -1,0 +1,460 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Theme foundation tokens (RGB triplets for Tailwind opacity modifiers) */
+  --app-bg: 249 250 251;
+  --surface: 255 255 255;
+  --surface-elevated: 255 255 255;
+  --surface-hover: 243 244 246;
+  --border: 229 231 235;
+  --border-color: rgb(var(--border));
+  --text-primary: 17 24 39;
+  --text-secondary: 55 65 81;
+  --text-muted: 107 114 128;
+  --accent: 37 99 235;
+  --accent-foreground: 255 255 255;
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 8px 18px -8px rgba(15, 23, 42, 0.16);
+  --glass-blur: 0px;
+
+  /* Surfaces */
+  --background: #f8fafc;
+  --card-background: #ffffff;
+  --foreground: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+
+  /* Brand palette — full scale (hex, no alpha modifier needed) */
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --primary: var(--primary-600);
+  --primary-foreground: #ffffff;
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+
+  --secondary-50: #f0f9ff;
+  --secondary-100: #e0f2fe;
+  --secondary-200: #bae6fd;
+  --secondary-300: #7dd3fc;
+  --secondary-400: #38bdf8;
+  --secondary-500: #0ea5e9;
+  --secondary-600: #0284c7;
+  --secondary-700: #0369a1;
+  --secondary-800: #075985;
+  --secondary-900: #0c4a6e;
+  --secondary: var(--secondary-500);
+  --secondary-foreground: #ffffff;
+  --color-secondary-200: #bae6fd;
+  --color-secondary-300: #7dd3fc;
+
+  /* Semantic palette */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --color-error-500: #ef4444;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-50: #fee2e2;
+
+  --color-success-50: #ecfdf5;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-warning-50: #fef3c7;
+  --color-warning-700: #b45309;
+
+  /* Neutral palette */
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+
+  /* Button state tokens (theme-stable hover/active backgrounds).
+     The palette -700 tokens are remapped in .dark for badge/text contrast,
+     so button states reference these dedicated tokens instead. */
+  --btn-primary-hover: #1d4ed8;
+  --btn-success-hover: #15803d;
+  --btn-danger-hover: #b91c1c;
+  --btn-neutral-active: #374151;
+
+  /* Typography scale */
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+
+  /* Layout spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+
+  /* Radii */
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --app-bg: 15 23 42;
+  --surface: 24 24 27;
+  --surface-elevated: 39 39 42;
+  --surface-hover: 52 52 58;
+  --border: 63 63 70;
+  --border-color: rgb(var(--border));
+  --text-primary: 244 244 245;
+  --text-secondary: 212 212 216;
+  --text-muted: 161 161 170;
+  --accent: 96 165 250;
+  --accent-foreground: 15 23 42;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 14px 28px -12px rgba(0, 0, 0, 0.48);
+  --glass-blur: 0px;
+
+  /* Brand palette — dark surface overrides.
+     -50/-100/-700 are intentional dark-surface values (bg/text pairs).
+     -200 through -900 fall back to light values; listed here explicitly for predictability. */
+  --primary-50: #1e3a5f;
+  --primary-100: #1e40af;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #93c5fd;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --secondary-50: #0c2a3e;
+  --secondary-100: #0c3044;
+  --secondary-200: #bae6fd;
+  --secondary-300: #7dd3fc;
+  --secondary-400: #38bdf8;
+  --secondary-500: #0ea5e9;
+  --secondary-600: #0284c7;
+  --secondary-700: #7dd3fc;
+  --secondary-800: #075985;
+  --secondary-900: #0c4a6e;
+
+  /* Semantic palette — dark surface overrides (bg -50 / text -700 pairs) */
+  --color-success-50: #052e16;
+  --color-success-700: #4ade80;
+  --color-warning-50: #451a03;
+  --color-warning-700: #fbbf24;
+  --color-error-50: #450a0a;
+  --color-error-700: #f87171;
+
+  /* Neutral palette — dark surface overrides */
+  --color-neutral-700: #d1d5db;
+}
+
+.theme-liquid-glass {
+  /* Faintly cool-tinted whites so the frosted chrome reads as glass, not flat white */
+  --surface: 250 251 255;
+  --surface-elevated: 252 253 255;
+  --surface-hover: 240 244 251;
+  --border: 203 213 230;
+  --border-color: rgb(var(--border));
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 14px 30px -16px rgba(15, 23, 42, 0.26);
+  --glass-blur: 14px;
+}
+
+/* Dashboard Layout Styles */
+.dashboard-layout {
+  @apply relative flex min-h-screen bg-app text-text-primary;
+}
+
+/* Liquid-glass: soft low-saturation cool backdrop for the frosted chrome to refract.
+   Scoped to the dashboard layout only (no effect on public pages or dark theme).
+   Tints mirror brand primary-600 (rgb 37 99 235) / secondary-500 (rgb 14 165 233)
+   at low opacity over a near-white base; inlined as rgb() because the brand tokens
+   are stored as hex, not rgb-triplets, so var()/<alpha-value> can't be used here. */
+.theme-liquid-glass .dashboard-layout {
+  background-color: #eef3fc;
+  background-image:
+    radial-gradient(
+      125% 95% at 100% 0%,
+      rgb(37 99 235 / 0.22) 0%,
+      rgb(37 99 235 / 0) 60%
+    ),
+    radial-gradient(
+      115% 100% at 0% 100%,
+      rgb(14 165 233 / 0.18) 0%,
+      rgb(14 165 233 / 0) 62%
+    ),
+    linear-gradient(135deg, #e7eefb 0%, #f3f7ff 55%, #eef4fe 100%);
+}
+
+.skip-link {
+  /* Keyboard-only: reveal on focus-visible so mouse/programmatic focus never
+     surfaces the skip link (it should appear only during keyboard navigation). */
+  @apply sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:bg-surface focus-visible:text-text-primary focus-visible:px-4 focus-visible:py-2 focus-visible:rounded-md focus-visible:shadow-lg focus-visible:border focus-visible:border-border;
+}
+
+.dashboard-sidebar {
+  @apply relative w-64 bg-surface shadow-lg border-r border-border flex flex-col;
+  transition: width 0.3s ease;
+}
+
+.theme-liquid-glass .dashboard-sidebar {
+  @apply bg-surface/70 backdrop-blur-[var(--glass-blur)];
+  box-shadow: var(--shadow-md);
+  /* Same backdrop-filter stacking trap as the header: lift the sidebar (and its
+     collapsed hover-card, which overhangs the content) above the content layer. */
+  z-index: 30;
+}
+
+.dashboard-sidebar.sidebar-closed {
+  @apply w-16;
+}
+
+.sidebar-header {
+  @apply p-4 border-b border-border flex items-center justify-between min-h-[72px];
+}
+
+.sidebar-closed .sidebar-header {
+  @apply justify-center;
+}
+
+.sidebar-logo {
+  @apply text-xl font-bold text-text-primary;
+}
+
+.sidebar-toggle {
+  @apply p-2 rounded-lg text-text-secondary hover:bg-surface-elevated transition-colors;
+}
+
+.sidebar-closed .nav-item svg {
+  @apply w-6 h-6;
+}
+
+.sidebar-nav {
+  @apply flex-1 px-4 py-6 space-y-2;
+}
+
+.nav-item {
+  @apply flex items-center px-3 py-2 text-sm font-medium rounded-lg text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors;
+}
+
+.nav-item-icon-only {
+  @apply justify-center px-0 py-3;
+}
+
+.nav-item-active {
+  @apply bg-accent/10 text-accent;
+}
+
+.nav-item-text {
+  @apply ml-3;
+}
+
+.submenu {
+  @apply ml-6 mt-2 space-y-1;
+}
+
+.submenu-item {
+  @apply block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface-elevated rounded-md transition-colors;
+}
+
+.submenu-item-active {
+  @apply text-accent bg-accent/10;
+}
+
+.user-avatar {
+  @apply w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center;
+}
+
+.user-avatar-initial {
+  @apply text-sm font-semibold;
+}
+
+.user-details {
+  @apply flex-1;
+}
+
+.user-name {
+  @apply text-sm font-medium text-text-primary;
+}
+
+.user-role {
+  @apply text-xs text-text-muted;
+}
+
+.dashboard-main {
+  @apply flex-1 flex flex-col overflow-hidden;
+}
+
+.dashboard-header {
+  @apply bg-surface shadow-sm border-b border-border;
+}
+
+.theme-liquid-glass .dashboard-header {
+  @apply bg-surface/70 backdrop-blur-[var(--glass-blur)];
+  box-shadow: var(--shadow-sm);
+  /* backdrop-filter creates a stacking context that would trap the user-menu
+     dropdown below the content. Lift the whole header context above content. */
+  position: relative;
+  z-index: 20;
+}
+
+.theme-liquid-glass .home-theme-card {
+  /* Slightly more translucent than chrome (sidebar/header /70) so cards reveal
+     a touch more of the gradient backdrop while keeping content readable. */
+  @apply bg-surface/[0.66] backdrop-blur-[var(--glass-blur)];
+  box-shadow: var(--shadow-md);
+}
+
+.header-content {
+  @apply px-6 py-4 flex items-center justify-between;
+}
+
+.header-context {
+  @apply flex flex-col gap-2;
+}
+
+.header-actions {
+  @apply flex items-center gap-4;
+}
+
+.tenant-switch {
+  @apply flex flex-col gap-1 min-w-64;
+}
+
+.tenant-switch-label {
+  @apply text-xs font-medium text-text-muted;
+}
+
+.tenant-switch-select {
+  @apply rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-secondary shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:bg-surface-elevated disabled:text-text-muted;
+}
+
+.tenant-switch-error {
+  @apply text-xs text-red-600;
+}
+
+.user-menu {
+  @apply relative;
+}
+
+.user-menu-button {
+  @apply flex items-center px-2 py-2 bg-transparent border border-border rounded-lg cursor-pointer hover:bg-surface-elevated transition-all;
+}
+
+.user-menu-button-active {
+  @apply bg-accent/10 border-accent/30;
+}
+
+.user-avatar-small {
+  @apply flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full;
+}
+
+.user-menu-text {
+  @apply ml-2 flex flex-col items-start text-left;
+}
+
+.user-menu-name {
+  @apply text-sm font-medium text-text-primary;
+}
+
+.user-menu-meta {
+  @apply text-xs text-text-muted;
+}
+
+.user-menu-panel {
+  @apply absolute right-0 mt-2 w-64 rounded-2xl border border-border bg-surface-elevated shadow-2xl focus:outline-none z-50;
+}
+
+.user-menu-panel-header {
+  @apply px-4 py-3 border-b border-border;
+}
+
+.user-menu-panel-name {
+  @apply text-sm font-semibold text-text-primary;
+}
+
+.user-menu-panel-meta {
+  @apply mt-0.5 text-xs text-text-muted;
+}
+
+.user-menu-list {
+  @apply p-2 flex flex-col gap-1;
+}
+
+.user-menu-item {
+  @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-text-secondary hover:bg-surface focus:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30;
+}
+
+.user-menu-item-icon {
+  @apply w-5 h-5 text-text-muted;
+}
+
+.user-menu-signout {
+  @apply text-red-600 hover:text-red-700 focus-visible:ring-red-200;
+}
+
+.breadcrumb {
+  @apply flex;
+}
+
+.breadcrumb-list {
+  @apply flex items-center space-x-2;
+}
+
+.breadcrumb-item {
+  @apply flex items-center text-sm;
+}
+
+.breadcrumb-separator {
+  @apply w-5 h-5 text-text-muted;
+}
+
+.breadcrumb-link {
+  @apply text-text-muted hover:text-text-secondary;
+}
+
+.breadcrumb-current {
+  @apply text-text-primary font-medium;
+}
+
+.dashboard-content {
+  @apply flex-1 overflow-auto bg-app;
+}
+
+/* Liquid-glass: let the layout's cool gradient show through the content area so
+   the frosted cards/header actually refract a backdrop instead of flat bg-app. */
+.theme-liquid-glass .dashboard-content {
+  @apply bg-transparent;
+}
+.sidebar-hover-card {
+  @apply absolute left-[4.5rem] z-40 w-60 rounded-xl border border-border bg-surface-elevated p-3 shadow-xl;
+}
+
+.sidebar-hover-main {
+  @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface;
+}
+
+.sidebar-hover-text {
+  @apply block truncate;
+}
+
+.sidebar-hover-submenu {
+  @apply mt-2 space-y-1;
+}
+
+.sidebar-hover-submenu-item {
+  @apply block rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-surface;
+}
