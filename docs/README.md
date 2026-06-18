@@ -6,6 +6,7 @@ The docs are intended to help readers understand the product direction, local se
 
 ## What To Read First
 
+- `01-business/public-product-overview-ja.md`: Japanese product overview and feature list for public readers
 - `01-business/pr-faq-workshop/pr-faq-public.md`: public PR/FAQ for the Build in Public snapshot
 - `01-business/pr-faq-workshop/ai-driven-development.md`: how the AI-driven development experiment is described publicly
 - `01-business/pr-faq-workshop/contribution-and-collaboration.md`: feedback, collaboration, and contribution policy

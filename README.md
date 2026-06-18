@@ -4,6 +4,11 @@ ISMS Pilot is a source-available Web application for exploring how ISMS work can
 
 It connects documents, information assets, risks, controls, control applicability decisions, internal audits, corrective actions, management reviews, tasks, notifications, and audit preparation outputs in one application flow.
 
+## 日本語で読む
+
+- [ISMS Pilot 公開版の概要](docs/01-business/public-product-overview-ja.md)
+- [公開向け PR/FAQ](docs/01-business/pr-faq-workshop/pr-faq-public.md)
+
 ## Why This Is Public
 
 This repository is a Build in Public snapshot. It is not a commercial SaaS launch, production service, or certification guarantee.
