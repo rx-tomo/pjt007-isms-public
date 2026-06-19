@@ -8,7 +8,20 @@ const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.join(__dirname),
   outputFileTracingIncludes: {
-    '/api/cron/reset-demo': ['./scripts/seed-practical-verification.mjs'],
+    '/api/cron/reset-demo': [
+      './scripts/seed-practical-verification.mjs',
+      './node_modules/@libsql/**',
+      './node_modules/cross-fetch/**',
+      './node_modules/data-uri-to-buffer/**',
+      './node_modules/fetch-blob/**',
+      './node_modules/formdata-polyfill/**',
+      './node_modules/js-base64/**',
+      './node_modules/libsql/**',
+      './node_modules/node-domexception/**',
+      './node_modules/node-fetch/**',
+      './node_modules/promise-limit/**',
+      './node_modules/web-streams-polyfill/**',
+    ],
   },
   allowedDevOrigins: ['127.0.0.1'],
   webpack: (config, { isServer }) => {
