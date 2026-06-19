@@ -1,7 +1,7 @@
 /**
  * AI Components
  *
- * This module exports AI-related UI components for the ISMS Pilot application.
+ * This module exports AI-related UI components for the Riscala AI for ISMS application.
  */
 
 export { default as AIAssistantPanel } from './AIAssistantPanel'

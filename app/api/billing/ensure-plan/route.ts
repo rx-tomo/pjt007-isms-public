@@ -402,7 +402,7 @@ async function handleSeatUsageNotifications(
       let emailLogId: string | undefined
 
       if (recipient.email) {
-        const subject = `【ISMS Manager】${config.title}`
+        const subject = `【Riscala AI for ISMS】${config.title}`
         const logId = crypto.randomUUID()
         try {
           await db.insert(emailLogs).values({

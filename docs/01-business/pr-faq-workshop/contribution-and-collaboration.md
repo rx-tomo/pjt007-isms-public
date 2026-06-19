@@ -8,11 +8,11 @@ status: public_snapshot_candidate
 
 # Contribution and Collaboration Policy
 
-この文書は、ISMS Pilotの公開用リポジトリで、フィードバック、コントリビューター、協業、商用相談をどう受けるかを整理する。公開README、`CONTRIBUTING.md`、Issueテンプレート、問い合わせ導線へ転用できる粒度で管理する。
+この文書は、Riscala AI for ISMSの公開用リポジトリで、フィードバック、コントリビューター、協業、商用相談をどう受けるかを整理する。公開README、`CONTRIBUTING.md`、Issueテンプレート、問い合わせ導線へ転用できる粒度で管理する。
 
 ## 入口方針
 
-ISMS Pilotは、Build in Publicの公開snapshotとして、次の種類の対話を歓迎する。
+Riscala AI for ISMSは、Build in Publicの公開snapshotとして、次の種類の対話を歓迎する。
 
 - ISMS実務者からのフィードバック。
 - 業務SaaS、GRC、文書管理、監査運用に詳しい人からの設計レビュー。

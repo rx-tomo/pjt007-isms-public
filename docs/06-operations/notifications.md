@@ -39,7 +39,7 @@ For production-like testing, configure:
 
 ```env
 RESEND_API_KEY=...
-INVITE_EMAIL_FROM="ISMS Pilot <no-reply@example.com>"
+INVITE_EMAIL_FROM="Riscala AI for ISMS <no-reply@example.com>"
 ```
 
 Do not commit real keys.

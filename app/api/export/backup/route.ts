@@ -79,7 +79,7 @@ function buildBackupReadme(params: {
   missingFiles: number
 }): string {
   return [
-    '# ISMS Pilot Backup Export',
+    '# Riscala AI for ISMS Backup Export',
     '',
     `Generated at: ${params.generatedAt}`,
     `Organization ID: ${params.organizationId}`,

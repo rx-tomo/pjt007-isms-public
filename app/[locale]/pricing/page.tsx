@@ -187,7 +187,7 @@ export default function PricingPage(
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <Link href={`/${locale}`} className="text-2xl font-bold text-text-primary">
-              ISMS Manager
+              Riscala AI for ISMS
             </Link>
             <nav className="flex items-center gap-6">
               {isAuthenticated ? (

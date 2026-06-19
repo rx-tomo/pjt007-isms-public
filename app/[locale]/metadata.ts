@@ -5,7 +5,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'landing' });
 
-  const title = 'ISMS Manager - ' + t('hero.title');
+  const title = 'Riscala AI for ISMS - ' + t('hero.title');
   const description = t('hero.subtitle');
 
   return {
@@ -14,13 +14,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     keywords: locale === 'ja'
       ? 'ISO27001, ISMS, 情報セキュリティ, 認証取得, クラウドサービス, リスク管理, 文書管理'
       : 'ISO27001, ISMS, Information Security, Certification, Cloud Service, Risk Management, Document Management',
-    authors: [{ name: 'ISMS Manager Team' }],
+    authors: [{ name: 'Riscala AI for ISMS Team' }],
     openGraph: {
       title,
       description,
       type: 'website',
       locale: locale === 'ja' ? 'ja_JP' : 'en_US',
-      siteName: 'ISMS Manager',
+      siteName: 'Riscala AI for ISMS',
     },
     twitter: {
       card: 'summary_large_image',
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       },
     },
     alternates: {
-      canonical: `https://isms-manager.com/${locale}`,
+      canonical: `https://riscala-isms.com/${locale}`,
       languages: {
         'ja': '/ja',
         'en': '/en',

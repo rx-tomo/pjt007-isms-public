@@ -127,8 +127,8 @@
     }
   },
   "common": {
-    "appName": "ISMS Pilot",
-    "title": "ISMS Pilot",
+    "appName": "Riscala AI for ISMS",
+    "title": "Riscala AI for ISMS",
     "login": {
       "title": "Login",
       "subtitle": "Sign in to your account",
@@ -314,7 +314,7 @@
     },
     "login": {
       "title": "Login",
-      "description": "Login to ISMS Manager to manage your ISO27001 certification progress.",
+      "description": "Login to Riscala AI for ISMS to manage your ISO27001 certification progress.",
       "noAccount": "Don't have an account?",
       "signupLink": "Sign up",
       "submit": "Login",
@@ -325,7 +325,7 @@
     },
     "signup": {
       "title": "Sign Up",
-      "description": "Create your ISMS Manager account to begin preparing for ISO27001 certification.",
+      "description": "Create your Riscala AI for ISMS account to begin preparing for ISO27001 certification.",
       "hasAccount": "Already have an account?",
       "loginLink": "Login",
       "submit": "Sign Up",
@@ -1043,10 +1043,10 @@
   },
   "landing": {
     "hero": {
-      "title": "ISO27001 Certification",
-      "titleHighlight": "Made Simple",
-      "subtitle": "ISMS Pilot helps connect first-time certification preparation with annual ISMS operation after certification.",
-      "description": "Executives and ISMS managers can see readiness, open actions, pending approvals, and evidence gaps without depending on one specialist to hold the whole picture.",
+      "title": "Riscala AI",
+      "titleHighlight": "for ISMS",
+      "subtitle": "Built through AI-driven development.",
+      "description": "An ISMS operations platform for ISO/IEC 27001 preparation and ongoing operation, connecting documents, information assets, risks, controls, audits, corrective actions, management reviews, and evidence exports.",
       "cta": {
         "startTrial": "Start 14-Day Free Trial",
         "watchDemo": "Watch Demo",
@@ -1069,7 +1069,7 @@
       }
     },
     "features": {
-      "title": "Why Choose ISMS Pilot",
+      "title": "Why Choose Riscala AI for ISMS",
       "subtitle": "Build and operate ISMS efficiently without consultants",
       "learnMore": "Learn more",
       "allFeatures": "All features included in every plan",
@@ -1191,7 +1191,7 @@
       }
     },
     "valueProps": {
-      "title": "Why Choose ISMS Pilot",
+      "title": "Why Choose Riscala AI for ISMS",
       "item1": {
         "title": "No Expertise Required",
         "description": "Organize required preparation and operations step by step while your team builds ISO27001 knowledge"
@@ -1230,11 +1230,11 @@
       "items": {
         "q1": {
           "question": "How long does ISO27001 certification take?",
-          "answer": "Timing depends on company size and current status. ISMS Pilot helps organize scope, documents, risks, controls, and audit preparation in one flow so gaps are easier to find."
+          "answer": "Timing depends on company size and current status. Riscala AI for ISMS helps organize scope, documents, risks, controls, and audit preparation in one flow so gaps are easier to find."
         },
         "q2": {
           "question": "Can we really achieve certification without consultants?",
-          "answer": "ISMS Pilot makes required information, approval status, and missing evidence easier to see so teams can prepare in-house. It does not guarantee certification or acceptance by an auditor."
+          "answer": "Riscala AI for ISMS makes required information, approval status, and missing evidence easier to see so teams can prepare in-house. It does not guarantee certification or acceptance by an auditor."
         },
         "q3": {
           "question": "Can it integrate with existing document management systems?",
@@ -1278,7 +1278,7 @@
         "docs": "Documentation",
         "status": "System Status"
       },
-      "copyright": "© 2025 ISMS Manager. All rights reserved.",
+      "copyright": "© 2025 Riscala AI for ISMS. All rights reserved.",
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
       "cookiePolicy": "Cookie Policy"
@@ -2906,7 +2906,7 @@
             "responsibilities": "Enter one responsibility per line."
           },
           "placeholders": {
-            "name": "e.g. ISMS Manager",
+            "name": "e.g. Riscala AI for ISMS",
             "responsibilities": "e.g. Coordinate internal audits"
           }
         },

@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
   const db = getDb()
   let departmentNameMap: Map<string, string> | null = null
 
-  let organizationName = 'ISMS Manager'
+  let organizationName = 'Riscala AI for ISMS'
   if (format === 'pdf') {
     const orgRows = await db
       .select({ name: organizations.name })

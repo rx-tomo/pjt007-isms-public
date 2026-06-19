@@ -1,5 +1,5 @@
 ---
-title: ISMS Pilot セキュリティ要件定義書
+title: Riscala AI for ISMS セキュリティ要件定義書
 category: architecture
 created: 2025-12-01
 last_updated: 2025-12-01
@@ -7,11 +7,11 @@ author: Claude
 ears_compliant: true
 ---
 
-# ISMS Pilot セキュリティ要件定義書
+# Riscala AI for ISMS セキュリティ要件定義書
 
 ## 1. 概要
 
-本ドキュメントは、ISMS Pilotにおけるセキュリティ要件をEARS（Easy Approach to Requirements Syntax）形式で定義します。ISO/IEC 27001の要求事項に準拠し、自社でもISMS認証取得を前提とした設計を行います。
+本ドキュメントは、Riscala AI for ISMSにおけるセキュリティ要件をEARS（Easy Approach to Requirements Syntax）形式で定義します。ISO/IEC 27001の要求事項に準拠し、自社でもISMS認証取得を前提とした設計を行います。
 
 ## 2. セキュリティ要件カテゴリ
 

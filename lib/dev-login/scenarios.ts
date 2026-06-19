@@ -65,7 +65,7 @@ export interface DevLoginRoleFlow {
 
 export const ROLE_SCENARIOS: Record<RoleKey, RoleScenario> = {
   super_admin: {
-    email: 'admin@isms-pilot.local',
+    email: 'admin@riscala-isms.local',
     password: 'DevSuperAdmin1!',
     fullName: 'プラットフォーム管理者',
     role: 'super_admin',
@@ -82,7 +82,7 @@ export const ROLE_SCENARIOS: Record<RoleKey, RoleScenario> = {
   system_operator: {
     email: 'operator.practical@isms-practical.local',
     password: 'DevSystemOperator1!',
-    fullName: 'ISMS Pilot システム運営者',
+    fullName: 'Riscala AI for ISMS システム運営者',
     role: 'system_operator',
     organization: {
       id: '70000000-0000-4000-8000-000000000001',

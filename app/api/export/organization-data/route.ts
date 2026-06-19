@@ -43,7 +43,7 @@ function buildTemplateRows() {
       {
         key: 'isms_manager',
         name: 'ISMSマネージャー',
-        name_en: 'ISMS Manager',
+        name_en: 'Riscala AI for ISMS',
         description: 'ISMS全体の推進と報告',
         responsibilities: 'PDCA;Management review',
         display_order: '1',

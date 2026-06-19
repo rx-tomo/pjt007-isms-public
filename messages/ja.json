@@ -127,8 +127,8 @@
     }
   },
   "common": {
-    "appName": "ISMS Pilot",
-    "title": "ISMS Pilot",
+    "appName": "Riscala AI for ISMS",
+    "title": "Riscala AI for ISMS",
     "login": {
       "title": "ログイン",
       "subtitle": "アカウントにサインインしてください",
@@ -314,7 +314,7 @@
     },
     "login": {
       "title": "ログイン",
-      "description": "ISMS Managerにログインして、ISO27001認証取得の進捗を管理しましょう。",
+      "description": "Riscala AI for ISMSにログインして、ISO27001認証取得の進捗を管理しましょう。",
       "noAccount": "アカウントをお持ちでない方は",
       "signupLink": "新規登録",
       "submit": "ログイン",
@@ -325,7 +325,7 @@
     },
     "signup": {
       "title": "新規登録",
-      "description": "ISMS Managerのアカウントを作成して、ISO27001認証取得の準備を始めましょう。",
+      "description": "Riscala AI for ISMSのアカウントを作成して、ISO27001認証取得の準備を始めましょう。",
       "hasAccount": "すでにアカウントをお持ちの方は",
       "loginLink": "ログイン",
       "submit": "登録する",
@@ -1043,10 +1043,10 @@
   },
   "landing": {
     "hero": {
-      "title": "ISO27001認証取得を",
-      "titleHighlight": "シンプルに",
-      "subtitle": "ISMS Pilotは、初回登録準備と認証後の継続運用をつなげて支援するクラウドサービスです。",
-      "description": "経営者や管理責任者が、準備状況・未対応事項・承認待ち・証跡不足を把握しながら、担当者に依存しすぎないISMS運用へ近づけます。",
+      "title": "Riscala AI",
+      "titleHighlight": "for ISMS",
+      "subtitle": "AI駆動開発でつくる、ISMS構築・運用支援プラットフォーム。",
+      "description": "ISO/IEC 27001の初回登録準備から認証後の継続運用まで、文書、情報資産、リスク、管理策、監査、是正、マネジメントレビュー、証跡出力をひとつの流れで扱います。",
       "cta": {
         "startTrial": "14日間無料トライアル",
         "watchDemo": "デモを見る",
@@ -1069,7 +1069,7 @@
       }
     },
     "features": {
-      "title": "なぜISMS Pilotが選ばれるのか",
+      "title": "なぜRiscala AI for ISMSが選ばれるのか",
       "subtitle": "コンサルタントに頼らず、自社で効率的にISMS構築・運用を実現",
       "learnMore": "詳しく見る",
       "allFeatures": "すべてのプランで全機能が利用可能",
@@ -1191,7 +1191,7 @@
       }
     },
     "valueProps": {
-      "title": "なぜISMS Pilotを選ぶのか",
+      "title": "なぜRiscala AI for ISMSを選ぶのか",
       "item1": {
         "title": "専門知識不要",
         "description": "ISO27001の専門知識をチームで補いながら、必要な準備と運用状況を段階的に整理"
@@ -1232,7 +1232,7 @@
       "items": {
         "q1": {
           "question": "ISO27001の認証取得にどれくらい時間がかかりますか？",
-          "answer": "企業規模や現状により異なります。ISMS Pilotでは、適用範囲、文書、リスク、管理策、監査準備を同じ流れで整理し、準備の抜け漏れを見つけやすくします。"
+          "answer": "企業規模や現状により異なります。Riscala AI for ISMSでは、適用範囲、文書、リスク、管理策、監査準備を同じ流れで整理し、準備の抜け漏れを見つけやすくします。"
         },
         "q2": {
           "question": "コンサルタントなしでも本当に認証取得できますか？",
@@ -1278,7 +1278,7 @@
         "docs": "ドキュメント",
         "status": "システム状態"
       },
-      "copyright": "© 2025 ISMS Manager. All rights reserved.",
+      "copyright": "© 2025 Riscala AI for ISMS. All rights reserved.",
       "privacyPolicy": "プライバシーポリシー",
       "termsOfService": "利用規約",
       "cookiePolicy": "Cookieポリシー"

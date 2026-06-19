@@ -60,7 +60,7 @@ function appendLine(lines: string[], content = '') {
 
 export function createRiskReportPdf(payload: RiskPdfPayload) {
   const lines: string[] = []
-  const orgName = payload.organizationName || 'ISMS Manager'
+  const orgName = payload.organizationName || 'Riscala AI for ISMS'
   appendLine(lines, `${orgName} リスクレポート`)
   appendLine(lines, `生成日時: ${payload.generatedAt}`)
   appendLine(lines, buildFiltersLine(payload.filters))

@@ -48,13 +48,13 @@ export function buildInvitationEmailSubject(
   const resolvedLocale = locale || 'ja'
   const orgName = organizationName || 'your organisation'
   return resolvedLocale === 'ja'
-    ? `【ISMS Manager】${orgName} への招待が届きました`
-    : `You've been invited to ${orgName} on ISMS Manager`
+    ? `【Riscala AI for ISMS】${orgName} への招待が届きました`
+    : `You've been invited to ${orgName} on Riscala AI for ISMS`
 }
 
 export class EmailService {
   private apiKey = process.env.RESEND_API_KEY
-  private fromAddress = process.env.INVITE_EMAIL_FROM || 'ISMS Manager <no-reply@isms-manager.test>'
+  private fromAddress = process.env.INVITE_EMAIL_FROM || 'Riscala AI for ISMS <no-reply@riscala-isms.test>'
   private appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007'
 
   async sendInvitationEmail(payload: InvitationEmailPayload): Promise<EmailSendResult> {
@@ -75,7 +75,7 @@ export class EmailService {
     const locale = payload.locale || 'ja'
     const inviteUrl = `${this.appUrl.replace(/\/$/, '')}/${locale}/auth/invite?token=${payload.token}`
     const orgName = payload.organizationName || 'your organisation'
-    const inviterName = payload.invitedByName || 'ISMS Manager Team'
+    const inviterName = payload.invitedByName || 'Riscala AI for ISMS Team'
     const subject = buildInvitationEmailSubject(payload.locale, payload.organizationName)
 
     const expiresText = payload.expiresAt
@@ -90,11 +90,11 @@ export class EmailService {
     const html = `<!DOCTYPE html>
 <html lang="${locale}">
   <body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: #111827;">
-    <h1 style="font-size: 20px;">${locale === 'ja' ? 'ISMS Manager への招待' : 'Invitation to ISMS Manager'}</h1>
+    <h1 style="font-size: 20px;">${locale === 'ja' ? 'Riscala AI for ISMS への招待' : 'Invitation to Riscala AI for ISMS'}</h1>
     <p>${
       locale === 'ja'
         ? `${inviterName} さんが ${orgName} のワークスペースにあなたを招待しています。下のボタンからアカウント登録を完了してください。`
-        : `${inviterName} invited you to join the ${orgName} workspace on ISMS Manager. Click the button below to accept your invitation.`
+        : `${inviterName} invited you to join the ${orgName} workspace on Riscala AI for ISMS. Click the button below to accept your invitation.`
     }</p>
     <p style="margin: 24px 0;">
       <a href="${inviteUrl}" style="display: inline-block; padding: 12px 20px; background: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 6px;">
@@ -128,7 +128,7 @@ export class EmailService {
     const text =
       locale === 'ja'
         ? `${inviterName} さんが ${orgName} のワークスペースに招待しています。以下のURLから参加できます: ${inviteUrl}`
-        : `${inviterName} invited you to join the ${orgName} workspace on ISMS Manager. Use this link to accept: ${inviteUrl}`
+        : `${inviterName} invited you to join the ${orgName} workspace on Riscala AI for ISMS. Use this link to accept: ${inviteUrl}`
 
     const response = await fetch(RESEND_ENDPOINT, {
       method: 'POST',

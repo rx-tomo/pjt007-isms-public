@@ -8,7 +8,7 @@ status: backlog_zero
 
 # PR/FAQ Workshop
 
-このディレクトリは、ISMS PilotのPR/FAQ正本候補を管理する。
+このディレクトリは、Riscala AI for ISMSのPR/FAQ正本候補を管理する。
 
 現時点の草稿は、既存コード、`spec-dsl`、実務検証QA、release-readiness docsから逆算した初稿に、オーナー指摘を反映した「未来起点のPR/FAQ正本候補」である。
 

@@ -1,5 +1,5 @@
 /**
- * Role hierarchy for the ISMS Pilot application.
+ * Role hierarchy for the Riscala AI for ISMS application.
  *
  * Each key lists the roles it is allowed to manage (invite, edit, deactivate).
  * Roles that are *not* listed as values cannot be managed by that actor.

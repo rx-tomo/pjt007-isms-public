@@ -127,8 +127,8 @@
     }
   },
   "common": {
-    "appName": "ISMS Pilot",
-    "title": "ISMS Pilot",
+    "appName": "Riscala AI for ISMS",
+    "title": "Riscala AI for ISMS",
     "login": {
       "title": "登录",
       "subtitle": "请登录您的账户",
@@ -314,7 +314,7 @@
     },
     "login": {
       "title": "登录",
-      "description": "登录ISMS Manager，管理ISO27001认证进度。",
+      "description": "登录Riscala AI for ISMS，管理ISO27001认证进度。",
       "noAccount": "还没有账户？",
       "signupLink": "注册",
       "submit": "登录",
@@ -325,7 +325,7 @@
     },
     "signup": {
       "title": "注册",
-      "description": "创建ISMS Manager账户，开始ISO27001认证准备。",
+      "description": "创建Riscala AI for ISMS账户，开始ISO27001认证准备。",
       "hasAccount": "已有账户？",
       "loginLink": "登录",
       "submit": "注册",
@@ -1043,10 +1043,10 @@
   },
   "landing": {
     "hero": {
-      "title": "让ISO27001认证",
-      "titleHighlight": "更简单",
-      "subtitle": "ISMS Pilot帮助企业贯通首次认证准备与认证后的年度持续运行。",
-      "description": "经营者和管理负责人可以查看准备状况、未处理事项、待审批事项和证据缺口，减少对单一负责人经验的依赖。",
+      "title": "Riscala AI",
+      "titleHighlight": "for ISMS",
+      "subtitle": "Built through AI-driven development.",
+      "description": "面向 ISO/IEC 27001 准备与持续运行的 ISMS 运营平台，将文件、信息资产、风险、控制措施、审核、纠正措施、管理评审和证据导出连接在同一流程中。",
       "cta": {
         "startTrial": "14天免费试用",
         "watchDemo": "观看演示",
@@ -1069,7 +1069,7 @@
       }
     },
     "features": {
-      "title": "为什么选择ISMS Pilot",
+      "title": "为什么选择Riscala AI for ISMS",
       "subtitle": "让经营者和管理负责人更容易掌握准备与运行状况",
       "learnMore": "了解更多",
       "allFeatures": "所有套餐均可使用全部功能",
@@ -1191,7 +1191,7 @@
       }
     },
     "valueProps": {
-      "title": "为什么选择ISMS Pilot",
+      "title": "为什么选择Riscala AI for ISMS",
       "item1": {
         "title": "无需专业知识",
         "description": "团队可以在补充ISO27001知识的同时，分步骤整理所需准备和运行状况"
@@ -1232,11 +1232,11 @@
       "items": {
         "q1": {
           "question": "获得ISO27001认证需要多长时间？",
-          "answer": "时间因企业规模和现状而异。ISMS Pilot可将适用范围、文件、风险、控制措施和审核准备放在同一流程中整理，帮助发现准备缺口。"
+          "answer": "时间因企业规模和现状而异。Riscala AI for ISMS可将适用范围、文件、风险、控制措施和审核准备放在同一流程中整理，帮助发现准备缺口。"
         },
         "q2": {
           "question": "不依赖咨询顾问真的能获得认证吗？",
-          "answer": "ISMS Pilot会让必要信息、审批状态和缺失证据更容易查看，帮助团队自行推进准备。但它不保证取得认证或被审核机构受理。"
+          "answer": "Riscala AI for ISMS会让必要信息、审批状态和缺失证据更容易查看，帮助团队自行推进准备。但它不保证取得认证或被审核机构受理。"
         },
         "q3": {
           "question": "可以与现有的文件管理系统集成吗？",
@@ -1278,7 +1278,7 @@
         "docs": "文档",
         "status": "系统状态"
       },
-      "copyright": "© 2025 ISMS Manager. All rights reserved.",
+      "copyright": "© 2025 Riscala AI for ISMS. All rights reserved.",
       "privacyPolicy": "隐私政策",
       "termsOfService": "服务条款",
       "cookiePolicy": "Cookie政策"

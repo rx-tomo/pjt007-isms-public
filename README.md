@@ -1,12 +1,14 @@
-# ISMS Pilot
+# Riscala AI for ISMS
 
-ISMS Pilot is a source-available Web application for exploring how ISMS work can be supported from initial ISO/IEC 27001 preparation through ongoing operation after certification.
+AI駆動開発でつくる、ISMS構築・運用支援プラットフォーム。
+
+Riscala AI for ISMS is a source-available ISMS operations platform built through AI-driven development. It supports ISO/IEC 27001 preparation and ongoing ISMS operations, including documents, information assets, risks, controls, audits, corrective actions, management reviews, and evidence exports.
 
 It connects documents, information assets, risks, controls, control applicability decisions, internal audits, corrective actions, management reviews, tasks, notifications, and audit preparation outputs in one application flow.
 
 ## 日本語で読む
 
-- [ISMS Pilot 公開版の概要](docs/01-business/public-product-overview-ja.md)
+- [Riscala AI for ISMS 公開版の概要](docs/01-business/public-product-overview-ja.md)
 - [公開向け PR/FAQ](docs/01-business/pr-faq-workshop/pr-faq-public.md)
 
 ## Why This Is Public
@@ -17,11 +19,11 @@ The goal is to make the current state of the product visible so that ISMS practi
 
 ## 100% AI-Driven Development
 
-ISMS Pilot is also an experiment in AI-driven product development. The owner defines the product direction, requirements, priorities, and review decisions, while implementation, fixes, documentation, and verification are carried out through collaboration with AI agents.
+Riscala AI for ISMS is also an experiment in AI-driven product development. The owner defines the product direction, requirements, priorities, and review decisions, while implementation, fixes, documentation, and verification are carried out through collaboration with AI agents.
 
 The owner has not directly written application code line by line. This repository is intended to show both the product hypothesis and the development style: what AI agents can build, where human judgment remains essential, and how quality and business decisions can be separated.
 
-This does not mean the product's core value is AI automation inside ISMS operations. The current product value is the ISMS workflow itself. In-product AI support is treated as a future/auxiliary area that requires additional privacy, logging, and human-review policy.
+The “AI” in the name refers primarily to the development approach: this product is built through AI-driven development. In-product AI assistance is treated as a separate future capability and requires additional privacy, logging, and human-review design.
 
 ## Current Snapshot
 

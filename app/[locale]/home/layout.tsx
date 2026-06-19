@@ -16,7 +16,7 @@ export async function generateMetadata(
 
   return {
     title: `${t('home')} - ${t('appName')}`,
-    description: 'ISMS Manager Home overview'
+    description: 'Riscala AI for ISMS Home overview'
   }
 }
 

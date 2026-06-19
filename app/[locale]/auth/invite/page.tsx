@@ -49,10 +49,10 @@ export default async function InvitePage(
         </div>
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-white p-12">
           <div className="max-w-md">
-            <h2 className="text-4xl font-bold mb-6">ISMS Pilot</h2>
+            <h2 className="text-4xl font-bold mb-6">Riscala AI for ISMS</h2>
             <p className="text-xl mb-8 text-blue-100">
-              ISO27001認証取得を効率的にサポートする<br />
-              クラウドベースの統合管理システム
+              AI駆動開発でつくる、<br />
+              ISMS構築・運用支援プラットフォーム。
             </p>
             <div className="space-y-4">
               <div className="flex items-start">

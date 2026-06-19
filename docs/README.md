@@ -1,6 +1,6 @@
-# ISMS Pilot Public Docs
+# Riscala AI for ISMS Public Docs
 
-This directory contains a limited public documentation set for evaluating ISMS Pilot.
+This directory contains a limited public documentation set for evaluating Riscala AI for ISMS.
 
 The docs are intended to help readers understand the product direction, local setup, current architecture, quality checks, operations notes, and UI/design conventions. They are not a complete commercial service manual, SLA, contract, or certification guarantee.
 

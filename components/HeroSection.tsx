@@ -93,7 +93,7 @@ export default function HeroSection() {
                 <div className="w-3 h-3 rounded-full bg-green-500" />
               </div>
               <div className="flex-1 text-center text-sm text-text-muted">
-                ISMS Pilot Dashboard
+                Riscala AI for ISMS Dashboard
               </div>
             </div>
             <div className="p-8 bg-gradient-to-br from-surface-elevated to-surface-elevated">

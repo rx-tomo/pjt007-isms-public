@@ -1,7 +1,7 @@
 # 翻訳ファイルガイドライン
 
 ## 概要
-このドキュメントは、ISMS Pilot プロジェクトにおける翻訳ファイル（`messages/*.json`）の記述ルールを定めたものです。
+このドキュメントは、Riscala AI for ISMS プロジェクトにおける翻訳ファイル（`messages/*.json`）の記述ルールを定めたものです。
 
 ## 重要：ドット記法の禁止
 
@@ -50,7 +50,7 @@ IntlError: INVALID_KEY: Namespace keys can not contain the character "." as this
 ```json
 {
   "common": {
-    "appName": "ISMS Pilot",
+    "appName": "Riscala AI for ISMS",
     "buttons": {
       "save": "保存",
       "cancel": "キャンセル",

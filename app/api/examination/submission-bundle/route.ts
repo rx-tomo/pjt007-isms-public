@@ -116,7 +116,7 @@ function buildBundlePdfLines(bundle: SubmissionBundle): string[] {
   )
 
   return [
-    'ISMS Pilot - Audit Preparation Package',
+    'Riscala AI for ISMS - Audit Preparation Package',
     '審査準備パッケージサマリー',
     `Organization: ${bundle.organization.name}`,
     `Generated: ${bundle.generatedAt}`,
@@ -212,7 +212,7 @@ function buildBundlePdfHtml(bundle: SubmissionBundle) {
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>ISMS Pilot - Audit Preparation Package</title>
+  <title>Riscala AI for ISMS - Audit Preparation Package</title>
   <style>
     @page { size: A4; margin: 18mm 14mm 20mm; }
     * { box-sizing: border-box; }
@@ -367,7 +367,7 @@ function buildBundlePdfHtml(bundle: SubmissionBundle) {
 </head>
 <body>
   <div class="cover">
-    <div class="eyebrow">ISMS Pilot - Audit Preparation Package</div>
+    <div class="eyebrow">Riscala AI for ISMS - Audit Preparation Package</div>
     <h1>審査準備パッケージサマリー</h1>
     <p class="subtitle">審査準備と内部レビューのために、証跡、判断根拠、不足事項を読みやすく整理した確認資料です。</p>
   </div>
@@ -489,7 +489,7 @@ async function renderBundlePdfWithChromium(bundle: SubmissionBundle): Promise<Bu
       headerTemplate: '<div></div>',
       footerTemplate: `
         <div style="width:100%; font-size:7pt; color:#64748b; padding:0 14mm; font-family:system-ui, sans-serif;">
-          <span>ISMS Pilot audit preparation support</span>
+          <span>Riscala AI for ISMS audit preparation support</span>
           <span style="float:right;">Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>
         </div>
       `,
