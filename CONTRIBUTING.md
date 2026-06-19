@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in ISMS Pilot.
+Thank you for your interest in Riscala AI for ISMS.
 
 This repository is source-available for evaluation, not an open source project. Product feedback, ISMS practice feedback, questions, and collaboration ideas are welcome.
 
