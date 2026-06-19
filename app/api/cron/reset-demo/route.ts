@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300
 
 const execFileAsync = promisify(execFile)
 const DEFAULT_DEMO_DB_NAME = 'pjt007-isms-public'
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
           SEED_OUTPUT_DIR: outputDir,
         },
         maxBuffer: 10 * 1024 * 1024,
-        timeout: 55_000,
+        timeout: 290_000,
       }
     )
     const payload = parseSeedOutput(stdout)
