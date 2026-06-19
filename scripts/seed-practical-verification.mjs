@@ -1584,15 +1584,23 @@ async function run(client, label, items) {
   return { label, statements: items.length, affected };
 }
 
+async function createSeedClient(dbUrl) {
+  const moduleName = process.env.SEED_LIBSQL_CLIENT === 'web'
+    ? '@libsql/client/web'
+    : '@libsql/client';
+  const { createClient } = await import(moduleName);
+
+  return createClient({
+    url: dbUrl,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+}
+
 async function main() {
   const dbUrl = resolveDbUrl();
   let client = null;
   if (!dryRun) {
-    const { createClient } = await import('@libsql/client');
-    client = createClient({
-      url: dbUrl,
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    });
+    client = await createSeedClient(dbUrl);
   }
 
   const outputDir = process.env.SEED_OUTPUT_DIR || path.join(process.cwd(), 'test-results');

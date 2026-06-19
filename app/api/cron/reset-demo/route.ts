@@ -72,6 +72,7 @@ export async function GET(request: Request) {
         cwd: process.cwd(),
         env: {
           ...process.env,
+          SEED_LIBSQL_CLIENT: 'web',
           SEED_OUTPUT_DIR: outputDir,
         },
         maxBuffer: 10 * 1024 * 1024,

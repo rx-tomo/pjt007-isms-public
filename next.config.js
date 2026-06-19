@@ -11,8 +11,10 @@ const nextConfig = {
     '/api/cron/reset-demo': [
       './scripts/seed-practical-verification.mjs',
       './node_modules/@libsql/**',
+      './node_modules/@neon-rs/**',
       './node_modules/cross-fetch/**',
       './node_modules/data-uri-to-buffer/**',
+      './node_modules/detect-libc/**',
       './node_modules/fetch-blob/**',
       './node_modules/formdata-polyfill/**',
       './node_modules/js-base64/**',
