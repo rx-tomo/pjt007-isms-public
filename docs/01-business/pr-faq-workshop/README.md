@@ -67,7 +67,7 @@ status: backlog_zero
 
 PR/FAQで語っている外向きの中核価値は、最新実装と大きく矛盾していない。初回登録準備と継続運用は代表seed/QAで確認可能であり、今回のseed整理により enterprise / suspended を含む4テナントの検証データへ広がった。
 
-一方、今回の公開目的は「この完成度を商用提供として売り出すこと」ではなく、「開発途上の到達点、未完成部分、今後の計画、AI駆動開発の進め方を外部読者に分かる形で示すこと」である。public本文では、内部リポジトリの整理手順ではなく、プロダクトの価値、現在地、協業余地を前面に出す。公開snapshotのallowlist、secret scan、非公開docs除外などの運用情報は、public本文ではなく公開同期手順とhandoffで管理する。
+一方、今回の公開目的は「この完成度を商用提供として売り出すこと」ではなく、「開発途上の到達点、未完成部分、今後の計画、AI駆動開発の進め方を外部読者に分かる形で示すこと」である。public本文では、開発運用の舞台裏ではなく、プロダクトの価値、現在地、協業余地を前面に出す。
 
 Dev Loginも、ロール先行ではなく「テナント選択 -> テナント内ユーザー選択 -> ログイン」へ更新済みで、PR/FAQの内部成功条件である「利用者の立場で主要業務を確認する」ための検証基盤として整った。古いPlaywright/E2E組織データは `seed:practical-verification -- --reset --scenario all` のcleanup対象になり、正本seedは4テナントだけを残す。
 
@@ -85,7 +85,7 @@ npm run qa:public-copy
 
 ## 次アクション
 
-- `public-repo-sync` / `pjt007-public-sync` で公開snapshotを作る。
-- 公開snapshotで lint、typecheck、build、translation check、public-copy check、secret scan を実施する。
+- 公開候補文書と公開候補コードの文言境界を確認する。
+- 公開前に lint、typecheck、build、translation check、public-copy check、secret scan を実施する。
 - `ai-driven-development.md` と `contribution-and-collaboration.md` を public README / `CONTRIBUTING.md` / `SECURITY.md` へ転用する。
 - 公開後も、最終商用SaaSに向けた追加実装と、Build in Public用snapshot更新を混同しない。

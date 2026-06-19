@@ -15,8 +15,9 @@ The docs are intended to help readers understand the product direction, local se
 - `05-quality/import-export-coverage-matrix.md`: current export/import coverage notes
 - `05-quality/qa-guidelines.md`: public quality-checking guidance
 
-## Public Documentation Boundary
+## Documentation Boundary
 
-This public docs set intentionally excludes non-public working notes, private work logs, operational records, historical evidence, issue export files, raw agent operating instructions, local databases, and generated artifacts.
+This public docs set focuses on product direction, setup, architecture, quality checks,
+operations notes, and UI/design conventions needed to evaluate the product.
 
 Some implementation and planning docs describe current direction rather than a finished commercial service. When a document says a feature is a goal, direction, or future gate, it should not be read as a production commitment.

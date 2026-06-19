@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import type { SuperAdminHealthAlert } from '@/lib/hooks/useSuperAdminHealth'
 
-const RUNBOOK_URL = 'https://github.com/rx-tomo/pjt007/blob/main/docs/06-operations/super-admin-runbook.md'
+const RUNBOOK_URL =
+  process.env.NEXT_PUBLIC_RUNBOOK_URL ??
+  'https://github.com/rx-tomo/isms-pilot-public/blob/main/docs/06-operations/super-admin-runbook.md'
 
 interface Props {
   alert: SuperAdminHealthAlert

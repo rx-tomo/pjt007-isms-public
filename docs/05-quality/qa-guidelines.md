@@ -7,7 +7,7 @@ status: active
 
 # Quality Assurance Guidelines
 
-この文書は現行構成のQA入口です。過去の Supabase / Service Role Key 前提のUC別手順は `docs/archive/legacy-supabase-qa/` に退避済みで、現行の作業正本ではありません。
+この文書は現行構成のQA入口です。過去の Supabase / Service Role Key 前提のUC別手順は、現行の作業正本ではありません。
 
 ## Current Stack
 

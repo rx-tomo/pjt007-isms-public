@@ -96,11 +96,6 @@ Included:
 - public-facing setup, quality, operations, and design documentation
 - minimal CI for lint, typecheck, translation validation, public-copy checks, and build
 
-Excluded:
-
-- private Git history
-- non-public working notes, operational records, and historical evidence
-- development logs and issue export files
-- AI/agent operating instructions
-- local MCP configuration
-- local databases, build artifacts, generated QA artifacts, secrets, and tokens
+This public package is limited to files that help readers inspect, run, and evaluate
+the product. It is not intended to include unrelated work logs, local machine state,
+generated QA output, local databases, secrets, or tokens.

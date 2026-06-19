@@ -661,8 +661,8 @@
               "shipped": "Delivered"
             },
             "items": {
-              "handoffCleanup": {
-                "title": "Trim handoff template noise",
+              "documentationCleanup": {
+                "title": "Trim operating template noise",
                 "owner": "Owner: Sato (IT)",
                 "eta": "ETA: 12 Nov"
               },
@@ -2479,8 +2479,8 @@
               "shipped": "Shipped"
             },
             "items": {
-              "handoffCleanup": {
-                "title": "Handoff Documentation Cleanup",
+              "documentationCleanup": {
+                "title": "Operational Documentation Cleanup",
                 "owner": "Owner: Tanaka",
                 "eta": "ETA: End of April"
               },

@@ -7,7 +7,7 @@ status: active
 
 # Vercel / Turso Environment Setup
 
-この文書は現行構成用の環境設定メモです。過去の Supabase / Service Role Key 前提の手順は `docs/archive/legacy-supabase-qa/` に退避済みです。
+この文書は現行構成用の環境設定メモです。古い Supabase / Service Role Key 前提の手順は現行構成では使いません。
 
 ## Current Stack
 

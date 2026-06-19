@@ -661,8 +661,8 @@
               "shipped": "已完成"
             },
             "items": {
-              "handoffCleanup": {
-                "title": "整理交接模板",
+              "documentationCleanup": {
+                "title": "整理运营模板",
                 "owner": "负责人: 佐藤 (信息系统)",
                 "eta": "计划: 11月12日"
               },
@@ -3223,8 +3223,8 @@
               "shipped": "已完成"
             },
             "items": {
-              "handoffCleanup": {
-                "title": "交接文档整理",
+              "documentationCleanup": {
+                "title": "运营文档整理",
                 "owner": "负责人：田中",
                 "eta": "预计：4月底"
               },

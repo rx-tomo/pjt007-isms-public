@@ -661,8 +661,8 @@
               "shipped": "完了"
             },
             "items": {
-              "handoffCleanup": {
-                "title": "ハンドオフテンプレートの整理",
+              "documentationCleanup": {
+                "title": "運用テンプレートの整理",
                 "owner": "担当: 佐藤 (情シス)",
                 "eta": "予定: 11月12日"
               },
@@ -3223,8 +3223,8 @@
               "shipped": "完了"
             },
             "items": {
-              "handoffCleanup": {
-                "title": "引き継ぎドキュメント整理",
+              "documentationCleanup": {
+                "title": "運用ドキュメント整理",
                 "owner": "担当: 田中",
                 "eta": "予定: 4月末"
               },

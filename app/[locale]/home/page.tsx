@@ -2303,10 +2303,10 @@ function UserDashboard({
 
   const improvementEntries: UserImprovementItem[] = [
     {
-      id: 'handoffCleanup',
-      title: t('roleDashboards.user.sections.improvements.items.handoffCleanup.title'),
-      owner: t('roleDashboards.user.sections.improvements.items.handoffCleanup.owner'),
-      eta: t('roleDashboards.user.sections.improvements.items.handoffCleanup.eta'),
+      id: 'documentationCleanup',
+      title: t('roleDashboards.user.sections.improvements.items.documentationCleanup.title'),
+      owner: t('roleDashboards.user.sections.improvements.items.documentationCleanup.owner'),
+      eta: t('roleDashboards.user.sections.improvements.items.documentationCleanup.eta'),
       status: 'scheduled'
     },
     {

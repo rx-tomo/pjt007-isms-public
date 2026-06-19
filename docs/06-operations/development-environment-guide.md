@@ -7,7 +7,7 @@ status: active
 
 # Development Environment Guide
 
-このガイドは現行の開発環境正本です。古い Supabase / Service Role Key / Supabase Edge Function 前提の手順は `docs/archive/legacy-supabase-qa/` に退避済みで、現行開発では使いません。
+このガイドは現行の開発環境正本です。古い Supabase / Service Role Key / Supabase Edge Function 前提の手順は現行開発では使いません。
 
 ## Current Stack
 

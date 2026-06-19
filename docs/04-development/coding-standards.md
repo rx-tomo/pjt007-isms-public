@@ -16,7 +16,7 @@
 ### 基本構造
 
 ```
-pjt007/
+project-root/
 ├── app/                      # Next.js App Router
 │   ├── [locale]/            # 多言語対応ルート
 │   │   ├── (auth)/          # 認証関連ページグループ
@@ -29,7 +29,7 @@ pjt007/
 │   ├── features/            # 機能別コンポーネント
 │   └── layouts/             # レイアウトコンポーネント
 ├── lib/                     # ユーティリティ・ライブラリ
-│   ├── supabase/           # Supabase関連
+│   ├── db/                 # Drizzle / libSQL関連
 │   ├── hooks/              # カスタムフック
 │   ├── utils/              # ユーティリティ関数
 │   └── constants/          # 定数定義
@@ -44,7 +44,7 @@ pjt007/
 
 #### `/app`
 - **用途**: Next.js App Routerのページとレイアウト
-- **命名規則**:
+- **命名規則**: 
   - ページ: `page.tsx`
   - レイアウト: `layout.tsx`
   - エラー: `error.tsx`
@@ -151,7 +151,7 @@ import styles from './Component.module.css';
    ```typescript
    // ❌ 禁止
    import { Button } from '../../../components/ui/Button';
-
+   
    // ✅ 推奨
    import { Button } from '@/components/ui/Button';
    ```
@@ -160,7 +160,7 @@ import styles from './Component.module.css';
    ```typescript
    // ❌ 禁止（パフォーマンスに影響）
    export * from './components';
-
+   
    // ✅ 推奨（明示的なエクスポート）
    export { Button } from './Button';
    export { Card } from './Card';
@@ -204,9 +204,9 @@ interface DocumentListProps {
   onSelect?: (document: Document) => void;
 }
 
-export function DocumentList({
+export function DocumentList({ 
   organizationId,
-  onSelect
+  onSelect 
 }: DocumentListProps) {
   const t = useTranslations('documents');
   const { documents, isLoading } = useDocuments(organizationId);
@@ -252,7 +252,7 @@ export async function generateMetadata({ params: { locale } }) {
 
 export default async function DocumentsPage() {
   const documents = await getDocuments();
-
+  
   return (
     <div>
       <PageHeader title="documents.title" />
@@ -285,7 +285,7 @@ export function useDocuments(organizationId: string) {
           .from('documents')
           .select('*')
           .eq('organization_id', organizationId);
-
+        
         if (error) throw error;
         setDocuments(data || []);
       } catch (err) {
