@@ -21,6 +21,7 @@ const nextConfig = {
       './node_modules/node-fetch/**',
       './node_modules/promise-limit/**',
       './node_modules/web-streams-polyfill/**',
+      './node_modules/ws/**',
     ],
   },
   allowedDevOrigins: ['127.0.0.1'],
