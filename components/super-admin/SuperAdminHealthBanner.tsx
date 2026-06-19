@@ -6,7 +6,7 @@ import type { SuperAdminHealthAlert } from '@/lib/hooks/useSuperAdminHealth'
 
 const RUNBOOK_URL =
   process.env.NEXT_PUBLIC_RUNBOOK_URL ??
-  'https://github.com/rx-tomo/isms-pilot-public/blob/main/docs/06-operations/super-admin-runbook.md'
+  'https://github.com/rx-tomo/pjt007-isms-public/blob/main/docs/06-operations/super-admin-runbook.md'
 
 interface Props {
   alert: SuperAdminHealthAlert
