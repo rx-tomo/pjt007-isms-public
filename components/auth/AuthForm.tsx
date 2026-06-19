@@ -443,17 +443,14 @@ export default function AuthForm({ mode, locale }: AuthFormProps) {
           </button>
         </div>
 
-        {/* 開発環境用リンク */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="text-center">
-            <Link
-              href={`/${locale}/dev-login`}
-              className="text-sm text-text-muted hover:text-text-secondary"
-            >
-              {t('common.devLogin')}
-            </Link>
-          </div>
-        )}
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-center">
+          <Link
+            href={`/${locale}/dev-login`}
+            className="text-sm font-semibold text-indigo-700 hover:text-indigo-600"
+          >
+            {t('common.devLogin')}
+          </Link>
+        </div>
       </form>
     </div>
   )

@@ -310,7 +310,7 @@
     "common": {
       "email": "邮箱地址",
       "password": "密码",
-      "devLogin": "开发登录"
+      "devLogin": "演示登录"
     },
     "login": {
       "title": "登录",

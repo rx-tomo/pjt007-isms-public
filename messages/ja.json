@@ -310,7 +310,7 @@
     "common": {
       "email": "メールアドレス",
       "password": "パスワード",
-      "devLogin": "開発ログイン"
+      "devLogin": "デモ用ログイン"
     },
     "login": {
       "title": "ログイン",
