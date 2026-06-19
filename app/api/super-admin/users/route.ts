@@ -11,6 +11,10 @@ type RoleKey = 'super_admin' | 'system_operator'
 
 const normalizeRole = (value?: string | null) => (value ?? '').toLowerCase()
 
+function isPublicDemoMode() {
+  return process.env.DEMO_PUBLIC_LOGIN_ENABLED === 'true' && process.env.DEMO_RESET_ENABLED === 'true'
+}
+
 async function findAuthUserByEmail(
   email: string
 ): Promise<{ id: string; email?: string | null } | null> {
@@ -35,6 +39,13 @@ async function ensureAuthUser(
 }
 
 export async function POST(request: NextRequest) {
+  if (isPublicDemoMode()) {
+    return new Response(JSON.stringify({ error: 'Public demo user creation is disabled.' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' }
+    })
+  }
+
   const guardResult = await requireServiceRole(request, {
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.users.create'

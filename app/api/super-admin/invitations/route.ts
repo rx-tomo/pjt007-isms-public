@@ -11,6 +11,10 @@ import { eq, desc, lt, inArray } from 'drizzle-orm'
 
 const MAX_LIMIT = 100
 
+function isPublicDemoMode() {
+  return process.env.DEMO_PUBLIC_LOGIN_ENABLED === 'true' && process.env.DEMO_RESET_ENABLED === 'true'
+}
+
 export async function GET(request: NextRequest) {
   const guardResult = await requireServiceRole(request, {
     allowedRoles: ['super_admin'],
@@ -91,6 +95,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (isPublicDemoMode()) {
+    return new Response(JSON.stringify({ error: 'Public demo invitation acceptance is disabled.' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' }
+    })
+  }
+
   const guardResult = await requireServiceRole(request, {
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.invitations.accept'

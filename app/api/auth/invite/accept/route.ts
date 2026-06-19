@@ -5,7 +5,18 @@ import { userProfiles, userMemberships, organizationInvitations, auditLogs } fro
 import { authUsers } from '@/lib/db/drizzle/schema/auth'
 import { eq, and } from 'drizzle-orm'
 
+function isPublicDemoMode() {
+  return process.env.DEMO_PUBLIC_LOGIN_ENABLED === 'true' && process.env.DEMO_RESET_ENABLED === 'true'
+}
+
 export async function POST(request: NextRequest) {
+  if (isPublicDemoMode()) {
+    return NextResponse.json(
+      { error: 'Public demo invitation acceptance is disabled.', code: 'PUBLIC_DEMO_DISABLED' },
+      { status: 403 }
+    )
+  }
+
   // Verify the caller is authenticated
   const { user, applyCookies } = await getRouteAuth(request)
 

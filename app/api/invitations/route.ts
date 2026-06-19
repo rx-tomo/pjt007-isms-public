@@ -9,7 +9,15 @@ import { createPendingEmailLog, finalizeEmailLog } from '@/lib/server/emailLogs'
 
 const ADMIN_ROLES = ['org_admin', 'system_operator', 'super_admin']
 
+function isPublicDemoMode() {
+  return process.env.DEMO_PUBLIC_LOGIN_ENABLED === 'true' && process.env.DEMO_RESET_ENABLED === 'true'
+}
+
 export async function POST(request: NextRequest) {
+  if (isPublicDemoMode()) {
+    return NextResponse.json({ error: 'Public demo invitations are disabled.' }, { status: 403 })
+  }
+
   const { user, applyCookies } = await getRouteAuth(request)
 
   if (!user) {
