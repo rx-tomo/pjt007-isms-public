@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Riscala AI for ISMS 業務仕様DSLまとめ</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 12mm 12mm 14mm;
+    }
+
+    :root {
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #cbd5e1;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --navy: #1e3a5f;
+      --blue: #2563eb;
+      --teal: #0f766e;
+      --amber: #b45309;
+      --rose: #be123c;
+      --green: #15803d;
+      --violet: #6d28d9;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", "Segoe UI", sans-serif;
+      color: var(--ink);
+      font-size: 9.8pt;
+      line-height: 1.55;
+      letter-spacing: 0;
+    }
+
+    body {
+      margin: 0;
+      background: white;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      font-size: 25pt;
+      line-height: 1.15;
+      margin-bottom: 10px;
+      color: var(--navy);
+    }
+
+    h2 {
+      font-size: 15.5pt;
+      color: var(--navy);
+      margin: 0 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--line);
+      page-break-after: avoid;
+    }
+
+    h3 {
+      font-size: 11.4pt;
+      margin-bottom: 6px;
+      color: #0f172a;
+      page-break-after: avoid;
+    }
+
+    p { margin-bottom: 8px; }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 8.4pt;
+      background: #eef2f7;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
+    .page {
+      min-height: 267mm;
+      page-break-after: always;
+      padding: 0;
+    }
+
+    .page:last-child { page-break-after: auto; }
+
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 267mm;
+      padding: 10mm 0 2mm;
+    }
+
+    .eyebrow {
+      font-size: 9pt;
+      color: var(--teal);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 13pt;
+      color: #334155;
+      max-width: 160mm;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 30mm 1fr;
+      gap: 5px 10px;
+      color: #334155;
+      font-size: 9.5pt;
+      margin-top: 18px;
+    }
+
+    .meta dt {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .meta dd { margin: 0; }
+
+    .cover-band {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: linear-gradient(180deg, #f8fafc, #ffffff);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .tile {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel);
+      min-height: 76px;
+    }
+
+    .tile strong {
+      display: block;
+      font-size: 10.2pt;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+
+    .tile span {
+      color: #475569;
+      font-size: 8.8pt;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 8px 0 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 8.4pt;
+      font-weight: 700;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .confirmed { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .partial { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .unconfirmed { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .standard { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+
+    .diagram {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 12px;
+      margin: 10px 0 14px;
+      page-break-inside: avoid;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: 1fr 12mm 1fr 12mm 1fr;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .arrow {
+      text-align: center;
+      color: var(--blue);
+      font-size: 16pt;
+      font-weight: 700;
+    }
+
+    .box {
+      border: 1px solid #bfdbfe;
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      padding: 9px;
+      background: #eff6ff;
+      min-height: 68px;
+    }
+
+    .box.teal { border-color: #99f6e4; border-left-color: var(--teal); background: #f0fdfa; }
+    .box.amber { border-color: #fde68a; border-left-color: var(--amber); background: #fffbeb; }
+    .box.rose { border-color: #fecdd3; border-left-color: var(--rose); background: #fff1f2; }
+    .box.green { border-color: #bbf7d0; border-left-color: var(--green); background: #f0fdf4; }
+    .box.violet { border-color: #ddd6fe; border-left-color: var(--violet); background: #f5f3ff; }
+
+    .box-title {
+      display: block;
+      font-weight: 800;
+      margin-bottom: 3px;
+      color: #0f172a;
+    }
+
+    .box small {
+      color: #475569;
+      display: block;
+    }
+
+    .lifecycle {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 7px;
+    }
+
+    .step-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: var(--bg);
+      min-height: 92px;
+    }
+
+    .step-card .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: white;
+      font-size: 8pt;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .swimlane {
+      display: grid;
+      grid-template-columns: 24mm 1fr;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 10px 0;
+      page-break-inside: avoid;
+    }
+
+    .lane-label {
+      background: #e2e8f0;
+      font-weight: 800;
+      padding: 8px;
+      border-bottom: 1px solid white;
+    }
+
+    .lane-content {
+      padding: 7px 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .lane-label:last-of-type, .lane-content:last-of-type { border-bottom: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 8.7pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 6px 7px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eaf2ff;
+      color: #1e3a5f;
+      text-align: left;
+      font-weight: 800;
+    }
+
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+    }
+
+    .note {
+      border: 1px solid #fde68a;
+      border-left: 5px solid var(--amber);
+      background: #fffbeb;
+      border-radius: 8px;
+      padding: 9px 10px;
+      margin: 10px 0;
+      page-break-inside: avoid;
+    }
+
+    .note strong {
+      color: #92400e;
+    }
+
+    ul.compact {
+      margin: 0;
+      padding-left: 17px;
+    }
+
+    ul.compact li { margin-bottom: 3px; }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 8.6pt;
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .check {
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 8px;
+      background: #f0fdf4;
+    }
+
+    .warn {
+      border: 1px solid #fecdd3;
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff1f2;
+    }
+
+    .small { font-size: 8.4pt; color: #475569; }
+
+    @media print {
+      .page { min-height: auto; }
+      .diagram, .tile, table, .note, .swimlane { break-inside: avoid; }
+      h2, h3 { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <section class="cover page">
+    <div>
+      <div class="eyebrow">Engineer Summary PDF</div>
+      <h1>Riscala AI for ISMS<br>業務仕様DSLまとめ</h1>
+      <p class="subtitle">実装済みの業務フロー、判断ルール、データ定義、API、例外・監査観点を、中級エンジニアが参照しやすい形で整理した概要資料。</p>
+      <dl class="meta">
+        <dt>対象</dt><dd><code>docs/01-business/spec-dsl/</code></dd>
+        <dt>作成日</dt><dd>2026-05-14</dd>
+        <dt>想定読者</dt><dd>仕様確認、実装改修、QA設計、外部連携設計を担当する中級エンジニア</dd>
+        <dt>前提</dt><dd>推測補完はせず、確認済み・部分確認・未確認を分離する</dd>
+      </dl>
+    </div>
+    <div class="cover-band">
+      <h3>この資料で掴むこと</h3>
+      <div class="summary-grid">
+        <div class="tile"><strong>何が仕様化されたか</strong><span>BPMN相当、DMN相当、JSON Schema、OpenAPI、例外ポリシー、用語集。</span></div>
+        <div class="tile"><strong>どこが実装根拠か</strong><span>Drizzleスキーマ、Next.js API Route、サービス層、既存業務docs。</span></div>
+        <div class="tile"><strong>次に何を細かくするか</strong><span>承認、リスク評価、課金、通知再試行、全APIレスポンスなど。</span></div>
+      </div>
+      <div class="status-row">
+        <span class="badge confirmed">confirmed</span>
+        <span class="badge partial">partially_confirmed</span>
+        <span class="badge unconfirmed">unconfirmed</span>
+        <span class="badge standard">BPMN / DMN / JSON Schema / OpenAPI</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="page">
+    <h2>1. 全体像: 実装から参照仕様へ</h2>
+    <p>仕様パッケージは、現行コードに埋め込まれた業務仕様を、AIや外部システムが検証しやすい単位に分解したものです。正本はコードとDB定義ですが、仕様レビューや連携設計ではこのパッケージを入口にします。</p>
+    <div class="diagram">
+      <div class="flow-row">
+        <div class="box teal">
+          <span class="box-title">入力ソース</span>
+          <small>DBスキーマ、サービス層、API Route、業務docs、QAシナリオ</small>
+        </div>
+        <div class="arrow">→</div>
+        <div class="box">
+          <span class="box-title">仕様パッケージ</span>
+          <small>process、decision_rules、data_schema、api_spec、exception_policy、glossary</small>
+        </div>
+        <div class="arrow">→</div>
+        <div class="box amber">
+          <span class="box-title">利用者</span>
+          <small>エンジニア、QA、AIエージェント、外部連携、監査/仕様レビュー</small>
+        </div>
+      </div>
+    </div>
+
+    <h3>ファイル構成と役割</h3>
+    <table>
+      <thead><tr><th>ファイル</th><th>形式</th><th>主な用途</th><th>詳細化しやすい点</th></tr></thead>
+      <tbody>
+        <tr><td><code>process.md</code></td><td>BPMN化しやすいMarkdown/YAML</td><td>業務順序、担当主体、システム処理、人手確認ポイント</td><td>BPMN 2.0 XML化、画面遷移との対応</td></tr>
+        <tr><td><code>decision_rules.yaml</code></td><td>DMN風YAML</td><td>承認条件、権限、入力検証、例外分岐</td><td>DMN表、テストケース自動生成</td></tr>
+        <tr><td><code>data_schema.json</code></td><td>JSON Schema 2020-12</td><td>主要集約とAPI payloadの構造検証</td><td>全テーブル/全DTOへの拡張</td></tr>
+        <tr><td><code>api_spec.yaml</code></td><td>OpenAPI 3.1相当</td><td>代表API、認証、エラー応答、外部連携の入口</td><td>全レスポンス、全エラー、認可条件</td></tr>
+        <tr><td><code>exception_policy.yaml</code></td><td>YAML</td><td>エラー時の扱い、監査ログ、人手確認、再処理条件</td><td>運用Runbook、監査証跡要件</td></tr>
+        <tr><td><code>glossary.md</code></td><td>Markdown</td><td>人間とAIの共通語彙</td><td>ドメイン辞書、用語揺れ検出</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>読み方:</strong> まず <code>README.md</code> で確認済み/未確認の前提を確認し、業務変更なら <code>process.md</code> と <code>decision_rules.yaml</code>、API変更なら <code>api_spec.yaml</code> と <code>data_schema.json</code> を見るのが効率的です。</div>
+  </section>
+
+  <section class="page">
+    <h2>2. 業務フローの中核</h2>
+    <p>Riscala AI for ISMSは、テナント/組織設定を起点に、情報資産、リスク、文書、監査、マネジメントレビューへ流れるISMS運用サイクルを持ちます。</p>
+    <div class="diagram">
+      <div class="lifecycle">
+        <div class="step-card"><span class="num">1</span><strong>組織設定</strong><br><span class="small">スコープ、部門、ユーザー、ロール、権限</span></div>
+        <div class="step-card"><span class="num">2</span><strong>資産・リスク</strong><br><span class="small">情報資産、リスク評価、対応、管理策</span></div>
+        <div class="step-card"><span class="num">3</span><strong>文書統制</strong><br><span class="small">作成、版管理、2段階承認、エクスポート</span></div>
+        <div class="step-card"><span class="num">4</span><strong>内部監査</strong><br><span class="small">計画承認、チェック、不適合、報告書承認</span></div>
+        <div class="step-card"><span class="num">5</span><strong>改善</strong><br><span class="small">フォローアップ、マネジメントレビュー、次サイクル</span></div>
+      </div>
+    </div>
+
+    <h3>主要プロセス一覧</h3>
+    <table>
+      <thead><tr><th>ID</th><th>名称</th><th>確認状況</th><th>見るべき実装</th><th>人手確認ポイント</th></tr></thead>
+      <tbody>
+        <tr><td>P-001</td><td>ISMS運用ライフサイクル</td><td><span class="badge partial">partial</span></td><td><code>docs/01-business</code>, <code>lib/services/*</code></td><td>スコープ、責任者、リスク判断、レビュー結論</td></tr>
+        <tr><td>P-002</td><td>文書2段階承認</td><td><span class="badge confirmed">confirmed</span></td><td><code>lib/services/document.ts</code>, <code>approval.ts</code></td><td>承認者、承認/却下コメント、却下後修正</td></tr>
+        <tr><td>P-003</td><td>汎用承認・エスカレーション</td><td><span class="badge confirmed">confirmed</span></td><td><code>lib/services/approval.ts</code>, <code>cron/escalate...</code></td><td>期限超過時の通知先、差戻し理由</td></tr>
+        <tr><td>P-004</td><td>監査計画承認</td><td><span class="badge confirmed">confirmed</span></td><td><code>lib/services/audit.ts</code></td><td>却下後に計画を修正して再申請するか</td></tr>
+        <tr><td>P-005</td><td>監査報告書承認</td><td><span class="badge confirmed">confirmed</span></td><td><code>lib/services/audit.ts</code></td><td>報告書内容、却下理由、再提出</td></tr>
+        <tr><td>P-006</td><td>AIリスク分析</td><td><span class="badge confirmed">confirmed</span></td><td><code>app/api/ai/risks/analyze/route.ts</code></td><td>AI提案の採否、保存可否</td></tr>
+      </tbody>
+    </table>
+
+    <h3>文書承認のスイムレーン概要</h3>
+    <div class="swimlane">
+      <div class="lane-label">作成者</div><div class="lane-content">下書き文書を作成し、一次承認者と最終承認者を選択して承認依頼を開始する。</div>
+      <div class="lane-label">System</div><div class="lane-content">文書状態を <code>draft</code> から <code>in_review</code> へ変更し、<code>approval_requests</code> と通知、監査ログを作成する。</div>
+      <div class="lane-label">承認者</div><div class="lane-content">現在のpending承認者だけが承認/却下できる。却下時は後続pendingも却下され、文書は <code>draft</code> に戻る。</div>
+      <div class="lane-label">System</div><div class="lane-content">全承認が完了すると文書を <code>approved</code> にし、<code>approved_by</code> と <code>approved_at</code> を記録する。</div>
+    </div>
+  </section>
+
+  <section class="page">
+    <h2>3. 判断ルールと状態遷移</h2>
+    <p>判断ルールはDMN風YAMLにまとめられています。実装確認済みの条件分岐を、入力、出力、HTTPステータス、エラー文言に分解しています。</p>
+
+    <div class="two-col">
+      <div class="diagram">
+        <h3>文書状態</h3>
+        <div class="box teal"><span class="box-title">draft</span><small>承認依頼可能</small></div>
+        <div class="arrow">↓ submit</div>
+        <div class="box"><span class="box-title">in_review</span><small>承認中。却下でdraftへ戻る</small></div>
+        <div class="arrow">↓ all approved</div>
+        <div class="box green"><span class="box-title">approved</span><small>承認済み</small></div>
+        <div class="arrow">↓ obsolete</div>
+        <div class="box rose"><span class="box-title">obsolete</span><small>廃止扱い</small></div>
+      </div>
+      <div class="diagram">
+        <h3>承認リクエスト状態</h3>
+        <div class="box"><span class="box-title">pending</span><small>承認待ち。期限超過ならエスカレーション対象</small></div>
+        <div class="arrow">↓ approve / reject</div>
+        <div class="three-col">
+          <div class="box green"><span class="box-title">approved</span><small>差戻しでpendingへ</small></div>
+          <div class="box rose"><span class="box-title">rejected</span><small>差戻しでpendingへ</small></div>
+          <div class="box amber"><span class="box-title">expired</span><small>状態値は定義済み</small></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>代表的な判断表</h3>
+    <table>
+      <thead><tr><th>ID</th><th>判断</th><th>主な入力</th><th>出力</th><th>実装根拠</th></tr></thead>
+      <tbody>
+        <tr><td>D-001</td><td>ロール管理可否</td><td>actor_role, target_role</td><td>allowed</td><td><code>lib/constants/roleHierarchy.ts</code></td></tr>
+        <tr><td>D-002</td><td>タスク操作権限</td><td>action, actor_role</td><td>allowed</td><td><code>lib/constants/taskPermissions.ts</code></td></tr>
+        <tr><td>D-003</td><td>文書作成バリデーション</td><td>認証、組織、title、status</td><td>HTTP 200/400/401/403/500</td><td><code>app/api/documents/route.ts</code></td></tr>
+        <tr><td>D-004</td><td>文書承認開始可否</td><td>文書状態、承認者、既存pending</td><td>作成する承認step、次状態、エラー</td><td><code>lib/services/document.ts</code></td></tr>
+        <tr><td>D-006</td><td>承認差戻し可否</td><td>状態、組織、差戻し者、承認者</td><td>allowed/error</td><td><code>lib/services/approval.ts</code></td></tr>
+        <tr><td>D-008</td><td>AIリスク分析入力検証</td><td>role, type, context</td><td>HTTP 200/400/403</td><td><code>app/api/ai/risks/analyze/route.ts</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>注意:</strong> リスクスコア計算は <code>impact_level * likelihood_level</code> と確認済みですが、low/medium/highなどの帯判定閾値は未確認として分離しています。</div>
+  </section>
+
+  <section class="page">
+    <h2>4. データ定義とAPIの見取り図</h2>
+    <p><code>data_schema.json</code> は主要集約をJSON Schema化し、<code>api_spec.yaml</code> は代表APIをOpenAPI 3.1相当で整理しています。全テーブル完全網羅ではなく、業務仕様確認に必要な中核データを優先しています。</p>
+
+    <div class="diagram">
+      <div class="flow-row">
+        <div class="box teal"><span class="box-title">Organization</span><small>テナント境界。原則 <code>organization_id</code> で分離</small></div>
+        <div class="arrow">→</div>
+        <div class="box"><span class="box-title">User / Role</span><small>profile、membership、permission set、role flag</small></div>
+        <div class="arrow">→</div>
+        <div class="box amber"><span class="box-title">Domain Records</span><small>document、risk、audit、incident、BCP、education、supplier</small></div>
+      </div>
+      <div class="flow-row" style="margin-top: 8px;">
+        <div class="box violet"><span class="box-title">Approval</span><small>resource_type/resource_idで複数業務を承認</small></div>
+        <div class="arrow">→</div>
+        <div class="box green"><span class="box-title">Notification</span><small>承認依頼、期限超過、外部チャネル</small></div>
+        <div class="arrow">→</div>
+        <div class="box rose"><span class="box-title">Audit Log</span><small>誰が、何を、どの資源へ、どう変更したか</small></div>
+      </div>
+    </div>
+
+    <h3>主要データと制約</h3>
+    <table>
+      <thead><tr><th>集約</th><th>主な必須項目</th><th>状態/許容値</th><th>補足</th></tr></thead>
+      <tbody>
+        <tr><td>Document</td><td>id, organization_id, title, created_by</td><td>draft, in_review, approved, obsolete</td><td>承認は現行サービスでは主に <code>approval_requests</code> を使用</td></tr>
+        <tr><td>ApprovalRequest</td><td>id, organization_id, resource_type, resource_id, status</td><td>pending, approved, rejected, expired</td><td>resource_typeはdocument/audit_plan/audit_report等</td></tr>
+        <tr><td>Risk</td><td>id, title</td><td>identified, analyzing, treating, monitoring, closed</td><td>risk_scoreはアプリ層計算</td></tr>
+        <tr><td>InformationAsset</td><td>id, organization_id, name</td><td>asset_type, classification, criticality, status</td><td>CSVインポート/エクスポート対象</td></tr>
+        <tr><td>AuditPlan</td><td>id, title</td><td>planning, scheduled, in_progress, completed, cancelled</td><td>承認後にscheduledへ遷移</td></tr>
+        <tr><td>AI Risk Analyze Request</td><td>type, context</td><td>identify, evaluate, suggest_treatments</td><td>typeごとにcontext必須項目が変わる</td></tr>
+      </tbody>
+    </table>
+
+    <h3>代表APIマップ</h3>
+    <table>
+      <thead><tr><th>API</th><th>用途</th><th>認証/認可</th><th>代表エラー</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /api/documents</code></td><td>文書作成</td><td>Better Auth session、組織一致</td><td>401, 400, 403, 500</td></tr>
+        <tr><td><code>POST /api/ai/risks/analyze</code></td><td>AIリスク分析</td><td>org_admin/system_operator/auditor</td><td>400, 403, 500</td></tr>
+        <tr><td><code>GET /api/cron/escalate-overdue-approvals</code></td><td>期限超過承認エスカレーション</td><td>Bearer CRON_SECRET</td><td>401, 500</td></tr>
+        <tr><td><code>GET/POST /api/audit/periods</code></td><td>監査期間</td><td>セッション系</td><td>詳細はAPI側追加確認</td></tr>
+        <tr><td><code>POST /api/information-assets/import</code></td><td>情報資産インポート</td><td>セッション系</td><td>CSV検証結果</td></tr>
+        <tr><td><code>POST /api/stripe/webhook</code></td><td>Stripe webhook</td><td>署名検証想定</td><td>400等。詳細は追加確認</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="page">
+    <h2>5. 例外処理・監査観点</h2>
+    <p>例外ポリシーは、エラー時に何を返すか、ログに何を残すか、どこで人手確認へ戻すかを整理するための入口です。</p>
+
+    <div class="two-col">
+      <div>
+        <h3>自動処理できない/戻す条件</h3>
+        <table>
+          <thead><tr><th>条件</th><th>戻し先</th></tr></thead>
+          <tbody>
+            <tr><td>文書承認者未指定</td><td>承認依頼モーダルで再選択</td></tr>
+            <tr><td>文書却下</td><td>作成者が文書を修正し再申請</td></tr>
+            <tr><td>監査計画却下</td><td>監査計画を修正し再申請判断</td></tr>
+            <tr><td>AI提案</td><td>採用/不採用を人が判断</td></tr>
+            <tr><td>インポートエラー行</td><td>CSV/ZIP内容を修正して再投入</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>監査ログに含めるべき情報</h3>
+        <div class="diagram">
+          <ul class="compact">
+            <li><code>organization_id</code></li>
+            <li><code>user_id</code> または <code>actor_id</code></li>
+            <li><code>action</code> または <code>event_type</code></li>
+            <li><code>resource_type</code> と <code>resource_id</code></li>
+            <li><code>changes</code> または <code>payload</code></li>
+            <li><code>created_at</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>確認済みイベント語彙</h3>
+    <table>
+      <thead><tr><th>領域</th><th>イベント</th></tr></thead>
+      <tbody>
+        <tr><td>document</td><td><code>document.created</code>, <code>document.approval_requested</code>, <code>document.approved</code>, <code>document.rejected</code></td></tr>
+        <tr><td>approval_event</td><td><code>requested</code>, <code>approved</code>, <code>rejected</code>, <code>escalated</code>, <code>reverted</code></td></tr>
+        <tr><td>audit</td><td><code>audit.plan.approval_requested</code>, <code>audit.plan.approved</code>, <code>audit.report.approved</code>, <code>audit.report.rejected</code></td></tr>
+        <tr><td>risk</td><td><code>risk.created</code>, <code>risk.updated</code>, <code>risk.deleted</code></td></tr>
+        <tr><td>permission</td><td><code>user.permissions_updated</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>未確認として残すべきもの</h3>
+    <div class="checklist">
+      <div class="warn"><strong>通知再試行</strong><br><span class="small">外部チャネル配信失敗時の再試行回数、バックオフ、停止条件は未確認。</span></div>
+      <div class="warn"><strong>失敗系監査ログ</strong><br><span class="small">すべての失敗を監査ログへ残す方針かは未確認。</span></div>
+      <div class="warn"><strong>課金上限</strong><br><span class="small">要件上の上限/自動アップグレードが実装済みか追加照合が必要。</span></div>
+      <div class="warn"><strong>全APIの外部公開範囲</strong><br><span class="small">画面だけが使うサービス操作と外部API化する操作の境界は未確認。</span></div>
+    </div>
+  </section>
+
+  <section class="page">
+    <h2>6. エンジニア向け活用ガイド</h2>
+    <div class="two-col">
+      <div>
+        <h3>改修前チェック</h3>
+        <div class="check"><strong>業務フロー変更</strong><br><span class="small"><code>process.md</code> と <code>decision_rules.yaml</code> を更新し、状態遷移と人手確認ポイントを確認する。</span></div>
+        <div class="check" style="margin-top:8px;"><strong>データ項目変更</strong><br><span class="small"><code>data_schema.json</code> とDrizzleスキーマ、API payload、インポート/エクスポートを同期する。</span></div>
+        <div class="check" style="margin-top:8px;"><strong>API変更</strong><br><span class="small"><code>api_spec.yaml</code> に認証、認可、エラー応答、レスポンスを明記する。</span></div>
+      </div>
+      <div>
+        <h3>QA/AI検証への使い方</h3>
+        <div class="check"><strong>判断表からテスト生成</strong><br><span class="small">DMN風ルールの各行を正常系/異常系テストケースへ展開する。</span></div>
+        <div class="check" style="margin-top:8px;"><strong>スキーマ検証</strong><br><span class="small">主要DTOをJSON Schemaで検証し、必須項目や状態値の揺れを検知する。</span></div>
+        <div class="check" style="margin-top:8px;"><strong>未確認事項の棚卸し</strong><br><span class="small">仕様レビュー時に未確認リストを潰し、推測が実装へ混ざらないようにする。</span></div>
+      </div>
+    </div>
+
+    <h3>今回のPDF作成時の検証観点</h3>
+    <table>
+      <thead><tr><th>観点</th><th>確認方法</th><th>期待結果</th></tr></thead>
+      <tbody>
+        <tr><td>構文</td><td>JSON parse / YAML parse</td><td>仕様ファイルが機械的に読める</td></tr>
+        <tr><td>レイアウト</td><td>HTMLレンダリング、Puppeteer layout report、プレビュー画像</td><td>横溢れや大きな崩れがない</td></tr>
+        <tr><td>文字化け</td><td>PDFテキスト抽出で置換文字を検索</td><td>置換文字や異常な四角文字が出ない</td></tr>
+        <tr><td>誤字脱字</td><td>抽出テキストの主要語と見出しを確認</td><td>主要語、ファイル名、状態値が読み取れる</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>次の詳細化候補:</strong> 文書承認のBPMN XML化、リスク評価帯の正本確認、全APIレスポンススキーマ、通知再試行仕様、Stripeイベント別状態遷移。</div>
+
+    <p class="footer-note">参照元: <code>docs/01-business/spec-dsl/</code>。このPDFは中級エンジニア向けの概説資料であり、詳細な機械可読仕様は各ソースファイルを正とします。</p>
+  </section>
+</body>
+</html>

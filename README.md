@@ -2,111 +2,98 @@
 
 AI駆動開発でつくる、ISMS構築・運用支援プラットフォーム。
 
-Riscala AI for ISMS is a source-available ISMS operations platform built through AI-driven development. It supports ISO/IEC 27001 preparation and ongoing ISMS operations, including documents, information assets, risks, controls, audits, corrective actions, management reviews, and evidence exports.
+Riscala AI for ISMS is an ISMS operations platform built through AI-driven development. It supports ISO/IEC 27001 preparation and ongoing ISMS operations, including documents, information assets, risks, controls, audits, corrective actions, management reviews, and evidence exports.
 
-It connects documents, information assets, risks, controls, control applicability decisions, internal audits, corrective actions, management reviews, tasks, notifications, and audit preparation outputs in one application flow.
+名称に含まれる “AI” は、主に開発手法としてのAI駆動開発を指します。プロダクト内のAI支援機能は、プライバシー、ログ、人的レビュー方針を整理したうえで扱う将来機能です。
 
-## 日本語で読む
+## 現在の標準構成
 
-- [Riscala AI for ISMS 公開版の概要](docs/01-business/public-product-overview-ja.md)
-- [公開向け PR/FAQ](docs/01-business/pr-faq-workshop/pr-faq-public.md)
+- Frontend / App: Next.js App Router
+- DB: Drizzle ORM + libSQL
+- ローカルDB: SQLite file database (`file:local.db`)
+- クラウドDB: Turso (`libsql://...`)
+- Auth: Better Auth
+- Storage: ローカルファイルシステム (`.storage/`)
 
-## Why This Is Public
+以前の Supabase/Postgres 前提は廃止済みです。履歴はGitに残るため、現行の開発・検証では Supabase CLI、Supabase migrations、Service Role Key を前提にしません。
 
-This repository is a Build in Public snapshot. It is not a commercial SaaS launch, production service, or certification guarantee.
-
-The goal is to make the current state of the product visible so that ISMS practitioners, SaaS builders, potential collaborators, and people interested in AI-driven development can review the direction, run the app locally, and give feedback.
-
-## 100% AI-Driven Development
-
-Riscala AI for ISMS is also an experiment in AI-driven product development. The owner defines the product direction, requirements, priorities, and review decisions, while implementation, fixes, documentation, and verification are carried out through collaboration with AI agents.
-
-The owner has not directly written application code line by line. This repository is intended to show both the product hypothesis and the development style: what AI agents can build, where human judgment remains essential, and how quality and business decisions can be separated.
-
-The “AI” in the name refers primarily to the development approach: this product is built through AI-driven development. In-product AI assistance is treated as a separate future capability and requires additional privacy, logging, and human-review design.
-
-## Current Snapshot
-
-The current implementation assumes a SaaS-style model with service operators, tenant administrators, and tenant users. It also includes plan/subscription concepts and Stripe integration points, including mock-mode flows for local evaluation.
-
-Areas you can inspect include:
-
-- initial ISMS registration preparation flows
-- ongoing annual ISMS operation flows
-- document, information asset, risk, task, education, audit, corrective action, and management review modules
-- control applicability decisions with versioning, change reasons, review, approval, and reissue flows
-- audit preparation package output concepts
-- export/import and organization backup direction for avoiding SaaS lock-in
-- local SQLite/libSQL development setup and Turso-compatible database access
-
-Still-open commercial/product areas include pricing, formal contracts, SLA/RTO/RPO, production support, production security review, real customer migration, contribution acceptance rules, and whether to package a simpler single-user variant.
-
-## Public Demo
-
-You can try the current public demo here:
-
-- [Public demo site](https://riscala.datagen-pro.com)
-- [Demo login](https://riscala.datagen-pro.com/ja/dev-login)
-
-The demo is intended for hands-on evaluation with seeded fictional tenants and users. Use Demo login to inspect and write sample data. Demo data is reset to the seed state once per day, so entered data is not retained.
-
-The public demo does not accept real user registration. Billing and Stripe-related screens run in mock mode and do not process real payments.
-
-## License
-
-This project is source-available, not open source.
-
-You may view, evaluate, test, and use the code for non-commercial assessment. Commercial use, redistribution, managed hosting, SaaS use, resale, or derivative product use requires prior written permission. See [LICENSE](LICENSE).
-
-## Try Locally
-
-Requirements:
-
-- Node.js 20 or later
-- npm
-
-Setup:
+## ローカル開発
 
 ```bash
-npm ci
+npm install
 cp .env.example .env.local
+npm run db:seed
 npm run dev
 ```
 
-Open `http://localhost:3007`.
+アプリは `http://localhost:3007` で起動します。
 
-The default local setup uses SQLite/libSQL-compatible local storage and mock modes for Stripe, email, and AI integrations. Real external service keys are optional and must be supplied through your own `.env.local`.
+`.env.example` の既定値では、DB はリポジトリ直下の `local.db` を使います。
 
-## Useful Checks
+```env
+DATABASE_MODE=sqlite
+TURSO_DATABASE_URL=file:local.db
+```
+
+Turso Cloud を使う場合は次を設定します。
+
+```env
+DATABASE_MODE=turso
+TURSO_DATABASE_URL=libsql://xxx.turso.io
+TURSO_AUTH_TOKEN=...
+```
+
+## よく使うコマンド
 
 ```bash
+npm run dev
+npm run build
 npm run lint
 npm run typecheck
 npm run lint:messages
-npm run qa:public-copy
-npm run build
+npm run db:seed
+npm run seed:practical-verification -- --reset
 ```
 
-## Feedback and Collaboration
+`npm run db:seed` は `scripts/seed-sqlite.mjs` を実行し、ローカルでは `local.db`、Turso設定時はTursoにデモデータを投入します。
 
-Feedback is welcome from people who understand ISMS practice, business SaaS design, AI-driven development, or possible collaboration models.
+## ローカルDBの実体
 
-Please use issues for product feedback and questions. Security reports should not be opened as public issues; see [SECURITY.md](SECURITY.md). Code contributions may be reviewed case by case, but this repository is not operated as an open source project. See [CONTRIBUTING.md](CONTRIBUTING.md).
+ローカル検証中に使われるDBは SQLite ファイルです。
 
-Commercial licensing, hosted use, redistribution, individual implementation support, or partnership inquiries require prior permission from the repository owner.
+- `local.db`
+- `local.db-shm`
+- `local.db-wal`
 
-## Public Boundary
+`lib/db/drizzle/client.ts` が `TURSO_DATABASE_URL` を見て接続先を決めます。未設定なら `SQLITE_DB_PATH` または `local.db` にフォールバックします。
 
-This repository is a source-available public snapshot for evaluation.
+## プロジェクト構造
 
-Included:
+```text
+app/                 Next.js App Router
+components/          UIコンポーネント
+lib/                 サービス、DB、認証、共通ユーティリティ
+lib/db/drizzle/      Drizzle schema と libSQL client
+drizzle/             Drizzle migrations
+messages/            翻訳辞書
+scripts/             seed / QA / 運用補助スクリプト
+docs/                仕様、QA、運用ドキュメント
+tests/               unit / e2e tests
+```
 
-- application source code needed to inspect and run the product locally
-- database schema and migration examples
-- internationalized messages
-- public-facing setup, quality, operations, and design documentation
-- minimal CI for lint, typecheck, translation validation, public-copy checks, and build
+## ドキュメント
 
-This public package is limited to files that help readers inspect, run, and evaluate
-the product. It is not intended to include unrelated work logs, local machine state,
-generated QA output, local databases, secrets, or tokens.
+- `docs/01-business/public-product-overview-ja.md`: 日本語の公開向けプロダクト概要と機能一覧
+- `docs/01-business/pr-faq-workshop/pr-faq-public.md`: Build in Public 向けの公開PR/FAQ
+- `docs/01-business/spec-dsl/`: 現行業務仕様の参照パッケージ
+- `docs/02-project/12_uc-checklist.md`: ユースケース進捗
+- `docs/02-project/release-readiness/practical-verification-plan.md`: 実務検証計画
+- `docs/05-quality/qa-guidelines.md`: QAガイドライン
+- `docs/06-operations/development-environment-guide.md`: 開発環境ガイド
+- `docs/handoff/`: セッション引き継ぎ
+
+古いドキュメントや過去のhandoffには Supabase 時代の記述が残る場合があります。現行実装の正本は、`lib/db/drizzle/`、`drizzle/`、`.env.example`、この README を優先してください。
+
+## ライセンス
+
+このプロジェクトはプロプライエタリソフトウェアです。

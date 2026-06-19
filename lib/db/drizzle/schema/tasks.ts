@@ -83,6 +83,8 @@ export const tasks = sqliteTable(
     index('idx_tasks_status').on(table.status),
     index('idx_tasks_priority').on(table.priority),
     index('idx_tasks_due_date').on(table.dueDate),
+    index('idx_tasks_org_status').on(table.organizationId, table.status),
+    index('idx_tasks_org_due_date').on(table.organizationId, table.dueDate),
   ]
 )
 

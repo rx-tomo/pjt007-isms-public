@@ -96,6 +96,8 @@ export const documents = sqliteTable(
     index('idx_documents_category').on(table.category),
     index('idx_documents_created_at').on(table.createdAt),
     index('idx_documents_folder').on(table.folderId),
+    index('idx_documents_org_status').on(table.organizationId, table.status),
+    index('idx_documents_org_created_at').on(table.organizationId, table.createdAt),
   ]
 )
 

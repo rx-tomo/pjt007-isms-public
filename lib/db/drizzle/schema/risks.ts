@@ -147,6 +147,9 @@ export const risks = sqliteTable(
     index('idx_risks_status').on(table.status),
     index('idx_risks_risk_score').on(table.riskScore),
     index('idx_risks_assessment_period').on(table.assessmentPeriod),
+    index('idx_risks_org_status').on(table.organizationId, table.status),
+    index('idx_risks_org_assessment_period').on(table.organizationId, table.assessmentPeriod),
+    index('idx_risks_org_risk_score').on(table.organizationId, table.riskScore),
   ]
 )
 

@@ -1,0 +1,234 @@
+metadata:
+  title: ISMS Pilot Release Readiness Scoring Model
+  created: 2026-05-14
+  last_updated: 2026-05-14
+  author: Codex
+  total_score: 100
+  target_score: 90
+  release_candidate_rule: >
+    total_scoreが90以上で、かつrequired_gatesがすべてpassの場合のみリリース候補とする。
+
+scoring_principles:
+  - 推測で満点にしない。コード、docs、テスト、証跡で確認できた範囲だけ加点する。
+  - docsのみ確認できる項目は、実装確認済みより低く評価する。
+  - 未確認は0点または部分点にし、unresolved_itemsへ記録する。
+  - UC、既存QA資料、ページ、サービス、APIの存在は必要な素材だが、それだけでは業務ワークフロー達成の証跡としない。
+  - 工程2、3、5は、実装資産起点ではなく、ISMS新規導入、継続運用、内部監査、SaaS運営の実務工程起点で採点する。
+  - 効率性はページやマニュアルの存在ではなく、次アクション性、一気通貫性、証跡探索性、例外復帰性で評価する。
+  - 高/重大セキュリティ問題、テナント越境、認証認可重大不備は点数に関係なくリリース不可とする。
+  - 事業オーナー判断が必要な事項はowner-decision-policy.mdの既定方針に従い、方針外は課題化する。
+
+workflow_based_sources:
+  operational_workflow_model: docs/02-project/release-readiness/isms-operational-workflow-model.md
+  required_capability_matrix: docs/02-project/release-readiness/required-capability-matrix.md
+  capability_gap_assessment: docs/02-project/release-readiness/capability-gap-assessment.md
+  operational_efficiency_review: docs/02-project/release-readiness/operational-efficiency-review.md
+  correction_policy: >
+    初回採点でUC・docs・実装資産の存在を根拠にした項目は、
+    上記4文書に照らして再評価する。
+
+categories:
+  - id: isms_business_capability
+    name: ISMS業務機能
+    weight: 30
+    checks:
+      - id: documents
+        name: 文書管理
+        max: 4
+        evidence_expectation: 文書作成、編集、承認依頼、版管理、エクスポートが確認できる
+      - id: approvals
+        name: 承認ワークフロー
+        max: 4
+        evidence_expectation: 承認、却下、差戻し、履歴、期限管理が確認できる
+      - id: assets
+        name: 情報資産管理
+        max: 3
+        evidence_expectation: 資産登録、分類、CSV取込/出力、リスク連携が確認できる
+      - id: risks
+        name: リスク評価・対応
+        max: 5
+        evidence_expectation: リスク登録、評価、対応策、マトリクス、レビューが確認できる
+      - id: controls
+        name: 管理策・SoA支援
+        max: 4
+        evidence_expectation: 管理策ライブラリ、適用判断、証跡との関連が確認できる
+      - id: tasks
+        name: タスク・是正管理
+        max: 3
+        evidence_expectation: タスク作成、担当、期限、状態、通知が確認できる
+      - id: audits
+        name: 内部監査・フォローアップ
+        max: 5
+        evidence_expectation: 監査計画、実施、指摘、報告、是正フォローが確認できる
+      - id: evidence_export
+        name: 証跡・通知・エクスポート
+        max: 2
+        evidence_expectation: 監査証跡、通知、データ出力が確認できる
+
+  - id: saas_operations
+    name: SaaS運営
+    weight: 15
+    checks:
+      - id: tenant_provision
+        name: テナント作成
+        max: 4
+        evidence_expectation: super_adminがテナントを作成・確認できる
+      - id: permissions
+        name: 利用権限付与
+        max: 3
+        evidence_expectation: 招待、ロール、組織内権限管理が確認できる
+      - id: subscription
+        name: 契約・プラン
+        max: 3
+        evidence_expectation: プラン、課金、Webhookまたは手動運用境界が確認できる
+      - id: audit_support
+        name: 監査ログ・サポート調査
+        max: 3
+        evidence_expectation: 運営者が調査に必要なログやテナント状態を確認できる
+      - id: data_operations
+        name: データ運用
+        max: 2
+        evidence_expectation: エクスポート、保持、削除、バックアップ方針が確認できる
+
+  - id: ux_operational_efficiency
+    name: UX・運用効率
+    weight: 15
+    checks:
+      - id: onboarding_guidance
+        name: 初期導入ガイド
+        max: 4
+        evidence_expectation: 初回ログインから組織設定、スコープ、ユーザー招待まで迷わず進められる
+      - id: recurring_operations
+        name: 月次・日常運用
+        max: 3
+        evidence_expectation: タスク、通知、ダッシュボードで次アクションが分かる
+      - id: audit_preparation
+        name: 監査準備効率
+        max: 3
+        evidence_expectation: 監査に必要な文書、証跡、レポートを探しやすい
+      - id: templates_import_export
+        name: テンプレート・入出力
+        max: 3
+        evidence_expectation: テンプレート、CSV、PDF/ZIP等の入出力で作業短縮できる
+      - id: ai_assist
+        name: AI支援
+        max: 2
+        evidence_expectation: AI出力が人手確認と監査ログ前提で利用できる
+
+  - id: quality_correctness
+    name: 品質・正確性
+    weight: 20
+    checks:
+      - id: static_checks
+        name: lint/typecheck/build
+        max: 5
+        evidence_expectation: lint、typecheck、buildが成功または失敗理由が整理済み
+      - id: unit_tests
+        name: Unit tests
+        max: 4
+        evidence_expectation: unit testが成功または失敗理由が整理済み
+      - id: e2e_journey
+        name: E2E/Journey
+        max: 5
+        evidence_expectation: 主要ジャーニーがE2Eまたは手動証跡で確認済み
+      - id: qa_scripts
+        name: QA scripts
+        max: 3
+        evidence_expectation: 関連QAスクリプトが成功または未実行理由が整理済み
+      - id: state_exceptions
+        name: 状態遷移・例外処理
+        max: 3
+        evidence_expectation: 状態遷移、例外、再処理条件のテストまたはレビュー証跡がある
+
+  - id: security_auditability
+    name: セキュリティ
+    weight: 20
+    checks:
+      - id: auth_session
+        name: 認証・セッション
+        max: 4
+        evidence_expectation: 認証、MFA、セッション、ログアウトが確認できる
+      - id: rbac_tenant_isolation
+        name: RBAC・テナント分離
+        max: 5
+        evidence_expectation: org_idスコープ、権限拒否、越境アクセス防止が確認できる
+      - id: audit_logs
+        name: 監査ログ
+        max: 3
+        evidence_expectation: 重要操作、権限変更、エクスポート、セキュリティ設定変更が記録される
+      - id: api_rate_limit_secret
+        name: API防御・rate limit・secret
+        max: 3
+        evidence_expectation: rate limit、cron/API secret、入力検証、CORS等が確認できる
+      - id: dependency_secrets
+        name: 依存脆弱性・秘密情報
+        max: 3
+        evidence_expectation: 高/重大脆弱性、secret漏えい、ログ出力リスクがない
+      - id: ai_data_protection
+        name: AIデータ保護
+        max: 2
+        evidence_expectation: AI入力、キャッシュ、出力、人手確認、ログ方針が確認できる
+
+required_gates:
+  - id: no_high_or_critical_security_issue
+    name: 高/重大セキュリティ問題がない
+    pass_condition: qa:security、依存チェック、コードレビューで高/重大リスクが未処理で残っていない
+    status: pass
+    evidence:
+      - "2026-05-14〜Goal 6時点ではNext 14由来のhigh/OSV findingsが残っていた。"
+      - "2026-05-15 Next 16移行後 `npm run qa:security`: npm audit critical=0/high=0/total=16、OSV findings=0。"
+  - id: no_cross_tenant_access
+    name: テナント越境アクセスがない
+    pass_condition: RBAC/tenant isolationの否定ケースが確認済み
+    status: pass
+    evidence:
+      - "lib/server/auth/secureClient.ts と app/api/documents/route.ts で organization mismatch guard は確認。"
+      - "npm run qa:rbac:matrix は34 passed。settings/users/assets/controlsの非管理者拒否とpayload override拒否は確認済み。"
+      - "2026-05-15 Goal 6で `tests/e2e/tenant-api-isolation.spec.ts` を追加。Chromium 2 passed。別テナントのsetup counts、risk export、organization-data export、departments、ai-config updateを拒否。"
+  - id: no_critical_authz_gap
+    name: 認証・認可の重大不備がない
+    pass_condition: 未認証、権限不足、ロール変更の主要ケースが確認済み
+    status: unknown
+    evidence:
+      - "Better Auth route guard、requireServiceRole allowedRoles、Super Admin APIのrole guardはコードで確認。"
+      - "build中に BETTER_AUTH_SECRET default secret warning が出力され、本番認証設定の安全性は未確認。"
+      - "RBAC/権限拒否E2EはGoal 6で34 passedを維持。主要API越境否定E2Eも追加済み。"
+  - id: core_journeys_work
+    name: 主要業務ジャーニーが成立している
+    pass_condition: UC-01からUC-10の主要導線が自動または手動証跡で確認済み
+    status: fail
+    evidence:
+      - "docs上はUC-01〜UC-10完了記録があるが、2026-05-14 Goal 4時点のE2E smokeは22 passed / 6 failed / 6 did not run。"
+      - "npm run qa:documents は起動済みdev serverに対して6/6 failed。documents route timeoutとen templates 500。"
+      - "2026-05-15 Goal 6で `npm run test:e2e:smoke -- --reporter=line` は34 passed、`npm run qa:documents` は6/6 passed。ただしW-01〜W-06全面ジャーニーは未実行。"
+      - "2026-05-15 `npx playwright test tests/e2e/journeys --project=chromium --reporter=line` は57/57 failed。`/api/dev/login`, `/ja`, `/api/auth/get-session`, `/api/documents`などの共通JSON.parse failureにより業務成立は判定不能。"
+      - "2026-05-15 `.next` cleanup後にE2E dev serverを再起動し、`/api/dev/login`、`/ja`、cookie付き`/api/auth/get-session`、`/ja/settings/organization`、`/ja/super-admin/organizations`は200。SO-01/SA-01はrole setupと初期route renderingを越えた。"
+      - "2026-05-15 full Chromium journey suite rerun: 8 passed / 49 failed。共通JSON blockerではなく、super-admin API/test-contract、risk/task select data、invite token、toast、client/server boundary等の個別gapによりcore journeysは未成立。"
+  - id: no_open_p0_p1
+    name: P0/P1不具合が未処理で残っていない
+    pass_condition: P0/P1課題が0件、またはリリース除外が明示承認済み
+    status: fail
+    evidence:
+      - "P0: qa:securityのcritical/high/OSV findingsはNext 16後に0。security P0は解消済み。"
+      - "P1: npm run test:unit は1646 passed。ただしwebhook-delivery.test.tsとai-suggestion-repository.test.tsはrunner/旧mock debtとして一時除外。"
+      - "P1: npm run test:e2e:smoke は34 passed。"
+      - "P1: npm run qa:documents は6/6 passed。"
+
+severity_rules:
+  p0: リリース不可。セキュリティ重大、データ損失、テナント越境、主要導線停止。
+  p1: リリース前修正が必要。主要ユーザーが業務を完了できない、または監査証跡が欠落する。
+  p2: リリース候補に残せる可能性がある。回避策があり、残リスクを明示できる。
+  p3: リリース後改善。効率化、文言、軽微なUX、追加自動化。
+
+machine_scoring:
+  phase_score_source: checksheet.yaml phases[].score.actual
+  phase_score_max_source: checksheet.yaml phases[].score.max
+  phase_score_total_max: 100
+  release_candidate_minimum: 90
+  gate_status_values:
+    pass: pass
+    fail: fail
+    unknown: unknown
+  output_formats:
+    - markdown
+    - json

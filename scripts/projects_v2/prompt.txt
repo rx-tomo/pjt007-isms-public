@@ -1,0 +1,9 @@
+# prompt.txt（$ISSUE_NUM を後で置換）
+1. `ready` ラベルが付いた GitHub Issue #$ISSUE_NUM を見つけ、自分にアサインして `ready` を外しつつ `in_progress` を付与する。
+2. 対応方法を調査する（コードやドキュメントを読む）。
+3. ExecPlan (as described in ./PLANS.md) に従って実装する。
+4. フィードバックループ（ビルド・テスト・lint など）を回して検証する。
+5. 完了したら `done` にラベルを付け替え、短い修正の要約コメントを添えて Issue をクローズする。
+6. 適切な Git コミットを作成し、メッセージに "Fixes #$ISSUE_NUM" を含める。
+7. 現在のプロジェクトの状態と計画している課題、todosを書き出して、あなたと同レベルのエンジニアが理解できる程度、正確に引き継ぎができる書類を作成する。出力は、docs/handoffの中にhandoff-yyyymmddhhmm.yamlとして、構造化したYAML形式にする
+

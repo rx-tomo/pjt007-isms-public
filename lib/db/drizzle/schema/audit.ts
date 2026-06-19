@@ -149,6 +149,7 @@ export const auditPlans = sqliteTable(
     index('idx_audit_plans_status').on(table.status),
     index('idx_audit_plans_audit_period').on(table.auditPeriod),
     index('idx_audit_plans_audited_unit_id').on(table.auditedUnitId),
+    index('idx_audit_plans_org_status').on(table.organizationId, table.status),
   ]
 )
 

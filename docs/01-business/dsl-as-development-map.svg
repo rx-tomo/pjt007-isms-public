@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">DSLに落とす理由</title>
+  <desc id="desc">コード、人間の理解、AIの作業単位をつなぐ中間表現としてDSLを使う理由を説明する業務用図解。</desc>
+  <defs>
+    <style>
+      .bg { fill: #fbfcfe; }
+      .title { font: 800 64px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #0f172a; }
+      .subtitle { font: 700 30px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #1f2937; }
+      .bandText { font: 800 34px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #111827; }
+      .colTitle { font: 800 34px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #fff; }
+      .body { font: 700 27px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #111827; }
+      .small { font: 700 23px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #111827; }
+      .cycleTitle { font: 800 30px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #fff; }
+      .cycleLabel { font: 800 24px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #111827; }
+      .conclusion { font: 800 34px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; fill: #111827; }
+      .card { fill: #fff; stroke-width: 2; }
+      .dashBlue { stroke: #93c5fd; stroke-width: 2; stroke-dasharray: 4 6; }
+      .dashTeal { stroke: #5eead4; stroke-width: 2; stroke-dasharray: 4 6; }
+      .dashOrange { stroke: #fdba74; stroke-width: 2; stroke-dasharray: 4 6; }
+      .iconBox { fill: #f8fafc; stroke-width: 1.5; }
+    </style>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrowTeal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="900"/>
+  <text x="800" y="72" text-anchor="middle" class="title">DSLに落とす理由</text>
+  <text x="800" y="120" text-anchor="middle" class="subtitle">コード・人間の理解・AIの作業単位をつなぐ中間表現</text>
+
+  <rect x="48" y="145" width="1504" height="86" rx="8" fill="#fff" stroke="#f59e0b" stroke-width="2"/>
+  <circle cx="132" cy="188" r="34" fill="#f59e0b"/>
+  <path d="M114 177 L126 171 L139 177 L151 171 L151 201 L139 207 L126 201 L114 207 Z" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="132" cy="169" r="6" fill="#fff"/>
+  <text x="200" y="200" class="bandText">DSLは巨大な仕様書ではなく、探索型開発を継続可能にする“更新される地図”</text>
+
+  <rect x="48" y="246" width="475" height="407" rx="8" class="card" stroke="#2563eb"/>
+  <rect x="48" y="246" width="475" height="56" rx="8" fill="#2563eb"/>
+  <rect x="48" y="292" width="475" height="10" fill="#2563eb"/>
+  <text x="286" y="286" text-anchor="middle" class="colTitle">コードから仕様を起こす</text>
+
+  <rect x="70" y="319" width="74" height="66" rx="6" class="iconBox" stroke="#93c5fd"/>
+  <circle cx="104" cy="348" r="17" fill="none" stroke="#1d4ed8" stroke-width="5"/>
+  <path d="M117 361 L133 377" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>
+  <text x="170" y="362" class="small">現行機能を確認</text>
+  <line x1="158" y1="390" x2="500" y2="390" class="dashBlue"/>
+
+  <rect x="70" y="399" width="74" height="66" rx="6" class="iconBox" stroke="#93c5fd"/>
+  <path d="M91 414 H119 L133 428 V450 H91 Z" fill="none" stroke="#1d4ed8" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M119 414 V428 H133" fill="none" stroke="#1d4ed8" stroke-width="5"/>
+  <text x="170" y="442" class="small">実装済みの振る舞いを把握</text>
+  <line x1="158" y1="470" x2="500" y2="470" class="dashBlue"/>
+
+  <rect x="70" y="479" width="74" height="66" rx="6" class="iconBox" stroke="#93c5fd"/>
+  <circle cx="107" cy="509" r="18" fill="none" stroke="#1d4ed8" stroke-width="5"/>
+  <path d="M100 531 H114 M101 518 H113 M107 491 V486" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round"/>
+  <text x="170" y="522" class="small">業務上の意味を読み解く</text>
+  <line x1="158" y1="550" x2="500" y2="550" class="dashBlue"/>
+
+  <rect x="70" y="559" width="74" height="66" rx="6" class="iconBox" stroke="#93c5fd"/>
+  <circle cx="92" cy="593" r="8" fill="#1d4ed8"/>
+  <circle cx="122" cy="578" r="8" fill="#1d4ed8"/>
+  <circle cx="123" cy="610" r="8" fill="#1d4ed8"/>
+  <path d="M99 589 L115 581 M99 597 L116 606" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>
+  <text x="170" y="602" class="small">情報の散在を整理</text>
+
+  <path d="M534 450 H568" stroke="#64748b" stroke-width="8" marker-end="url(#arrowGray)"/>
+
+  <rect x="570" y="246" width="455" height="407" rx="8" class="card" stroke="#0f766e"/>
+  <rect x="570" y="246" width="455" height="56" rx="8" fill="#0f766e"/>
+  <rect x="570" y="292" width="455" height="10" fill="#0f766e"/>
+  <text x="798" y="286" text-anchor="middle" class="colTitle">DSLで構造化する</text>
+  <g>
+    <rect x="588" y="316" width="66" height="48" rx="6" fill="#ecfeff" stroke="#99f6e4"/>
+    <path d="M621 326 V355 M601 355 H641 M606 343 H636" stroke="#0f766e" stroke-width="7" stroke-linecap="round"/>
+    <text x="680" y="350" class="body">Workflow：業務の流れ</text>
+    <line x1="670" y1="372" x2="1005" y2="372" class="dashTeal"/>
+    <rect x="588" y="377" width="66" height="48" rx="6" fill="#ecfeff" stroke="#99f6e4"/>
+    <path d="M621 385 L641 394 V412 L621 421 L601 412 V394 Z" fill="#0f766e"/>
+    <path d="M612 404 L619 411 L633 395" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="680" y="411" class="body">CAP：必要能力</text>
+    <line x1="670" y1="433" x2="1005" y2="433" class="dashTeal"/>
+    <rect x="588" y="438" width="66" height="48" rx="6" fill="#ecfeff" stroke="#99f6e4"/>
+    <ellipse cx="621" cy="450" rx="22" ry="8" fill="none" stroke="#0f766e" stroke-width="5"/>
+    <path d="M599 450 V470 C599 481 643 481 643 470 V450" fill="none" stroke="#0f766e" stroke-width="5"/>
+    <text x="680" y="472" class="body">Entity：業務データ</text>
+    <line x1="670" y1="494" x2="1005" y2="494" class="dashTeal"/>
+    <rect x="588" y="499" width="66" height="48" rx="6" fill="#ecfeff" stroke="#99f6e4"/>
+    <path d="M604 538 V506 M621 538 V506 M638 538 V506" stroke="#0f766e" stroke-width="7" stroke-linecap="round"/>
+    <text x="680" y="533" class="body">Gate：検証条件</text>
+    <line x1="670" y1="555" x2="1005" y2="555" class="dashTeal"/>
+    <rect x="588" y="560" width="66" height="48" rx="6" fill="#ecfeff" stroke="#99f6e4"/>
+    <path d="M604 569 H630 L641 580 V599 H604 Z" fill="none" stroke="#0f766e" stroke-width="5"/>
+    <path d="M619 591 L626 598 L640 584" fill="none" stroke="#0f766e" stroke-width="5" stroke-linecap="round"/>
+    <text x="680" y="594" class="body">Evidence：確認済み証跡</text>
+    <line x1="670" y1="616" x2="1005" y2="616" class="dashTeal"/>
+    <rect x="588" y="621" width="66" height="24" rx="6" fill="#ecfeff" stroke="#99f6e4"/>
+    <path d="M604 641 V631 M621 641 V626 M638 641 V621" stroke="#0f766e" stroke-width="9"/>
+    <text x="680" y="641" class="body">Gap：不足と次アクション</text>
+  </g>
+
+  <path d="M1036 450 H1070" stroke="#64748b" stroke-width="8" marker-end="url(#arrowGray)"/>
+
+  <rect x="1072" y="246" width="480" height="407" rx="8" class="card" stroke="#f97316"/>
+  <rect x="1072" y="246" width="480" height="56" rx="8" fill="#f97316"/>
+  <rect x="1072" y="292" width="480" height="10" fill="#f97316"/>
+  <text x="1312" y="286" text-anchor="middle" class="colTitle">次の開発に戻す</text>
+  <rect x="1096" y="321" width="74" height="66" rx="6" class="iconBox" stroke="#fdba74"/>
+  <text x="1126" y="348" font-size="24" font-weight="800" fill="#f97316">1</text>
+  <text x="1111" y="371" font-size="24" font-weight="800" fill="#f97316">2</text>
+  <text x="1140" y="371" font-size="24" font-weight="800" fill="#f97316">3</text>
+  <text x="1196" y="361" class="small">実務検証の優先順位を決める</text>
+  <line x1="1184" y1="392" x2="1524" y2="392" class="dashOrange"/>
+
+  <rect x="1096" y="410" width="74" height="66" rx="6" class="iconBox" stroke="#fdba74"/>
+  <circle cx="1133" cy="443" r="20" fill="none" stroke="#f97316" stroke-width="6"/>
+  <circle cx="1133" cy="443" r="8" fill="#f97316"/>
+  <path d="M1146 430 L1158 418 M1158 418 H1148 M1158 418 V428" stroke="#f97316" stroke-width="5" stroke-linecap="round"/>
+  <text x="1196" y="451" class="small">小さなGoalに分解</text>
+  <line x1="1184" y1="481" x2="1524" y2="481" class="dashOrange"/>
+
+  <rect x="1096" y="499" width="74" height="66" rx="6" class="iconBox" stroke="#fdba74"/>
+  <rect x="1110" y="523" width="46" height="28" rx="12" fill="none" stroke="#f97316" stroke-width="5"/>
+  <circle cx="1124" cy="537" r="4" fill="#f97316"/>
+  <circle cx="1142" cy="537" r="4" fill="#f97316"/>
+  <path d="M1133 523 V512 M1122 552 L1115 560 M1144 552 L1151 560" stroke="#f97316" stroke-width="5" stroke-linecap="round"/>
+  <text x="1196" y="540" class="small">AIエージェントへ渡しやすい</text>
+  <line x1="1184" y1="570" x2="1524" y2="570" class="dashOrange"/>
+
+  <rect x="1096" y="588" width="74" height="48" rx="6" class="iconBox" stroke="#fdba74"/>
+  <path d="M1114 610 C1120 597 1139 596 1148 606 M1152 624 C1145 637 1126 638 1117 628" fill="none" stroke="#f97316" stroke-width="6" stroke-linecap="round"/>
+  <path d="M1147 596 V607 H1158 M1118 638 V627 H1107" fill="none" stroke="#f97316" stroke-width="5" stroke-linecap="round"/>
+  <text x="1196" y="622" class="small">実装後にDSLへ反映</text>
+
+  <rect x="48" y="670" width="1504" height="148" rx="8" fill="#f8ffff" stroke="#0f766e" stroke-width="2"/>
+  <rect x="478" y="676" width="644" height="38" rx="6" fill="#0f766e"/>
+  <text x="800" y="704" text-anchor="middle" class="cycleTitle">アジャイル × コーディングエージェントでの循環</text>
+
+  <g>
+    <circle cx="150" cy="743" r="42" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+    <text x="150" y="751" text-anchor="middle" font-size="42" font-weight="800" fill="#2563eb">&lt;/&gt;</text>
+    <text x="150" y="815" text-anchor="middle" class="cycleLabel">実装</text>
+    <path d="M198 743 H274" stroke="#0f766e" stroke-width="7" marker-end="url(#arrowTeal)"/>
+
+    <circle cx="336" cy="743" r="42" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+    <rect x="313" y="720" width="46" height="36" rx="4" fill="none" stroke="#2563eb" stroke-width="5"/>
+    <path d="M326 738 L335 747 L350 729" fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round"/>
+    <text x="336" y="815" text-anchor="middle" class="cycleLabel">動作確認</text>
+    <path d="M384 743 H460" stroke="#0f766e" stroke-width="7" marker-end="url(#arrowTeal)"/>
+
+    <circle cx="522" cy="743" r="42" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+    <path d="M501 719 H530 L543 732 V762 H501 Z" fill="none" stroke="#2563eb" stroke-width="5"/>
+    <circle cx="538" cy="755" r="11" fill="none" stroke="#2563eb" stroke-width="5"/>
+    <path d="M546 763 L558 775" stroke="#2563eb" stroke-width="5" stroke-linecap="round"/>
+    <text x="522" y="815" text-anchor="middle" class="cycleLabel">コードから抽出</text>
+    <path d="M570 743 H650" stroke="#0f766e" stroke-width="7" marker-end="url(#arrowTeal)"/>
+
+    <rect x="665" y="706" width="210" height="74" rx="7" fill="#fff" stroke="#0f766e" stroke-width="2"/>
+    <path d="M722 730 L752 715 L783 730 L813 715 L813 760 L783 775 L752 760 L722 775 Z" fill="none" stroke="#0f766e" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="768" cy="718" r="9" fill="#0f766e"/>
+    <text x="770" y="806" text-anchor="middle" font-size="31" font-weight="800" fill="#0f766e">開発の地図</text>
+    <path d="M882 743 H958" stroke="#0f766e" stroke-width="7" marker-end="url(#arrowTeal)"/>
+
+    <circle cx="1020" cy="743" r="42" fill="#fff" stroke="#0f766e" stroke-width="2"/>
+    <ellipse cx="1020" cy="728" rx="25" ry="9" fill="none" stroke="#0f766e" stroke-width="5"/>
+    <path d="M995 728 V754 C995 766 1045 766 1045 754 V728" fill="none" stroke="#0f766e" stroke-width="5"/>
+    <path d="M1034 758 L1055 779" stroke="#0f766e" stroke-width="5" stroke-linecap="round"/>
+    <text x="1020" y="815" text-anchor="middle" class="cycleLabel">DSLに記録</text>
+    <path d="M1068 743 H1144" stroke="#0f766e" stroke-width="7" marker-end="url(#arrowTeal)"/>
+
+    <circle cx="1206" cy="743" r="42" fill="#fff" stroke="#0f766e" stroke-width="2"/>
+    <path d="M1186 762 V744 M1206 762 V729 M1226 762 V719" stroke="#0f766e" stroke-width="9"/>
+    <text x="1206" y="815" text-anchor="middle" class="cycleLabel">Gap分析</text>
+    <path d="M1254 743 H1330" stroke="#0f766e" stroke-width="7" marker-end="url(#arrowTeal)"/>
+
+    <circle cx="1392" cy="743" r="42" fill="#fff" stroke="#f97316" stroke-width="2"/>
+    <path d="M1372 721 V771" stroke="#f97316" stroke-width="6" stroke-linecap="round"/>
+    <path d="M1375 725 C1392 715 1406 735 1423 724 V752 C1406 763 1392 742 1375 752 Z" fill="#f97316"/>
+    <text x="1392" y="815" text-anchor="middle" class="cycleLabel">小さなGoal</text>
+  </g>
+  <path d="M1392 832 H150 V829" fill="none" stroke="#0f766e" stroke-width="7"/>
+
+  <rect x="48" y="835" width="1504" height="52" rx="8" fill="#fff" stroke="#f59e0b" stroke-width="2"/>
+  <circle cx="126" cy="861" r="24" fill="#f59e0b"/>
+  <path d="M113 860 L122 869 L140 850" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="200" y="873" class="conclusion">仕様書より構造的、コードより業務寄り。DSLは人間の判断とAIの実装を接続する。</text>
+</svg>

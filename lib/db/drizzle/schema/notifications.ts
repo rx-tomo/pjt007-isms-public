@@ -74,6 +74,7 @@ export const notifications = sqliteTable(
     index('idx_notifications_status').on(table.status),
     index('idx_notifications_created_at').on(table.createdAt),
     index('idx_notifications_org_id').on(table.organizationId),
+    index('idx_notifications_user_status_created_at').on(table.userId, table.status, table.createdAt),
   ]
 )
 

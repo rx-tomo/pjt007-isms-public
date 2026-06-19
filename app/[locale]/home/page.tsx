@@ -238,9 +238,145 @@ export default function HomePage(
 
     let cancelled = false
 
+    async function loadSecondaryDashboardData(resolvedUser: any, resolvedOrganization: any) {
+      let activityErrored = false
+
+      if (!cancelled) {
+        setActivityStatus('loading')
+        if (resolvedUser.role === 'approver') {
+          setApproverMetricsStatus('loading')
+        }
+      }
+
+      try {
+        const activityPromise =
+          simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
+            ? Promise.resolve<ActivityLogEntry[]>([])
+            : activityService
+                .getRecentActivity({ organizationId: resolvedOrganization.id, limit: 30 })
+                .catch(err => {
+                  console.warn('[Dashboard] activity load failed', err)
+                  activityErrored = true
+                  return [] as ActivityLogEntry[]
+                })
+
+        const [
+          unreadCountValue,
+          notificationItems,
+          activityLogs,
+          educationFollowUpSummary,
+          managementReviews,
+          myTrainingSummary,
+          nextApproverMetrics
+        ] = await Promise.all([
+          NotificationService.getUnreadCount(resolvedUser.id).catch(err => {
+            console.warn('[Dashboard] unread count load failed', err)
+            return 0
+          }),
+          NotificationService.getNotifications(resolvedUser.id).catch(err => {
+            console.warn('[Dashboard] notifications load failed', err)
+            return []
+          }),
+          activityPromise,
+          ORGANIZATION_STATS_ROLES.has(resolvedUser.role) && resolvedOrganization.id !== fallbackOrgId
+            ? fetch('/api/education/follow-up', {
+                credentials: 'include',
+                cache: 'no-store'
+              })
+                .then(async response => {
+                  if (!response.ok) throw new Error(`education follow-up ${response.status}`)
+                  const payload = await response.json()
+                  return payload.data as EducationFollowUpSummary
+                })
+                .catch(err => {
+                  console.warn('[Dashboard] education follow-up load failed', err)
+                  return null
+                })
+            : Promise.resolve(null),
+          ORGANIZATION_STATS_ROLES.has(resolvedUser.role) && resolvedOrganization.id !== fallbackOrgId
+            ? fetch('/api/management-reviews', {
+                credentials: 'include',
+                cache: 'no-store'
+              })
+                .then(async response => {
+                  if (!response.ok) throw new Error(`management reviews ${response.status}`)
+                  const payload = await response.json()
+                  return (payload.data ?? []) as Array<{ status?: string }>
+                })
+                .catch(err => {
+                  console.warn('[Dashboard] management reviews load failed', err)
+                  return [] as Array<{ status?: string }>
+                })
+            : Promise.resolve([] as Array<{ status?: string }>),
+          resolvedUser.role === 'user' && resolvedOrganization.id !== fallbackOrgId
+            ? fetch('/api/education/my-training', {
+                credentials: 'include',
+                cache: 'no-store'
+              })
+                .then(async response => {
+                  if (!response.ok) throw new Error(`my training ${response.status}`)
+                  const payload = await response.json()
+                  return payload.data as MyTrainingSummary
+                })
+                .catch(err => {
+                  console.warn('[Dashboard] my training load failed', err)
+                  return null
+                })
+            : Promise.resolve(null),
+          resolvedUser.role === 'approver'
+            ? (simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
+                ? Promise.resolve(buildApproverFallbackMetrics())
+                : documentService.getApproverDashboardMetrics(resolvedOrganization.id).catch(metricsError => {
+                    console.warn('[Dashboard] approver metrics load failed', metricsError)
+                    return null
+                  }))
+            : Promise.resolve(null)
+        ])
+
+        if (cancelled) return
+
+        const notificationsList = notificationItems ?? []
+        const resolvedActivityItems =
+          simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
+            ? buildActivityFallbackItems(locale, t)
+            : buildActivityFeedItems({
+                logs: activityLogs ?? [],
+                notifications: notificationsList,
+                locale,
+                t
+              })
+        const scheduledManagementReviews = managementReviews.filter(review => review.status === 'scheduled').length
+        const inProgressManagementReviews = managementReviews.filter(review => review.status === 'in_progress').length
+
+        setUnreadNotificationCount(unreadCountValue ?? 0)
+        setNotificationPreview(notificationsList.slice(0, 3))
+        setActivityItems(resolvedActivityItems)
+        setActivityStatus(activityErrored ? 'error' : 'ready')
+        setEducationFollowUp(educationFollowUpSummary ?? null)
+        setManagementReviewSummary({
+          scheduled_count: scheduledManagementReviews,
+          in_progress_count: inProgressManagementReviews,
+          pending_count: scheduledManagementReviews + inProgressManagementReviews
+        })
+        setMyTraining(myTrainingSummary ?? null)
+
+        if (resolvedUser.role === 'approver') {
+          setApproverMetrics(nextApproverMetrics)
+          setApproverMetricsStatus(nextApproverMetrics ? 'ready' : 'error')
+        }
+      } catch (secondaryError) {
+        console.warn('[Dashboard] secondary data load failed', secondaryError)
+        if (!cancelled) {
+          setActivityStatus('error')
+          if (resolvedUser.role === 'approver') {
+            setApproverMetricsStatus('error')
+          }
+        }
+      }
+    }
+
     async function load() {
       const pendingWarnings: string[] = []
-      setActivityStatus('loading')
       try {
         let currentUser = await userService.getCurrentUser().catch(err => {
           console.warn('[Dashboard] failed to load current user', err)
@@ -308,92 +444,20 @@ export default function HomePage(
           }
         })()
 
-        let activityErrored = false
-        const activityPromise =
-          simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
-            ? Promise.resolve<ActivityLogEntry[]>([])
-            : activityService
-                .getRecentActivity({ organizationId: resolvedOrganization.id, limit: 30 })
-                .catch(err => {
-                  console.warn('[Dashboard] activity load failed', err)
-                  activityErrored = true
-                  return [] as ActivityLogEntry[]
-                })
-
         const [
           currentStats,
           currentSubscription,
-          unreadCountValue,
-          notificationItems,
-          onboarding,
-          activityLogs,
-          educationFollowUpSummary,
-          managementReviews,
-          myTrainingSummary
+          onboarding
         ] = await Promise.all([
           statsPromise,
           stripeService.getCurrentSubscription(resolvedOrganization.id).catch(err => {
             console.warn('[Dashboard] subscription load failed', err)
             return null
           }),
-          NotificationService.getUnreadCount(resolvedUser.id).catch(err => {
-            console.warn('[Dashboard] unread count load failed', err)
-            return 0
-          }),
-          NotificationService.getNotifications(resolvedUser.id).catch(err => {
-            console.warn('[Dashboard] notifications load failed', err)
-            return []
-          }),
           onboardingService.getProgress(resolvedOrganization.id).catch(err => {
             console.warn('[Dashboard] onboarding progress load failed', err)
             return null
-          }),
-          activityPromise,
-          ORGANIZATION_STATS_ROLES.has(resolvedUser.role) && resolvedOrganization.id !== fallbackOrgId
-            ? fetch('/api/education/follow-up', {
-                credentials: 'include',
-                cache: 'no-store'
-              })
-                .then(async response => {
-                  if (!response.ok) throw new Error(`education follow-up ${response.status}`)
-                  const payload = await response.json()
-                  return payload.data as EducationFollowUpSummary
-                })
-                .catch(err => {
-                  console.warn('[Dashboard] education follow-up load failed', err)
-                  return null
-                })
-            : Promise.resolve(null),
-          ORGANIZATION_STATS_ROLES.has(resolvedUser.role) && resolvedOrganization.id !== fallbackOrgId
-            ? fetch('/api/management-reviews', {
-                credentials: 'include',
-                cache: 'no-store'
-              })
-                .then(async response => {
-                  if (!response.ok) throw new Error(`management reviews ${response.status}`)
-                  const payload = await response.json()
-                  return (payload.data ?? []) as Array<{ status?: string }>
-                })
-                .catch(err => {
-                  console.warn('[Dashboard] management reviews load failed', err)
-                  return [] as Array<{ status?: string }>
-                })
-            : Promise.resolve([] as Array<{ status?: string }>),
-          resolvedUser.role === 'user' && resolvedOrganization.id !== fallbackOrgId
-            ? fetch('/api/education/my-training', {
-                credentials: 'include',
-                cache: 'no-store'
-              })
-                .then(async response => {
-                  if (!response.ok) throw new Error(`my training ${response.status}`)
-                  const payload = await response.json()
-                  return payload.data as MyTrainingSummary
-                })
-                .catch(err => {
-                  console.warn('[Dashboard] my training load failed', err)
-                  return null
-                })
-            : Promise.resolve(null)
+          })
         ])
 
         let resolvedSubscription = currentSubscription
@@ -403,25 +467,6 @@ export default function HomePage(
             resolvedSubscription = await stripeService.syncSubscriptionFromStripe(resolvedOrganization.id)
           } catch (syncError) {
             console.warn('[Dashboard] subscription sync skipped', syncError)
-          }
-        }
-
-        let nextApproverMetrics: ApproverDashboardMetrics | null = null
-        let nextApproverMetricsStatus: ApproverMetricsStatus = 'idle'
-
-        if (resolvedUser.role === 'approver') {
-          nextApproverMetricsStatus = 'loading'
-          if (simulateStatsOffline || resolvedOrganization.id === fallbackOrgId) {
-            nextApproverMetrics = buildApproverFallbackMetrics()
-            nextApproverMetricsStatus = 'ready'
-          } else {
-            try {
-              nextApproverMetrics = await documentService.getApproverDashboardMetrics(resolvedOrganization.id)
-              nextApproverMetricsStatus = 'ready'
-            } catch (metricsError) {
-              console.warn('[Dashboard] approver metrics load failed', metricsError)
-              nextApproverMetricsStatus = 'error'
-            }
           }
         }
 
@@ -442,38 +487,16 @@ export default function HomePage(
             documentStatusBreakdown: currentStats?.documentStatusBreakdown ?? {}
           })
           setSubscription(resolvedSubscription)
-          const notificationsList = notificationItems ?? []
-          setUnreadNotificationCount(unreadCountValue ?? 0)
-          setNotificationPreview(notificationsList.slice(0, 3))
-          const resolvedActivityItems =
-            simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
-              ? buildActivityFallbackItems(locale, t)
-              : buildActivityFeedItems({
-                  logs: activityLogs ?? [],
-                  notifications: notificationsList,
-                  locale,
-                  t
-                })
-          setActivityItems(resolvedActivityItems)
-          setActivityStatus(activityErrored ? 'error' : 'ready')
           setOnboardingProgress(onboarding ?? null)
-          setEducationFollowUp(educationFollowUpSummary ?? null)
-          const scheduledManagementReviews = managementReviews.filter(review => review.status === 'scheduled').length
-          const inProgressManagementReviews = managementReviews.filter(review => review.status === 'in_progress').length
-          setManagementReviewSummary({
-            scheduled_count: scheduledManagementReviews,
-            in_progress_count: inProgressManagementReviews,
-            pending_count: scheduledManagementReviews + inProgressManagementReviews
-          })
-          setMyTraining(myTrainingSummary ?? null)
           setWarnings(Array.from(new Set(pendingWarnings)))
           const shouldOpenPhaseWizard =
             resolvedUser.role === 'system_operator' && !resolvedOrganization.isms_phase
           setPhaseWizardOpen(shouldOpenPhaseWizard)
           setPhaseSelection(prev => prev || (resolvedOrganization.isms_phase as IsmsPhase | '') || '')
           setPhaseSubmitError(null)
-          setApproverMetrics(nextApproverMetrics)
-          setApproverMetricsStatus(nextApproverMetricsStatus)
+          setApproverMetrics(null)
+          setApproverMetricsStatus(resolvedUser.role === 'approver' ? 'loading' : 'idle')
+          void loadSecondaryDashboardData(resolvedUser, resolvedOrganization)
         }
       } catch (err: any) {
         console.error('[Dashboard] data load failed', err)

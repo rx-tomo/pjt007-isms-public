@@ -1,0 +1,9 @@
+CREATE INDEX IF NOT EXISTS `idx_tasks_org_status` ON `tasks` (`organization_id`, `status`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_tasks_org_due_date` ON `tasks` (`organization_id`, `due_date`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_risks_org_status` ON `risks` (`organization_id`, `status`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_risks_org_assessment_period` ON `risks` (`organization_id`, `assessment_period`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_risks_org_risk_score` ON `risks` (`organization_id`, `risk_score`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_documents_org_status` ON `documents` (`organization_id`, `status`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_documents_org_created_at` ON `documents` (`organization_id`, `created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_audit_plans_org_status` ON `audit_plans` (`organization_id`, `status`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_notifications_user_status_created_at` ON `notifications` (`user_id`, `status`, `created_at`);

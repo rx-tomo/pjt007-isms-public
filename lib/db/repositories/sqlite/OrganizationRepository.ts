@@ -5,7 +5,7 @@
  * SECURITY: All queries enforce organization_id scoping.
  */
 
-import { desc, eq, and } from 'drizzle-orm'
+import { desc, eq, and, inArray, isNull, lt, notInArray, or, sql } from 'drizzle-orm'
 import { BaseSQLiteRepository } from './BaseSQLiteRepository'
 import {
   auditPlans,
@@ -543,50 +543,70 @@ export class SQLiteOrganizationRepository extends BaseSQLiteRepository implement
 
     const today = new Date().toISOString().slice(0, 10)
     const [
-      userRows,
-      documentRows,
-      taskRows,
-      riskRows,
-      auditPlanRows
+      userCountRows,
+      documentCountRows,
+      inProgressAuditCountRows,
+      overdueTaskCountRows,
+      taskStatusRows,
+      documentStatusRows,
+      riskStatusRows
     ] = await Promise.all([
       this.db
-        .select({ id: userProfiles.id })
+        .select({ count: sql<number>`count(*)` })
         .from(userProfiles)
         .where(eq(userProfiles.organizationId, organizationId)),
       this.db
-        .select({ status: documents.status })
+        .select({ count: sql<number>`count(*)` })
         .from(documents)
         .where(eq(documents.organizationId, organizationId)),
       this.db
-        .select({ status: tasks.status, dueDate: tasks.dueDate })
-        .from(tasks)
-        .where(eq(tasks.organizationId, organizationId)),
-      this.db
-        .select({ status: risks.status })
-        .from(risks)
-        .where(eq(risks.organizationId, organizationId)),
-      this.db
-        .select({ status: auditPlans.status })
+        .select({ count: sql<number>`count(*)` })
         .from(auditPlans)
-        .where(eq(auditPlans.organizationId, organizationId))
+        .where(and(
+          eq(auditPlans.organizationId, organizationId),
+          inArray(auditPlans.status, ['scheduled', 'in_progress'])
+        )),
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(tasks)
+        .where(and(
+          eq(tasks.organizationId, organizationId),
+          or(isNull(tasks.status), notInArray(tasks.status, ['done', 'cancelled'])),
+          lt(tasks.dueDate, today)
+        )),
+      this.db
+        .select({ status: tasks.status, count: sql<number>`count(*)` })
+        .from(tasks)
+        .where(eq(tasks.organizationId, organizationId))
+        .groupBy(tasks.status),
+      this.db
+        .select({ status: documents.status, count: sql<number>`count(*)` })
+        .from(documents)
+        .where(eq(documents.organizationId, organizationId))
+        .groupBy(documents.status),
+      this.db
+        .select({ status: risks.status, count: sql<number>`count(*)` })
+        .from(risks)
+        .where(eq(risks.organizationId, organizationId))
+        .groupBy(risks.status)
     ])
 
-    const taskStatusBreakdown = countByStatus(taskRows.map(row => row.status ?? 'todo'))
-    const documentStatusBreakdown = countByStatus(documentRows.map(row => row.status ?? 'draft'))
-    const riskStatusBreakdown = countByStatus(riskRows.map(row => row.status ?? 'identified'))
+    const taskStatusBreakdown = countStatusRows(taskStatusRows, 'todo')
+    const documentStatusBreakdown = countStatusRows(documentStatusRows, 'draft')
+    const riskStatusBreakdown = countStatusRows(riskStatusRows, 'identified')
 
     return {
-      userCount: userRows.length,
-      documentCount: documentRows.length,
-      pendingReviewDocumentCount: documentRows.filter(row => row.status === 'in_review').length,
-      activeTaskCount: taskRows.filter(row => !['done', 'cancelled'].includes(row.status ?? '')).length,
-      overdueTaskCount: taskRows.filter(row => (
-        !['done', 'cancelled'].includes(row.status ?? '') &&
-        Boolean(row.dueDate) &&
-        row.dueDate! < today
-      )).length,
-      activeRiskCount: riskRows.filter(row => row.status !== 'closed').length,
-      inProgressAuditCount: auditPlanRows.filter(row => ['scheduled', 'in_progress'].includes(row.status ?? '')).length,
+      userCount: readCount(userCountRows),
+      documentCount: readCount(documentCountRows),
+      pendingReviewDocumentCount: documentStatusBreakdown.in_review ?? 0,
+      activeTaskCount: Object.entries(taskStatusBreakdown).reduce((total, [status, count]) => (
+        ['done', 'cancelled'].includes(status) ? total : total + count
+      ), 0),
+      overdueTaskCount: readCount(overdueTaskCountRows),
+      activeRiskCount: Object.entries(riskStatusBreakdown).reduce((total, [status, count]) => (
+        status === 'closed' ? total : total + count
+      ), 0),
+      inProgressAuditCount: readCount(inProgressAuditCountRows),
       taskStatusBreakdown,
       riskStatusBreakdown,
       documentStatusBreakdown
@@ -677,9 +697,15 @@ export class SQLiteOrganizationRepository extends BaseSQLiteRepository implement
   }
 }
 
-function countByStatus(statuses: string[]): Record<string, number> {
-  return statuses.reduce<Record<string, number>>((acc, status) => {
-    acc[status] = (acc[status] ?? 0) + 1
+function countStatusRows(rows: Array<{ status: string | null; count: number }>, fallbackStatus: string): Record<string, number> {
+  return rows.reduce<Record<string, number>>((acc, row) => {
+    const status = row.status ?? fallbackStatus
+    const count = Number(row.count ?? 0)
+    acc[status] = (acc[status] ?? 0) + count
     return acc
   }, {})
+}
+
+function readCount(rows: Array<{ count: number }>): number {
+  return Number(rows[0]?.count ?? 0)
 }

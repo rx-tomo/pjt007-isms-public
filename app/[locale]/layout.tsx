@@ -24,7 +24,13 @@ const notoSansJP = Noto_Sans_JP({
   display: 'swap',
 });
 
-const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.match(/^GTM-[A-Z0-9]+$/)?.[0] ?? null;
+const gtmDisabled = process.env.NEXT_PUBLIC_GTM_ENABLED === 'false';
+const gtmId = gtmDisabled
+  ? null
+  : process.env.NEXT_PUBLIC_GTM_ID?.match(/^GTM-[A-Z0-9]+$/)?.[0] ?? null;
+const gaMeasurementId = gtmId
+  ? null
+  : process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.match(/^G-[A-Z0-9]+$/)?.[0] ?? null;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -92,6 +98,26 @@ export default async function LocaleLayout(
               style={{ display: 'none', visibility: 'hidden' }}
             />
           </noscript>
+        )}
+        {gaMeasurementId && (
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+            strategy="afterInteractive"
+          />
+        )}
+        {gaMeasurementId && (
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaMeasurementId}');
+              `,
+            }}
+          />
         )}
         <LocaleProvider locale={locale}>
           <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
