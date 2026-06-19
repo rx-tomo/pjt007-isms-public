@@ -5,7 +5,18 @@ import { organizations, userProfiles, userMemberships, auditLogs } from '@/lib/d
 import { eq } from 'drizzle-orm'
 import { createDefaultCategories } from '@/lib/services/defaultCategories'
 
+function isPublicDemoMode() {
+  return process.env.DEMO_PUBLIC_LOGIN_ENABLED === 'true' && process.env.DEMO_RESET_ENABLED === 'true'
+}
+
 export async function POST(request: NextRequest) {
+  if (isPublicDemoMode()) {
+    return NextResponse.json(
+      { error: 'Public demo signup is disabled. Use demo login instead.' },
+      { status: 403 }
+    )
+  }
+
   // Verify the caller is an authenticated user
   const { user, applyCookies } = await getRouteAuth(request)
 

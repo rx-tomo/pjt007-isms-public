@@ -12,9 +12,10 @@ type AuthMode = 'login' | 'signup'
 interface AuthFormProps {
   mode: AuthMode
   locale: string
+  publicDemoMode?: boolean
 }
 
-export default function AuthForm({ mode, locale }: AuthFormProps) {
+export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthFormProps) {
   const t = useTranslations('auth')
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -35,6 +36,7 @@ export default function AuthForm({ mode, locale }: AuthFormProps) {
     .split(',')
     .map(provider => provider.trim())
     .filter(Boolean)
+  const signupDisabledForDemo = publicDemoMode && mode === 'signup'
 
   // フォームデータ
   const [formData, setFormData] = useState({
@@ -408,10 +410,23 @@ export default function AuthForm({ mode, locale }: AuthFormProps) {
           </div>
         )}
 
+        {signupDisabledForDemo && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {t('signup.publicDemoDisabled')}{' '}
+            <Link href={`/${locale}/dev-login`} className="font-semibold underline underline-offset-2">
+              {t('common.devLogin')}
+            </Link>
+          </div>
+        )}
+
         <div>
           <button
             type="submit"
-            disabled={isLoading || (mode === 'login' && isAwaitingMfa && mfaCode.trim().length === 0)}
+            disabled={
+              signupDisabledForDemo ||
+              isLoading ||
+              (mode === 'login' && isAwaitingMfa && mfaCode.trim().length === 0)
+            }
             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (

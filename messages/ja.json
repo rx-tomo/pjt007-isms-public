@@ -333,7 +333,8 @@
       "organizationName": "組織名",
       "confirmPassword": "パスワード（確認）",
       "agreeToTerms": "利用規約に同意する",
-      "termsLink": "利用規約"
+      "termsLink": "利用規約",
+      "publicDemoDisabled": "公開デモでは新規登録を停止しています。試用する場合は"
     },
     "verifyEmail": {
       "title": "メールをご確認ください",

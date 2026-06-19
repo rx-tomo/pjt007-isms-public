@@ -2,6 +2,10 @@ import { setRequestLocale, getTranslations } from 'next-intl/server'
 import AuthForm from '@/components/auth/AuthForm'
 import type { Metadata } from 'next'
 
+function isPublicDemoMode() {
+  return process.env.DEMO_PUBLIC_LOGIN_ENABLED === 'true' && process.env.DEMO_RESET_ENABLED === 'true'
+}
+
 export async function generateMetadata(
   props: {
     params: Promise<{ locale: string }>
@@ -36,7 +40,7 @@ export default async function SignupPage(
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-app py-12 px-4 sm:px-6 lg:px-8">
-      <AuthForm mode="signup" locale={locale} />
+      <AuthForm mode="signup" locale={locale} publicDemoMode={isPublicDemoMode()} />
     </div>
   )
 }

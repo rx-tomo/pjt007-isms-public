@@ -333,7 +333,8 @@
       "organizationName": "Organization Name",
       "confirmPassword": "Confirm Password",
       "agreeToTerms": "I agree to the terms of service",
-      "termsLink": "Terms of Service"
+      "termsLink": "Terms of Service",
+      "publicDemoDisabled": "Public demo signup is disabled. To try the product, use"
     },
     "verifyEmail": {
       "title": "Check your email",

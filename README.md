@@ -43,13 +43,14 @@ Still-open commercial/product areas include pricing, formal contracts, SLA/RTO/R
 
 ## Public Demo
 
-A public demo environment is planned at:
+You can try the current public demo here:
 
-```text
-https://riscala.datagen-pro.com
-```
+- [Public demo site](https://riscala.datagen-pro.com)
+- [Demo login](https://riscala.datagen-pro.com/ja/dev-login)
 
-The demo is intended for hands-on evaluation with seeded fictional tenants and users. Visitors can use the public Dev Login flow to inspect and write sample data. Demo data is reset to the seed state once per day, so entered data is not retained.
+The demo is intended for hands-on evaluation with seeded fictional tenants and users. Use Demo login to inspect and write sample data. Demo data is reset to the seed state once per day, so entered data is not retained.
+
+The public demo does not accept real user registration. Billing and Stripe-related screens run in mock mode and do not process real payments.
 
 ## License
 

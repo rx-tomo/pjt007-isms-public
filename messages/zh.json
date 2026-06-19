@@ -333,7 +333,8 @@
       "organizationName": "组织名称",
       "confirmPassword": "确认密码",
       "agreeToTerms": "同意服务条款",
-      "termsLink": "服务条款"
+      "termsLink": "服务条款",
+      "publicDemoDisabled": "公开演示环境已关闭新用户注册。如需试用，请使用"
     },
     "verifyEmail": {
       "title": "请查收邮件",
