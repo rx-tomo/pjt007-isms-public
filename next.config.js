@@ -7,6 +7,9 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.join(__dirname),
+  outputFileTracingIncludes: {
+    '/api/cron/reset-demo': ['./scripts/seed-practical-verification.mjs'],
+  },
   allowedDevOrigins: ['127.0.0.1'],
   webpack: (config, { isServer }) => {
     config.watchOptions = {

@@ -41,6 +41,16 @@ Areas you can inspect include:
 
 Still-open commercial/product areas include pricing, formal contracts, SLA/RTO/RPO, production support, production security review, real customer migration, contribution acceptance rules, and whether to package a simpler single-user variant.
 
+## Public Demo
+
+A public demo environment is planned at:
+
+```text
+https://riscala.datagen-pro.com
+```
+
+The demo is intended for hands-on evaluation with seeded fictional tenants and users. Visitors can use the public Dev Login flow to inspect and write sample data. Demo data is reset to the seed state once per day, so entered data is not retained.
+
 ## License
 
 This project is source-available, not open source.
@@ -86,7 +96,7 @@ Commercial licensing, hosted use, redistribution, individual implementation supp
 
 ## Public Boundary
 
-This repository is an allowlisted public snapshot. It does not include the private development history.
+This repository is a source-available public snapshot for evaluation.
 
 Included:
 

@@ -1,10 +1,4 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": false,
-      "master": false
-    }
-  },
   "github": {
     "enabled": true,
     "autoAlias": false,
@@ -14,6 +8,10 @@
     {
       "path": "/api/cron/escalate-overdue-approvals",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/reset-demo",
+      "schedule": "0 19 * * *"
     }
   ]
 }

@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "lint:messages": "node scripts/validate-translations.js",
-    "qa:public-copy": "node scripts/qa-public-copy-boundary.js"
+    "qa:public-copy": "node scripts/qa-public-copy-boundary.js",
+    "seed:practical-verification": "node scripts/seed-practical-verification.mjs",
+    "qa:practical-seed": "node scripts/qa-practical-seed.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

@@ -17,9 +17,9 @@
 ## Stripe 本接続切替
 
 1. `.env.local`（本番は Vercel 環境変数）に設定:
-   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...`（検証は `pk_test_...`）
-   - `STRIPE_SECRET_KEY=sk_live_...`
-   - `STRIPE_WEBHOOK_SECRET=whsec_...`
+   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<Stripe publishable key>`
+   - `STRIPE_SECRET_KEY=<Stripe secret key>`
+   - `STRIPE_WEBHOOK_SECRET=<Stripe webhook secret>`
    - `STRIPE_TEST_MODE` を削除（`mock` のままだとmock動作が優先される）
 2. 料金プランの Stripe Price ID を設定: `pricing_plans.stripe_price_id` または環境変数
    （`STRIPE_<PLAN>_PRICE_ID`、`lib/stripe/config.ts` の `PRICE_ENV_MAP` 参照）
