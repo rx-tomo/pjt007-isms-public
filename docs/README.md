@@ -17,6 +17,6 @@ The docs are intended to help readers understand the product direction, local se
 
 ## Public Documentation Boundary
 
-This public docs set intentionally excludes internal handoff notes, private work logs, meeting notes, historical release-readiness evidence, issue export files, raw agent operating instructions, local databases, and generated artifacts.
+This public docs set intentionally excludes non-public working notes, private work logs, operational records, historical evidence, issue export files, raw agent operating instructions, local databases, and generated artifacts.
 
 Some implementation and planning docs describe current direction rather than a finished commercial service. When a document says a feature is a goal, direction, or future gate, it should not be read as a production commitment.

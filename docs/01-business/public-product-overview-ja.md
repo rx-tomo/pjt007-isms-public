@@ -178,21 +178,9 @@ Riscala AI for ISMS は、単に ISMS の帳票を並べたプロトタイプで
 
 ## さらに読む
 
-- `README.md`: ローカル実行方法と公開リポジトリの前提
+- `README.md`: ローカル実行方法と公開版の前提
 - `docs/01-business/pr-faq-workshop/pr-faq-public.md`: 公開向け PR/FAQ
 - `docs/01-business/pr-faq-workshop/ai-driven-development.md`: AI 駆動開発としての位置づけ
 - `docs/01-business/pr-faq-workshop/contribution-and-collaboration.md`: フィードバック、協業、貢献の扱い
 - `docs/05-quality/import-export-coverage-matrix.md`: インポート、エクスポートの現状整理
 - `docs/06-operations/billing-and-data-operations.md`: 課金とデータ運用の現状整理
-
-## 元リポジトリと公開リポジトリの関係
-
-開発の正本は非公開の元リポジトリです。公開リポジトリは正式な fork ではなく、公開してよいファイルだけを抜き出した snapshot です。
-
-- 元リポジトリ: `rx-tomo/pjt007`
-- ローカルの元リポジトリ: `/Users/tom/workspace/work/pjt007`
-- 公開リポジトリ: `rx-tomo/isms-pilot-public`
-
-同期では、元リポジトリの Git 履歴を公開リポジトリへ push しません。必要なタイミングで、公開対象のファイルだけを allowlist 方式で公開用 checkout にコピーし、内部メモ、handoff、archive、meeting notes、ローカル DB、ログ、秘密情報候補、生成物を除外してから、公開リポジトリ側で検証、commit、push します。
-
-そのため、元リポジトリには内部開発の完全な文脈が残り、公開リポジトリには外部の読者が読んでよいコードと文書だけが残ります。

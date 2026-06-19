@@ -99,7 +99,7 @@ Included:
 Excluded:
 
 - private Git history
-- internal handoff, archive, meeting, and release-readiness evidence
+- non-public working notes, operational records, and historical evidence
 - development logs and issue export files
 - AI/agent operating instructions
 - local MCP configuration
