@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { UserService, type UserRole } from '@/lib/services/user';
 import { useAuditAccess } from '@/lib/hooks/useAuditAccess';
 import { NotificationBell } from '@/components/layout/NotificationBell';
+import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
 
 const AUTO_COLLAPSE_ROUTES = new Set(['documents', 'risks', 'tasks', 'incidents', 'audit', 'approvals', 'education', 'management-reviews', 'suppliers', 'bcp']);
 const SIDEBAR_COLLAPSED_KEY = 'dashboard:sidebar-collapsed';
@@ -929,6 +930,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
                   )}
                 </div>
               )}
+              <div className="hidden xl:flex items-center gap-2">
+                <a
+                  href={PUBLIC_REPOSITORY_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition hover:border-accent hover:text-accent"
+                >
+                  {t('common.publicLinks.source')}
+                </a>
+                <a
+                  href={PUBLIC_REPOSITORY_ISSUES_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition hover:border-accent hover:text-accent"
+                >
+                  {t('common.publicLinks.feedback')}
+                </a>
+              </div>
               <NotificationBell />
 
               {/* User Menu */}
@@ -988,6 +1007,36 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
                           <span>{item.label}</span>
                         </Link>
                       ))}
+                      <a
+                        href={PUBLIC_REPOSITORY_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="user-menu-item"
+                        role="menuitem"
+                        data-user-menu-item
+                        data-testid="user-menu-item-public-source"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <svg className="user-menu-item-icon" aria-hidden fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-5m-4-8h6m0 0v6m0-6L10 15" />
+                        </svg>
+                        <span>{t('common.publicLinks.source')}</span>
+                      </a>
+                      <a
+                        href={PUBLIC_REPOSITORY_ISSUES_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="user-menu-item"
+                        role="menuitem"
+                        data-user-menu-item
+                        data-testid="user-menu-item-public-feedback"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <svg className="user-menu-item-icon" aria-hidden fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h5m7-2a8 8 0 11-3.293-6.475L21 4l-1.525 4.293A7.963 7.963 0 0120 12z" />
+                        </svg>
+                        <span>{t('common.publicLinks.feedback')}</span>
+                      </a>
                       <button
                         type="button"
                         className="user-menu-item user-menu-signout"

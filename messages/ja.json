@@ -153,7 +153,7 @@
     "chinese": "简体中文",
     "email": "メールアドレス",
     "password": "パスワード",
-    "devLogin": "開発ログイン",
+    "devLogin": "デモ用ログイン",
     "loading": "読み込み中",
     "search": "検索",
     "updatedAt": "更新日",
@@ -168,6 +168,10 @@
     "subscription": "サブスクリプション",
     "home": "ホーム",
     "skipToContent": "メインコンテンツへ移動",
+    "publicLinks": {
+      "source": "GitHubでソースを見る",
+      "feedback": "フィードバックする"
+    },
     "header": {
       "greeting": "{name} さん",
       "organizationLabel": "所属",
@@ -436,6 +440,14 @@
     "devOnlyFeature": "開発環境専用",
     "note": "ヒント:",
     "noteContent": " 作成されたテストユーザー／組織は Dev Login と local.db の user_profiles で確認・初期化できます。",
+    "publicNotice": {
+      "title": "このデモはBuild in Publicの公開デモです",
+      "body": "Riscala AI for ISMSは、ISMS支援アプリケーションの現在地と、AI駆動開発で業務アプリを作る過程を公開するために運用しています。架空データで試用でき、入力内容は定期的に初期状態へ戻ります。ソース確認、フィードバック、協業相談はGitHubからお願いします。"
+    },
+    "publicLinks": {
+      "source": "GitHubでソースを見る",
+      "feedback": "フィードバック・問い合わせ"
+    },
     "mfaPanel": {
       "title": "MFA / SSO 確認",
       "description": ".env.local に AUTH_MFA_REQUIRED_ROLES / AUTH_MFA_DUMMY_CODE / NEXT_PUBLIC_AUTH_SSO_PROVIDERS を設定するとパスワード後の OTP 入力や IdP ラベル表示を確認できます。",
@@ -1057,9 +1069,9 @@
         "ongoingOperation": "継続運用中の方はこちら"
       },
       "trustIndicators": {
-        "secureEnvironment": "セキュアな環境",
-        "companiesDeployed": "100社以上の導入実績",
-        "customerSatisfaction": "顧客満足度95%"
+        "secureEnvironment": "Build in Public",
+        "companiesDeployed": "Source-available",
+        "customerSatisfaction": "デモデータは定期リセット"
       },
       "badge": "ISO/IEC 27001:2022対応",
       "demo": {
@@ -1250,13 +1262,13 @@
       }
     },
     "cta": {
-      "title": "今すぐISMS構築を始めましょう",
-      "subtitle": "14日間の無料トライアルで、全機能をお試しください",
-      "button": "無料で始める",
-      "noCredit": "クレジットカード登録不要",
-      "noSetupFee": "初期費用無料",
-      "cancelAnytime": "いつでもキャンセル可能",
-      "support247": "24/7サポート"
+      "title": "公開デモで現在の実装を確認できます",
+      "subtitle": "架空データを使って、ISMS構築・運用支援アプリの画面、導線、出力の現在地を試せます。",
+      "button": "デモ用ログイン",
+      "noCredit": "新規登録・クレジットカード登録は不要",
+      "noSetupFee": "架空データで試用",
+      "cancelAnytime": "入力内容は定期リセット",
+      "support247": "GitHubでフィードバック歓迎"
     },
     "footer": {
       "tagline": "成長する企業のISO27001認証取得をシンプルに",
@@ -1264,12 +1276,15 @@
         "title": "プロダクト",
         "features": "機能",
         "pricing": "料金",
-        "demo": "デモ"
+        "demo": "デモ",
+        "source": "GitHub公開リポジトリ",
+        "publicOverview": "公開版の概要"
       },
       "company": {
         "title": "会社情報",
         "about": "会社概要",
         "contact": "お問い合わせ",
+        "feedback": "フィードバック・問い合わせ",
         "privacy": "プライバシーポリシー",
         "terms": "利用規約"
       },

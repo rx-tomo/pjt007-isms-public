@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ROLE_SCENARIOS, type RoleKey, type RoleScenarioOrganization } from '@/lib/dev-login/scenarios'
 import { getRoleDefaultRoute } from '@/lib/home/roleHomeConfig'
+import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks'
 
 type OrganizationOption = RoleScenarioOrganization & {
   updatedAt: string | null
@@ -222,11 +223,52 @@ export default function DevLoginPage() {
               <h1 className="text-3xl font-semibold text-text-primary">{t('title')}</h1>
               <p className="mt-2 max-w-3xl text-sm text-text-secondary">{t('description')}</p>
             </div>
-            <Link href={`/${locale}/auth/login`} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              {t('backToLogin')}
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={PUBLIC_REPOSITORY_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                {t('publicLinks.source')}
+              </a>
+              <a
+                href={PUBLIC_REPOSITORY_ISSUES_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                {t('publicLinks.feedback')}
+              </a>
+              <Link href={`/${locale}/auth/login`} className="text-sm font-medium text-text-secondary hover:text-indigo-500">
+                {t('backToLogin')}
+              </Link>
+            </div>
           </div>
         </header>
+
+        <section className="rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-sm text-indigo-950">
+          <h2 className="font-semibold">{t('publicNotice.title')}</h2>
+          <p className="mt-1 leading-6">{t('publicNotice.body')}</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <a
+              href={PUBLIC_REPOSITORY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:text-indigo-900"
+            >
+              {t('publicLinks.source')}
+            </a>
+            <a
+              href={PUBLIC_REPOSITORY_ISSUES_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:text-indigo-900"
+            >
+              {t('publicLinks.feedback')}
+            </a>
+          </div>
+        </section>
 
         <section className="grid gap-6 lg:grid-cols-[360px,1fr]">
           <div className="space-y-3">

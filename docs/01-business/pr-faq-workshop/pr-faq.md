@@ -3,27 +3,26 @@ title: Riscala AI for ISMS PR/FAQ Index
 category: business
 created: 2026-06-09
 last_updated: 2026-06-18
-status: split_index
+status: public_index
 ---
 
 # Riscala AI for ISMS PR/FAQ
 
 このファイルはPR/FAQ関連文書の入口である。
 
-顧客向けにそのまま見せる候補文と、内部の開発判断・未決定事項を混ぜないため、PR/FAQを次の2ファイルに分ける。
+公開版では、外部読者にそのまま見せる候補文を中心に残している。
 
 1. `pr-faq-public.md`
    - プレスリリース草稿
    - 顧客向けFAQ
    - 顧客向けに使える価値表現
-2. `pr-faq-internal.md`
-   - Draft Basis
-   - 内部向けFAQ
-   - 認識ズレ候補・未決定事項
-   - 競合・代替手段に対する勝ち筋
-   - 次にオーナーへ確認したいこと
+2. `ai-driven-development.md`
+   - AI駆動開発として公開する意味
+   - 公開するもの、公開しないものの境界
+3. `contribution-and-collaboration.md`
+   - フィードバック、協業、貢献の入口
 
-顧客向け画面、公開資料、サービス紹介文、FAQへ転用する場合は、まず `pr-faq-public.md` を参照する。開発方針、実務検証上の中間ゴール、spec-dslとの関係、未決定事項を確認する場合は `pr-faq-internal.md` を参照する。
+顧客向け画面、公開資料、サービス紹介文、FAQへ転用する場合は、まず `pr-faq-public.md` を参照する。
 
 2026-06-18時点の直近ゴールは、最終商用サービス開始ではなく、開発途上の到達点を公開用リポジトリへ source-available evaluation snapshot として分離公開することである。このBuild in Public向け公開は、商用SaaS提供、課金開始、認証取得保証、SLA提供を意味しない。
 

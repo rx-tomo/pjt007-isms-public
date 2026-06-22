@@ -49,10 +49,10 @@ export default function CTASection() {
               }`}
             >
               <Link
-                href={`/${locale}/auth/signup`}
+                href={`/${locale}/dev-login`}
                 className="group inline-flex items-center gap-3 bg-surface text-accent px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
               >
-                {t('landing.cta.button')}
+                {t('common.devLogin')}
                 <svg
                   className="w-5 h-5 group-hover:translate-x-1 transition-transform"
                   fill="none"

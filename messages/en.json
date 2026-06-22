@@ -153,7 +153,7 @@
     "chinese": "简体中文",
     "email": "Email Address",
     "password": "Password",
-    "devLogin": "Dev Login",
+    "devLogin": "Demo login",
     "loading": "Loading",
     "search": "Search",
     "updatedAt": "Updated At",
@@ -168,6 +168,10 @@
     "subscription": "Subscription",
     "home": "Home",
     "skipToContent": "Skip to main content",
+    "publicLinks": {
+      "source": "View source on GitHub",
+      "feedback": "Send feedback"
+    },
     "header": {
       "greeting": "Welcome, {name}",
       "organizationLabel": "Organization",
@@ -436,6 +440,14 @@
     "devOnlyFeature": "Development only",
     "note": "Tip:",
     "noteContent": " Inspect or reset generated users/organizations from Dev Login and local.db tables.",
+    "publicNotice": {
+      "title": "This is a Build in Public demo",
+      "body": "Riscala AI for ISMS is published to show the current state of an ISMS support application and the process of building practical business software through AI-driven development. You can try it with fictional seeded data, and entered data is reset regularly. Use GitHub for source review, feedback, and collaboration inquiries."
+    },
+    "publicLinks": {
+      "source": "View source on GitHub",
+      "feedback": "Feedback and inquiries"
+    },
     "mfaPanel": {
       "title": "MFA / SSO checks",
       "description": "Set AUTH_MFA_REQUIRED_ROLES / AUTH_MFA_DUMMY_CODE / NEXT_PUBLIC_AUTH_SSO_PROVIDERS in .env.local to exercise post-password OTP prompts and Identity Provider labels.",
@@ -1057,9 +1069,9 @@
         "ongoingOperation": "Already Certified"
       },
       "trustIndicators": {
-        "secureEnvironment": "Secure Environment",
-        "companiesDeployed": "100+ Companies Deployed",
-        "customerSatisfaction": "95% Customer Satisfaction"
+        "secureEnvironment": "Build in Public",
+        "companiesDeployed": "Source-available",
+        "customerSatisfaction": "Demo data resets regularly"
       },
       "badge": "ISO/IEC 27001:2022 Compliant",
       "demo": {
@@ -1250,13 +1262,13 @@
       "contactSupport": "Contact our support team"
     },
     "cta": {
-      "title": "Start Building Your ISMS Today",
-      "subtitle": "Try all features free for 14 days",
-      "button": "Start Free Trial",
-      "noCredit": "No credit card required",
-      "noSetupFee": "No setup fee",
-      "cancelAnytime": "Cancel anytime",
-      "support247": "24/7 support"
+      "title": "Try the current public demo",
+      "subtitle": "Use fictional seeded data to inspect the current screens, workflows, and exports of the ISMS support application.",
+      "button": "Demo login",
+      "noCredit": "No signup or credit card required",
+      "noSetupFee": "Seeded fictional data",
+      "cancelAnytime": "Demo data resets regularly",
+      "support247": "Feedback welcome on GitHub"
     },
     "footer": {
       "tagline": "Simplifying ISO27001 certification for growing businesses worldwide",
@@ -1264,12 +1276,15 @@
         "title": "Product",
         "features": "Features",
         "pricing": "Pricing",
-        "demo": "Demo"
+        "demo": "Demo",
+        "source": "Public GitHub repository",
+        "publicOverview": "Public overview"
       },
       "company": {
         "title": "Company",
         "about": "About Us",
         "contact": "Contact",
+        "feedback": "Feedback and inquiries",
         "privacy": "Privacy Policy",
         "terms": "Terms of Service"
       },

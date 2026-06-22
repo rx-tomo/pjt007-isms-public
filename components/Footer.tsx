@@ -2,6 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import {
+  PUBLIC_PRODUCT_OVERVIEW_URL,
+  PUBLIC_REPOSITORY_ISSUES_URL,
+  PUBLIC_REPOSITORY_URL,
+} from '@/lib/publicLinks';
 
 export default function Footer() {
   const t = useTranslations();
@@ -38,6 +43,26 @@ export default function Footer() {
                   {t('landing.footer.product.pricing')}
                 </Link>
               </li>
+              <li>
+                <a
+                  href={PUBLIC_REPOSITORY_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm hover:text-accent transition-colors"
+                >
+                  {t('landing.footer.product.source')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={PUBLIC_PRODUCT_OVERVIEW_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm hover:text-accent transition-colors"
+                >
+                  {t('landing.footer.product.publicOverview')}
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -54,6 +79,16 @@ export default function Footer() {
                 <Link href="/contact" className="text-sm hover:text-accent transition-colors">
                   {t('landing.footer.company.contact')}
                 </Link>
+              </li>
+              <li>
+                <a
+                  href={PUBLIC_REPOSITORY_ISSUES_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm hover:text-accent transition-colors"
+                >
+                  {t('landing.footer.company.feedback')}
+                </a>
               </li>
               <li>
                 <Link href="/privacy" className="text-sm hover:text-accent transition-colors">

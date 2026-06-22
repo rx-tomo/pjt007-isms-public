@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useState } from 'react';
 import Link from 'next/link';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
 
 export default function Header() {
   const t = useTranslations();
@@ -41,6 +42,22 @@ export default function Header() {
                 {t(`nav.${item.key}`)}
               </a>
             ))}
+            <a
+              href={PUBLIC_REPOSITORY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-text-secondary hover:text-accent transition-colors duration-200"
+            >
+              {t('common.publicLinks.source')}
+            </a>
+            <a
+              href={PUBLIC_REPOSITORY_ISSUES_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-text-secondary hover:text-accent transition-colors duration-200"
+            >
+              {t('common.publicLinks.feedback')}
+            </a>
           </nav>
 
           {/* Right side items */}
@@ -54,10 +71,10 @@ export default function Header() {
                 {t('common.login.title')}
               </Link>
               <Link
-                href={`/${locale}/auth/signup`}
+                href={`/${locale}/dev-login`}
                 className="px-4 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-lg hover:bg-primary-700 transition-colors duration-200"
               >
-                {t('common.signup')}
+                {t('common.devLogin')}
               </Link>
             </div>
 
@@ -99,6 +116,24 @@ export default function Header() {
                   {t(`nav.${item.key}`)}
                 </a>
               ))}
+              <a
+                href={PUBLIC_REPOSITORY_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-text-secondary hover:text-accent transition-colors duration-200 py-2"
+              >
+                {t('common.publicLinks.source')}
+              </a>
+              <a
+                href={PUBLIC_REPOSITORY_ISSUES_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-text-secondary hover:text-accent transition-colors duration-200 py-2"
+              >
+                {t('common.publicLinks.feedback')}
+              </a>
               {/* Auth links for mobile */}
               <div className="flex flex-col gap-3 pt-4 border-t border-border">
                 <Link
@@ -109,11 +144,11 @@ export default function Header() {
                   {t('common.login.title')}
                 </Link>
                 <Link
-                  href={`/${locale}/auth/signup`}
+                  href={`/${locale}/dev-login`}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full px-4 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-lg hover:bg-primary-700 transition-colors duration-200 text-center"
                 >
-                  {t('common.signup')}
+                  {t('common.devLogin')}
                 </Link>
               </div>
             </nav>

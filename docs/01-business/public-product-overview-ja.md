@@ -20,8 +20,8 @@ Riscala AI for ISMS の公開は、商用 SaaS サービスの正式開始では
 
 現在の公開デモは次のURLで確認できます。
 
-- [公開デモサイト](https://riscala.datagen-pro.com)
-- [デモ用ログイン](https://riscala.datagen-pro.com/ja/dev-login)
+- [公開デモサイト](https://riscala-ai.com)
+- [デモ用ログイン](https://riscala-ai.com/ja/dev-login)
 
 公開デモでは、あらかじめ用意された架空のテナントとユーザーを使って画面や一部の書き込み操作を試せます。入力した内容は保持されず、デモ環境は毎日 seed 状態へ戻ります。
 
@@ -193,5 +193,4 @@ Riscala AI for ISMS は、単に ISMS の帳票を並べたプロトタイプで
 - `docs/01-business/pr-faq-workshop/pr-faq-public.md`: 公開向け PR/FAQ
 - `docs/01-business/pr-faq-workshop/ai-driven-development.md`: AI 駆動開発としての位置づけ
 - `docs/01-business/pr-faq-workshop/contribution-and-collaboration.md`: フィードバック、協業、貢献の扱い
-- `docs/05-quality/import-export-coverage-matrix.md`: インポート、エクスポートの現状整理
 - `docs/06-operations/billing-and-data-operations.md`: 課金とデータ運用の現状整理

@@ -41,4 +41,4 @@ SQL 例: `select * from export_events where document_id = '...';`
 
 ## 証跡保存
 - `test-results/document-export-*.json` には `npm run qa:documents` / `npm run qa:documents:approver` で取得した `export_events` クエリ結果、ダウンロードファイル名、403/denied ケースのステータスを JSON で保存しています。
-- 現行の代表QAは `docs/05-quality/qa-guidelines.md` と `docs/10-improvement-plan/owner-verification-guide.md` を優先します。古い Supabase 前提のUC別QA手順は現行構成では使いません。
+- 現行の代表QAは、公開版READMEに記載した `lint`、`typecheck`、`lint:messages`、`qa:public-copy`、`build` を優先します。古い Supabase 前提のUC別QA手順は現行構成では使いません。
