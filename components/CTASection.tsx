@@ -68,30 +68,12 @@ export default function CTASection() {
               </p>
             </div>
 
-            {/* Trust indicators */}
             <div
-              className={`mt-12 flex flex-wrap justify-center items-center gap-8 transition-all duration-1000 delay-600 ${
+              className={`mx-auto mt-10 max-w-3xl rounded-lg border border-white/20 bg-white/10 px-5 py-4 text-left text-sm leading-7 text-primary-50 transition-all duration-1000 delay-600 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
             >
-              <div className="flex items-center gap-2 text-primary-100">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>{t('landing.cta.noSetupFee')}</span>
-              </div>
-              <div className="flex items-center gap-2 text-primary-100">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>{t('landing.cta.cancelAnytime')}</span>
-              </div>
-              <div className="flex items-center gap-2 text-primary-100">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>{t('landing.cta.support247')}</span>
-              </div>
+              {t('landing.cta.demoResetExplanation')}
             </div>
           </div>
         </div>

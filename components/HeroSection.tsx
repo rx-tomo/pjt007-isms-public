@@ -2,8 +2,27 @@
 
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useLocale } from 'next-intl';
-import { PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
+import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
+
+const productScreenshots = [
+  {
+    src: '/landing/dashboard-home.png',
+    titleKey: 'landing.hero.screenshots.dashboard.title',
+    descriptionKey: 'landing.hero.screenshots.dashboard.description'
+  },
+  {
+    src: '/landing/risk-register.png',
+    titleKey: 'landing.hero.screenshots.risks.title',
+    descriptionKey: 'landing.hero.screenshots.risks.description'
+  },
+  {
+    src: '/landing/documents-workflow.png',
+    titleKey: 'landing.hero.screenshots.documents.title',
+    descriptionKey: 'landing.hero.screenshots.documents.description'
+  }
+];
 
 export default function HeroSection() {
   const t = useTranslations();
@@ -40,6 +59,9 @@ export default function HeroSection() {
           <p className="text-xl sm:text-2xl text-text-secondary mb-10 leading-relaxed">
             {t('landing.hero.description')}
           </p>
+          <p className="mx-auto -mt-4 mb-10 max-w-3xl text-base sm:text-lg leading-8 text-text-secondary">
+            {t('landing.hero.publicNote')}
+          </p>
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -59,6 +81,14 @@ export default function HeroSection() {
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-text-secondary bg-surface border-2 border-border rounded-lg hover:text-accent hover:border-accent transition-colors duration-200"
             >
               {t('common.publicLinks.source')}
+            </a>
+            <a
+              href={PUBLIC_REPOSITORY_ISSUES_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-text-secondary bg-surface border-2 border-border rounded-lg hover:text-accent hover:border-accent transition-colors duration-200"
+            >
+              {t('common.publicLinks.feedback')}
             </a>
           </div>
 
@@ -87,9 +117,8 @@ export default function HeroSection() {
 
         {/* Product preview */}
         <div className="mt-20 relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-app via-transparent to-transparent z-10" />
-          <div className="rounded-xl shadow-2xl overflow-hidden bg-surface border border-border">
-            <div className="bg-surface-elevated px-4 py-3 flex items-center gap-2">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
+            <div className="bg-surface-elevated px-4 py-3 flex items-center gap-2 border-b border-border">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-500" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500" />
@@ -99,21 +128,52 @@ export default function HeroSection() {
                 Riscala AI for ISMS Dashboard
               </div>
             </div>
-            <div className="p-8 bg-gradient-to-br from-surface-elevated to-surface-elevated">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-surface rounded-lg p-6 shadow-sm">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">78%</div>
-                  <div className="text-sm text-text-secondary">{t('landing.hero.demo.constructionProgress')}</div>
-                </div>
-                <div className="bg-surface rounded-lg p-6 shadow-sm">
-                  <div className="text-3xl font-bold text-green-600 mb-2">23</div>
-                  <div className="text-sm text-text-secondary">{t('landing.hero.demo.approvedDocuments')}</div>
-                </div>
-                <div className="bg-surface rounded-lg p-6 shadow-sm">
-                  <div className="text-3xl font-bold text-yellow-600 mb-2">{t('landing.hero.demo.daysUntilAuditValue')}</div>
-                  <div className="text-sm text-text-secondary">{t('landing.hero.demo.daysUntilAudit')}</div>
-                </div>
+            <div className="grid gap-4 bg-surface-elevated p-4 lg:grid-cols-[1.45fr,1fr]">
+              <figure className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+                <Image
+                  src={productScreenshots[0].src}
+                  alt={t(productScreenshots[0].titleKey)}
+                  width={1440}
+                  height={980}
+                  className="aspect-[16/10] w-full object-cover object-top"
+                />
+                <figcaption className="border-t border-border p-4 text-left">
+                  <h2 className="text-base font-semibold text-text-primary">{t(productScreenshots[0].titleKey)}</h2>
+                  <p className="mt-1 text-sm leading-6 text-text-secondary">{t(productScreenshots[0].descriptionKey)}</p>
+                </figcaption>
+              </figure>
+
+              <div className="grid gap-4">
+                {productScreenshots.slice(1).map((screenshot) => (
+                  <figure key={screenshot.src} className="grid overflow-hidden rounded-lg border border-border bg-surface shadow-sm sm:grid-cols-[1.1fr,0.9fr] lg:grid-cols-1">
+                    <Image
+                      src={screenshot.src}
+                      alt={t(screenshot.titleKey)}
+                      width={1440}
+                      height={980}
+                      className="aspect-[16/9] h-full w-full object-cover object-top"
+                    />
+                    <figcaption className="border-t border-border p-4 text-left sm:border-l sm:border-t-0 lg:border-l-0 lg:border-t">
+                      <h2 className="text-sm font-semibold text-text-primary">{t(screenshot.titleKey)}</h2>
+                      <p className="mt-1 text-xs leading-5 text-text-secondary">{t(screenshot.descriptionKey)}</p>
+                    </figcaption>
+                  </figure>
+                ))}
               </div>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 text-left sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-surface/85 p-4 shadow-sm">
+              <div className="text-sm font-semibold text-text-primary">{t('landing.hero.previewNotes.operations.title')}</div>
+              <p className="mt-1 text-sm leading-6 text-text-secondary">{t('landing.hero.previewNotes.operations.body')}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface/85 p-4 shadow-sm">
+              <div className="text-sm font-semibold text-text-primary">{t('landing.hero.previewNotes.outputs.title')}</div>
+              <p className="mt-1 text-sm leading-6 text-text-secondary">{t('landing.hero.previewNotes.outputs.body')}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface/85 p-4 shadow-sm">
+              <div className="text-sm font-semibold text-text-primary">{t('landing.hero.previewNotes.public.title')}</div>
+              <p className="mt-1 text-sm leading-6 text-text-secondary">{t('landing.hero.previewNotes.public.body')}</p>
             </div>
           </div>
         </div>

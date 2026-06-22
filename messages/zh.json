@@ -1060,6 +1060,7 @@
       "titleHighlight": "for ISMS",
       "subtitle": "Built through AI-driven development.",
       "description": "面向 ISO/IEC 27001 准备与持续运行的 ISMS 运营平台，将文件、信息资产、风险、控制措施、审核、纠正措施、管理评审和证据导出连接在同一流程中。",
+      "publicNote": "本应用程序的源代码已公开。若希望查看实现、探讨业务使用、导入或协作，请通过公开 GitHub 仓库或反馈入口联系我们。",
       "cta": {
         "startTrial": "14天免费试用",
         "watchDemo": "观看演示",
@@ -1071,7 +1072,7 @@
       "trustIndicators": {
         "secureEnvironment": "Build in Public",
         "companiesDeployed": "Source-available",
-        "customerSatisfaction": "演示数据定期重置"
+        "customerSatisfaction": "演示每24小时重置"
       },
       "badge": "支持ISO/IEC 27001:2022",
       "demo": {
@@ -1079,6 +1080,34 @@
         "approvedDocuments": "已批准文件",
         "daysUntilAudit": "距下次审核",
         "daysUntilAuditValue": "45天"
+      },
+      "screenshots": {
+        "dashboard": {
+          "title": "一屏掌握运行状态",
+          "description": "在首页查看租户、角色、套餐、待审批、审核、任务与风险。"
+        },
+        "risks": {
+          "title": "风险台账与矩阵",
+          "description": "风险评估画面支持搜索、筛选、CSV导入以及Excel/PDF导出。"
+        },
+        "documents": {
+          "title": "文件管理与审批流程",
+          "description": "管理草稿、审核中与已批准文件，并支持Word/PDF格式导出。"
+        }
+      },
+      "previewNotes": {
+        "operations": {
+          "title": "从认证准备到持续运行",
+          "body": "在同一应用中跟踪首次认证准备和认证后的年度运行。"
+        },
+        "outputs": {
+          "title": "Excel / Word / PDF 导出",
+          "body": "通过可在本地使用的格式导出台账和文件，降低 SaaS 锁定。"
+        },
+        "public": {
+          "title": "公开代码与咨询入口",
+          "body": "可在公开仓库查看实现，并就使用、导入或协作进行咨询。"
+        }
       }
     },
     "features": {
@@ -1267,8 +1296,9 @@
       "button": "演示登录",
       "noCredit": "无需注册或登记信用卡",
       "noSetupFee": "使用虚构种子数据",
-      "cancelAnytime": "演示数据会定期重置",
-      "support247": "欢迎在 GitHub 反馈"
+      "cancelAnytime": "每24小时重置",
+      "support247": "欢迎在 GitHub 反馈",
+      "demoResetExplanation": "演示站点已预先登记虚构企业以及属于这些企业的虚构用户。请选择接近想确认的使用场景的租户和用户，即可登录并自由操作画面、保存内容。输入内容不以长期保留为前提，并会每24小时自动恢复到初始数据。"
     },
     "footer": {
       "tagline": "让成长型企业的ISO27001认证更简单",

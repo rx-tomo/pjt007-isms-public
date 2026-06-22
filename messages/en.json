@@ -1060,6 +1060,7 @@
       "titleHighlight": "for ISMS",
       "subtitle": "Built through AI-driven development.",
       "description": "An ISMS operations platform for ISO/IEC 27001 preparation and ongoing operation, connecting documents, information assets, risks, controls, audits, corrective actions, management reviews, and evidence exports.",
+      "publicNote": "The application source code is published. To review the implementation, explore business use, discuss adoption, or propose collaboration, use the public GitHub repository or feedback channel.",
       "cta": {
         "startTrial": "Start 14-Day Free Trial",
         "watchDemo": "Watch Demo",
@@ -1071,7 +1072,7 @@
       "trustIndicators": {
         "secureEnvironment": "Build in Public",
         "companiesDeployed": "Source-available",
-        "customerSatisfaction": "Demo data resets regularly"
+        "customerSatisfaction": "Demo resets every 24 hours"
       },
       "badge": "ISO/IEC 27001:2022 Compliant",
       "demo": {
@@ -1079,6 +1080,34 @@
         "approvedDocuments": "Approved Documents",
         "daysUntilAudit": "Days Until Next Audit",
         "daysUntilAuditValue": "45 days"
+      },
+      "screenshots": {
+        "dashboard": {
+          "title": "A single view of operations",
+          "description": "Review tenants, roles, plans, approvals, audits, tasks, and risks from the home dashboard."
+        },
+        "risks": {
+          "title": "Risk register and matrix",
+          "description": "A risk assessment screen with search, filters, CSV import, and Excel/PDF exports."
+        },
+        "documents": {
+          "title": "Document workflow",
+          "description": "Manage draft, review, and approved documents, with Word and PDF exports."
+        }
+      },
+      "previewNotes": {
+        "operations": {
+          "title": "From preparation to ongoing operation",
+          "body": "Track initial certification preparation and annual post-certification operations in one application."
+        },
+        "outputs": {
+          "title": "Excel / Word / PDF outputs",
+          "body": "The design avoids SaaS lock-in by exporting registers and documents into usable local formats."
+        },
+        "public": {
+          "title": "Published code and contact",
+          "body": "Review the implementation in the public repository and contact us about use, adoption, or collaboration."
+        }
       }
     },
     "features": {
@@ -1267,8 +1296,9 @@
       "button": "Demo login",
       "noCredit": "No signup or credit card required",
       "noSetupFee": "Seeded fictional data",
-      "cancelAnytime": "Demo data resets regularly",
-      "support247": "Feedback welcome on GitHub"
+      "cancelAnytime": "Resets every 24 hours",
+      "support247": "Feedback welcome on GitHub",
+      "demoResetExplanation": "The demo site already includes fictional companies and fictional users that belong to those companies. Choose a tenant and user that matches the usage scene you want to inspect, then freely try the screens and save changes. Entered data is not intended to be retained and is automatically reset to the seed state every 24 hours."
     },
     "footer": {
       "tagline": "Simplifying ISO27001 certification for growing businesses worldwide",

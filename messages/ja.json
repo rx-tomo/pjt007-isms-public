@@ -1060,6 +1060,7 @@
       "titleHighlight": "for ISMS",
       "subtitle": "AI駆動開発でつくる、ISMS構築・運用支援プラットフォーム。",
       "description": "ISO/IEC 27001の初回登録準備から認証後の継続運用まで、文書、情報資産、リスク、管理策、監査、是正、マネジメントレビュー、証跡出力をひとつの流れで扱います。",
+      "publicNote": "本アプリケーションはソースコードを公開しています。機能の確認、事業での活用、協業や導入相談は、GitHubの公開リポジトリまたはフィードバック窓口からお問い合わせください。",
       "cta": {
         "startTrial": "14日間無料トライアル",
         "watchDemo": "デモを見る",
@@ -1071,7 +1072,7 @@
       "trustIndicators": {
         "secureEnvironment": "Build in Public",
         "companiesDeployed": "Source-available",
-        "customerSatisfaction": "デモデータは定期リセット"
+        "customerSatisfaction": "24時間ごとにデモを初期化"
       },
       "badge": "ISO/IEC 27001:2022対応",
       "demo": {
@@ -1079,6 +1080,34 @@
         "approvedDocuments": "承認済み文書",
         "daysUntilAudit": "次回監査まで",
         "daysUntilAuditValue": "45日"
+      },
+      "screenshots": {
+        "dashboard": {
+          "title": "運用状況を一画面で把握",
+          "description": "テナント、ロール、契約プラン、承認待ち、監査、タスク、リスクをホームで俯瞰できます。"
+        },
+        "risks": {
+          "title": "リスク台帳とマトリクス",
+          "description": "検索、絞り込み、CSVインポート、Excel/PDF出力を備えたリスクアセスメント画面です。"
+        },
+        "documents": {
+          "title": "文書管理と承認フロー",
+          "description": "下書き、レビュー、承認済みの状態を管理し、Word/PDF形式で出力できます。"
+        }
+      },
+      "previewNotes": {
+        "operations": {
+          "title": "認証準備から継続運用まで",
+          "body": "初回登録準備と認証後の年次運用を、同じアプリケーションの中で追跡できます。"
+        },
+        "outputs": {
+          "title": "Excel / Word / PDF出力",
+          "body": "SaaSに閉じ込めず、台帳や文書を手元で使える形式へ出力する設計です。"
+        },
+        "public": {
+          "title": "公開コードと相談窓口",
+          "body": "公開リポジトリから実装を確認でき、活用・導入・協業の相談を受け付けています。"
+        }
       }
     },
     "features": {
@@ -1267,8 +1296,9 @@
       "button": "デモ用ログイン",
       "noCredit": "新規登録・クレジットカード登録は不要",
       "noSetupFee": "架空データで試用",
-      "cancelAnytime": "入力内容は定期リセット",
-      "support247": "GitHubでフィードバック歓迎"
+      "cancelAnytime": "24時間ごとに初期化",
+      "support247": "GitHubでフィードバック歓迎",
+      "demoResetExplanation": "デモサイトには架空の企業と、その企業に所属する架空ユーザーがあらかじめ登録されています。確認したい利用シーンに近いテナントとユーザーを選ぶだけでログインでき、画面操作や保存を自由に試せます。入力した内容は保持を前提とせず、24時間ごとに自動で初期状態へ戻ります。"
     },
     "footer": {
       "tagline": "成長する企業のISO27001認証取得をシンプルに",
