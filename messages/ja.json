@@ -1082,17 +1082,29 @@
         "daysUntilAuditValue": "45日"
       },
       "screenshots": {
+        "sceneLabel": "Scene {current} / {total}",
+        "previous": "前のシーン",
+        "next": "次のシーン",
+        "goToScene": "シーン {index} を表示",
         "dashboard": {
           "title": "運用状況を一画面で把握",
-          "description": "テナント、ロール、契約プラン、承認待ち、監査、タスク、リスクをホームで俯瞰できます。"
+          "description": "ログイン直後に、担当ロール、契約プラン、承認待ち、監査、タスク、未対応リスクをまとめて確認できます。"
         },
         "risks": {
           "title": "リスク台帳とマトリクス",
-          "description": "検索、絞り込み、CSVインポート、Excel/PDF出力を備えたリスクアセスメント画面です。"
+          "description": "リスクの検索、絞り込み、CSVインポート、Excel/PDF出力に加えて、影響度と発生可能性のマトリクスで全体像をつかめます。"
         },
         "documents": {
           "title": "文書管理と承認フロー",
-          "description": "下書き、レビュー、承認済みの状態を管理し、Word/PDF形式で出力できます。"
+          "description": "ISMS文書の下書き、レビュー、承認済み状態を一覧で扱い、Word/PDF形式の出力や版数履歴も確認できます。"
+        },
+        "audit": {
+          "title": "監査と是正の進捗管理",
+          "description": "監査計画、チェックリスト完了率、不適合、是正処置、フォローアップ状況を同じ画面で追跡できます。"
+        },
+        "submission": {
+          "title": "審査準備パッケージ",
+          "description": "適用範囲、体制、文書、資産、リスク、運用証跡を提出前にまとめ、不足や確認待ちを整理できます。"
         }
       },
       "previewNotes": {

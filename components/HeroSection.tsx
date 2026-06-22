@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
+
+const AUTO_ADVANCE_MS = 5000;
 
 const productScreenshots = [
   {
@@ -21,12 +24,38 @@ const productScreenshots = [
     src: '/landing/documents-workflow.png',
     titleKey: 'landing.hero.screenshots.documents.title',
     descriptionKey: 'landing.hero.screenshots.documents.description'
+  },
+  {
+    src: '/landing/audit-workflow.png',
+    titleKey: 'landing.hero.screenshots.audit.title',
+    descriptionKey: 'landing.hero.screenshots.audit.description'
+  },
+  {
+    src: '/landing/submission-bundle.png',
+    titleKey: 'landing.hero.screenshots.submission.title',
+    descriptionKey: 'landing.hero.screenshots.submission.description'
   }
 ];
 
 export default function HeroSection() {
   const t = useTranslations();
   const locale = useLocale();
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
+
+  useEffect(() => {
+    if (isUserInteracting) return;
+
+    const timer = window.setInterval(() => {
+      setActiveSceneIndex((current) => (current + 1) % productScreenshots.length);
+    }, AUTO_ADVANCE_MS);
+
+    return () => window.clearInterval(timer);
+  }, [isUserInteracting]);
+
+  const goToScene = (nextIndex: number) => {
+    setActiveSceneIndex((nextIndex + productScreenshots.length) % productScreenshots.length);
+  };
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-surface to-secondary-50 pt-32 pb-20">
@@ -116,7 +145,13 @@ export default function HeroSection() {
         </div>
 
         {/* Product preview */}
-        <div className="mt-20 relative">
+        <div
+          className="mt-20 relative"
+          onMouseEnter={() => setIsUserInteracting(true)}
+          onMouseLeave={() => setIsUserInteracting(false)}
+          onFocus={() => setIsUserInteracting(true)}
+          onBlur={() => setIsUserInteracting(false)}
+        >
           <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
             <div className="bg-surface-elevated px-4 py-3 flex items-center gap-2 border-b border-border">
               <div className="flex gap-1.5">
@@ -128,52 +163,85 @@ export default function HeroSection() {
                 Riscala AI for ISMS Dashboard
               </div>
             </div>
-            <div className="grid gap-4 bg-surface-elevated p-4 lg:grid-cols-[1.45fr,1fr]">
-              <figure className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-                <Image
-                  src={productScreenshots[0].src}
-                  alt={t(productScreenshots[0].titleKey)}
-                  width={1440}
-                  height={980}
-                  className="aspect-[16/10] w-full object-cover object-top"
-                />
-                <figcaption className="border-t border-border p-4 text-left">
-                  <h2 className="text-base font-semibold text-text-primary">{t(productScreenshots[0].titleKey)}</h2>
-                  <p className="mt-1 text-sm leading-6 text-text-secondary">{t(productScreenshots[0].descriptionKey)}</p>
-                </figcaption>
-              </figure>
-
-              <div className="grid gap-4">
-                {productScreenshots.slice(1).map((screenshot) => (
-                  <figure key={screenshot.src} className="grid overflow-hidden rounded-lg border border-border bg-surface shadow-sm sm:grid-cols-[1.1fr,0.9fr] lg:grid-cols-1">
-                    <Image
-                      src={screenshot.src}
-                      alt={t(screenshot.titleKey)}
-                      width={1440}
-                      height={980}
-                      className="aspect-[16/9] h-full w-full object-cover object-top"
-                    />
-                    <figcaption className="border-t border-border p-4 text-left sm:border-l sm:border-t-0 lg:border-l-0 lg:border-t">
-                      <h2 className="text-sm font-semibold text-text-primary">{t(screenshot.titleKey)}</h2>
-                      <p className="mt-1 text-xs leading-5 text-text-secondary">{t(screenshot.descriptionKey)}</p>
-                    </figcaption>
-                  </figure>
-                ))}
+            <div className="relative bg-surface-elevated">
+              <div className="overflow-hidden" aria-live="polite">
+                <div
+                  className="flex transition-transform duration-700 ease-out"
+                  style={{ transform: `translateX(-${activeSceneIndex * 100}%)` }}
+                >
+                  {productScreenshots.map((screenshot, index) => (
+                    <figure key={screenshot.src} className="min-w-full bg-surface-elevated">
+                      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr),340px]">
+                        <div className="bg-slate-950/5 p-3 sm:p-5">
+                          <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+                            <Image
+                              src={screenshot.src}
+                              alt={t(screenshot.titleKey)}
+                              width={1440}
+                              height={980}
+                              priority={index === 0}
+                              className="aspect-[16/10] w-full object-cover object-top"
+                            />
+                          </div>
+                        </div>
+                        <figcaption className="flex flex-col justify-center border-t border-border bg-surface p-6 text-left lg:border-l lg:border-t-0 lg:p-8">
+                          <div className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                            {t('landing.hero.screenshots.sceneLabel', {
+                              current: index + 1,
+                              total: productScreenshots.length
+                            })}
+                          </div>
+                          <h2 className="text-2xl font-bold leading-tight text-text-primary sm:text-3xl">
+                            {t(screenshot.titleKey)}
+                          </h2>
+                          <p className="mt-4 text-base leading-8 text-text-secondary">
+                            {t(screenshot.descriptionKey)}
+                          </p>
+                        </figcaption>
+                      </div>
+                    </figure>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="mt-5 grid gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-lg border border-border bg-surface/85 p-4 shadow-sm">
-              <div className="text-sm font-semibold text-text-primary">{t('landing.hero.previewNotes.operations.title')}</div>
-              <p className="mt-1 text-sm leading-6 text-text-secondary">{t('landing.hero.previewNotes.operations.body')}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface/85 p-4 shadow-sm">
-              <div className="text-sm font-semibold text-text-primary">{t('landing.hero.previewNotes.outputs.title')}</div>
-              <p className="mt-1 text-sm leading-6 text-text-secondary">{t('landing.hero.previewNotes.outputs.body')}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface/85 p-4 shadow-sm">
-              <div className="text-sm font-semibold text-text-primary">{t('landing.hero.previewNotes.public.title')}</div>
-              <p className="mt-1 text-sm leading-6 text-text-secondary">{t('landing.hero.previewNotes.public.body')}</p>
+
+              <div className="flex flex-col gap-4 border-t border-border bg-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center justify-center gap-2">
+                  {productScreenshots.map((screenshot, index) => (
+                    <button
+                      key={screenshot.src}
+                      type="button"
+                      aria-label={t('landing.hero.screenshots.goToScene', { index: index + 1 })}
+                      aria-current={activeSceneIndex === index}
+                      onClick={() => goToScene(index)}
+                      className={`h-2.5 rounded-full transition-all duration-300 ${
+                        activeSceneIndex === index ? 'w-9 bg-accent' : 'w-2.5 bg-border hover:bg-text-muted'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => goToScene(activeSceneIndex - 1)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition hover:border-accent hover:text-accent"
+                    aria-label={t('landing.hero.screenshots.previous')}
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goToScene(activeSceneIndex + 1)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition hover:border-accent hover:text-accent"
+                    aria-label={t('landing.hero.screenshots.next')}
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

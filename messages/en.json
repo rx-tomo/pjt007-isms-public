@@ -1082,17 +1082,29 @@
         "daysUntilAuditValue": "45 days"
       },
       "screenshots": {
+        "sceneLabel": "Scene {current} / {total}",
+        "previous": "Previous scene",
+        "next": "Next scene",
+        "goToScene": "Show scene {index}",
         "dashboard": {
           "title": "A single view of operations",
-          "description": "Review tenants, roles, plans, approvals, audits, tasks, and risks from the home dashboard."
+          "description": "After login, review the active role, plan, pending approvals, audits, tasks, and unresolved risks from one starting point."
         },
         "risks": {
           "title": "Risk register and matrix",
-          "description": "A risk assessment screen with search, filters, CSV import, and Excel/PDF exports."
+          "description": "Search and filter risks, import CSV files, export Excel/PDF reports, and understand the whole picture through an impact and likelihood matrix."
         },
         "documents": {
           "title": "Document workflow",
-          "description": "Manage draft, review, and approved documents, with Word and PDF exports."
+          "description": "Manage draft, in-review, and approved ISMS documents, with Word/PDF exports and version history."
+        },
+        "audit": {
+          "title": "Audit and corrective action tracking",
+          "description": "Track audit plans, checklist completion, nonconformities, corrective actions, and follow-up status in one workflow."
+        },
+        "submission": {
+          "title": "Submission readiness package",
+          "description": "Collect scope, organization, documents, assets, risks, and operating evidence before review, while surfacing missing or pending items."
         }
       },
       "previewNotes": {

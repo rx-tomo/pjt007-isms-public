@@ -1082,17 +1082,29 @@
         "daysUntilAuditValue": "45天"
       },
       "screenshots": {
+        "sceneLabel": "Scene {current} / {total}",
+        "previous": "上一场景",
+        "next": "下一场景",
+        "goToScene": "显示场景 {index}",
         "dashboard": {
           "title": "一屏掌握运行状态",
-          "description": "在首页查看租户、角色、套餐、待审批、审核、任务与风险。"
+          "description": "登录后可从一个入口查看当前角色、套餐、待审批、审核、任务和未处理风险。"
         },
         "risks": {
           "title": "风险台账与矩阵",
-          "description": "风险评估画面支持搜索、筛选、CSV导入以及Excel/PDF导出。"
+          "description": "支持风险搜索、筛选、CSV导入、Excel/PDF导出，并通过影响度与发生可能性的矩阵掌握整体情况。"
         },
         "documents": {
           "title": "文件管理与审批流程",
-          "description": "管理草稿、审核中与已批准文件，并支持Word/PDF格式导出。"
+          "description": "管理ISMS文件的草稿、审核中与已批准状态，并支持Word/PDF导出和版本历史确认。"
+        },
+        "audit": {
+          "title": "审核与纠正措施进度",
+          "description": "在同一流程中跟踪审核计划、检查清单完成率、不符合项、纠正措施和跟进状态。"
+        },
+        "submission": {
+          "title": "审核准备资料包",
+          "description": "在提交前整理适用范围、组织体制、文件、资产、风险和运行证据，并识别不足或待确认项目。"
         }
       },
       "previewNotes": {
