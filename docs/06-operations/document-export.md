@@ -29,6 +29,8 @@ Docx 形式は ZIP コンテナなので先頭 2 バイトが `PK` になりま�
 
 開発用 practical verification seed では、代表文書のMarkdown実体を `.storage/documents/{organizationId}/documents/{documentId}/{documentId}.md` に作成し、`documents` と `document_versions` の `file_name` / `file_path` / `file_size` / `mime_type` を同じ実体へ揃えます。これにより、文書一覧の「ファイルをダウンロード」、版履歴のダウンロード、PDF/Word/Excelエクスポートが同じ文書内容を参照します。
 
+公開デモはVercelの一時ファイル領域へ依存しないよう、同じ12文書の本文を `lib/fixtures/practical-document-bodies.json` と `public/demo-documents/` に同梱します。古いデモDBで `file_path` が未設定、またはreset後のローカル実体を別リクエストから読めない場合も、文書IDが一致するseed文書だけを同梱本文へフォールバックします。ユーザーが登録した通常文書はこのフォールバック対象にしません。
+
 ## 監査ログ
 `/api/documents/[id]/export` は service-role guard を通して成功・拒否を監査ログへ記録します。主な確認項目は次のとおりです。
 
