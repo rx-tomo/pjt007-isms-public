@@ -54,6 +54,19 @@ const normalizeUrgency = (value: string | null | undefined): UrgencyFilter => {
   return value === 'due' || value === 'escalation' ? value : ''
 }
 
+const isDueSoon = (dueAt: string | null): boolean => {
+  if (!dueAt) return false
+  const dueTime = new Date(dueAt).getTime()
+  if (Number.isNaN(dueTime)) return false
+  const now = Date.now()
+  return dueTime >= now && dueTime - now <= 24 * 60 * 60 * 1000
+}
+
+const formatDateTime = (value: string | null): string => {
+  if (!value) return '-'
+  return new Date(value).toLocaleString()
+}
+
 export default function ApprovalsPage(
   props: {
     params: Promise<{ locale: string }>
@@ -89,6 +102,9 @@ export default function ApprovalsPage(
 
   const canView = profileRole ? APPROVAL_VIEWER_ROLES.has(profileRole) : false
   const canRevert = profileRole ? REVERT_ROLES.has(profileRole) : false
+  const pendingCount = requests.filter((request) => request.status === 'pending').length
+  const dueSoonCount = requests.filter((request) => request.status === 'pending' && isDueSoon(request.due_at)).length
+  const escalationCount = requests.filter((request) => request.escalation_notified_at).length
 
   useEffect(() => {
     const nextTab = normalizeTab(searchParams?.get('status'))
@@ -130,7 +146,7 @@ export default function ApprovalsPage(
         // Fall back to the audit reports list for now.
         return `/${locale}/audit/reports`
       case 'nonconformity_closure':
-        // resource_id is the corrective action ID; link to the nonconformity workbench
+        // resource_id is the corrective action ID; link to the nonconformity overview
         return `/${locale}/audit/nonconformities`
       case 'followup_record':
         // resource_id is the follow-up record ID; link to the audit overview
@@ -288,12 +304,28 @@ export default function ApprovalsPage(
   return (
     <DashboardLayout locale={locale}>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-text-primary">承認キュー</h1>
-          <p className="mt-2 text-sm text-text-secondary">承認待ちの案件をまとめて確認・処理します。</p>
-          {organizationId && (
-            <p className="mt-1 text-xs text-text-muted">Organization: {organizationId}</p>
-          )}
+        <div className="mb-6 rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 data-testid="approval-queue-title" className="text-3xl font-bold text-text-primary">
+                {t('title')}
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-text-secondary">
+                対象を開いて内容と期限を確認し、承認、却下、差し戻しを選びます。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="rounded-full border border-border bg-surface-elevated px-3 py-1 font-medium text-text-primary">
+                承認待ち {pendingCount}
+              </span>
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-medium text-amber-900">
+                期限接近 {dueSoonCount}
+              </span>
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 font-medium text-rose-900">
+                要注意 {escalationCount}
+              </span>
+            </div>
+          </div>
         </div>
 
         {loading && (
@@ -356,6 +388,27 @@ export default function ApprovalsPage(
               </div>
             )}
 
+            <section
+              data-testid="approval-decision-workflow-guide"
+              className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-950"
+            >
+              <h2 className="font-semibold">承認判断の見方</h2>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-indigo-700">判断材料</p>
+                  <p className="mt-1 text-xs leading-5">対象画面で本文、変更理由、担当者、証跡、関連リスクを確認します。</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-indigo-700">承認すると進むこと</p>
+                  <p className="mt-1 text-xs leading-5">文書、監査、リスク、管理策などの次工程へ進み、証跡や台帳に反映されます。</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-indigo-700">却下時の戻り先</p>
+                  <p className="mt-1 text-xs leading-5">却下理由を残し、起案者または担当画面で修正して再申請します。</p>
+                </div>
+              </div>
+            </section>
+
             {filteredRequests.length === 0 ? (
               <EmptyState
                 title={activeTab === 'pending' ? t('empty') : t('emptyFiltered')}
@@ -365,8 +418,7 @@ export default function ApprovalsPage(
               <table className="min-w-full divide-y divide-border text-sm">
                 <thead className="bg-surface-elevated text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
                   <tr>
-                    <th className="px-4 py-3">対象</th>
-                    <th className="px-4 py-3">タイプ</th>
+                    <th className="px-4 py-3">判断対象</th>
                     <th className="px-4 py-3">ステータス</th>
                     <th className="px-4 py-3">申請日時</th>
                     <th className="px-4 py-3">期限</th>
@@ -382,16 +434,20 @@ export default function ApprovalsPage(
                       const statusLabel = STATUS_LABELS[request.status] ?? request.status
                       return (
                         <tr key={request.id} data-testid={`approval-row-${request.resource_type}-${request.resource_id}`}>
-                          <td className="px-4 py-3 font-mono text-xs text-text-secondary">
-                            {link === '#' ? (
-                              request.resource_id
-                            ) : (
-                              <Link href={link} className="text-blue-700 underline">
-                                {request.resource_id}
-                              </Link>
-                            )}
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              {link === '#' ? (
+                                <span className="font-medium text-text-primary">{typeLabel}</span>
+                              ) : (
+                                <Link href={link} className="font-medium text-blue-700 underline">
+                                  {typeLabel}を確認
+                                </Link>
+                              )}
+                              <p className="text-[11px] text-text-muted">
+                                詳細確認用の参照番号: {request.resource_id}
+                              </p>
+                            </div>
                           </td>
-                          <td className="px-4 py-3 text-text-primary">{typeLabel}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
                               request.status === 'approved' ? 'bg-green-100 text-green-800'
@@ -402,11 +458,19 @@ export default function ApprovalsPage(
                               {statusLabel}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-text-secondary">{new Date(request.requested_at).toLocaleString()}</td>
-                          <td className="px-4 py-3 text-text-secondary">{request.due_at ? new Date(request.due_at).toLocaleString() : '-'}</td>
-                          <td className="px-4 py-3 text-text-secondary">{request.approver_id ?? '未割当'}</td>
+                          <td className="px-4 py-3 text-text-secondary">{formatDateTime(request.requested_at)}</td>
+                          <td className={`px-4 py-3 ${isDueSoon(request.due_at) ? 'font-semibold text-amber-700' : 'text-text-secondary'}`}>
+                            {formatDateTime(request.due_at)}
+                          </td>
+                          <td className="px-4 py-3 text-text-secondary">{request.approver_id ? '割当済み' : '未割当'}</td>
                           <td className="px-4 py-3">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex flex-col items-end gap-2">
+                              {request.status === 'pending' && (
+                                <p className="max-w-44 text-right text-[11px] text-text-muted">
+                                  操作すると対象の承認状態が更新されます。
+                                </p>
+                              )}
+                              <div className="flex justify-end gap-2">
                               {request.status === 'pending' && (
                                 <>
                                   <button
@@ -442,6 +506,7 @@ export default function ApprovalsPage(
                                   差し戻し
                                 </button>
                               )}
+                              </div>
                             </div>
                           </td>
                         </tr>

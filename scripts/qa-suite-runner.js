@@ -49,6 +49,7 @@ const SUITES = {
     'qa:surveillance-first-step',
     'qa:surveillance-document-revision',
     'qa:surveillance-risk-reassessment',
+    'qa:surveillance-monthly-ops-cycle',
     'qa:surveillance-education-update',
     'qa:surveillance-corrective-action-update',
     'qa:surveillance-follow-up-update',
@@ -107,8 +108,8 @@ function parseArgs(argv) {
   return args;
 }
 
-function run(command, commandArgs) {
-  const result = spawnSync(command, commandArgs, { stdio: 'inherit' });
+function run(command, commandArgs, env = process.env) {
+  const result = spawnSync(command, commandArgs, { stdio: 'inherit', env });
   return result.status === 0;
 }
 
@@ -199,6 +200,9 @@ function main() {
     warmupRoutes(QA_SERVER_PORT);
   }
 
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const outputDir = path.join(process.cwd(), 'test-results');
+  const playwrightRoot = path.join(outputDir, 'playwright', `qa-suite-${stamp}`);
   const results = [];
   for (const script of scripts) {
     console.log(`\n========== ${script} ==========`);
@@ -206,8 +210,16 @@ function main() {
       results.push({ script, status: 'seed_reset_failed' });
       continue;
     }
-    const ok = run('npm', ['run', script]);
-    results.push({ script, status: ok ? 'pass' : 'fail' });
+    const scriptOutputDir = path.join(playwrightRoot, script.replace(/[^a-zA-Z0-9_-]/g, '-'));
+    const ok = run('npm', ['run', script], {
+      ...process.env,
+      PLAYWRIGHT_OUTPUT_DIR: scriptOutputDir,
+    });
+    results.push({
+      script,
+      status: ok ? 'pass' : 'fail',
+      playwrightOutputDir: path.relative(process.cwd(), scriptOutputDir),
+    });
   }
 
   const failed = results.filter((entry) => entry.status !== 'pass');
@@ -217,9 +229,7 @@ function main() {
     console.log(`${mark} ${entry.script} (${entry.status})`);
   }
 
-  const outputDir = path.join(process.cwd(), 'test-results');
   fs.mkdirSync(outputDir, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const outputPath = path.join(outputDir, `qa-suite-run-${stamp}.json`);
   fs.writeFileSync(outputPath, `${JSON.stringify({ generatedAt: new Date().toISOString(), reset, results }, null, 2)}\n`);
   console.log(`\n結果ファイル: ${outputPath}`);

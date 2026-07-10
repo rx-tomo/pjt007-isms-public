@@ -57,6 +57,12 @@ type SubmissionBundle = {
 
 const allowedRoles = new Set(['org_admin', 'system_operator', 'auditor'])
 
+const ROLE_LABELS: Record<string, string> = {
+  org_admin: 'ISMS管理者',
+  system_operator: '導入支援担当',
+  auditor: '内部監査員',
+}
+
 export default function SubmissionBundlePage(
   props: {
     params: Promise<{ locale: string }>
@@ -281,6 +287,7 @@ export default function SubmissionBundlePage(
   const nextActionHref = nextGapItem
     ? buildLocalizedRoute((nextGapItem.gapActions ?? [])[0]?.route ?? nextActionHrefByItem[nextGapItem.key])
     : null
+  const currentRoleLabel = currentUser?.role ? ROLE_LABELS[currentUser.role] ?? currentUser.role : '-'
 
   if (isLoading) {
     return (
@@ -319,12 +326,20 @@ export default function SubmissionBundlePage(
           <div>
             <h1 className="text-2xl font-semibold text-text-primary">{t('title')}</h1>
             <p className="mt-1 text-sm text-text-secondary">{t('description')}</p>
+            <p
+              className="mt-3 max-w-3xl rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950"
+              data-testid="submission-bundle-review-notice"
+            >
+              <span className="font-semibold">{t('reviewNotice.title')}</span>
+              {' '}
+              {t('reviewNotice.body')}
+            </p>
             {bundle && (
               <p className="mt-3 text-sm text-text-muted">
                 {t('organizationLine', {
                   name: bundle.organization.name,
                   phase: bundle.organization.ismsPhase ?? '-',
-                  role: currentUser?.role ?? '-',
+                  role: currentRoleLabel,
                 })}
               </p>
             )}
@@ -366,16 +381,17 @@ export default function SubmissionBundlePage(
         )}
       </div>
 
+      <div
+        data-testid="submission-bundle-safety-boundary"
+        className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
+      >
+        <p className="font-semibold">{t('safetyBoundary.title')}</p>
+        <p className="mt-1">{t('safetyBoundary.body')}</p>
+        <p className="mt-2 text-amber-900">{t('safetyBoundary.demoReset')}</p>
+      </div>
+
       {bundle && (
         <>
-          <div
-            className="rounded-lg border border-sky-200 bg-sky-50 p-5 text-sm text-sky-950"
-            data-testid="submission-bundle-review-notice"
-          >
-            <p className="font-semibold">{t('reviewNotice.title')}</p>
-            <p className="mt-1">{t('reviewNotice.body')}</p>
-          </div>
-
           <div className={`rounded-lg border p-5 ${readinessClass}`} data-testid="submission-bundle-readiness">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -440,26 +456,7 @@ export default function SubmissionBundlePage(
                   <h2 className="text-lg font-semibold text-text-primary">{t('nextAction.readyTitle')}</h2>
                   <p className="mt-1 text-sm text-text-secondary">{t('nextAction.readyDescription')}</p>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleDownloadPdf}
-                    disabled={!organizationId || !bundle || isDownloading || isDownloadingPdf}
-                    className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-                    data-testid="submission-bundle-next-action-pdf"
-                  >
-                    {isDownloadingPdf ? t('actions.downloadingPdf') : t('actions.downloadPdf')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDownloadZip}
-                    disabled={!organizationId || !bundle || isDownloading || isDownloadingPdf}
-                    className="inline-flex items-center justify-center rounded-md border border-blue-300 bg-surface px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                    data-testid="submission-bundle-next-action-zip"
-                  >
-                    {isDownloading ? t('actions.downloadingZip') : t('actions.downloadZip')}
-                  </button>
-                </div>
+                <p className="text-sm text-text-muted">{t('nextAction.readyOutputHint')}</p>
               </div>
             )}
           </div>

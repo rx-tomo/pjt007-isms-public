@@ -215,13 +215,6 @@ export default function SubscriptionPage(
           </div>
         </div>
 
-        {/* Test Mode Banner (GAP-022) */}
-        {(stripeMockMode || !isStripeConfigured) && (
-          <div className="mb-6 p-3 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-800">
-            {t('testModeNotice')}
-          </div>
-        )}
-
         {portalMessage && (
           <div className="rounded-md bg-green-50 p-4 mb-6">
             <p className="text-sm text-green-800">{portalMessage}</p>
@@ -417,6 +410,18 @@ export default function SubscriptionPage(
         )}
 
         {/* アクション */}
+        <div
+          data-testid="subscription-demo-billing-boundary"
+          className="mb-3 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950"
+        >
+          <p className="font-semibold">{t('actionBoundary.title')}</p>
+          <p className="mt-1">{t('actionBoundary.body')}</p>
+        </div>
+        {(stripeMockMode || !isStripeConfigured) && (
+          <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {t('testModeNotice')}
+          </p>
+        )}
         <div className="flex flex-col sm:flex-row gap-4">
           {subscription ? (
             <>

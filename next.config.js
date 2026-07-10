@@ -39,6 +39,11 @@ const nextConfig = {
         '**/.next/**',
         '**/test-results/**',
         '**/playwright-report/**',
+        '**/docs/05-quality/screenshots/**',
+        '**/docs/archive/**',
+        '**/docs/handoff/**',
+        '**/docs/sample/**',
+        '**/local.db*',
         '**/docs/05-quality/uc/**/logs/**',
       ],
     }

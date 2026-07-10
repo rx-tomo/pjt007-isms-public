@@ -26,6 +26,7 @@ const bannedTerms = [
   { term: 'submission bundle', reason: 'old external term' },
   { term: 'Initial cycle', reason: 'internal phase label' },
   { term: 'Surveillance cycle', reason: 'internal phase label' },
+  { term: 'riscala-isms.com', reason: 'stale public domain' },
 ]
 
 module.exports = { bannedTerms }

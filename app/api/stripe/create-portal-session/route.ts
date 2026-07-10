@@ -6,6 +6,7 @@ import { getDb } from '@/lib/db/drizzle/client'
 import { subscriptions } from '@/lib/db/drizzle/schema/billing'
 import { userProfiles } from '@/lib/db/drizzle/schema/users'
 import { eq, and, desc } from 'drizzle-orm'
+import { resolveBillingReturnUrl } from '@/lib/stripe/returnUrls'
 
 type ServiceRoleGuard = Awaited<ReturnType<typeof requireServiceRole>>['guard']
 
@@ -48,6 +49,11 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedOrgId) {
       return json({ error: 'organizationId は必須です。' }, { status: 400 })
+    }
+
+    const safeReturnUrl = resolveBillingReturnUrl(returnUrl, request.url, `/${locale}/settings/subscription`)
+    if (!safeReturnUrl) {
+      return json({ error: 'Portal return URL is not allowed.' }, { status: 400 })
     }
 
     const secretKeyRaw = process.env.STRIPE_SECRET_KEY ?? ''
@@ -102,9 +108,11 @@ export async function POST(request: NextRequest) {
       if (adminUser?.email) {
         const customers = await stripe.customers.list({
           email: adminUser.email,
-          limit: 1
+          limit: 10
         })
-        customerId = customers.data[0]?.id
+        customerId = customers.data.find((customer) => (
+          customer.metadata?.organization_id === normalizedOrgId
+        ))?.id
       }
     }
 
@@ -117,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: returnUrl && returnUrl.trim() !== '' ? returnUrl : new URL('/home', request.url).toString()
+      return_url: safeReturnUrl
     })
 
     await logEvent('success',

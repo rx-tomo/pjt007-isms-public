@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   DocumentService,
+  DocumentExportError,
   type DocumentWithFolder,
   type DocumentFolder,
   type DocumentVersion
@@ -643,7 +644,7 @@ export default function DocumentsPage(
       const blob = await documentService.exportDocument(doc.id, format)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
-      const extension = format === 'pdf' ? 'pdf' : 'doc'
+      const extension = format === 'pdf' ? 'pdf' : 'docx'
       a.href = url
       a.download = `${sanitizeFileName(doc.title)}.${extension}`
       document.body.appendChild(a)
@@ -652,7 +653,14 @@ export default function DocumentsPage(
       document.body.removeChild(a)
     } catch (error: any) {
       console.error('Error exporting document:', error)
-      alert(error.message || t('errors.exportFailed'))
+      const message = error instanceof DocumentExportError
+        ? error.code === 'PDF_EXPORT_UNAVAILABLE'
+          ? t('errors.pdfUnavailable')
+          : error.code === 'PDF_EXPORT_RATE_LIMITED'
+            ? t('errors.pdfRateLimited')
+            : error.message || t('errors.exportFailed')
+        : error.message || t('errors.exportFailed')
+      alert(message)
     }
   }
 

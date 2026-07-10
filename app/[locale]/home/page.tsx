@@ -655,11 +655,13 @@ export default function HomePage(
           name={displayName}
           organizationName={organization.name}
           role={role}
-          planLabel={pricingPlan}
+          phase={effectivePhase}
           subscriptionStatus={subscriptionStatus}
           nextBilling={subscription?.current_period_end}
           locale={locale}
           t={t}
+          stats={stats}
+          approverMetrics={approverMetrics}
         />
 
         <PhaseSummaryCard locale={locale} t={t} phase={phaseSummary} />
@@ -978,6 +980,85 @@ function formatPhaseDate(value: string, locale: string) {
   }
 }
 
+const ROLE_LABELS: Record<RoleKey, Record<string, string>> = {
+  super_admin: { ja: 'サービス運営者', en: 'Service operator', zh: '服务运营者' },
+  system_operator: { ja: '導入支援担当', en: 'Implementation operator', zh: '导入支持负责人' },
+  org_admin: { ja: 'ISMS管理者', en: 'ISMS manager', zh: 'ISMS 管理员' },
+  user: { ja: '一般利用者', en: 'Member', zh: '普通用户' },
+  auditor: { ja: '内部監査員', en: 'Internal auditor', zh: '内部审核员' },
+  approver: { ja: '承認者', en: 'Approver', zh: '审批人' }
+}
+
+function localized(locale: string, values: Record<string, string>) {
+  if (locale.startsWith('zh')) return values.zh ?? values.ja
+  if (locale.startsWith('en')) return values.en ?? values.ja
+  return values.ja
+}
+
+function getPrimaryAction(role: RoleKey, locale: string, stats: DashboardStats | null, approverMetrics: ApproverDashboardMetrics | null) {
+  if (role === 'approver') {
+    return {
+      href: `/${locale}/approvals?status=pending`,
+      label: localized(locale, {
+        ja: '承認待ちを確認',
+        en: 'Review approvals',
+        zh: '查看待审批'
+      }),
+      helper: localized(locale, {
+        ja: `${approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0}件の判断待ち`,
+        en: `${approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0} pending decisions`,
+        zh: `${approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0} 个待判断`
+      })
+    }
+  }
+
+  if (role === 'auditor') {
+    return {
+      href: `/${locale}/audit`,
+      label: localized(locale, {
+        ja: '監査の進捗を確認',
+        en: 'Review audit progress',
+        zh: '查看审核进度'
+      }),
+      helper: localized(locale, {
+        ja: `${stats?.inProgressAuditCount ?? 0}件の監査が進行中`,
+        en: `${stats?.inProgressAuditCount ?? 0} audits in progress`,
+        zh: `${stats?.inProgressAuditCount ?? 0} 个审核进行中`
+      })
+    }
+  }
+
+  if (role === 'user') {
+    return {
+      href: `/${locale}/tasks`,
+      label: localized(locale, {
+        ja: '自分の担当タスクを開く',
+        en: 'Open my tasks',
+        zh: '打开我的任务'
+      }),
+      helper: localized(locale, {
+        ja: `${stats?.activeTaskCount ?? 0}件のアクティブタスク`,
+        en: `${stats?.activeTaskCount ?? 0} active tasks`,
+        zh: `${stats?.activeTaskCount ?? 0} 个进行中任务`
+      })
+    }
+  }
+
+  return {
+    href: `/${locale}/tasks?due=overdue`,
+    label: localized(locale, {
+      ja: '優先対応を確認',
+      en: 'Review priority work',
+      zh: '查看优先事项'
+    }),
+    helper: localized(locale, {
+      ja: `${stats?.overdueTaskCount ?? 0}件の期限超過タスク`,
+      en: `${stats?.overdueTaskCount ?? 0} overdue tasks`,
+      zh: `${stats?.overdueTaskCount ?? 0} 个逾期任务`
+    })
+  }
+}
+
 function buildFallbackPhaseSummary(organization: {
   isms_phase?: unknown
   isms_phase_set_at?: string | null
@@ -1287,23 +1368,46 @@ function HomeHero({
   name,
   organizationName,
   role,
-  planLabel,
+  phase,
   subscriptionStatus,
   nextBilling,
   locale,
-  t
+  t,
+  stats,
+  approverMetrics
 }: {
   name: string
   organizationName: string
   role: RoleKey
-  planLabel: string
+  phase: IsmsPhase
   subscriptionStatus: string
   nextBilling?: string | null
   locale: string
   t: ReturnType<typeof useTranslations<'home'>>
+  stats: DashboardStats | null
+  approverMetrics: ApproverDashboardMetrics | null
 }) {
   const greeting = getGreeting(name, t)
   const formattedBilling = formatDate(nextBilling, locale)
+  const roleLabel = localized(locale, ROLE_LABELS[role])
+  const phaseLabel = localized(locale, {
+    ja: phase === 'initial' ? '初回登録準備' : '継続運用',
+    en: phase === 'initial' ? 'Initial certification preparation' : 'Annual operation',
+    zh: phase === 'initial' ? '初次认证准备' : '年度持续运行'
+  })
+  const primaryAction = getPrimaryAction(role, locale, stats, approverMetrics)
+  const blockerCount = (stats?.overdueTaskCount ?? 0) + (approverMetrics?.dueSoonCount ?? 0)
+  const blockerText = blockerCount > 0
+    ? localized(locale, {
+        ja: `${blockerCount}件の期限・承認を先に確認`,
+        en: `${blockerCount} time-sensitive items`,
+        zh: `${blockerCount} 个临近期限或审批`
+      })
+    : localized(locale, {
+        ja: '急ぎの確認はありません',
+        en: 'No urgent reviews',
+        zh: '暂无紧急确认'
+      })
 
   return (
     <section className="home-theme-card overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-white">
@@ -1313,28 +1417,34 @@ function HomeHero({
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3 text-xs text-indigo-600">
               <span className="rounded-full bg-surface px-3 py-1 font-medium shadow-sm">
-                {t(`hero.badges.role.${role}` as any)}
+                {roleLabel}
               </span>
               <span className="rounded-full bg-indigo-600/10 px-3 py-1 font-medium text-indigo-700">
-                {t(`subscription.status.${subscriptionStatus}` as any)} · {planLabel}
+                {phaseLabel} · {t(`subscription.status.${subscriptionStatus}` as any)}
               </span>
             </div>
             <h1 className="text-2xl font-semibold text-text-primary sm:text-3xl">
-              {greeting}
+              {localized(locale, { ja: '今日の確認事項', en: 'Today’s priorities', zh: '今日确认事项' })}
             </h1>
             <p className="text-sm text-text-secondary">
-              {t('hero.subtitle', { organization: organizationName })}
+              {greeting}。{t('hero.subtitle', { organization: organizationName })}
             </p>
           </div>
-          <div className="flex min-w-[220px] flex-col rounded-2xl border border-indigo-100 bg-surface/80 p-4 text-sm shadow-sm backdrop-blur">
-            <div className="flex items-center justify-between">
-              <span className="text-text-muted">{t('hero.plan')}</span>
-              <span className="font-medium text-text-primary">{planLabel}</span>
+          <div className="flex min-w-[260px] flex-col gap-3 rounded-2xl border border-indigo-100 bg-surface/80 p-4 text-sm shadow-sm backdrop-blur">
+            <div>
+              <p className="text-xs text-text-muted">{localized(locale, { ja: '最初に見ること', en: 'First thing to check', zh: '优先确认' })}</p>
+              <p className="font-medium text-text-primary">{primaryAction.helper}</p>
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-text-muted">{t('hero.nextBilling')}</span>
-              <span className="font-medium text-text-primary">{formattedBilling}</span>
+            <div className="flex items-center justify-between gap-4 text-xs text-text-muted">
+              <span>{blockerText}</span>
+              <span>{t('hero.nextBilling')}: {formattedBilling}</span>
             </div>
+            <Link
+              href={primaryAction.href}
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              {primaryAction.label}
+            </Link>
           </div>
         </div>
       </div>
@@ -2757,6 +2867,87 @@ function AdminDashboard({
     }
   ]
 
+  const workbenchGroups = [
+    {
+      key: 'initialPreparation',
+      title: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.title'),
+      description: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.description'),
+      items: [
+        {
+          key: 'scope',
+          href: `/${locale}/settings/organization`,
+          status: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.scope.status'),
+          title: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.scope.title'),
+          next: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.scope.next'),
+          done: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.scope.done'),
+          impact: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.scope.impact')
+        },
+        {
+          key: 'assetsRisks',
+          href: `/${locale}/settings/assets`,
+          status: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.assetsRisks.status', {
+            count: stats?.activeRiskCount ?? 0
+          }),
+          title: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.assetsRisks.title'),
+          next: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.assetsRisks.next'),
+          done: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.assetsRisks.done'),
+          impact: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.assetsRisks.impact')
+        },
+        {
+          key: 'documentsControls',
+          href: `/${locale}/documents`,
+          status: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.documentsControls.status', {
+            count: stats?.pendingReviewDocumentCount ?? 0
+          }),
+          title: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.documentsControls.title'),
+          next: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.documentsControls.next'),
+          done: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.documentsControls.done'),
+          impact: t('roleDashboards.admin.sections.workbench.groups.initialPreparation.items.documentsControls.impact')
+        }
+      ]
+    },
+    {
+      key: 'monthlyOperations',
+      title: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.title'),
+      description: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.description'),
+      items: [
+        {
+          key: 'overdueTasks',
+          href: `/${locale}/tasks?due=overdue`,
+          status: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.overdueTasks.status', {
+            count: stats?.overdueTaskCount ?? 0
+          }),
+          title: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.overdueTasks.title'),
+          next: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.overdueTasks.next'),
+          done: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.overdueTasks.done'),
+          impact: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.overdueTasks.impact')
+        },
+        {
+          key: 'educationReview',
+          href: educationFollowUpPath,
+          status: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.educationReview.status', {
+            count: educationFollowUp?.needs_follow_up_count ?? 0
+          }),
+          title: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.educationReview.title'),
+          next: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.educationReview.next'),
+          done: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.educationReview.done'),
+          impact: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.educationReview.impact')
+        },
+        {
+          key: 'managementReview',
+          href: `/${locale}/management-reviews?status=scheduled`,
+          status: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.managementReview.status', {
+            count: managementReviewSummary?.scheduled_count ?? 0
+          }),
+          title: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.managementReview.title'),
+          next: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.managementReview.next'),
+          done: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.managementReview.done'),
+          impact: t('roleDashboards.admin.sections.workbench.groups.monthlyOperations.items.managementReview.impact')
+        }
+      ]
+    }
+  ]
+
   const recentActivities = [
     {
       key: 'userJoined',
@@ -2810,6 +3001,70 @@ function AdminDashboard({
               </p>
               <p className="mt-1 text-sm text-text-secondary">{card.label}</p>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section
+        data-testid="admin-dashboard-workbench"
+        className="home-theme-card space-y-5 rounded-2xl border border-border bg-surface p-6 shadow-sm"
+      >
+        <div>
+          <h3 className="text-base font-semibold text-text-primary">
+            {t('roleDashboards.admin.sections.workbench.title')}
+          </h3>
+          <p className="text-xs text-text-muted">
+            {t('roleDashboards.admin.sections.workbench.subtitle')}
+          </p>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {workbenchGroups.map(group => (
+            <div
+              key={group.key}
+              data-testid={`admin-dashboard-workbench-${group.key}`}
+              className="rounded-2xl border border-border bg-surface-elevated/60 p-4"
+            >
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-text-primary">{group.title}</h4>
+                <p className="mt-1 text-xs text-text-secondary">{group.description}</p>
+              </div>
+              <div className="space-y-3">
+                {group.items.map(item => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    data-testid={`admin-dashboard-workbench-${group.key}-${item.key}`}
+                    className="block rounded-xl border border-border bg-surface p-4 transition hover:border-indigo-200 hover:shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                          {item.status}
+                        </span>
+                        <p className="mt-2 text-sm font-semibold text-text-primary">{item.title}</p>
+                        <p className="mt-1 text-xs text-text-secondary">{item.next}</p>
+                      </div>
+                      <div className="grid gap-2 text-xs text-text-muted sm:grid-cols-2 lg:w-72">
+                        <p>
+                          <span className="font-semibold text-text-secondary">
+                            {t('roleDashboards.admin.sections.workbench.labels.done')}
+                          </span>
+                          {' '}
+                          {item.done}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-text-secondary">
+                            {t('roleDashboards.admin.sections.workbench.labels.impact')}
+                          </span>
+                          {' '}
+                          {item.impact}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </section>

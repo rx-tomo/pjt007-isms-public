@@ -1,14 +1,32 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+const DEFAULT_SITE_URL = 'https://riscala-ai.com';
+const SUPPORTED_LOCALES = ['ja', 'en'] as const;
+
+function getSiteUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
+  if (!configuredUrl) return DEFAULT_SITE_URL;
+
+  try {
+    return new URL(configuredUrl).origin;
+  } catch {
+    return DEFAULT_SITE_URL;
+  }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'landing' });
 
   const title = 'Riscala AI for ISMS - ' + t('hero.title');
   const description = t('hero.subtitle');
+  const siteUrl = getSiteUrl();
+  const canonicalPath = `/${locale}`;
+  const canonicalUrl = `${siteUrl}${canonicalPath}`;
 
   return {
+    metadataBase: new URL(siteUrl),
     title,
     description,
     keywords: locale === 'ja'
@@ -19,6 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title,
       description,
       type: 'website',
+      url: canonicalUrl,
       locale: locale === 'ja' ? 'ja_JP' : 'en_US',
       siteName: 'Riscala AI for ISMS',
     },
@@ -39,11 +58,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       },
     },
     alternates: {
-      canonical: `https://riscala-isms.com/${locale}`,
-      languages: {
-        'ja': '/ja',
-        'en': '/en',
-      },
+      canonical: canonicalPath,
+      languages: Object.fromEntries(SUPPORTED_LOCALES.map((supportedLocale) => [
+        supportedLocale,
+        `/${supportedLocale}`,
+      ])),
     },
   };
 }
