@@ -53,3 +53,9 @@ npm run build
 ```
 
 If `npm run build` prints a Better Auth default secret warning, set `BETTER_AUTH_SECRET` in the target environment. Do not record the secret value in docs; record only the environment name, whether it is configured, and the verification date.
+
+## GitHub Deployment
+
+公開リポジトリの `main` はVercel本番の正本です。`vercel.json` の `github.autoAlias` を `true` に保ち、公開PRでGitHub CIとVercel Previewが成功した後にマージします。成功した `main` デプロイは `riscala-ai.com` へ自動でエイリアスされます。
+
+`autoAlias` を無効にすると、GitHubとVercelのデプロイ履歴だけが更新され、カスタムドメインが古いデプロイを指し続けます。公開後は必ず本番コミットのVercel statusがsuccessであることと、`https://riscala-ai.com` の実API/UIが新しい挙動を返すことを確認します。
