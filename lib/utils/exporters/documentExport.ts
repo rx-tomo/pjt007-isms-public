@@ -70,9 +70,10 @@ let activePdfRenders = 0
 export function sanitizeDocumentFileName(value: string, fallback = 'document') {
   return (
     value
+      .normalize('NFKC')
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/[^\p{L}\p{N}_-]+/gu, '-')
       .replace(/^-+|-+$/g, '') || fallback
   )
 }

@@ -26,8 +26,10 @@ files.sort()
 const fixtures = Object.fromEntries(files.map(filePath => {
   const documentId = path.basename(filePath, '.md')
   const body = fs.readFileSync(filePath, 'utf8')
+  const title = body.match(/^#\s+(.+)$/m)?.[1]?.trim() || documentId
+  const safeTitle = title.replace(/[\\/:*?"<>|]/g, '-').trim() || documentId
   return [documentId, {
-    fileName: `${documentId}.md`,
+    fileName: `${safeTitle}.md`,
     virtualPath: `demo-seed/${documentId}.md`,
     mimeType: 'text/markdown;charset=utf-8',
     size: Buffer.byteLength(body, 'utf8'),
