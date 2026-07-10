@@ -3,6 +3,7 @@ import {
   createPdfExport,
   createDocxExport,
   createExcelExport,
+  createAttachmentContentDisposition,
   formatDocumentDate,
   PdfExportUnavailableError,
   sanitizeDocumentFileName,
@@ -286,7 +287,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     const response = new NextResponse(new Uint8Array(docxBuffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'Content-Disposition': `attachment; filename="${safeTitle}.docx"`
+        'Content-Disposition': createAttachmentContentDisposition(`${safeTitle}.docx`, 'document.docx')
       }
     })
 
@@ -299,7 +300,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     const response = new NextResponse(new Uint8Array(excelBuffer), {
       headers: {
         'Content-Type': 'application/vnd.ms-excel',
-        'Content-Disposition': `attachment; filename="${safeTitle}.xls"`
+        'Content-Disposition': createAttachmentContentDisposition(`${safeTitle}.xls`, 'document.xls')
       }
     })
 
@@ -341,7 +342,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   const response = new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${safeTitle}.pdf"`
+      'Content-Disposition': createAttachmentContentDisposition(`${safeTitle}.pdf`, 'document.pdf')
     }
   })
 

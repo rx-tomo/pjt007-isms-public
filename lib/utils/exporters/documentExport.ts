@@ -78,6 +78,11 @@ export function sanitizeDocumentFileName(value: string, fallback = 'document') {
   )
 }
 
+export function createAttachmentContentDisposition(fileName: string, asciiFallback: string) {
+  const safeFallback = asciiFallback.replace(/[^a-zA-Z0-9._-]+/g, '-') || 'document'
+  return `attachment; filename="${safeFallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
+}
+
 export function formatDocumentDate(value: string) {
   try {
     return new Date(value).toISOString().split('T')[0]
