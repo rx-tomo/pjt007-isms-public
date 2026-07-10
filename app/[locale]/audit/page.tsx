@@ -183,6 +183,64 @@ export default function AuditPage(
     })
   }, [safePlansByStatus, statistics])
 
+  const lifecycleStages = useMemo(() => [
+    {
+      key: 'planning',
+      label: t('lifecycle.stages.planning.label'),
+      description: t('lifecycle.stages.planning.description'),
+      count: safePlansByStatus.planning + safePlansByStatus.scheduled,
+      href: `${basePath}?status=planning`
+    },
+    {
+      key: 'execution',
+      label: t('lifecycle.stages.execution.label'),
+      description: t('lifecycle.stages.execution.description'),
+      count: safePlansByStatus.in_progress,
+      href: `${basePath}?status=in_progress`
+    },
+    {
+      key: 'reporting',
+      label: t('lifecycle.stages.reporting.label'),
+      description: t('lifecycle.stages.reporting.description'),
+      count: safePlansByStatus.completed,
+      href: `/${locale}/audit/reports`
+    },
+    {
+      key: 'nonconformity',
+      label: t('lifecycle.stages.nonconformity.label'),
+      description: t('lifecycle.stages.nonconformity.description'),
+      count: safeNcStatusCounts.open + safeNcStatusCounts.in_progress,
+      href: `/${locale}/audit/nonconformities`
+    },
+    {
+      key: 'correctiveAction',
+      label: t('lifecycle.stages.correctiveAction.label'),
+      description: t('lifecycle.stages.correctiveAction.description'),
+      count: statistics?.openCorrectiveActions ?? 0,
+      href: `/${locale}/audit/nonconformities`
+    },
+    {
+      key: 'followUp',
+      label: t('lifecycle.stages.followUp.label'),
+      description: t('lifecycle.stages.followUp.description'),
+      count: safeFollowUpCounts.reopened + safeFollowUpCounts.on_hold,
+      href: basePath
+    }
+  ], [
+    basePath,
+    locale,
+    safeFollowUpCounts.on_hold,
+    safeFollowUpCounts.reopened,
+    safeNcStatusCounts.in_progress,
+    safeNcStatusCounts.open,
+    safePlansByStatus.completed,
+    safePlansByStatus.in_progress,
+    safePlansByStatus.planning,
+    safePlansByStatus.scheduled,
+    statistics?.openCorrectiveActions,
+    t
+  ])
+
   const filterBarItems = useMemo<FilterBarItem[]>(() => {
     const items: FilterBarItem[] = [
       {
@@ -398,6 +456,43 @@ export default function AuditPage(
         <h1 className="text-3xl font-bold">{t('title')}</h1>
       </div>
 
+      {statistics && (
+        <section
+          data-testid="audit-lifecycle-map"
+          className="mb-8 rounded-2xl border border-border bg-surface p-5 shadow-sm"
+        >
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-text-primary">{t('lifecycle.title')}</h2>
+            <p className="mt-1 text-sm text-text-secondary">{t('lifecycle.description')}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {lifecycleStages.map((stage, index) => (
+              <Link
+                key={stage.key}
+                href={stage.href}
+                data-testid={`audit-lifecycle-stage-${stage.key}`}
+                className="block rounded-xl border border-border bg-surface-elevated/70 p-4 transition hover:border-indigo-200 hover:bg-surface hover:shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-text-primary">{stage.label}</h3>
+                      <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-secondary">
+                        {t('lifecycle.count', { count: stage.count })}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-text-secondary">{stage.description}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 統計情報カード */}
       {statistics && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-8">
@@ -448,23 +543,32 @@ export default function AuditPage(
         <div className="mb-8 rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs font-semibold text-text-muted">{t('stats.periodHeaderTitle')}</p>
+              <p className="text-xs font-semibold text-text-muted">監査の進捗</p>
               <p
                 data-testid="audit-period-label"
                 className="text-lg font-semibold text-text-primary"
               >
                 {periodLabel}
               </p>
+              <p className="mt-1 text-xs text-text-muted">
+                計画、実施、指摘、是正、フォローアップの順に未対応を確認します。
+              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {followUpStatusOrder.map(statusKey => (
                 <span
                   key={statusKey}
                   className={`rounded-full border px-3 py-1 text-xs font-semibold ${followUpBadgeStyles[statusKey]}`}
                 >
-              {t(`plans.followUpStatus.labels.${statusKey}` as const)} {safeFollowUpCounts[statusKey] ?? 0}
+                  {t(`plans.followUpStatus.labels.${statusKey}` as const)} {safeFollowUpCounts[statusKey] ?? 0}
                 </span>
               ))}
+              <Link
+                href={`/${locale}/audit?status=in_progress`}
+                className="rounded-full bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-700"
+              >
+                進行中を見る
+              </Link>
             </div>
           </div>
 
@@ -485,13 +589,17 @@ export default function AuditPage(
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {periodStatusSegments.map(segment => (
-                <div key={segment.status} className="rounded-xl border border-border bg-surface-elevated p-3 text-xs text-text-secondary">
-                  <p className="font-semibold text-text-primary">
-                    {t(`plans.status.${segment.status}` as const)}
-                  </p>
+              {[
+                { key: 'planning', label: '計画', count: safePlansByStatus.planning, percent: periodStatusSegments.find(segment => segment.status === 'planning')?.percent ?? 0 },
+                { key: 'in_progress', label: '実施', count: safePlansByStatus.in_progress, percent: periodStatusSegments.find(segment => segment.status === 'in_progress')?.percent ?? 0 },
+                { key: 'nonconformities', label: '指摘', count: statistics.totalNonconformities, percent: 0 },
+                { key: 'corrective', label: '是正', count: statistics.openCorrectiveActions, percent: 0 },
+                { key: 'follow_up', label: 'フォロー', count: statistics.overdueCorrectiveActions, percent: 0 },
+              ].map(segment => (
+                <div key={segment.key} className="rounded-xl border border-border bg-surface-elevated p-3 text-xs text-text-secondary">
+                  <p className="font-semibold text-text-primary">{segment.label}</p>
                   <p className="text-[11px] text-text-muted">
-                    {segment.count} ({segment.percent}%)
+                    {segment.percent > 0 ? `${segment.count} (${segment.percent}%)` : segment.count}
                   </p>
                 </div>
               ))}

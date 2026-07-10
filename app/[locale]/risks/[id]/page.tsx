@@ -620,7 +620,10 @@ export default function RiskDetailPage(
                         </label>
                         <select
                           value={treatmentForm.treatment_type}
-                          onChange={(e) => setTreatmentForm({ ...treatmentForm, treatment_type: e.target.value as RiskTreatment['treatment_type'] })}
+                          onChange={(e) => setTreatmentForm(prev => ({
+                            ...prev,
+                            treatment_type: e.target.value as RiskTreatment['treatment_type']
+                          }))}
                           data-testid="risk-treatment-strategy"
                           className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                           required
@@ -637,7 +640,7 @@ export default function RiskDetailPage(
                         </label>
                         <textarea
                           value={treatmentForm.description}
-                          onChange={(e) => setTreatmentForm({ ...treatmentForm, description: e.target.value })}
+                          onChange={(e) => setTreatmentForm(prev => ({ ...prev, description: e.target.value }))}
                           data-testid="risk-treatment-description"
                           rows={3}
                           className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
@@ -651,7 +654,7 @@ export default function RiskDetailPage(
                           </label>
                           <select
                             value={treatmentForm.responsibleId}
-                            onChange={(e) => setTreatmentForm({ ...treatmentForm, responsibleId: e.target.value })}
+                            onChange={(e) => setTreatmentForm(prev => ({ ...prev, responsibleId: e.target.value }))}
                             data-testid="risk-treatment-responsible"
                             className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                             required
@@ -671,7 +674,7 @@ export default function RiskDetailPage(
                           <input
                             type="date"
                             value={treatmentForm.targetDate}
-                            onChange={(e) => setTreatmentForm({ ...treatmentForm, targetDate: e.target.value })}
+                            onChange={(e) => setTreatmentForm(prev => ({ ...prev, targetDate: e.target.value }))}
                             data-testid="risk-treatment-target-date"
                             className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                             required
@@ -686,7 +689,7 @@ export default function RiskDetailPage(
                           <input
                             type="date"
                             value={treatmentForm.residualReviewDueDate}
-                            onChange={(e) => setTreatmentForm({ ...treatmentForm, residualReviewDueDate: e.target.value })}
+                            onChange={(e) => setTreatmentForm(prev => ({ ...prev, residualReviewDueDate: e.target.value }))}
                             data-testid="risk-treatment-residual-review-due-date"
                             className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                             required

@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { getDb } from '@/lib/db/drizzle/client'
 import { pricingPlans } from '@/lib/db/drizzle/schema'
 import { eq, desc } from 'drizzle-orm'
+import { requireMockBillingAccess } from '@/lib/server/auth/mockBillingGuard'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const db = getDb()
   try {
     const { organizationId } = await request.json()
     if (!organizationId) {
       return NextResponse.json({ error: 'organizationId is required' }, { status: 400 })
+    }
+
+    const guard = await requireMockBillingAccess(request, organizationId)
+    if (guard.error) {
+      return guard.error
     }
 
     // 上位プラン（display_order が最大）を選択
@@ -28,7 +35,10 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin
     const res = await fetch(`${origin}/api/stripe/mock/complete`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: request.headers.get('cookie') ?? '',
+      },
       body: JSON.stringify({ organizationId, planId: plan.id, status: 'active' })
     })
 

@@ -193,4 +193,5 @@ Riscala AI for ISMS は、単に ISMS の帳票を並べたプロトタイプで
 - `docs/01-business/pr-faq-workshop/pr-faq-public.md`: 公開向け PR/FAQ
 - `docs/01-business/pr-faq-workshop/ai-driven-development.md`: AI 駆動開発としての位置づけ
 - `docs/01-business/pr-faq-workshop/contribution-and-collaboration.md`: フィードバック、協業、貢献の扱い
+- `docs/05-quality/import-export-coverage-matrix.md`: インポート、エクスポートの現状整理
 - `docs/06-operations/billing-and-data-operations.md`: 課金とデータ運用の現状整理

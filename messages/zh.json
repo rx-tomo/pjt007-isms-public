@@ -263,6 +263,7 @@
       "auditProgress": "审核进度",
       "correctiveActions": "纠正措施",
       "open": "未处理",
+      "in_progress": "处理中",
       "inProgress": "处理中",
       "completed": "已完成"
     },
@@ -486,7 +487,7 @@
       "noneOption": "从候选中选择",
       "loading": "加载中",
       "loadError": "获取用户列表失败",
-      "empty": "此租户尚无用户。请先以 System Operator 登录并添加。",
+      "empty": "此租户尚无用户。请先以 系统运营者 登录并添加。",
       "unknownName": "姓名未设置",
       "emptyEmail": "邮箱地址未填写"
     },
@@ -559,7 +560,7 @@
           "description": "允许创建任务、更新进度及操作评论。"
         },
         "can_manage_audit": {
-          "label": "审核工作区",
+          "label": "审核确认",
           "description": "允许操作审核计划、检查表及纠正要求。"
         },
         "can_manage_assets": {
@@ -587,7 +588,7 @@
         "description": "勾选后将忽略姓名、部门、语言等编辑内容，以场景默认值登录。通常请保持关闭。"
       },
       "user": {
-        "title": "我的工作区",
+        "title": "我的确认事项",
         "subtitle": "一目了然地查看负责任务、必读文件、培训及改进建议。",
         "sections": {
           "tasks": {
@@ -703,7 +704,7 @@
       "title": "测试场景示例",
       "body": "按以下顺序验证，可跨主要用例进行评估。",
       "items": {
-        "setup": "以系统运营者身份确认组织设置／RLS 的行为",
+        "setup": "以系统运营者身份确认组织设置／数据隔离的行为",
         "subscription": "以组织管理员身份演练计费、团队管理、文件登记",
         "review": "以审批人／审核员身份确认评审类页面及权限防护"
       }
@@ -722,10 +723,10 @@
       "system_operator": {
         "name": "系统运营者",
         "summary": "跨所有组织确认设置的场景",
-        "badge": "System Operator",
+        "badge": "系统运营者",
         "capabilities": [
           "确认多组织间的设置切换",
-          "验证 RLS 策略的行为及数据隔离",
+          "验证 数据隔离策略的行为及数据隔离",
           "测试初始设置及基础数据导入"
         ]
       },
@@ -762,7 +763,7 @@
       "approver": {
         "name": "审批人",
         "summary": "专注于确认文件审批流程",
-        "badge": "Approver",
+        "badge": "审批人",
         "capabilities": [
           "评审待批准文件",
           "任务／风险的最终批准",
@@ -937,7 +938,9 @@
       "approvalRequestFailed": "发送审批申请失败",
       "approvalFailed": "批准处理失败",
       "downloadFailed": "下载文件失败",
-      "exportFailed": "导出文件失败"
+      "exportFailed": "导出文件失败",
+      "pdfUnavailable": "此演示环境暂不支持PDF导出，请改为下载Word格式。",
+      "pdfRateLimited": "PDF导出当前较繁忙，请稍候约一分钟，或改为下载Word格式。"
     },
     "form": {
       "category": "类别",
@@ -1104,7 +1107,7 @@
         },
         "submission": {
           "title": "审核准备资料包",
-          "description": "在提交前整理适用范围、组织体制、文件、资产、风险和运行证据，并识别不足或待确认项目。"
+          "description": "在内部评审前整理适用范围、组织体制、文件、资产、风险和运行证据，并识别不足或待确认项目。"
         }
       },
       "previewNotes": {
@@ -1816,6 +1819,37 @@
   },
   "audit": {
     "title": "审核管理",
+    "lifecycle": {
+      "title": "审核生命周期",
+      "description": "按计划、实施、报告、不符合项、纠正和跟踪验证的顺序查看下一步应确认的位置。",
+      "count": "{count} 件",
+      "stages": {
+        "planning": {
+          "label": "计划",
+          "description": "确定审核范围、日程和负责人，完成实施前准备。"
+        },
+        "execution": {
+          "label": "实施",
+          "description": "推进检查清单，并将确认结果和证据记录为审核记录。"
+        },
+        "reporting": {
+          "label": "报告",
+          "description": "将审核结果整理为报告，并推进审批和相关方共享。"
+        },
+        "nonconformity": {
+          "label": "不符合项",
+          "description": "分类发现项，判断原因、影响和是否需要处置。"
+        },
+        "correctiveAction": {
+          "label": "纠正",
+          "description": "确认纠正措施的负责人、期限和完成证据。"
+        },
+        "followUp": {
+          "label": "跟踪验证",
+          "description": "确认纠正有效性，并记录重新打开或保留的判断。"
+        }
+      }
+    },
     "checklist": {
       "title": "审核检查清单",
       "description": "依据 ISO 27001 要求确认审核项目，并在同一流程中管理证据、发现项、不符合项和下一步操作。",
@@ -2317,7 +2351,7 @@
     },
     "accessDenied": {
       "title": "无权访问审核功能",
-      "description": "仅审核员、组织管理员、系统管理员或被授予审核管理权限的用户可使用审核工作区。如有需要，请联系管理员授予权限。",
+      "description": "仅审核员、组织管理员、系统管理员或被授予审核管理权限的用户可查看审核进度。如有需要，请联系管理员授予权限。",
       "permissionFetchFailed": "权限信息获取失败。如重新加载后仍未恢复，请联系管理员。"
     },
     "followUp": {
@@ -2434,7 +2468,7 @@
         "documents": "查看文件列表",
         "risks": "打开风险台账",
         "tasks": "查看任务看板",
-        "audits": "打开审核工作区"
+        "audits": "打开审核进度"
       }
     },
     "statusBreakdown": {
@@ -2877,8 +2911,8 @@
             "description": "查看和调整各租户的策略与权限"
           },
           "policies": {
-            "title": "RLS/安全设置",
-            "description": "验证 Row Level Security 及通用设置的行为"
+            "title": "数据隔离与安全设置",
+            "description": "确认各租户的数据隔离和通用设置"
           }
         },
         "orgAdmin": {
@@ -2911,7 +2945,7 @@
         },
         "auditor": {
           "workspace": {
-            "title": "审核工作区",
+            "title": "审核进度",
             "description": "集中查看负责审核的计划、检查表和证据"
           },
           "correctiveActions": {
@@ -2933,9 +2967,9 @@
     },
     "roleDashboards": {
       "auditor": {
-        "title": "审核工作区",
+        "title": "审核进度",
         "subtitle": "在此跟踪负责中的审核计划、不符合项、证据和下一步需要处理的事项。",
-        "viewWorkspace": "打开审核工作区",
+        "viewWorkspace": "打开审核进度",
         "statusLabels": {
           "planning": "计划中",
           "fieldwork": "现场审核",
@@ -3041,6 +3075,70 @@
             "openRisks": "未关闭风险",
             "overdueTasks": "逾期任务"
           },
+          "workbench": {
+            "title": "ISMS 运行工作台",
+            "subtitle": "按状态、下一画面、完成条件和证据影响确认初次注册准备与每月运行。",
+            "labels": {
+              "done": "完成条件:",
+              "impact": "证据:"
+            },
+            "groups": {
+              "initialPreparation": {
+                "title": "初次注册准备",
+                "description": "按顺序整理审核准备所需的基础内容。",
+                "items": {
+                  "scope": {
+                    "status": "首先确认",
+                    "title": "确定适用范围和组织体制",
+                    "next": "在组织设置中确认适用范围、据点、责任人和体制。",
+                    "done": "能够说明适用范围和责任人",
+                    "impact": "用于提交包中的组织和范围说明"
+                  },
+                  "assetsRisks": {
+                    "status": "风险 {count} 件",
+                    "title": "连接信息资产与风险",
+                    "next": "从信息资产台账进入风险评估，复查处置中风险。",
+                    "done": "主要资产已关联风险和处置",
+                    "impact": "成为风险台账和控制措施判断的依据"
+                  },
+                  "documentsControls": {
+                    "status": "待审批 {count} 件",
+                    "title": "推进文件和控制措施到审批状态",
+                    "next": "打开文件管理和控制措施库，减少未审批和理由不足。",
+                    "done": "基准文件和 SoA 判断可供评审",
+                    "impact": "成为审核准备包的主要证据"
+                  }
+                }
+              },
+              "monthlyOperations": {
+                "title": "每月运行",
+                "description": "汇总认证后仍需持续推进的确认、改进和管理评审。",
+                "items": {
+                  "overdueTasks": {
+                    "status": "逾期 {count} 件",
+                    "title": "让停滞任务回到轨道",
+                    "next": "打开逾期任务，更新负责人、期限和完成条件。",
+                    "done": "逾期和待评审原因已消除",
+                    "impact": "作为持续改进和运行记录保留"
+                  },
+                  "educationReview": {
+                    "status": "需跟进 {count} 件",
+                    "title": "补齐教育培训记录缺口",
+                    "next": "在教育计划中确认未参加、未记录和逾期事项。",
+                    "done": "对象人员的参加、合格和记录齐备",
+                    "impact": "可作为审核时的教育证据"
+                  },
+                  "managementReview": {
+                    "status": "计划中 {count} 件",
+                    "title": "将运行结果交给管理评审",
+                    "next": "在管理评审中整理议题、判断和下一步行动。",
+                    "done": "管理判断和行动已记录",
+                    "impact": "成为年度评审和改进计划证据"
+                  }
+                }
+              }
+            }
+          },
           "priorityActions": {
             "title": "今日需确认事项",
             "subtitle": "汇总截止日期、审批、教育、风险中优先级较高的确认事项。",
@@ -3135,7 +3233,7 @@
         }
       },
       "approver": {
-        "title": "审批人工作区",
+        "title": "待审批确认",
         "subtitle": "集中查看待审批、升级事项和 SLA 期限。",
         "helperFallback": "处理中",
         "lastUpdated": "最后更新 {value}",
@@ -3853,7 +3951,7 @@
         "rolesSection": {
           "title": "基础角色",
           "description": "请选择 1 个租户级的基础角色。可在右侧单独调整模块权限。",
-          "systemOperatorDisabled": "System Operator 只能由现有的系统运营员或超级管理员授予。",
+          "systemOperatorDisabled": "系统运营者 只能由现有的系统运营员或超级管理员授予。",
           "selfOrgAdminLocked": "无法解除自己的组织管理员角色。",
           "systemOperatorLastGuard": "这是最后一名系统运营员，无法更改角色。请先添加其他系统运营员。"
         },
@@ -3879,7 +3977,7 @@
           "description": "允许创建任务、分配负责人和更新进度。"
         },
         "audit": {
-          "title": "审核工作区",
+          "title": "审核确认",
           "description": "允许创建审核计划以及管理发现项和纠正措施。"
         },
         "assets": {
@@ -4317,7 +4415,15 @@
           "failed": "失败"
         }
       },
-      "testModeNotice": "正在以 Stripe 测试模式运行。账单门户将打开模拟页面，不会产生实际扣款。"
+      "testModeNotice": "正在以 Stripe 测试模式运行。账单门户将打开模拟页面，不会产生实际扣款。",
+      "demoBoundary": {
+        "title": "演示计费模式",
+        "body": "在此公开演示中，即使尝试变更套餐或操作账单门户，也不会产生真实支付、合同变更或账单。如需商用或业务应用，请通过公开仓库或联系渠道咨询。"
+      },
+      "actionBoundary": {
+        "title": "操作前确认",
+        "body": "下方按钮是演示用计费流程，未连接真实银行卡登记或生产计费。"
+      }
     },
     "notifications": {
       "title": "通知设置",
@@ -4704,7 +4810,7 @@
         "loadTenants": "租户列表获取失败。",
         "loadDeletedTenants": "已删除租户列表获取失败。",
         "createFailed": "租户开通失败。",
-        "createValidation": "租户名称和 System Operator 邮箱为必填项。",
+        "createValidation": "租户名称和 系统运营者 邮箱为必填项。",
         "lockFailed": "租户锁定状态更新失败。",
         "loadAudits": "审计日志获取失败。"
       },
@@ -4760,13 +4866,13 @@
       },
       "create": {
         "title": "开通租户",
-        "subtitle": "创建组织记录和初始 System Operator 账户。",
+        "subtitle": "创建组织记录和初始 系统运营者 账户。",
         "fields": {
           "name": "租户名称",
           "plan": "套餐",
           "status": "状态",
           "trialDays": "试用天数（天）",
-          "operatorEmail": "System Operator 邮箱",
+          "operatorEmail": "系统运营者 邮箱",
           "operatorName": "显示名称（可选）",
           "locale": "首选语言"
         },
@@ -4775,7 +4881,7 @@
           "plan": "初始套餐可随时在租户详情中更改。",
           "status": "请先将初始状态设为运行中或已锁定，再按需执行锁定操作。",
           "trialDays": "以 0〜365 的整数指定试用期。",
-          "operatorEmail": "该邮箱用于 System Operator 登录，不能与现有账户重复。"
+          "operatorEmail": "该邮箱用于 系统运营者 登录，不能与现有账户重复。"
         },
         "planOptions": {
           "trial": "试用",
@@ -4789,9 +4895,9 @@
         },
         "success": "{name} 已创建。",
         "credentials": {
-          "title": "初始 System Operator 信息",
+          "title": "初始 系统运营者 信息",
           "description": "该信息不会再次显示。请通过安全渠道共享。",
-          "linkedTitle": "已关联现有 System Operator",
+          "linkedTitle": "已关联现有 系统运营者",
           "linkedDescription": "该邮箱已在其他租户使用，已将现有账户关联到新租户。密码不会再次显示。",
           "email": "邮箱",
           "password": "临时密码",
@@ -4962,7 +5068,7 @@
       },
       "roles": {
         "super_admin": "Super Admin",
-        "system_operator": "System Operator"
+        "system_operator": "系统运营者"
       },
       "messages": {
         "created": "已将 {email} 创建为 {role}。",
@@ -5429,11 +5535,16 @@
   "examination": {
     "submissionBundle": {
       "title": "审核准备资料包",
-      "description": "面向初次认证审核，将适用范围、组织体系、文件、资产、风险、适用控制措施的决定及初始任务整理为审核准备资料包。它不保证取得认证或被审核机构受理，但可帮助在提交前确认准备状况、缺口和下一步操作。",
+      "description": "面向初次认证审核，将适用范围、组织体系、文件、资产、风险、适用控制措施的决定及初始任务整理为审核准备资料包。它不保证取得认证或被审核机构受理，但可帮助内部评审确认准备状况、缺口和下一步操作。",
       "organizationLine": "{name} / 阶段: {phase} / 角色: {role}",
       "reviewNotice": {
         "title": "用于支持审核准备的确认资料",
-        "body": "本资料包用于整理审核准备和内部评审所需的证据。它不保证通过 ISO 27001 认证或在审核中被受理，但可帮助您在提交前确认所需信息、缺口和下一步操作。"
+        "body": "本资料包用于整理审核准备和内部评审所需的证据。它不保证通过 ISO 27001 认证或在审核中被受理，但可帮助您确认所需信息、缺口和下一步操作。"
+      },
+      "safetyBoundary": {
+        "title": "提交前评审用的支持资料包",
+        "body": "此画面的 PDF/ZIP 输出用于整理审核提交或内部确认所需信息。不保证取得认证、被审核受理或审核机构的判断结果。",
+        "demoReset": "公开演示环境中输入的内容会定期初始化。请勿输入真实数据或机密信息。"
       },
       "actions": {
         "refresh": "重新加载",
@@ -5443,7 +5554,7 @@
         "downloadingPdf": "正在准备PDF..."
       },
       "readiness": {
-        "label": "提交准备情况",
+        "label": "内部评审状态",
         "readyItems": "已就绪",
         "gapItems": "缺口项",
         "generatedAt": "生成时间",
@@ -5451,8 +5562,8 @@
         "soaVersion": "v{version}",
         "noSoa": "未发布",
         "status": {
-          "ready": "提交前需要确认的资料已可查看",
-          "ready_with_gaps": "存在缺口或待确认事项，提交前需要先完善"
+          "ready": "内部评审需要确认的资料已可查看",
+          "ready_with_gaps": "存在缺口或待确认事项，需要先完善"
         }
       },
       "nextAction": {
@@ -5461,7 +5572,8 @@
         "gapFallback": "请查看缺口项详情，并在相关页面更新证据、负责人或判断理由。",
         "openTarget": "打开相关页面",
         "readyTitle": "可输出审核准备资料包",
-        "readyDescription": "可将已就绪的证据导出为PDF或ZIP，用于经营者、管理负责人和相关人员评审。本资料不保证审核受理。"
+        "readyDescription": "可将已就绪的证据导出为PDF或ZIP，用于经营者、管理负责人和相关人员评审。本资料不保证审核受理。",
+        "readyOutputHint": "请使用页面上方的PDF或ZIP按钮导出。"
       },
       "items": {
         "countAndSources": "{count}项 / {sources}",

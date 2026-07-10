@@ -288,10 +288,10 @@ const scopes = [
 ];
 
 const documentTemplates = [
-  template('policy-basic-ja', '情報セキュリティ基本方針テンプレート', '初回登録準備で最初に整える方針文書', 'policy', 'ISO 27001:2022 5.2', '# 情報セキュリティ基本方針\n\n目的、適用範囲、責任、継続的改善を記載する。'),
-  template('scope-statement-ja', 'ISMS適用範囲記述書テンプレート', '組織、拠点、システム、除外事項を整理する', 'form', 'ISO 27001:2022 4.3', '# ISMS適用範囲\n\n対象部門、業務、情報システム、除外事項を記載する。'),
-  template('risk-procedure-ja', 'リスクアセスメント手順書テンプレート', 'リスク評価基準と対応方針を記録する', 'procedure', 'ISO 27001:2022 6.1', '# リスクアセスメント手順\n\n特定、分析、評価、対応、レビューの手順を記載する。'),
-  template('audit-checklist-ja', '内部監査チェックリストテンプレート', '継続運用で内部監査証跡を残す', 'checklist', 'ISO 27001:2022 9.2', '# 内部監査チェックリスト\n\n監査項目、確認結果、証跡、不適合を記載する。'),
+  template('policy-basic-ja', '情報セキュリティ基本方針テンプレート', '初回登録準備で最初に整える方針文書', 'policy', 'ISO 27001:2022 5.2', practicalTemplateBody('policy-basic')),
+  template('scope-statement-ja', 'ISMS適用範囲記述書テンプレート', '組織、拠点、システム、除外事項を整理する', 'form', 'ISO 27001:2022 4.3', practicalTemplateBody('scope-statement')),
+  template('risk-procedure-ja', 'リスクアセスメント手順書テンプレート', 'リスク評価基準と対応方針を記録する', 'procedure', 'ISO 27001:2022 6.1', practicalTemplateBody('risk-procedure')),
+  template('audit-checklist-ja', '内部監査チェックリストテンプレート', '継続運用で内部監査証跡を残す', 'checklist', 'ISO 27001:2022 9.2', practicalTemplateBody('audit-checklist')),
 ];
 
 const documents = [
@@ -308,6 +308,8 @@ const documents = [
   doc('suspended', '01', '情報セキュリティ基本方針 旧版', '利用休止前の旧方針。再開時に見直しが必要。', 'draft', 'policy', '02', null, null),
   doc('suspended', '02', 'ISMS再開準備チェックリスト', '休止状態から再開するための最低限の確認項目。', 'draft', 'checklist', '02', null, null),
 ];
+
+const documentVersionsSeed = documents.map(documentVersion);
 
 const riskCategories = [
   riskCategory('initial', '01', 'アクセス管理', '初回登録準備で優先して確認するID/権限リスク', '#2563EB', 1),
@@ -635,6 +637,7 @@ function id(s, entity, n) {
     assignment: '7301',
     scope: '7400',
     document: '7500',
+    documentVersion: '7501',
     riskCategory: '7600',
     riskCriteria: '7601',
     asset: '7700',
@@ -796,17 +799,469 @@ function template(n, name, description, category, isoReference, contentTemplate)
   };
 }
 
+function organizationNameFor(s) {
+  return orgs.find((org) => org.scenario === s)?.name ?? 'モデル組織';
+}
+
+function userNameFor(s, userNo) {
+  return users.find((userRow) => userRow.scenario === s && userRow.id === id(s, 'user', userNo))?.full_name ?? '未設定';
+}
+
+function statusLabel(status) {
+  return {
+    draft: '下書き',
+    in_review: 'レビュー中',
+    approved: '承認済み',
+  }[status] ?? status;
+}
+
+function categoryLabel(category) {
+  return {
+    policy: '方針',
+    form: '記録様式',
+    procedure: '手順書',
+    checklist: 'チェックリスト',
+    plan: '計画書',
+  }[category] ?? category;
+}
+
+function nextReviewDateFor(s, n) {
+  const reviewDates = {
+    initial: '2026-09-30',
+    surveillance: '2027-03-31',
+    enterprise: '2026-12-31',
+    suspended: '2026-08-31',
+  };
+  if (s === 'initial' && n === '02') return '2026-08-31';
+  if (s === 'suspended') return '2026-07-31';
+  return reviewDates[s] ?? '2026-12-31';
+}
+
+function markdownFileName(documentId) {
+  return `${documentId}.md`;
+}
+
+function markdownFilePath(s, documentId) {
+  return `${orgIdFor(s)}/documents/${documentId}/${markdownFileName(documentId)}`;
+}
+
+function practicalTemplateBody(kind) {
+  const templateHeader = (title, purpose, isoReference) => `# ${title}
+
+| 項目 | 内容 |
+| --- | --- |
+| 文書ステータス | テンプレート |
+| 作成目的 | ${purpose} |
+| 関連規格 | ${isoReference} |
+| 編集方針 | 角括弧や例示の箇所を自社の組織、部門、情報資産、期限、責任者に置き換える |
+| 次回見直し | 年1回、または組織・システム・委託先・法令要求の変更時 |
+
+`;
+
+  const templates = {
+    'policy-basic': `${templateHeader('情報セキュリティ基本方針', '経営者が情報セキュリティの基本姿勢と責任を示す', 'ISO 27001:2022 5.2')}
+## 1. 目的
+当社は、顧客情報、従業員情報、契約情報、開発・運用情報を重要な情報資産として取り扱う。本方針は、情報資産を適切に保護し、事業継続、顧客信頼、法令・契約遵守を実現するための基本的な考え方を定める。
+
+## 2. 適用範囲
+| 区分 | 対象例 |
+| --- | --- |
+| 組織 | [対象部門名、拠点名、リモート勤務者] |
+| 業務 | [開発、運用、営業、顧客サポート、委託先管理] |
+| 情報資産 | [顧客情報、契約情報、ソースコード、ログ、教育記録] |
+| 関係者 | 役員、従業員、業務委託者、委託先担当者 |
+
+## 3. 基本方針
+1. 情報資産の機密性、完全性、可用性を維持する。
+2. 法令、契約、社内規程、顧客要求を遵守する。
+3. 情報セキュリティリスクを定期的に評価し、必要な対応を実施する。
+4. 事故や異常を速やかに報告し、再発防止を行う。
+5. 教育、内部監査、マネジメントレビューを通じて継続的改善を行う。
+
+## 4. 責任
+| 役割 | 責任 |
+| --- | --- |
+| 経営者 | 方針承認、資源配分、重大リスクの受容判断 |
+| ISMS管理責任者 | 方針運用、教育、監査、改善管理 |
+| 部門責任者 | 部門内の遵守確認、例外承認、是正対応 |
+| 全従業員 | ルール遵守、教育受講、異常報告 |
+
+## 5. 承認・見直し
+本方針は経営者が承認し、全社に周知する。年1回以上、または事業・組織・システムに重大な変更があった場合に見直す。
+`,
+    'scope-statement': `${templateHeader('ISMS適用範囲記述書', '認証・運用の対象境界を、部門、業務、システム、除外事項で明確にする', 'ISO 27001:2022 4.3')}
+## 1. 適用範囲の要約
+当社のISMSは、[対象サービス/業務] の企画、開発、提供、保守、顧客対応に関わる活動を対象とする。
+
+## 2. 対象部門・拠点
+| 区分 | 対象 | 備考 |
+| --- | --- | --- |
+| 拠点 | [本社/支社/リモート勤務環境] | 入退室、端末、ネットワークを確認 |
+| 部門 | [経営管理、情報システム、開発、営業、運用] | 対象業務と責任者を明記 |
+| 外部関係者 | [クラウド事業者、業務委託先] | 委託先管理手順で評価 |
+
+## 3. 対象システム・情報資産
+| 情報資産 | 主な利用部門 | 保管場所 | 分類 |
+| --- | --- | --- | --- |
+| [顧客情報] | [営業/CS] | [SaaS/共有ドライブ] | restricted |
+| [認証情報] | [情報システム] | [ID管理基盤] | restricted |
+| [業務記録] | [対象部門] | [文書管理] | internal |
+
+## 4. 除外事項
+| 除外対象 | 理由 | 代替管理 |
+| --- | --- | --- |
+| [例: 製造設備] | 当社で保有・運用していない | 委託先評価で確認 |
+| [例: 海外拠点] | 対象拠点が存在しない | 変更時に再評価 |
+
+## 5. 境界の見直し
+新サービス、組織変更、主要委託先変更、拠点追加、重要なシステム変更がある場合は、適用範囲を見直す。
+`,
+    'risk-procedure': `${templateHeader('リスクアセスメント手順書', '情報資産に対するリスクを一貫した基準で評価し、対応を決める', 'ISO 27001:2022 6.1')}
+## 1. 実施タイミング
+- 年1回の定期評価。
+- 新規サービス、重要システム変更、委託先変更、重大インシデント発生時。
+- 顧客要求、法令、契約条件に重要な変更があった時。
+
+## 2. 評価手順
+1. 情報資産台帳から対象資産を選定する。
+2. 脅威、脆弱性、既存管理策を確認する。
+3. 影響度と発生可能性を評価する。
+4. リスク値を算出し、対応方針を決める。
+5. 対応計画、責任者、期限、残留リスク承認を記録する。
+
+## 3. 評価基準
+| リスク値 | 判定 | 必要対応 |
+| --- | --- | --- |
+| 15以上 | 高 | 経営者確認、低減計画、期限設定 |
+| 8-14 | 中 | 部門責任者が対応計画を管理 |
+| 7以下 | 低 | 現行管理策を維持し年次確認 |
+
+## 4. 対応方針
+| 方針 | 使う場面 | 記録すること |
+| --- | --- | --- |
+| 低減 | 管理策でリスクを下げる | 実施策、期限、責任者 |
+| 移転 | 保険、契約、委託で分担する | 移転先、契約根拠 |
+| 回避 | 業務や利用を停止する | 回避判断、影響 |
+| 受容 | 残留リスクを許容する | 承認者、期限、条件 |
+
+## 5. レビュー
+高リスクと期限超過対応は月次で確認し、マネジメントレビューへ入力する。
+`,
+    'audit-checklist': `${templateHeader('内部監査チェックリスト', 'ISMS運用の証跡、手順遵守、不適合、改善機会を確認する', 'ISO 27001:2022 9.2')}
+## 1. 監査概要
+| 項目 | 内容 |
+| --- | --- |
+| 監査目的 | ISMS運用状況と審査準備状況を確認する |
+| 対象範囲 | [部門/業務/システム/委託先] |
+| 監査員 | [氏名] |
+| 監査日 | [YYYY-MM-DD] |
+
+## 2. チェック項目
+| No | 確認項目 | 確認資料 | 判定 | メモ |
+| --- | --- | --- | --- | --- |
+| 1 | 適用範囲が現行業務と一致している | 適用範囲記述書、組織図 | 未確認 |  |
+| 2 | 情報資産台帳が更新されている | 情報資産台帳 | 未確認 |  |
+| 3 | リスク評価と対応計画が記録されている | リスク台帳、対応計画 | 未確認 |  |
+| 4 | アクセスレビューの証跡がある | 権限一覧、承認記録 | 未確認 |  |
+| 5 | 教育受講記録が管理されている | 教育記録、理解度確認 | 未確認 |  |
+
+## 3. 不適合・観察事項
+| 区分 | 内容 | 是正責任者 | 期限 |
+| --- | --- | --- | --- |
+| 不適合 | [要求事項を満たしていない内容] | [氏名] | [YYYY-MM-DD] |
+| 観察事項 | [改善が望ましい内容] | [氏名] | [YYYY-MM-DD] |
+
+## 4. 監査結論
+監査員は、確認した証跡、不適合、改善機会、次回確認事項をまとめ、ISMS管理責任者へ報告する。
+`,
+  };
+
+  return templates[kind] ?? templateHeader('ISMS文書テンプレート', 'ISMS文書の初期案を作る', 'ISO 27001:2022');
+}
+
+function practicalDocumentBody(s, n, title, description, status, category, createdByUserNo, approvedByUserNo) {
+  const orgName = organizationNameFor(s);
+  const ownerName = userNameFor(s, createdByUserNo);
+  const approverName = approvedByUserNo ? userNameFor(s, approvedByUserNo) : '未承認';
+  const nextReviewDate = nextReviewDateFor(s, n);
+  const commonHeader = `# ${title}
+
+| 項目 | 内容 |
+| --- | --- |
+| 組織 | ${orgName} |
+| 文書区分 | ${categoryLabel(category)} |
+| 文書ステータス | ${statusLabel(status)} |
+| 概要 | ${description} |
+| 作成目的 | 開発用テナントで審査準備と社内レビューを体験するためのサンプル文書 |
+| 作成責任者 | ${ownerName} |
+| 承認者 | ${approverName} |
+| 次回見直し | ${nextReviewDate} |
+| 取扱区分 | 社内利用・審査準備用 |
+| 編集メモ | 実運用では、この本文を自社の組織、情報資産、期限、責任者、証跡名に置き換えて利用する |
+
+`;
+
+  const bodies = {
+    'initial:01': `## 1. 目的
+${orgName} は、顧客情報、開発情報、社内運用情報を適切に保護し、事業継続と顧客からの信頼を維持するため、情報セキュリティ基本方針を定める。
+
+## 2. 適用範囲
+- 本社およびリモート勤務環境で行うB2B SaaS開発、運用、顧客サポート業務。
+- 顧客問い合わせ履歴、開発リポジトリ、社内ID基盤、契約関連情報。
+- 役員、従業員、業務委託者、および情報資産にアクセスする外部委託先。
+
+## 3. 基本方針
+1. 機密性、完全性、可用性を考慮して情報資産を分類し、必要な管理策を適用する。
+2. 法令、契約、社内規程、ISO 27001:2022 の要求事項を遵守する。
+3. インシデント発生時は速やかに報告、封じ込め、原因分析、再発防止を行う。
+4. 年1回以上、リスク評価とマネジメントレビューを実施し、継続的改善を行う。
+
+## 4. 責任
+| 役割 | 主な責任 |
+| --- | --- |
+| 代表取締役 | 方針承認、資源配分、重大リスクの受容判断 |
+| ISMS管理責任者 | 方針運用、教育、内部監査、改善状況の管理 |
+| 各部門責任者 | 部門内の遵守状況確認、例外申請、是正対応 |
+| 全従業員 | 手順遵守、異常の報告、教育受講 |
+
+## 5. 承認
+本方針は経営者承認後に全社へ周知し、年次または重大な変更時に見直す。`,
+    'initial:02': `## 1. ISMS適用範囲
+${orgName} のISMSは、顧客向けSaaSの企画、開発、運用、保守、顧客サポートに関わる業務を対象とする。
+
+## 2. 対象拠点・勤務形態
+- 本社オフィス
+- リモート勤務環境
+- クラウドサービス管理コンソール
+
+## 3. 対象部門
+| 部門 | 対象業務 |
+| --- | --- |
+| 経営管理部 | 契約、規程、教育、マネジメントレビュー |
+| 情報システム部 | ID管理、端末管理、クラウド設定、ログ管理 |
+| 開発部 | ソースコード管理、CI/CD、脆弱性対応 |
+| カスタマーサクセス部 | 顧客問い合わせ、契約状況、サポート履歴管理 |
+
+## 4. 除外事項
+- 物理的な製造設備は保有していないため、製造ライン固有の管理策は適用外とする。
+- 海外拠点は存在しないため、海外現地法制に基づく拠点管理は対象外とする。
+
+## 5. 境界と依存
+クラウド基盤、メール、ID管理、Gitホスティングは外部サービスを利用する。各サービスは委託先管理手順に基づき評価し、契約と設定証跡を管理する。`,
+    'initial:03': `## 1. 目的
+情報資産に対する脅威と脆弱性を特定し、事業影響に応じたリスク対応を決定する。
+
+## 2. 実施タイミング
+- 年1回の定期リスクアセスメント。
+- 新サービス開始、主要システム変更、重大インシデント発生時。
+- 委託先、法令、顧客要求に重要な変更があった時。
+
+## 3. 評価手順
+1. 情報資産台帳から対象資産を選定する。
+2. 脅威、脆弱性、既存管理策を確認する。
+3. 影響度と発生可能性を5段階で評価する。
+4. リスク値に応じて低減、移転、回避、受容を決定する。
+5. 対応計画、責任者、期限、残留リスク承認を記録する。
+
+## 4. 判定基準
+| リスク値 | 判定 | 対応 |
+| --- | --- | --- |
+| 15以上 | 高 | 経営者確認と低減計画が必須 |
+| 8-14 | 中 | 部門責任者が対応計画を管理 |
+| 7以下 | 低 | 現行管理策を維持し年次確認 |
+
+## 5. 記録
+評価結果、根拠、承認、対応状況はRiscala AI for ISMS上で管理し、内部監査で確認できる状態にする。`,
+    'surveillance:01': `## 1. 年次見直し結果
+${orgName} は、2026年度の事業環境、インシデント、監査結果、顧客要求の変化を踏まえ、情報セキュリティ基本方針を継続適用する。
+
+## 2. 重点方針
+- 運用監視ログとインシデント初動の証跡を強化する。
+- 顧客ポータルのアクセスレビューを四半期ごとに実施する。
+- 内部監査で指摘された証跡不足を是正し、再発防止を確認する。
+
+## 3. 今年度の改善テーマ
+| テーマ | 目標 | 責任者 |
+| --- | --- | --- |
+| アクセスレビュー | 四半期レビュー100%実施 | 情報システム部長 |
+| 教育 | 対象者受講率95%以上 | ISMS管理責任者 |
+| インシデント対応 | 初動記録の標準化 | 運用責任者 |
+
+## 4. 周知
+承認後、全従業員へ社内ポータルで周知し、教育計画に反映する。`,
+    'surveillance:02': `## 1. 手順の位置づけ
+本手順は、年次リスク見直しと新規変更時のリスク評価に適用する。
+
+## 2. 継続運用での確認ポイント
+- 前回評価からの環境変更。
+- インシデント、ヒヤリハット、監査指摘。
+- 顧客要求、契約、外部サービスの変更。
+- 残留リスクの受容期限と承認者。
+
+## 3. レビュー会議
+| 参加者 | 役割 |
+| --- | --- |
+| ISMS管理責任者 | 評価結果の取りまとめ |
+| 情報システム部 | 技術的管理策の妥当性確認 |
+| 部門責任者 | 業務影響と対応期限の確認 |
+| 経営者 | 高リスクと残留リスクの承認 |
+
+## 4. 完了条件
+高リスクの対応計画、残留リスク承認、関連タスクが登録され、次回レビュー日が設定されていること。`,
+    'surveillance:03': `## 1. 監査目的
+2026年度のISMS運用状況を確認し、審査前に証跡不足、手順逸脱、改善機会を明確にする。
+
+## 2. 監査範囲
+- 顧客ポータル運用
+- 運用監視ログ管理
+- 内部監査証跡フォルダ
+- 教育記録と是正処置記録
+
+## 3. 監査スケジュール
+| 日程 | 対象 | 監査員 | 主な確認資料 |
+| --- | --- | --- | --- |
+| 2026-06-10 | 情報システム部 | 主任監査員 | アクセスレビュー、ログ確認記録 |
+| 2026-06-12 | 運用部門 | 監査員 | インシデント記録、手順書 |
+| 2026-06-14 | ISMS事務局 | 主任監査員 | 是正処置、教育記録、前回指摘 |
+
+## 4. 判定
+不適合、観察事項、改善機会を区分し、是正処置の責任者と期限を設定する。`,
+    'surveillance:04': `## 1. 会議概要
+2026年度マネジメントレビューでは、内部監査結果、リスク評価、教育状況、インシデント、改善活動を経営者が確認する。
+
+## 2. 入力情報
+- 内部監査結果と不適合対応状況。
+- リスクアセスメントと残留リスク承認状況。
+- 教育受講率と理解度確認結果。
+- 顧客要求、法令、外部委託先の変化。
+
+## 3. 議題別メモ
+| 議題 | 確認結果 | 決定事項 |
+| --- | --- | --- |
+| 内部監査 | 証跡不足2件を確認 | 7月末までに是正完了 |
+| リスク | 高リスク1件を継続管理 | 経営者が残留リスクを条件付き承認 |
+| 教育 | 受講率93% | 未受講者へ再通知 |
+
+## 4. 次アクション
+決定事項はタスク化し、次回レビューで完了状況を確認する。`,
+    'enterprise:01': `## 1. 目的
+主要委託先が ${orgName} の情報資産を取り扱う際に満たすべき情報セキュリティ要求事項を定める。
+
+## 2. 要求事項
+- 秘密保持契約を締結し、再委託時は事前承認を得る。
+- 委託業務に必要な最小権限でアクセスを付与する。
+- インシデント発生時は24時間以内に一次報告する。
+- 製造データ、顧客情報、認証情報は承認された環境でのみ取り扱う。
+
+## 3. 評価項目
+| 項目 | 確認内容 |
+| --- | --- |
+| 組織的管理 | セキュリティ責任者、教育、規程 |
+| 技術的管理 | アクセス制御、ログ、脆弱性対応 |
+| 物理的管理 | 入退室、媒体管理、保管 |
+| 委託管理 | 再委託、契約、証跡提出 |
+
+## 4. 見直し
+主要委託先は年1回以上評価し、高リスク委託先は改善計画を要求する。`,
+    'enterprise:02': `## 1. 評価対象
+2026年度の主要製造委託先、物流委託先、保守委託先を対象に、契約、運用、証跡の状態を確認する。
+
+## 2. 評価結果
+| 委託先区分 | 評価 | 主な根拠 | 対応 |
+| --- | --- | --- | --- |
+| 製造委託先A | B | 教育記録は良好、ログ提出が一部遅延 | 次回月次で改善確認 |
+| 物流委託先B | A | 契約、入退室、媒体管理の証跡あり | 継続 |
+| 保守委託先C | C | 再委託先一覧の更新遅れ | 是正依頼 |
+
+## 3. 改善依頼
+- 再委託先一覧を最新版へ更新する。
+- 共有フォルダ権限の棚卸し結果を提出する。
+- インシデント連絡網の責任者を明確化する。
+
+## 4. 承認
+評価結果は購買・委託先管理部が取りまとめ、ISMS管理責任者が承認する。`,
+    'enterprise:03': `## 1. 対象データ
+製造指示、品質記録、委託先共有データ、ERPから出力される生産関連データを対象とする。
+
+## 2. 分類と保管
+| 分類 | 例 | 保管場所 | 保管期間 |
+| --- | --- | --- | --- |
+| restricted | 製造条件、顧客別仕様 | ERP、委託先ポータル | 契約終了後5年 |
+| internal | 工程進捗、一般集計 | 社内共有 | 3年 |
+| public | 公開済み製品情報 | Webサイト | 必要期間 |
+
+## 3. 取扱手順
+1. 共有前に分類と宛先を確認する。
+2. 委託先ポータル以外でrestrictedデータを共有しない。
+3. ダウンロード権限は業務上必要な担当者に限定する。
+4. 契約終了時は共有権限を停止し、削除証跡を取得する。
+
+## 4. 例外
+緊急時の例外共有は部門責任者の承認を得て、24時間以内にISMS管理責任者へ報告する。`,
+    'suspended:01': `## 1. 文書状態
+本方針は利用休止前に作成された旧版であり、再開時には現行業務、利用サービス、責任者を確認して改訂する。
+
+## 2. 旧方針の要点
+- 顧客管理表、契約書、メールを主な情報資産として管理する。
+- 小規模本社とリモート勤務環境を対象とする。
+- 情報管理担当が台帳、教育、アクセス確認を兼務する。
+
+## 3. 再開時の見直し観点
+| 観点 | 確認内容 |
+| --- | --- |
+| 組織 | 責任者、部門、委託先の変更 |
+| システム | 利用SaaS、ID管理、ファイル共有 |
+| データ | 顧客情報、契約情報、保存期間 |
+| 証跡 | 教育、アクセスレビュー、リスク評価 |
+
+## 4. 注意
+この旧版のまま審査準備に使わず、再開準備チェックリスト完了後に新版を承認する。`,
+    'suspended:02': `## 1. 目的
+休止状態からISMS運用を再開する前に、最低限必要な体制、台帳、権限、証跡を確認する。
+
+## 2. チェックリスト
+| No | 確認項目 | 状態 | メモ |
+| --- | --- | --- | --- |
+| 1 | 組織情報と責任者を更新した | 未完了 | 新任担当者の確認待ち |
+| 2 | 利用SaaSと管理者権限を棚卸しした | 進行中 | ファイル共有を確認中 |
+| 3 | 顧客情報の保存場所を確認した | 未完了 | 旧PC内データを確認 |
+| 4 | リスク評価を再実施した | 未完了 | スコープ確定後に実施 |
+| 5 | 教育対象者を確定した | 未完了 | 再開日程と連動 |
+
+## 3. 再開判定
+必須項目が完了し、経営者が残留リスクを確認した後に、通常運用へ戻す。`
+  };
+
+  const templateUsage = `## 雛形としての使い方
+- 固有名詞、部門名、情報資産名、委託先名、期限、責任者を自社の内容へ置き換える。
+- 表の空欄や「未完了」の項目は、初回レビュー時に担当者と期限を設定する。
+- 承認後はRiscala AI for ISMSの文書版履歴に残し、関連するリスク、タスク、証跡へリンクする。
+
+## レビュー記録
+| レビュー日 | レビュー者 | 確認観点 | 結果 |
+| --- | --- | --- | --- |
+| ${nextReviewDate} | ${ownerName} | 適用範囲、責任者、証跡、次回見直し日 | 未実施 |
+`;
+
+  return `${commonHeader}${bodies[`${s}:${n}`] ?? `## 概要\n${description}\n\n## 確認事項\n- 文書の目的と利用場面を確認する。\n- 責任者、承認者、次回見直し日を明確にする。\n- 関連する証跡とタスクをRiscala AI for ISMSに登録する。`}\n\n${templateUsage}\n`;
+}
+
 function doc(s, n, title, description, status, category, createdByUserNo, approvedByUserNo, approvedAt) {
+  const documentId = id(s, 'document', n);
+  const body = practicalDocumentBody(s, n, title, description, status, category, createdByUserNo, approvedByUserNo);
+  const fileName = markdownFileName(documentId);
+  const filePath = markdownFilePath(s, documentId);
+
   return {
     scenario: s,
-    id: id(s, 'document', n),
+    id: documentId,
     organization_id: orgIdFor(s),
     title,
     description,
-    file_name: null,
-    file_path: null,
-    file_size: null,
-    mime_type: null,
+    file_name: fileName,
+    file_path: filePath,
+    file_size: Buffer.byteLength(body, 'utf8'),
+    mime_type: 'text/markdown;charset=utf-8',
     version_number: 1,
     status,
     category,
@@ -819,6 +1274,24 @@ function doc(s, n, title, description, status, category, createdByUserNo, approv
     retention_delete_at: null,
     created_at: now,
     updated_at: now,
+    seed_body: body,
+  };
+}
+
+function documentVersion(row) {
+  return {
+    scenario: row.scenario,
+    id: id(row.scenario, 'documentVersion', row.id.slice(-2)),
+    document_id: row.id,
+    version_number: 1,
+    title: row.title,
+    description: row.description,
+    file_name: row.file_name,
+    file_path: row.file_path,
+    file_size: row.file_size,
+    changes: 'seed_document_body_initialized',
+    created_by: row.created_by,
+    created_at: row.created_at,
   };
 }
 
@@ -1361,6 +1834,32 @@ function statements(table, columns, rows, conflictColumn = 'id') {
   return rows.map((row) => statement(table, columns, row, conflictColumn));
 }
 
+function writeDocumentSeedFiles(rows) {
+  if (dryRun) {
+    return {
+      label: 'write practical document files',
+      statements: 0,
+      affected: 0,
+      details: { skipped: 'dry-run' },
+    };
+  }
+
+  let affected = 0;
+  for (const row of rows) {
+    if (!row.file_path || !row.seed_body) continue;
+    const outputPath = path.join(process.cwd(), '.storage', 'documents', row.file_path);
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, row.seed_body, 'utf8');
+    affected += 1;
+  }
+
+  return {
+    label: 'write practical document files',
+    statements: rows.length,
+    affected,
+  };
+}
+
 function schemaStatements() {
   return [
     {
@@ -1416,6 +1915,63 @@ function schemaStatements() {
       sql: 'create index if not exists idx_soa_versions_published_at on soa_versions(published_at)',
       args: [],
     },
+    {
+      sql: `create table if not exists organization_deletion_requests (
+        id text primary key,
+        organization_id text not null references organizations(id) on delete cascade,
+        requester_id text references user_profiles(id) on delete set null,
+        requested_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        reason text,
+        source text not null default 'customer_early_request',
+        status text not null default 'requested',
+        confirmed_by text references user_profiles(id) on delete set null,
+        confirmed_at text,
+        execution_scheduled_at text,
+        customer_notice text,
+        created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      )`,
+      args: [],
+    },
+    {
+      sql: 'create index if not exists idx_org_deletion_requests_org on organization_deletion_requests(organization_id)',
+      args: [],
+    },
+    {
+      sql: 'create index if not exists idx_org_deletion_requests_status on organization_deletion_requests(status)',
+      args: [],
+    },
+    {
+      sql: 'create index if not exists idx_org_deletion_requests_scheduled on organization_deletion_requests(execution_scheduled_at)',
+      args: [],
+    },
+    {
+      sql: `create table if not exists organization_deletion_runs (
+        id text primary key,
+        organization_id text not null references organizations(id) on delete cascade,
+        deletion_request_id text references organization_deletion_requests(id) on delete set null,
+        scope text not null,
+        started_at text not null,
+        completed_at text,
+        result text not null,
+        error_summary text,
+        customer_evidence text,
+        created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      )`,
+      args: [],
+    },
+    {
+      sql: 'create index if not exists idx_org_deletion_runs_org on organization_deletion_runs(organization_id)',
+      args: [],
+    },
+    {
+      sql: 'create index if not exists idx_org_deletion_runs_request on organization_deletion_runs(deletion_request_id)',
+      args: [],
+    },
+    {
+      sql: 'create index if not exists idx_org_deletion_runs_result on organization_deletion_runs(result)',
+      args: [],
+    },
   ];
 }
 
@@ -1434,8 +1990,21 @@ async function ensureColumn(client, table, column, definition) {
   return { label: `ensure ${table}.${column}`, statements: 1, affected: 0 };
 }
 
+async function ensureIndex(client, name, sql) {
+  if (dryRun) {
+    return { label: `ensure index ${name}`, statements: 1, affected: 0 };
+  }
+
+  await client.execute({ sql, args: [] });
+  return { label: `ensure index ${name}`, statements: 1, affected: 0 };
+}
+
 async function ensureSchemaColumns(client) {
   const columns = [
+    ['organizations', 'ended_at', 'text'],
+    ['organizations', 'retention_until', 'text'],
+    ['organizations', 'deletion_scheduled_at', 'text'],
+    ['organizations', 'deletion_status', "text not null default 'active'"],
     ['iso_controls', 'soa_status', "text not null default 'not_reviewed'"],
     ['iso_controls', 'soa_applicability_reason', 'text'],
     ['iso_controls', 'soa_exclusion_reason', 'text'],
@@ -1461,6 +2030,16 @@ async function ensureSchemaColumns(client) {
   for (const [table, column, definition] of columns) {
     results.push(await ensureColumn(client, table, column, definition));
   }
+  results.push(await ensureIndex(
+    client,
+    'idx_organizations_deletion_status',
+    'create index if not exists idx_organizations_deletion_status on organizations(deletion_status)'
+  ));
+  results.push(await ensureIndex(
+    client,
+    'idx_organizations_deletion_scheduled_at',
+    'create index if not exists idx_organizations_deletion_scheduled_at on organizations(deletion_scheduled_at)'
+  ));
   return results;
 }
 
@@ -1792,6 +2371,10 @@ async function main() {
       'folder_id', 'created_by', 'updated_by', 'approved_by', 'approved_at',
       'retention_delete_at', 'created_at', 'updated_at',
     ], filterScenario(documents))],
+    ['document_versions', statements('document_versions', [
+      'id', 'document_id', 'version_number', 'title', 'description',
+      'file_name', 'file_path', 'file_size', 'changes', 'created_by', 'created_at',
+    ], filterScenario(documentVersionsSeed))],
     ['education_materials', statements('education_materials', [
       'id', 'organization_id', 'title', 'material_type', 'url', 'file_reference',
       'description', 'created_at', 'updated_at',
@@ -1921,6 +2504,7 @@ async function main() {
   for (const [label, items] of batches) {
     summary.push(await run(client, label, items));
   }
+  summary.push(writeDocumentSeedFiles(filterScenario(documents)));
 
   const payload = {
     ok: true,
