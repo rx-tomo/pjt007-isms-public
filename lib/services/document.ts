@@ -416,6 +416,18 @@ export class DocumentService {
    * ファイルをダウンロード
    */
   async downloadFile(filePath: string): Promise<Blob> {
+    const demoSeedMatch = filePath.match(/^demo-seed\/([0-9a-f-]{36})\.md$/i)
+    if (demoSeedMatch && typeof window !== 'undefined') {
+      const response = await this.fetcher(`/demo-documents/${demoSeedMatch[1]}.md`, {
+        method: 'GET',
+        cache: 'no-store'
+      })
+      if (!response.ok) {
+        throw new Error('ファイルのダウンロードに失敗しました')
+      }
+      return response.blob()
+    }
+
     const storage = getStorageProvider()
     const { data, error } = await storage.download('documents', filePath)
 

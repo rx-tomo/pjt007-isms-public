@@ -16,6 +16,10 @@ import { organizations } from '@/lib/db/drizzle/schema/organizations'
 import { userProfiles } from '@/lib/db/drizzle/schema/users'
 import { getStorageProvider } from '@/lib/storage'
 import { eq, and, asc, inArray } from 'drizzle-orm'
+import {
+  getPracticalDocumentFixture,
+  type PracticalDocumentFixture
+} from '@/lib/fixtures/practicalDocumentFixtures'
 
 export const runtime = 'nodejs'
 
@@ -45,11 +49,16 @@ function consumePdfExportAllowance(userId: string) {
   return true
 }
 
-async function readDocumentBody(filePath: string | null, mimeType: string | null, fileSize: number | null) {
-  if (!filePath) return null
+async function readDocumentBody(
+  filePath: string | null,
+  mimeType: string | null,
+  fileSize: number | null,
+  fallback: PracticalDocumentFixture | null
+) {
+  if (!filePath) return fallback?.body ?? null
   const baseMimeType = mimeType?.toLowerCase().split(';')[0]?.trim()
-  if (baseMimeType && !TEXT_MIME_TYPES.has(baseMimeType)) return null
-  if (fileSize && fileSize > MAX_EXPORT_BODY_BYTES) return null
+  if (baseMimeType && !TEXT_MIME_TYPES.has(baseMimeType)) return fallback?.body ?? null
+  if (fileSize && fileSize > MAX_EXPORT_BODY_BYTES) return fallback?.body ?? null
 
   const storage = getStorageProvider()
   const { data, error } = await storage.download('documents', filePath)
@@ -57,9 +66,9 @@ async function readDocumentBody(filePath: string | null, mimeType: string | null
     console.warn('Document export body read skipped', {
       reason: error ? 'storage_download_failed' : 'missing_blob'
     })
-    return null
+    return fallback?.body ?? null
   }
-  if (data.size > MAX_EXPORT_BODY_BYTES) return null
+  if (data.size > MAX_EXPORT_BODY_BYTES) return fallback?.body ?? null
 
   return data.text()
 }
@@ -241,7 +250,12 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     }
   })
 
-  const bodyMarkdown = await readDocumentBody(document.filePath, document.mimeType, document.fileSize)
+  const bodyMarkdown = await readDocumentBody(
+    document.filePath,
+    document.mimeType,
+    document.fileSize,
+    getPracticalDocumentFixture(document.id)
+  )
   const exportModel: DocumentExportModel = {
     title: document.title,
     description: document.description,
