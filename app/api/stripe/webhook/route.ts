@@ -45,8 +45,16 @@ export async function POST(request: Request) {
   const useMockWebhook = !secretConfigured || webhookSecret === ''
 
   if (useMockWebhook) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[Stripe] webhook secret is not configured in production')
+      return NextResponse.json({ error: 'Stripe webhook is not configured' }, { status: 503 })
+    }
     const raw = await request.text()
-    console.info('[Stripe Skeleton] webhook fallback payload:', raw)
+    const payload = safeParseJson(raw)
+    console.info('[Stripe Skeleton] webhook fallback accepted', {
+      eventId: typeof payload?.id === 'string' ? payload.id : null,
+      eventType: typeof payload?.type === 'string' ? payload.type : null,
+    })
     return NextResponse.json({ received: true })
   }
 
@@ -72,7 +80,11 @@ export async function POST(request: Request) {
         userId: null,
         actionName: 'stripe.webhook',
         status: 'denied',
-        context: { reason: 'invalid_signature', payload }
+        context: {
+          reason: 'invalid_signature',
+          eventId: typeof payload.id === 'string' ? payload.id : null,
+          eventType: typeof payload.type === 'string' ? payload.type : null
+        }
       })
     }
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })

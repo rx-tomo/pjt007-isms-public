@@ -22,14 +22,14 @@ const ROLE_HOME_CONFIG: Record<RoleKey, RoleHomeConfig> = {
     quickLinks: [
       {
         path: '/super-admin/organizations',
-        badge: 'Tenants',
+        badge: '管理',
         badgeTone: 'bg-slate-100 text-slate-700',
         titleToken: 'quickLinks.items.superAdmin.organizations.title',
         descriptionToken: 'quickLinks.items.superAdmin.organizations.description'
       },
       {
         path: '/super-admin/logs',
-        badge: 'Audit',
+        badge: '監査',
         badgeTone: 'bg-slate-100 text-slate-700',
         titleToken: 'quickLinks.items.superAdmin.audit.title',
         descriptionToken: 'quickLinks.items.superAdmin.audit.description'
@@ -41,14 +41,14 @@ const ROLE_HOME_CONFIG: Record<RoleKey, RoleHomeConfig> = {
     quickLinks: [
       {
         path: '/settings/organization',
-        badge: 'Settings',
+        badge: '設定',
         badgeTone: 'bg-purple-100 text-purple-700',
         titleToken: 'quickLinks.items.systemOperator.settings.title',
         descriptionToken: 'quickLinks.items.systemOperator.settings.description'
       },
       {
         path: '/settings/controls',
-        badge: 'RLS',
+        badge: '隔離',
         badgeTone: 'bg-purple-100 text-purple-700',
         titleToken: 'quickLinks.items.systemOperator.policies.title',
         descriptionToken: 'quickLinks.items.systemOperator.policies.description'
@@ -60,21 +60,21 @@ const ROLE_HOME_CONFIG: Record<RoleKey, RoleHomeConfig> = {
     quickLinks: [
       {
         path: '/settings/users',
-        badge: 'Team',
+        badge: '体制',
         badgeTone: 'bg-blue-100 text-blue-700',
         titleToken: 'quickLinks.items.orgAdmin.members.title',
         descriptionToken: 'quickLinks.items.orgAdmin.members.description'
       },
       {
         path: '/settings/subscription',
-        badge: 'Billing',
+        badge: '契約',
         badgeTone: 'bg-blue-100 text-blue-700',
         titleToken: 'quickLinks.items.orgAdmin.billing.title',
         descriptionToken: 'quickLinks.items.orgAdmin.billing.description'
       },
       {
         path: '/documents',
-        badge: 'Docs',
+        badge: '文書',
         badgeTone: 'bg-blue-100 text-blue-700',
         titleToken: 'quickLinks.items.orgAdmin.documents.title',
         descriptionToken: 'quickLinks.items.orgAdmin.documents.description'
@@ -86,21 +86,21 @@ const ROLE_HOME_CONFIG: Record<RoleKey, RoleHomeConfig> = {
     quickLinks: [
       {
         path: '/tasks',
-        badge: 'Tasks',
+        badge: 'タスク',
         badgeTone: 'bg-emerald-100 text-emerald-700',
         titleToken: 'quickLinks.items.member.tasks.title',
         descriptionToken: 'quickLinks.items.member.tasks.description'
       },
       {
         path: '/documents',
-        badge: 'Docs',
+        badge: '文書',
         badgeTone: 'bg-emerald-100 text-emerald-700',
         titleToken: 'quickLinks.items.member.documents.title',
         descriptionToken: 'quickLinks.items.member.documents.description'
       },
       {
         path: '/education',
-        badge: 'Training',
+        badge: '教育',
         badgeTone: 'bg-emerald-100 text-emerald-700',
         titleToken: 'quickLinks.items.member.training.title',
         descriptionToken: 'quickLinks.items.member.training.description'
@@ -112,14 +112,14 @@ const ROLE_HOME_CONFIG: Record<RoleKey, RoleHomeConfig> = {
     quickLinks: [
       {
         path: '/audit',
-        badge: 'Audit',
+        badge: '監査',
         badgeTone: 'bg-amber-100 text-amber-700',
         titleToken: 'quickLinks.items.auditor.workspace.title',
         descriptionToken: 'quickLinks.items.auditor.workspace.description'
       },
       {
         path: '/audit/nonconformities',
-        badge: 'Follow-up',
+        badge: '是正',
         badgeTone: 'bg-amber-100 text-amber-700',
         titleToken: 'quickLinks.items.auditor.correctiveActions.title',
         descriptionToken: 'quickLinks.items.auditor.correctiveActions.description'
@@ -131,14 +131,14 @@ const ROLE_HOME_CONFIG: Record<RoleKey, RoleHomeConfig> = {
     quickLinks: [
       {
         path: '/approvals?status=pending',
-        badge: 'Approve',
+        badge: '承認',
         badgeTone: 'bg-rose-100 text-rose-700',
         titleToken: 'quickLinks.items.approver.pendingDocuments.title',
         descriptionToken: 'quickLinks.items.approver.pendingDocuments.description'
       },
       {
         path: '/approvals?status=pending&urgency=due',
-        badge: 'Due',
+        badge: '期限',
         badgeTone: 'bg-rose-100 text-rose-700',
         titleToken: 'quickLinks.items.approver.reviewTasks.title',
         descriptionToken: 'quickLinks.items.approver.reviewTasks.description'

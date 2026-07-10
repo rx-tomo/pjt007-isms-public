@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { addMonths } from 'date-fns'
 import { getDb } from '@/lib/db/drizzle/client'
 import { pricingPlans, subscriptions, paymentHistory, stripeEvents } from '@/lib/db/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { isStripeMockMode, resolveStripePriceIdFromEnv } from '@/lib/stripe/config'
+import { resolveStripePriceIdFromEnv } from '@/lib/stripe/config'
 import { DEFAULT_PRICING_PLANS } from '@/lib/stripe/defaultPricingPlans'
+import { requireMockBillingAccess } from '@/lib/server/auth/mockBillingGuard'
 
 interface MockCompletePayload {
   organizationId?: string
@@ -17,25 +19,7 @@ interface MockCompletePayload {
   status?: 'trialing' | 'active'
 }
 
-export async function POST(request: Request) {
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Mock endpoint is disabled in production.' }, { status: 403 })
-  }
-
-  if (!isStripeMockMode()) {
-    return NextResponse.json({ error: 'Enable STRIPE_TEST_MODE=mock to use this endpoint.' }, { status: 403 })
-  }
-
-  // Require dev login session — prevents cross-tenant writes in preview environments
-  const { cookies } = await import('next/headers')
-  const cookieStore = await cookies()
-  const sessionToken =
-    cookieStore.get('better-auth.session_token')?.value ||
-    cookieStore.get('__Secure-better-auth.session_token')?.value
-  if (!sessionToken) {
-    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
-  }
-
+export async function POST(request: NextRequest) {
   const db = getDb()
 
   let payload: MockCompletePayload
@@ -48,6 +32,11 @@ export async function POST(request: Request) {
   const organizationId = payload.organizationId
   if (!organizationId) {
     return NextResponse.json({ error: 'organizationId is required.' }, { status: 400 })
+  }
+
+  const guard = await requireMockBillingAccess(request, organizationId)
+  if (guard.error) {
+    return guard.error
   }
 
   const planId = payload.planId

@@ -4,7 +4,9 @@ import {
   createDocxExport,
   createExcelExport,
   formatDocumentDate,
-  sanitizeDocumentFileName
+  PdfExportUnavailableError,
+  sanitizeDocumentFileName,
+  type DocumentExportModel
 } from '@/lib/utils/exporters/documentExport'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
 import { getDb } from '@/lib/db/drizzle/client'
@@ -12,12 +14,55 @@ import { documents, documentVersions, documentFolders } from '@/lib/db/drizzle/s
 import { approvalRequests } from '@/lib/db/drizzle/schema/approvals'
 import { organizations } from '@/lib/db/drizzle/schema/organizations'
 import { userProfiles } from '@/lib/db/drizzle/schema/users'
+import { getStorageProvider } from '@/lib/storage'
 import { eq, and, asc, inArray } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
 
 const WORD_FORMATS = new Set(['word', 'doc', 'docx'])
 const EXCEL_FORMATS = new Set(['excel', 'xls', 'xlsx'])
+const TEXT_MIME_TYPES = new Set([
+  'text/markdown',
+  'text/plain',
+  'application/markdown'
+])
+const MAX_EXPORT_BODY_BYTES = 1024 * 1024
+const PDF_EXPORTS_PER_MINUTE = 5
+const pdfExportWindows = new Map<string, { startedAt: number; count: number }>()
+
+function consumePdfExportAllowance(userId: string) {
+  const now = Date.now()
+  for (const [key, window] of pdfExportWindows) {
+    if (now - window.startedAt >= 60_000) pdfExportWindows.delete(key)
+  }
+  const current = pdfExportWindows.get(userId)
+  if (!current || now - current.startedAt >= 60_000) {
+    pdfExportWindows.set(userId, { startedAt: now, count: 1 })
+    return true
+  }
+  if (current.count >= PDF_EXPORTS_PER_MINUTE) return false
+  current.count += 1
+  return true
+}
+
+async function readDocumentBody(filePath: string | null, mimeType: string | null, fileSize: number | null) {
+  if (!filePath) return null
+  const baseMimeType = mimeType?.toLowerCase().split(';')[0]?.trim()
+  if (baseMimeType && !TEXT_MIME_TYPES.has(baseMimeType)) return null
+  if (fileSize && fileSize > MAX_EXPORT_BODY_BYTES) return null
+
+  const storage = getStorageProvider()
+  const { data, error } = await storage.download('documents', filePath)
+  if (error || !data) {
+    console.warn('Document export body read skipped', {
+      reason: error ? 'storage_download_failed' : 'missing_blob'
+    })
+    return null
+  }
+  if (data.size > MAX_EXPORT_BODY_BYTES) return null
+
+  return data.text()
+}
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -123,11 +168,6 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     .limit(1)
   const organizationName = org?.name ?? 'Unknown organization'
 
-  const metadataLines = [
-    `Organization: ${organizationName}`,
-    `Document Version: v${latestVersionNumber}`,
-    `Exported At: ${exportedAt}`
-  ]
   const exportContext = {
     version: latestVersionNumber,
     exportedAt,
@@ -171,67 +211,64 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     }
   }
 
-  const sections: string[] = []
-  sections.push(...metadataLines)
-  sections.push('')
-  sections.push(`Title: ${document.title}`)
-  sections.push(`Status: ${document.status ?? 'unknown'}`)
-  if (document.category) {
-    sections.push(`Category: ${document.category}`)
-  }
-  if (folderName) {
-    sections.push(`Folder: ${folderName}`)
-  }
-  sections.push(`Created At: ${formatDocumentDate(document.createdAt ?? '')}`)
   const createdBy = users.get(document.createdBy)
-  if (createdBy) {
-    sections.push(`Created By: ${createdBy.name}`)
-  }
-  if (document.updatedBy) {
-    const updatedBy = users.get(document.updatedBy)
-    sections.push(`Last Updated: ${formatDocumentDate(document.updatedAt ?? '')}${updatedBy ? ` by ${updatedBy.name}` : ''}`)
-  }
+  const updatedBy = document.updatedBy ? users.get(document.updatedBy) : null
+  let approvedByName: string | null = null
   if (document.approvedBy) {
     const approvedBy = users.get(document.approvedBy)
     if (approvedBy) {
-      sections.push(`Approved By: ${approvedBy.name}`)
+      approvedByName = approvedBy.name
     }
   }
-  if (tagsList.length > 0) {
-    sections.push(`Tags: ${tagsList.join(', ')}`)
-  }
-  sections.push('')
-  sections.push('Description:')
-  sections.push(document.description?.trim() || '(No description)')
 
-  if (approvals.length > 0) {
-    sections.push('')
-    sections.push('Approval Flow:')
-    approvals.forEach(approval => {
-      const approver = approval.approverId ? users.get(approval.approverId) : null
-      const approverName = approver?.name ?? '\u2014'
-      const status = approval.status ?? 'pending'
-      const updatedAt = approval.updatedAt ? formatDocumentDate(approval.updatedAt) : '\u2014'
-      sections.push(`  Step ${approval.stepNumber ?? '\u2014'}: ${status} (${approverName}, ${updatedAt})`)
-    })
-  }
+  const approvalItems = approvals.map(approval => {
+    const approver = approval.approverId ? users.get(approval.approverId) : null
+    const approverName = approver?.name ?? '\u2014'
+    const status = approval.status ?? 'pending'
+    const updatedAt = approval.updatedAt ? formatDocumentDate(approval.updatedAt) : '\u2014'
+    return {
+      label: `Step ${approval.stepNumber ?? '\u2014'}: ${status}`,
+      detail: `${approverName}, ${updatedAt}`
+    }
+  })
 
-  if (versions.length > 0) {
-    sections.push('')
-    sections.push('Version History:')
-    versions.forEach(version => {
-      const author = users.get(version.createdBy)
-      const authorName = author?.name ?? version.createdBy
-      const changes = version.changes ? ` \u2013 ${version.changes}` : ''
-      sections.push(`  v${version.versionNumber} (${formatDocumentDate(version.createdAt ?? '')} by ${authorName})${changes}`)
-    })
+  const versionItems = versions.map(version => {
+    const author = users.get(version.createdBy)
+    const authorName = author?.name ?? version.createdBy
+    return {
+      label: `v${version.versionNumber}`,
+      detail: `${formatDocumentDate(version.createdAt ?? '')} by ${authorName}${version.changes ? ` - ${version.changes}` : ''}`
+    }
+  })
+
+  const bodyMarkdown = await readDocumentBody(document.filePath, document.mimeType, document.fileSize)
+  const exportModel: DocumentExportModel = {
+    title: document.title,
+    description: document.description,
+    bodyMarkdown,
+    metadata: {
+      organization: organizationName,
+      version: latestVersionNumber,
+      exportedAt,
+      status: document.status ?? 'unknown',
+      category: document.category,
+      folder: folderName,
+      createdAt: formatDocumentDate(document.createdAt ?? ''),
+      createdBy: createdBy?.name ?? null,
+      updatedAt: document.updatedAt ? formatDocumentDate(document.updatedAt) : null,
+      updatedBy: updatedBy?.name ?? null,
+      approvedBy: approvedByName,
+      tags: tagsList
+    },
+    approvals: approvalItems,
+    versions: versionItems
   }
 
   const safeTitle = sanitizeDocumentFileName(document.title || 'document')
-  await logEvent('success', exportContext, { format, documentId: document.id })
 
   if (format === 'word') {
-    const docxBuffer = await createDocxExport(sections)
+    const docxBuffer = await createDocxExport(exportModel)
+    await logEvent('success', exportContext, { format, documentId: document.id })
     const response = new NextResponse(new Uint8Array(docxBuffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -243,7 +280,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   }
 
   if (format === 'excel') {
-    const excelBuffer = createExcelExport(sections)
+    const excelBuffer = createExcelExport(exportModel)
+    await logEvent('success', exportContext, { format, documentId: document.id })
     const response = new NextResponse(new Uint8Array(excelBuffer), {
       headers: {
         'Content-Type': 'application/vnd.ms-excel',
@@ -254,7 +292,38 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     return wrapResponse(response)
   }
 
-  const pdfBuffer = createPdfExport(sections)
+  let pdfBuffer: Buffer
+  if (!consumePdfExportAllowance(profile.id)) {
+    await logEvent(
+      'denied',
+      { ...exportContext, reason: 'pdf_rate_limit_exceeded' },
+      { format, documentId: document.id }
+    )
+    return json({
+      error: 'Too many PDF export requests. Please use Word or try again later.',
+      errorCode: 'PDF_EXPORT_RATE_LIMITED'
+    }, { status: 429 })
+  }
+
+  try {
+    pdfBuffer = await createPdfExport(exportModel)
+  } catch (pdfError) {
+    if (!(pdfError instanceof PdfExportUnavailableError)) {
+      throw pdfError
+    }
+
+    await logEvent(
+      'error',
+      { ...exportContext, reason: 'pdf_renderer_unavailable' },
+      { format, documentId: document.id }
+    )
+    return json({
+      error: 'PDF export is unavailable in this demo environment.',
+      errorCode: pdfError.code
+    }, { status: 503 })
+  }
+
+  await logEvent('success', exportContext, { format, documentId: document.id })
   const response = new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       'Content-Type': 'application/pdf',

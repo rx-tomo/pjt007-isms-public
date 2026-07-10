@@ -8,6 +8,7 @@ import { organizations } from '@/lib/db/drizzle/schema/organizations'
 import { userProfiles } from '@/lib/db/drizzle/schema/users'
 import { eq, and } from 'drizzle-orm'
 import { findDefaultPricingPlan } from '@/lib/stripe/defaultPricingPlans'
+import { resolveBillingReturnUrl } from '@/lib/stripe/returnUrls'
 
 type ServiceRoleGuard = Awaited<ReturnType<typeof requireServiceRole>>['guard']
 
@@ -55,6 +56,12 @@ export async function POST(request: NextRequest) {
       return json({ error: 'organizationId is required' }, { status: 400 })
     }
 
+    const safeSuccessUrl = resolveBillingReturnUrl(successUrl, request.url, '/settings/subscription')
+    const safeCancelUrl = resolveBillingReturnUrl(cancelUrl, request.url, '/pricing')
+    if (!safeSuccessUrl || !safeCancelUrl) {
+      return json({ error: 'Checkout return URL is not allowed.' }, { status: 400 })
+    }
+
     const db = getDb()
     const secretKeyRaw = process.env.STRIPE_SECRET_KEY ?? ''
     const secretConfigured = hasStripeSecret()
@@ -100,6 +107,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!secretConfigured) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[Stripe] checkout unavailable: missing STRIPE_SECRET_KEY in production', {
+          organizationId: normalizedOrgId,
+          planId
+        })
+        return json(
+          { error: 'Stripe checkout is not configured.' },
+          { status: 503 }
+        )
+      }
+
       console.info('[Stripe Skeleton] create-checkout-session fallback (missing secret key)', {
         organizationId: normalizedOrgId,
         planId
@@ -119,7 +137,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (isStripeMockMode()) {
+    if (process.env.NODE_ENV !== 'production' && isStripeMockMode()) {
       console.info('[Stripe Mock] create-checkout-session simulated', {
         organizationId: normalizedOrgId,
         planId,
@@ -156,8 +174,8 @@ export async function POST(request: NextRequest) {
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: safeSuccessUrl,
+      cancel_url: safeCancelUrl,
       client_reference_id: normalizedOrgId,
       metadata: {
         organization_id: normalizedOrgId,

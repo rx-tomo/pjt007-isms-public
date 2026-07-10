@@ -1,7 +1,7 @@
 ---
 title: Billing and Data Operations
 category: operations
-last_updated: 2026-06-18
+last_updated: 2026-06-23
 status: active
 ---
 
@@ -14,11 +14,11 @@ This project currently has a billing design and partial Stripe integration for p
 | Area | Current state | Public wording boundary |
 | --- | --- | --- |
 | Pricing plans | `/pricing` displays plan choices from `pricing_plans` when seeded, otherwise from `DEFAULT_PRICING_PLANS`. Env-based Stripe Price ID mapping exists for trial / starter / standard / enterprise. | Describe as plan configuration and pricing-screen design, not as confirmed commercial price policy. |
-| Checkout | `/api/stripe/create-checkout-session` can create a real Stripe Checkout Session when a valid secret key and plan Price ID are configured. In mock mode or non-production without a secret key, it returns a `cs_test_mock_*` session ID. | Say local/source-available verification does not require production Stripe keys. |
-| Mock checkout | `/mock/checkout` calls `/api/stripe/mock/complete`, which is disabled in production, requires a dev session today, and writes mock subscription/payment/event rows. Org-scope enforcement is still required before public/preview exposure. | Say this verifies the in-app billing journey only; it does not process money. |
+| Checkout | `/api/stripe/create-checkout-session` can create a real Stripe Checkout Session when a valid secret key and plan Price ID are configured. In mock mode or non-production without a secret key, it returns a `cs_test_mock_*` session ID. In production, missing Stripe secret configuration fails closed with 503. | Say local/source-available verification does not require production Stripe keys. |
+| Mock checkout | `/mock/checkout` calls `/api/stripe/mock/complete`, which is disabled in production, requires mock mode, requires an authenticated org admin / system operator / super admin session, and enforces organization scope before writing mock subscription/payment/event rows. | Say this verifies the in-app billing journey only; it does not process money. |
 | Subscription UI | `/settings/subscription` shows current plan, period, usage, cancellation state, export/offboarding controls, and a test-mode banner when Stripe is mocked or not configured. | Say subscription management UI is present, with production readiness still gated. |
-| Customer portal | `/api/stripe/create-portal-session` returns `/mock/portal` in mock mode. With real Stripe configuration it creates a Stripe Billing Portal session for the latest customer. Current mock portal mutation endpoints are verification-only and need production-disable / mock-mode / org-scope gates before any public or commercial environment. | Say portal integration path exists, but commercial portal configuration and endpoint hardening must be verified before launch. |
-| Webhooks | `/api/stripe/webhook` verifies Stripe signatures when keys/secrets are present and records idempotent event processing. Without Stripe config it accepts payloads as a skeleton fallback for local verification only. | Do not present webhook handling as production-certified until fail-closed behavior and Stripe event replay are completed. |
+| Customer portal | `/api/stripe/create-portal-session` returns `/mock/portal` in mock mode. With real Stripe configuration it creates a Stripe Billing Portal session for the latest customer. Return URLs are limited to application origins, and email fallback only accepts Stripe customers whose metadata matches the organization. | Say portal integration path exists, but commercial portal configuration and endpoint hardening must be verified before launch. |
+| Webhooks | `/api/stripe/webhook` verifies Stripe signatures when keys/secrets are present and records idempotent event processing. Production now fails closed when required Stripe secrets are missing; non-production skeleton fallback avoids raw payload logging. | Do not present webhook handling as production-certified until signed Stripe event replay is completed. |
 
 ## Local Billing Mode
 
@@ -54,12 +54,12 @@ Before real customer charging, complete and record at least the following:
 - Configure real Stripe products/prices, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and publishable key in the target environment; keep real keys out of the repository.
 - Map every active plan to a real Stripe Price ID and verify checkout for trial, starter, standard, and enterprise paths as applicable.
 - Configure and verify Stripe Billing Portal behavior for plan changes, cancellation, payment method updates, invoice access, and return URLs.
-- Protect mock portal mutation endpoints before preview/public exposure: production 403, mock-mode gate, authenticated caller, and organization-scope authorization.
-- Make webhook misconfiguration fail closed in production, avoid raw webhook payload logging, and verify invalid signatures return 400.
+- Verify mock portal mutation endpoints in preview/public settings: production 403, mock-mode gate, authenticated caller, and organization-scope authorization are implemented, but role policy must still be confirmed for `system_operator`.
+- Verify webhook misconfiguration fail-closed behavior in the target environment, no raw webhook payload logging, and invalid signatures returning 400.
 - Replay Stripe test-mode webhook events for checkout completion, subscription create/update/delete, invoice success/failure, duplicate delivery, missing secret, and invalid signature denial.
 - Verify authorization boundaries for org admin / system operator only, including cross-tenant access denial for subscription, usage, checkout, and portal APIs.
-- Verify checkout `successUrl` / `cancelUrl` and portal `returnUrl` against an application-origin allowlist.
-- Use saved Stripe customer IDs from checkout/webhook sync for commercial portal access, or verify any email fallback against Stripe customer metadata for the same organization.
+- Verify checkout `successUrl` / `cancelUrl` and portal `returnUrl` against the application-origin allowlist in the target domain. Production does not trust arbitrary request Host/origin values as allowlist entries.
+- Use saved Stripe customer IDs from checkout/webhook sync for commercial portal access; email fallback is guarded by Stripe customer metadata and should be treated as recovery-only.
 - Confirm payment history, subscription status, cancellation-at-period-end, usage display, and audit/service-role events after webhook sync.
 - Prepare rollback / disablement steps, including how to turn off real checkout while preserving existing tenant access.
 

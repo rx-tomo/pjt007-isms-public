@@ -52,6 +52,13 @@ export interface DocumentWithFolder extends RepoDocumentWithFolder {
   approvalProgress?: DocumentApprovalProgress
 }
 
+export class DocumentExportError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message)
+    this.name = 'DocumentExportError'
+  }
+}
+
 export type {
   Document,
   DocumentInsert,
@@ -430,8 +437,9 @@ export class DocumentService {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
-      const message = (body as { error?: string }).error ?? '文書のエクスポートに失敗しました'
-      throw new Error(message)
+      const errorBody = body as { error?: string; errorCode?: string }
+      const message = errorBody.error ?? '文書のエクスポートに失敗しました'
+      throw new DocumentExportError(message, errorBody.errorCode)
     }
 
     return response.blob()
