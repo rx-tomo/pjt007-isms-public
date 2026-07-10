@@ -5,6 +5,7 @@ import { userProfiles, userMemberships, documents, auditLogs } from '@/lib/db/dr
 import { DocumentService } from '@/lib/services/document'
 import { StorageQuotaService } from '@/lib/services/storageQuota'
 import { and, eq } from 'drizzle-orm'
+import { hydratePracticalDocumentFile } from '@/lib/fixtures/practicalDocumentFixtures'
 
 interface CreateDocumentPayload {
   document?: {
@@ -85,7 +86,10 @@ export async function GET(request: NextRequest) {
         departmentId,
         includeNoDepartment,
       })
-      const enriched = await documentService.enrichDocumentsWithApprovalProgress(organizationId, data)
+      const enriched = await documentService.enrichDocumentsWithApprovalProgress(
+        organizationId,
+        data.map(hydratePracticalDocumentFile)
+      )
       return applyCookies(NextResponse.json(enriched))
     }
 
@@ -93,7 +97,10 @@ export async function GET(request: NextRequest) {
       const folderId = searchParams.get('folderId') ?? undefined
       const requestingUserId = searchParams.get('requestingUserId') ?? user.id
       const data = await documentService.getDocumentsScoped(organizationId, requestingUserId, folderId)
-      const enriched = await documentService.enrichDocumentsWithApprovalProgress(organizationId, data)
+      const enriched = await documentService.enrichDocumentsWithApprovalProgress(
+        organizationId,
+        data.map(hydratePracticalDocumentFile)
+      )
       return applyCookies(NextResponse.json(enriched))
     }
 
