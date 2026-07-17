@@ -1,59 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { and, eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userMemberships, userProfiles } from '@/lib/db/drizzle/schema'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 import { TaskService } from '@/lib/services/task'
 import { buildTaskCsv } from '@/lib/utils/exporters/taskExport'
 import type { TaskPriority, TaskStatus } from '@/lib/db/repositories/interfaces/ITaskRepository'
-
-async function resolveOrganizationId(db: ReturnType<typeof getDb>, userId: string, requestedOrganizationId?: string) {
-  if (requestedOrganizationId) {
-    return requestedOrganizationId
-  }
-
-  const [profile] = await db
-    .select({ organizationId: userProfiles.organizationId })
-    .from(userProfiles)
-    .where(eq(userProfiles.id, userId))
-    .limit(1)
-
-  if (profile?.organizationId) {
-    return profile.organizationId
-  }
-
-  const [membership] = await db
-    .select({ organizationId: userMemberships.organizationId })
-    .from(userMemberships)
-    .where(and(
-      eq(userMemberships.userId, userId),
-      eq(userMemberships.status, 'active')
-    ))
-    .limit(1)
-
-  return membership?.organizationId ?? null
-}
-
-async function assertOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
-  const [[profile], [membership]] = await Promise.all([
-    db
-      .select({ organizationId: userProfiles.organizationId })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({ id: userMemberships.id })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.status, 'active')
-      ))
-      .limit(1),
-  ])
-
-  return profile?.organizationId === organizationId || Boolean(membership)
-}
 
 function parseStatus(value: string | null): TaskStatus | undefined {
   if (!value) return undefined
@@ -91,20 +42,6 @@ function taskMatchesTagFilter(task: Awaited<ReturnType<TaskService['getTasks']>>
 
 export async function GET(request: NextRequest) {
   const isTemplate = request.nextUrl.searchParams.get('template') === 'true'
-
-  if (isTemplate) {
-    const BOM = '\uFEFF'
-    const headers = 'title,description,category,assignee_email,status,priority,due_date,estimated_hours,tags'
-    const csv = BOM + headers + '\n'
-
-    return new Response(csv, {
-      headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="task_import_template.csv"'
-      }
-    })
-  }
-
   const { user, applyCookies } = await getRouteAuth(request)
 
   if (!user) {
@@ -112,19 +49,28 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
-  const organizationId = await resolveOrganizationId(
-    db,
-    user.id,
-    request.nextUrl.searchParams.get('organizationId') ?? undefined
-  )
+  const organizationId = request.nextUrl.searchParams.get('organizationId')?.trim()
 
   if (!organizationId) {
     return applyCookies(NextResponse.json({ error: 'organizationId is required' }, { status: 400 }))
   }
 
-  const hasAccess = await assertOrganizationAccess(db, user.id, organizationId)
-  if (!hasAccess) {
+  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  if (!authorization.ok) {
     return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+  }
+
+  if (isTemplate) {
+    const BOM = '\uFEFF'
+    const headers = 'title,description,category,assignee_email,status,priority,due_date,estimated_hours,tags'
+    const csv = BOM + headers + '\n'
+
+    return applyCookies(new NextResponse(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="task_import_template.csv"'
+      }
+    }))
   }
 
   try {

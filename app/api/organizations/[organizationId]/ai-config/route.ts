@@ -12,6 +12,7 @@ export async function PATCH(
   try {
     const { organizationId } = params
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'tenant',
       allowedRoles: ['org_admin', 'system_operator'],
       organizationId,
       actionName: 'organization.ai_config.update',

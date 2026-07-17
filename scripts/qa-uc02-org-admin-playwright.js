@@ -21,7 +21,7 @@ const result = spawnSync('npx', ['playwright', 'test', testFile, '--reporter=lin
   env: {
     ...process.env,
     PLAYWRIGHT_TEST_BASE_URL: BASE_URL,
-    PLAYWRIGHT_SKIP_WEB_SERVER: process.env.PLAYWRIGHT_SKIP_WEB_SERVER || '1',
+    PLAYWRIGHT_EXTERNAL_WEB_SERVER: process.env.PLAYWRIGHT_EXTERNAL_WEB_SERVER || '1',
     E2E_MODE: process.env.E2E_MODE || '1',
     NEXT_PUBLIC_E2E_MODE: process.env.NEXT_PUBLIC_E2E_MODE || '1'
   }

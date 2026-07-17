@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
 import { DepartmentScopeService } from '@/lib/services/departmentScope'
+import { isMemberTenantInvariantError } from '@/lib/services/memberTenantInvariant'
 
 type Params = {
   organizationId: string
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
   const params = await props.params
   const organizationId = params.organizationId
   const guardResult = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId,
     actionName: 'organization.members.department_scopes_read',
@@ -32,6 +34,9 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
     const scopes = await new DepartmentScopeService().listUserScopes(organizationId, userId)
     return guardResult.guard.json({ scopes })
   } catch (error) {
+    if (isMemberTenantInvariantError(error)) {
+      return errorResponse(guardResult.guard.json, error.message, error.status)
+    }
     console.error('[Member department scopes] read failed', error)
     return errorResponse(guardResult.guard.json, 'Failed to load department scopes', 500)
   }
@@ -41,6 +46,7 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
   const params = await props.params
   const organizationId = params.organizationId
   const guardResult = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId,
     actionName: 'organization.members.department_scopes_update',
@@ -51,15 +57,19 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
     return guardResult.error ?? new Response('Unauthorized', { status: 401 })
   }
 
-  let payload: { userId?: string; departmentIds?: string[] }
+  let payload: unknown
   try {
     payload = await request.json()
   } catch {
     return errorResponse(guardResult.guard.json, 'Invalid JSON payload')
   }
 
-  const userId = payload.userId?.trim()
-  if (!userId || !Array.isArray(payload.departmentIds)) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return errorResponse(guardResult.guard.json, 'Invalid JSON payload')
+  }
+  const body = payload as Record<string, unknown>
+  const userId = typeof body.userId === 'string' ? body.userId.trim() : ''
+  if (!userId || !Object.hasOwn(body, 'departmentIds')) {
     return errorResponse(guardResult.guard.json, 'userId and departmentIds are required')
   }
 
@@ -67,10 +77,14 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
     const scopes = await new DepartmentScopeService().updateUserDepartmentScopes({
       organizationId,
       userId,
-      departmentIds: payload.departmentIds,
+      departmentIds: body.departmentIds,
+      actorUserId: guardResult.guard.userId,
     })
     return guardResult.guard.json({ scopes })
   } catch (error) {
+    if (isMemberTenantInvariantError(error)) {
+      return errorResponse(guardResult.guard.json, error.message, error.status)
+    }
     console.error('[Member department scopes] update failed', error)
     return errorResponse(guardResult.guard.json, 'Failed to update department scopes', 500)
   }

@@ -16,6 +16,7 @@ import {
 } from '@/lib/utils/riskOperationalReadiness'
 import type { RiskWithRelations, RiskTreatment, RiskAssetWithDetails } from '@/lib/services/risk'
 import type { UserRole, UserProfile } from '@/lib/services/user'
+import type { ApprovalCandidate } from '@/lib/approvals/approvalCandidateContract'
 
 interface TreatmentFormState {
   treatment_type: RiskTreatment['treatment_type']
@@ -64,6 +65,7 @@ export default function RiskDetailPage(
   const [risk, setRisk] = useState<RiskWithRelations | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [approvalCandidates, setApprovalCandidates] = useState<ApprovalCandidate[]>([])
   const [showTreatmentForm, setShowTreatmentForm] = useState(false)
   const [treatmentForm, setTreatmentForm] = useState<TreatmentFormState>(() => createInitialTreatmentState())
   const [organizationId, setOrganizationId] = useState<string | null>(null)
@@ -96,13 +98,34 @@ export default function RiskDetailPage(
       setOrganizationId(riskData.organization_id || null)
 
       if (riskData?.organization_id) {
-        const orgUsers = await userService.getOrganizationUsers(riskData.organization_id)
-        setUsers(orgUsers)
-      }
+        // Profile and approval candidates are required for separate UI paths.
+        // Loading administrative members must not make either path fail.
+        const profilePromise = userService.getUserProfile().catch(error => {
+          console.error('Failed to load current user profile', error)
+          return null
+        })
+        const candidatePromise = userService.getApprovalCandidates(
+          riskData.organization_id,
+          'risk_acceptance',
+          riskData.id
+        ).catch(error => {
+          console.error('Failed to load risk acceptance candidates', error)
+          return []
+        })
+        const [profile, candidateRows] = await Promise.all([profilePromise, candidatePromise])
 
-      const profile = await userService.getUserProfile()
-      if (profile) {
-        setUserRole(profile.role as UserRole)
+        setApprovalCandidates(candidateRows)
+
+        if (profile) {
+          setUserRole(profile.effective_role)
+          if (['system_operator', 'org_admin'].includes(profile.effective_role ?? '')) {
+            try {
+              setUsers(await userService.getOrganizationUsers(riskData.organization_id))
+            } catch (error) {
+              console.error('Failed to load organization members', error)
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Error loading risk details:', err)
@@ -620,10 +643,14 @@ export default function RiskDetailPage(
                         </label>
                         <select
                           value={treatmentForm.treatment_type}
-                          onChange={(e) => setTreatmentForm(prev => ({
-                            ...prev,
-                            treatment_type: e.target.value as RiskTreatment['treatment_type']
-                          }))}
+                          onChange={(e) => {
+                            const treatmentType = e.target.value as RiskTreatment['treatment_type']
+                            setTreatmentForm(prev => ({
+                              ...prev,
+                              treatment_type: treatmentType,
+                              responsibleId: '',
+                            }))
+                          }}
                           data-testid="risk-treatment-strategy"
                           className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                           required
@@ -660,11 +687,17 @@ export default function RiskDetailPage(
                             required
                           >
                             <option value="">{t('treatment.controls.searchPlaceholder')}</option>
-                            {users.map((user) => (
-                              <option key={user.id} value={user.id}>
-                                {user.full_name || user.email}
-                              </option>
-                            ))}
+                            {treatmentForm.treatment_type === 'accept'
+                              ? approvalCandidates.map((candidate) => (
+                                  <option key={candidate.id} value={candidate.id}>
+                                    {candidate.displayName} ({candidate.role})
+                                  </option>
+                                ))
+                              : users.map((user) => (
+                                  <option key={user.id} value={user.id}>
+                                    {user.full_name || user.email}
+                                  </option>
+                                ))}
                           </select>
                         </div>
                         <div>
@@ -811,7 +844,9 @@ export default function RiskDetailPage(
                         </div>
                         <p className="mt-3 text-sm text-text-secondary">{treatment.description}</p>
                         <p className="mt-1 text-xs text-text-muted">
-                          {t('treatment.responsible')}: {users.find((user) => user.id === treatment.responsible_id)?.full_name || treatment.responsible_id || '-'}
+                          {t('treatment.responsible')}: {users.find((user) => user.id === treatment.responsible_id)?.full_name
+                            || approvalCandidates.find((candidate) => candidate.id === treatment.responsible_id)?.displayName
+                            || '-'}
                         </p>
                         {treatment.treatment_type === 'accept' && (
                           <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 p-3 text-xs text-amber-900">

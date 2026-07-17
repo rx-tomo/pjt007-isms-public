@@ -1,334 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { and, eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { auditLogs, userMemberships, userProfiles } from '@/lib/db/drizzle/schema'
-import { isoControls, riskTreatments, risks, soaVersions } from '@/lib/db/drizzle/schema/risks'
 import { ApprovalService, type ApprovalRequestStatus } from '@/lib/services/approval'
-import { AuditService } from '@/lib/services/audit'
-import { DocumentService } from '@/lib/services/document'
-import { IncidentService } from '@/lib/services/incident'
+import { enrichApprovalQueueItems } from '@/lib/server/approvalQueueContext'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import { DocumentApprovalMutationService } from '@/lib/server/documents/documentApprovalMutationService'
+import { isDocumentTenantInvariantError } from '@/lib/services/documentTenantInvariant'
+import {
+  isNonDocumentApprovalMutationError,
+  NonDocumentApprovalMutationService,
+} from '@/lib/server/approvals/nonDocumentApprovalMutationService'
 
 const APPROVAL_VIEWER_ROLES = new Set(['approver', 'org_admin', 'system_operator'])
 const REVERT_ROLES = new Set(['org_admin', 'system_operator'])
-
-async function approveIsoControlSoa(input: {
-  requestId: string
-  controlId: string
-  actorId: string
-  comment?: string
-}) {
-  const db = getDb()
-  const [control] = await db
-    .select()
-    .from(isoControls)
-    .where(eq(isoControls.id, input.controlId))
-    .limit(1)
-
-  if (!control) {
-    throw new Error('適用管理策判断の対象管理策が見つかりません')
-  }
-
-  const approvalService = new ApprovalService()
-  await approvalService.approveRequest({
-    requestId: input.requestId,
-    actorId: input.actorId,
-    comment: input.comment,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(isoControls)
-    .set({
-      soaApprovalStatus: 'approved',
-      soaApprovedBy: input.actorId,
-      soaApprovedAt: now,
-      soaRejectionReason: null,
-      updatedAt: now,
-    })
-    .where(eq(isoControls.id, input.controlId))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: control.organizationId,
-    userId: input.actorId,
-    action: 'control.soa.approved',
-    resourceType: 'iso_control',
-    resourceId: input.controlId,
-    changes: JSON.stringify({ approval_request_id: input.requestId, comment: input.comment ?? null }),
-    scope: 'tenant',
-  })
-}
-
-async function rejectIsoControlSoa(input: {
-  requestId: string
-  controlId: string
-  actorId: string
-  reason: string
-}) {
-  const db = getDb()
-  const [control] = await db
-    .select()
-    .from(isoControls)
-    .where(eq(isoControls.id, input.controlId))
-    .limit(1)
-
-  if (!control) {
-    throw new Error('適用管理策判断の対象管理策が見つかりません')
-  }
-
-  const approvalService = new ApprovalService()
-  await approvalService.rejectRequest({
-    requestId: input.requestId,
-    actorId: input.actorId,
-    reason: input.reason,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(isoControls)
-    .set({
-      soaApprovalStatus: 'rejected',
-      soaApprovedBy: null,
-      soaApprovedAt: null,
-      soaRejectionReason: input.reason,
-      updatedAt: now,
-    })
-    .where(eq(isoControls.id, input.controlId))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: control.organizationId,
-    userId: input.actorId,
-    action: 'control.soa.rejected',
-    resourceType: 'iso_control',
-    resourceId: input.controlId,
-    changes: JSON.stringify({ approval_request_id: input.requestId, reason: input.reason }),
-    scope: 'tenant',
-  })
-}
-
-async function approveSoaVersion(input: {
-  requestId: string
-  versionId: string
-  actorId: string
-  comment?: string
-}) {
-  const db = getDb()
-  const [version] = await db
-    .select()
-    .from(soaVersions)
-    .where(eq(soaVersions.id, input.versionId))
-    .limit(1)
-
-  if (!version) {
-    throw new Error('適用管理策判断版が見つかりません')
-  }
-
-  const approvalService = new ApprovalService()
-  await approvalService.approveRequest({
-    requestId: input.requestId,
-    actorId: input.actorId,
-    comment: input.comment,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(soaVersions)
-    .set({
-      reviewStatus: 'approved',
-      reviewedBy: input.actorId,
-      reviewedAt: now,
-      rejectionReason: null,
-    })
-    .where(eq(soaVersions.id, input.versionId))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: version.organizationId,
-    userId: input.actorId,
-    action: 'control.soa.version_review_approved',
-    resourceType: 'soa_version',
-    resourceId: input.versionId,
-    changes: JSON.stringify({
-      approval_request_id: input.requestId,
-      version_number: version.versionNumber,
-      comment: input.comment ?? null,
-    }),
-    scope: 'tenant',
-  })
-}
-
-async function rejectSoaVersion(input: {
-  requestId: string
-  versionId: string
-  actorId: string
-  reason: string
-}) {
-  const db = getDb()
-  const [version] = await db
-    .select()
-    .from(soaVersions)
-    .where(eq(soaVersions.id, input.versionId))
-    .limit(1)
-
-  if (!version) {
-    throw new Error('適用管理策判断版が見つかりません')
-  }
-
-  const approvalService = new ApprovalService()
-  await approvalService.rejectRequest({
-    requestId: input.requestId,
-    actorId: input.actorId,
-    reason: input.reason,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(soaVersions)
-    .set({
-      reviewStatus: 'rejected',
-      reviewedBy: null,
-      reviewedAt: now,
-      rejectionReason: input.reason,
-    })
-    .where(eq(soaVersions.id, input.versionId))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: version.organizationId,
-    userId: input.actorId,
-    action: 'control.soa.version_review_rejected',
-    resourceType: 'soa_version',
-    resourceId: input.versionId,
-    changes: JSON.stringify({
-      approval_request_id: input.requestId,
-      version_number: version.versionNumber,
-      reason: input.reason,
-    }),
-    scope: 'tenant',
-  })
-}
-
-async function approveResidualAcceptance(input: {
-  requestId: string
-  treatmentId: string
-  actorId: string
-  comment?: string
-}) {
-  const db = getDb()
-  const [treatment] = await db
-    .select({
-      id: riskTreatments.id,
-      riskId: riskTreatments.riskId,
-      organizationId: risks.organizationId,
-    })
-    .from(riskTreatments)
-    .innerJoin(risks, eq(riskTreatments.riskId, risks.id))
-    .where(eq(riskTreatments.id, input.treatmentId))
-    .limit(1)
-
-  if (!treatment) {
-    throw new Error('Residual acceptance treatment not found')
-  }
-  if (!treatment.organizationId) {
-    throw new Error('Residual acceptance organization not found')
-  }
-
-  const approvalService = new ApprovalService()
-  await approvalService.approveRequest({
-    requestId: input.requestId,
-    actorId: input.actorId,
-    comment: input.comment,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(riskTreatments)
-    .set({
-      residualApprovalStatus: 'approved',
-      residualApprovedBy: input.actorId,
-      residualApprovedAt: now,
-      residualRejectionReason: null,
-      updatedAt: now,
-    })
-    .where(eq(riskTreatments.id, input.treatmentId))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: treatment.organizationId,
-    userId: input.actorId,
-    action: 'risk.residual_acceptance.approved',
-    resourceType: 'risk_treatment',
-    resourceId: input.treatmentId,
-    changes: JSON.stringify({
-      risk_id: treatment.riskId,
-      approval_request_id: input.requestId,
-      comment: input.comment ?? null,
-    }),
-    scope: 'tenant',
-  })
-}
-
-async function rejectResidualAcceptance(input: {
-  requestId: string
-  treatmentId: string
-  actorId: string
-  reason: string
-}) {
-  const db = getDb()
-  const [treatment] = await db
-    .select({
-      id: riskTreatments.id,
-      riskId: riskTreatments.riskId,
-      organizationId: risks.organizationId,
-    })
-    .from(riskTreatments)
-    .innerJoin(risks, eq(riskTreatments.riskId, risks.id))
-    .where(eq(riskTreatments.id, input.treatmentId))
-    .limit(1)
-
-  if (!treatment) {
-    throw new Error('Residual acceptance treatment not found')
-  }
-  if (!treatment.organizationId) {
-    throw new Error('Residual acceptance organization not found')
-  }
-
-  const approvalService = new ApprovalService()
-  await approvalService.rejectRequest({
-    requestId: input.requestId,
-    actorId: input.actorId,
-    reason: input.reason,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(riskTreatments)
-    .set({
-      residualApprovalStatus: 'rejected',
-      residualApprovedBy: null,
-      residualApprovedAt: null,
-      residualRejectionReason: input.reason,
-      updatedAt: now,
-    })
-    .where(eq(riskTreatments.id, input.treatmentId))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: treatment.organizationId,
-    userId: input.actorId,
-    action: 'risk.residual_acceptance.rejected',
-    resourceType: 'risk_treatment',
-    resourceId: input.treatmentId,
-    changes: JSON.stringify({
-      risk_id: treatment.riskId,
-      approval_request_id: input.requestId,
-      reason: input.reason,
-    }),
-    scope: 'tenant',
-  })
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -342,44 +26,12 @@ function parseStatus(value: string | null): ApprovalRequestStatus | undefined {
   return undefined
 }
 
-async function getOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
-  const [[profile], [membership]] = await Promise.all([
-    db
-      .select({
-        organizationId: userProfiles.organizationId,
-        role: userProfiles.role,
-      })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({
-        id: userMemberships.id,
-        role: userMemberships.role,
-      })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.status, 'active')
-      ))
-      .limit(1),
-  ])
-
-  const profileAccess = profile?.organizationId === organizationId
-  const membershipAccess = Boolean(membership)
-  const role = membership?.role ?? (profileAccess ? profile?.role : null)
-
-  return {
-    hasAccess: profileAccess || membershipAccess,
-    role,
-    canView: Boolean(role && APPROVAL_VIEWER_ROLES.has(role)),
-    canRevert: Boolean(role && REVERT_ROLES.has(role)),
-  }
-}
-
 function forbidden() {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+}
+
+function approvalNotFound() {
+  return NextResponse.json({ error: 'Approval request not found' }, { status: 404 })
 }
 
 export async function GET(request: NextRequest) {
@@ -396,8 +48,8 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
-  const access = await getOrganizationAccess(db, user.id, organizationId)
-  if (!access.hasAccess || !access.canView) {
+  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  if (!authorization.ok || !APPROVAL_VIEWER_ROLES.has(authorization.context.role)) {
     return applyCookies(forbidden())
   }
 
@@ -405,10 +57,13 @@ export async function GET(request: NextRequest) {
   const status = parseStatus(searchParams.get('status'))
   const requests = await service.listRequests(organizationId, {
     status,
-    approverId: access.role === 'approver' && status === 'pending' ? user.id : undefined,
+    approverId: authorization.context.role === 'approver' ? user.id : undefined,
   })
 
-  return applyCookies(NextResponse.json(requests))
+  return applyCookies(NextResponse.json(await enrichApprovalQueueItems(
+    requests,
+    authorization.context
+  )))
 }
 
 export async function POST(request: NextRequest) {
@@ -431,14 +86,23 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb()
-    const access = await getOrganizationAccess(db, user.id, requestRow.organization_id)
-    if (!access.hasAccess || !access.canView) {
-      return applyCookies(forbidden())
+    const authorization = await resolveTenantAuthorizationContext(
+      db,
+      user.id,
+      requestRow.organization_id
+    )
+    if (
+      !authorization.ok
+      || !APPROVAL_VIEWER_ROLES.has(authorization.context.role)
+      || (
+        authorization.context.role === 'approver'
+        && requestRow.approver_id !== user.id
+      )
+    ) {
+      return applyCookies(approvalNotFound())
     }
 
-    if (access.role === 'approver' && requestRow.approver_id && requestRow.approver_id !== user.id) {
-      return applyCookies(forbidden())
-    }
+    const nonDocumentService = new NonDocumentApprovalMutationService()
 
     const action = body.action
     const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
@@ -446,57 +110,15 @@ export async function POST(request: NextRequest) {
 
     if (action === 'approve') {
       if (requestRow.resource_type === 'document') {
-        await new DocumentService().approveDocument(requestRow.resource_id)
-      } else if (requestRow.resource_type === 'incident') {
-        await new IncidentService().approveIncident({
-          incidentId: requestRow.resource_id,
-          actorId: user.id,
-        })
-      } else if (requestRow.resource_type === 'audit_plan') {
-        await new AuditService().approveAuditPlan({
-          planId: requestRow.resource_id,
-          actorId: user.id,
-          comment,
-        })
-      } else if (requestRow.resource_type === 'audit_report') {
-        await new AuditService().approveAuditReport({
-          reportId: requestRow.resource_id,
-          actorId: user.id,
-          comment,
-        })
-      } else if (requestRow.resource_type === 'nonconformity_closure') {
-        await new AuditService().approveCorrectiveActionClosure({
-          actionId: requestRow.resource_id,
-          actorId: user.id,
-          comment,
-        })
-      } else if (requestRow.resource_type === 'iso_control_soa') {
-        await approveIsoControlSoa({
-          requestId: requestRow.id,
-          controlId: requestRow.resource_id,
-          actorId: user.id,
-          comment,
-        })
-      } else if (requestRow.resource_type === 'soa_version') {
-        await approveSoaVersion({
-          requestId: requestRow.id,
-          versionId: requestRow.resource_id,
-          actorId: user.id,
-          comment,
-        })
-      } else if (requestRow.resource_type === 'risk_residual_acceptance') {
-        await approveResidualAcceptance({
-          requestId: requestRow.id,
-          treatmentId: requestRow.resource_id,
-          actorId: user.id,
-          comment,
-        })
+        await new DocumentApprovalMutationService().approve(
+          authorization.context,
+          requestRow.resource_id,
+          { comment },
+          { userId: user.id, userAgent: request.headers.get('user-agent') },
+          requestRow.id
+        )
       } else {
-        await approvalService.approveRequest({
-          requestId: requestRow.id,
-          actorId: user.id,
-          comment,
-        })
+        await nonDocumentService.approve(authorization.context, requestRow.id, comment)
       }
 
       return applyCookies(NextResponse.json({ ok: true }))
@@ -508,83 +130,51 @@ export async function POST(request: NextRequest) {
       }
 
       if (requestRow.resource_type === 'document') {
-        await new DocumentService().rejectDocument(requestRow.resource_id, reason)
-      } else if (requestRow.resource_type === 'incident') {
-        await new IncidentService().rejectIncident({
-          incidentId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
-      } else if (requestRow.resource_type === 'audit_plan') {
-        await new AuditService().rejectAuditPlan({
-          planId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
-      } else if (requestRow.resource_type === 'audit_report') {
-        await new AuditService().rejectAuditReport({
-          reportId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
-      } else if (requestRow.resource_type === 'nonconformity_closure') {
-        await new AuditService().rejectCorrectiveActionClosure({
-          actionId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
-      } else if (requestRow.resource_type === 'iso_control_soa') {
-        await rejectIsoControlSoa({
-          requestId: requestRow.id,
-          controlId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
-      } else if (requestRow.resource_type === 'soa_version') {
-        await rejectSoaVersion({
-          requestId: requestRow.id,
-          versionId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
-      } else if (requestRow.resource_type === 'risk_residual_acceptance') {
-        await rejectResidualAcceptance({
-          requestId: requestRow.id,
-          treatmentId: requestRow.resource_id,
-          actorId: user.id,
-          reason,
-        })
+        await new DocumentApprovalMutationService().reject(
+          authorization.context,
+          requestRow.resource_id,
+          { reason },
+          { userId: user.id, userAgent: request.headers.get('user-agent') },
+          requestRow.id
+        )
       } else {
-        await approvalService.rejectRequest({
-          requestId: requestRow.id,
-          actorId: user.id,
-          reason,
-        })
+        await nonDocumentService.reject(authorization.context, requestRow.id, reason)
       }
 
       return applyCookies(NextResponse.json({ ok: true }))
     }
 
     if (action === 'revert') {
-      if (!access.canRevert) {
+      if (!REVERT_ROLES.has(authorization.context.role)) {
         return applyCookies(forbidden())
       }
       if (!reason) {
         return applyCookies(NextResponse.json({ error: 'Missing revert reason' }, { status: 400 }))
       }
 
-      await approvalService.revertApprovalRequest({
-        requestId: requestRow.id,
-        revertedBy: user.id,
-        reason,
-        organizationId: requestRow.organization_id,
-      })
+      if (requestRow.resource_type === 'document') {
+        await new DocumentApprovalMutationService().revert(
+          authorization.context,
+          requestRow.resource_id,
+          { reason },
+          { userId: user.id, userAgent: request.headers.get('user-agent') },
+          requestRow.id
+        )
+      } else {
+        await nonDocumentService.revert(authorization.context, requestRow.id, reason)
+      }
 
       return applyCookies(NextResponse.json({ ok: true }))
     }
 
     return applyCookies(NextResponse.json({ error: 'Unsupported approval action' }, { status: 400 }))
   } catch (error) {
+    if (isDocumentTenantInvariantError(error)) {
+      return applyCookies(NextResponse.json({ error: error.message }, { status: error.status }))
+    }
+    if (isNonDocumentApprovalMutationError(error)) {
+      return applyCookies(NextResponse.json({ error: error.message }, { status: error.status }))
+    }
     console.error('Approvals API POST failed', error)
     return applyCookies(NextResponse.json({ error: 'Failed to update approval request' }, { status: 500 }))
   }

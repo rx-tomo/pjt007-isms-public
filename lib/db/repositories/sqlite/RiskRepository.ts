@@ -32,8 +32,8 @@ import { userProfiles } from '@/lib/db/drizzle/schema/users'
 import type {
   IRiskRepository,
   Risk,
-  RiskInsert,
-  RiskUpdate,
+  RiskRepositoryInsert,
+  RiskRepositoryUpdate,
   RiskCategory,
   RiskTreatment,
   RiskCriteria,
@@ -43,11 +43,11 @@ import type {
   RiskMatrixEntry,
   RiskStats,
   RiskFilters,
-  TreatmentPayload,
 } from '../interfaces/IRiskRepository'
 import type { QueryOptions } from '../interfaces/IBaseRepository'
 import type { RiskAssetWithDetails } from '@/lib/services/informationAsset'
 import type { DrizzleDb } from '@/lib/db/drizzle/client'
+import { DEPARTMENT_UNASSIGNED_VALUE } from '@/lib/constants/departments'
 
 export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskRepository {
   /**
@@ -212,19 +212,35 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
       conditions.push(eq(risks.assessmentPeriod, filters.assessmentPeriod))
     }
 
-    // Department filter (via owner's primaryDepartmentId)
-    const needsDepartmentJoin = filters?.departmentId !== undefined
+    // Department filter (temporary inference via owner's primaryDepartmentId; BL-022)
+    const departmentIds = filters?.departmentIds !== undefined
+      ? [...new Set(filters.departmentIds)]
+      : typeof filters?.departmentId === 'string' && filters.departmentId !== DEPARTMENT_UNASSIGNED_VALUE
+        ? [filters.departmentId]
+        : []
+    const includeNoDepartment = filters?.includeNoDepartment === true
+      || filters?.departmentId === null
+      || filters?.departmentId === DEPARTMENT_UNASSIGNED_VALUE
+    const needsDepartmentJoin = filters?.departmentIds !== undefined
+      || filters?.departmentId !== undefined
+      || filters?.includeNoDepartment === true
+
+    if (needsDepartmentJoin && departmentIds.length === 0 && !includeNoDepartment) {
+      return []
+    }
+
     if (needsDepartmentJoin) {
-      if (filters!.includeNoDepartment) {
-        // Include risks where owner's department matches OR is NULL
+      if (departmentIds.length > 0 && includeNoDepartment) {
         conditions.push(
           or(
-            eq(userProfiles.primaryDepartmentId, filters!.departmentId!),
+            inArray(userProfiles.primaryDepartmentId, departmentIds),
             isNull(userProfiles.primaryDepartmentId)
           ) as never
         )
+      } else if (departmentIds.length > 0) {
+        conditions.push(inArray(userProfiles.primaryDepartmentId, departmentIds) as never)
       } else {
-        conditions.push(eq(userProfiles.primaryDepartmentId, filters!.departmentId!) as never)
+        conditions.push(isNull(userProfiles.primaryDepartmentId) as never)
       }
     }
 
@@ -250,7 +266,13 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
 
     // Conditionally add userProfiles JOIN for department filtering
     const queryWithJoins = needsDepartmentJoin
-      ? baseRiskQuery.leftJoin(userProfiles, eq(risks.ownerId, userProfiles.id))
+      ? baseRiskQuery.leftJoin(
+          userProfiles,
+          and(
+            eq(risks.ownerId, userProfiles.id),
+            eq(userProfiles.organizationId, organizationId)
+          )
+        )
       : baseRiskQuery
 
     const rows = await queryWithJoins
@@ -312,7 +334,10 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
   /**
    * Create a new risk
    */
-  async create(data: RiskInsert): Promise<Risk> {
+  async create(data: RiskRepositoryInsert): Promise<Risk> {
+    if ('owner_id' in data) {
+      throw new Error('Risk owner assignment must use RiskTenantLifecycleService')
+    }
     this.requireOrganizationId(data.organization_id, 'create risk')
 
     const id = data.id ?? crypto.randomUUID()
@@ -333,7 +358,7 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
       status: data.status ?? 'identified',
       identifiedDate: data.identified_date ?? null,
       identifiedBy: data.identified_by ?? null,
-      ownerId: data.owner_id ?? null,
+      ownerId: null,
       assessmentPeriod,
       createdAt: data.created_at ?? now,
       updatedAt: data.updated_at ?? now,
@@ -349,7 +374,10 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
   /**
    * Update an existing risk
    */
-  async update(id: string, updates: RiskUpdate): Promise<Risk | null> {
+  async update(id: string, updates: RiskRepositoryUpdate): Promise<Risk | null> {
+    if ('owner_id' in updates) {
+      throw new Error('Risk owner changes must use RiskTenantLifecycleService')
+    }
     const now = new Date().toISOString()
 
     // We need to fetch current data to compute risk_score if only one of impact/likelihood is updated
@@ -380,7 +408,6 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
       setPayload.assessmentPeriod = this.computeAssessmentPeriod(updates.identified_date)
     }
     if (updates.identified_by !== undefined) setPayload.identifiedBy = updates.identified_by
-    if (updates.owner_id !== undefined) setPayload.ownerId = updates.owner_id
 
     // Compute risk_score
     if (updates.impact_level !== undefined || updates.likelihood_level !== undefined) {
@@ -412,156 +439,6 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
     await this.db
       .delete(risks)
       .where(eq(risks.id, id))
-  }
-
-  // =========================================
-  // Treatment operations
-  // =========================================
-
-  /**
-   * Create a risk treatment
-   */
-  async createTreatment(
-    riskId: string,
-    treatment: TreatmentPayload,
-    controlIds: string[] = []
-  ): Promise<RiskTreatment> {
-    const id = crypto.randomUUID()
-    const now = new Date().toISOString()
-
-    const row = {
-      id,
-      riskId,
-      treatmentType: treatment.treatment_type,
-      description: treatment.description,
-      responsibleId: treatment.responsible_id ?? null,
-      dueDate: treatment.due_date ?? null,
-      status: treatment.status ?? 'planned',
-      residualApprovalStatus: 'draft',
-      residualApprovedBy: null,
-      residualApprovedAt: null,
-      residualRejectionReason: null,
-      residualReviewDueDate: treatment.residual_review_due_date ?? null,
-      costEstimate: treatment.cost_estimate ?? null,
-      actualCost: treatment.actual_cost ?? null,
-      effectivenessRating: treatment.effectiveness_rating ?? null,
-      createdAt: now,
-      updatedAt: now,
-    }
-
-    await this.db.insert(riskTreatments).values(row)
-
-    if (controlIds.length > 0) {
-      await this.syncTreatmentControls(id, controlIds)
-    }
-
-    this.logDataAccess('createTreatment', 'n/a', { riskId, treatmentId: id })
-
-    return this.mapTreatmentRowToEntity(row)
-  }
-
-  /**
-   * Update a risk treatment
-   */
-  async updateTreatment(
-    id: string,
-    updates: Partial<TreatmentPayload>,
-    controlIds?: string[]
-  ): Promise<RiskTreatment> {
-    const now = new Date().toISOString()
-
-    const setPayload: Record<string, unknown> = {
-      updatedAt: now,
-    }
-
-    if (updates.treatment_type !== undefined) setPayload.treatmentType = updates.treatment_type
-    if (updates.description !== undefined) setPayload.description = updates.description
-    if (updates.responsible_id !== undefined) setPayload.responsibleId = updates.responsible_id
-    if (updates.due_date !== undefined) setPayload.dueDate = updates.due_date
-    if (updates.status !== undefined) setPayload.status = updates.status
-    if ('residual_approval_status' in updates) setPayload.residualApprovalStatus = updates.residual_approval_status
-    if ('residual_approved_by' in updates) setPayload.residualApprovedBy = updates.residual_approved_by
-    if ('residual_approved_at' in updates) setPayload.residualApprovedAt = updates.residual_approved_at
-    if ('residual_rejection_reason' in updates) setPayload.residualRejectionReason = updates.residual_rejection_reason
-    if ('residual_review_due_date' in updates) setPayload.residualReviewDueDate = updates.residual_review_due_date
-    if (updates.cost_estimate !== undefined) setPayload.costEstimate = updates.cost_estimate
-    if (updates.actual_cost !== undefined) setPayload.actualCost = updates.actual_cost
-    if (updates.effectiveness_rating !== undefined) setPayload.effectivenessRating = updates.effectiveness_rating
-
-    await this.db
-      .update(riskTreatments)
-      .set(setPayload)
-      .where(eq(riskTreatments.id, id))
-
-    if (Array.isArray(controlIds)) {
-      await this.syncTreatmentControls(id, controlIds)
-    }
-
-    // Re-fetch
-    const rows = await this.db
-      .select()
-      .from(riskTreatments)
-      .where(eq(riskTreatments.id, id))
-
-    if (rows.length === 0) {
-      throw new Error('対応策の更新に失敗しました')
-    }
-
-    return this.mapTreatmentRowToEntity(rows[0])
-  }
-
-  /**
-   * Delete a risk treatment
-   */
-  async deleteTreatment(id: string): Promise<void> {
-    await this.db
-      .delete(riskTreatments)
-      .where(eq(riskTreatments.id, id))
-  }
-
-  /**
-   * Sync treatment control links (add new, remove old, keep existing)
-   */
-  async syncTreatmentControls(treatmentId: string, controlIds: string[]): Promise<void> {
-    // Get existing links
-    const existing = await this.db
-      .select({ id: riskControlLinks.id, isoControlId: riskControlLinks.isoControlId })
-      .from(riskControlLinks)
-      .where(eq(riskControlLinks.riskTreatmentId, treatmentId))
-
-    const existingIds = new Set(existing.map(row => row.isoControlId))
-    const nextIds = new Set(controlIds)
-
-    const toInsert = controlIds.filter(cid => !existingIds.has(cid))
-    const toDelete = existing.filter(row => !nextIds.has(row.isoControlId))
-
-    // Insert new links
-    if (toInsert.length > 0) {
-      const now = new Date().toISOString()
-      for (const controlId of toInsert) {
-        await this.db.insert(riskControlLinks).values({
-          id: crypto.randomUUID(),
-          riskTreatmentId: treatmentId,
-          isoControlId: controlId,
-          createdAt: now,
-          updatedAt: now,
-        })
-      }
-    }
-
-    // Delete removed links
-    if (toDelete.length > 0) {
-      const deleteIds = toDelete.map(row => row.id)
-      await this.db
-        .delete(riskControlLinks)
-        .where(inArray(riskControlLinks.id, deleteIds))
-    }
-
-    this.logDataAccess('syncTreatmentControls', 'n/a', {
-      treatmentId,
-      added: toInsert.length,
-      removed: toDelete.length,
-    })
   }
 
   // =========================================
@@ -1080,6 +957,7 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
     residualApprovedAt?: string | null
     residualRejectionReason?: string | null
     residualReviewDueDate?: string | null
+    materialVersion?: number
     costEstimate: number | null
     actualCost: number | null
     effectivenessRating: number | null
@@ -1099,12 +977,13 @@ export class SQLiteRiskRepository extends BaseSQLiteRepository implements IRiskR
       residual_approved_at: row.residualApprovedAt ?? null,
       residual_rejection_reason: row.residualRejectionReason ?? null,
       residual_review_due_date: row.residualReviewDueDate ?? null,
+      material_version: row.materialVersion ?? 1,
       cost_estimate: row.costEstimate,
       actual_cost: row.actualCost,
       effectiveness_rating: row.effectivenessRating,
       created_at: row.createdAt,
       updated_at: row.updatedAt,
-    }
+    } as RiskTreatment
   }
 
   private mapCriteriaRowToEntity(row: {

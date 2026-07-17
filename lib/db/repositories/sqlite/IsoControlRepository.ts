@@ -14,7 +14,7 @@
  * @module lib/db/repositories/sqlite/IsoControlRepository
  */
 
-import { eq, and, or, like, inArray, asc, sql } from 'drizzle-orm'
+import { eq, and, or, like, asc, sql } from 'drizzle-orm'
 import { BaseSQLiteRepository } from './BaseSQLiteRepository'
 import { isoControls, riskControlLinks, controlTemplates } from '@/lib/db/drizzle/schema/risks'
 import type {
@@ -23,7 +23,6 @@ import type {
   IsoControlInsert,
   IsoControlUpdate,
   ControlTemplate,
-  RiskControlLink,
   IsoControlSearchFilters,
 } from '../interfaces/IIsoControlRepository'
 import type { QueryOptions } from '../interfaces/IBaseRepository'
@@ -200,12 +199,11 @@ export class SQLiteIsoControlRepository extends BaseSQLiteRepository implements 
   }
 
   /**
-   * Delete an ISO control
+   * ISO control deletion requires fresh tenant authorization and audit logging.
+   * Keep this runtime guard for legacy callers that hold the concrete class.
    */
-  async delete(id: string): Promise<void> {
-    await this.db
-      .delete(isoControls)
-      .where(eq(isoControls.id, id))
+  async delete(_id: string): Promise<void> {
+    throw new Error('ISO control deletion must use the authorized controls API')
   }
 
   // =========================================
@@ -332,92 +330,6 @@ export class SQLiteIsoControlRepository extends BaseSQLiteRepository implements 
     return rows.map(row => this.mapRowToEntity(row))
   }
 
-  /**
-   * Link a control to a risk treatment
-   */
-  async linkControlToTreatment(treatmentId: string, controlId: string): Promise<RiskControlLink> {
-    const id = crypto.randomUUID()
-    const now = new Date().toISOString()
-
-    const row = {
-      id,
-      riskTreatmentId: treatmentId,
-      isoControlId: controlId,
-      createdAt: now,
-      updatedAt: now,
-    }
-
-    await this.db.insert(riskControlLinks).values(row)
-
-    this.logDataAccess('linkControlToTreatment', 'n/a', { treatmentId, controlId })
-
-    return this.mapLinkRowToEntity(row)
-  }
-
-  /**
-   * Unlink a control from a risk treatment
-   */
-  async unlinkControlFromTreatment(treatmentId: string, controlId: string): Promise<void> {
-    await this.db
-      .delete(riskControlLinks)
-      .where(
-        and(
-          eq(riskControlLinks.riskTreatmentId, treatmentId),
-          eq(riskControlLinks.isoControlId, controlId)
-        )
-      )
-  }
-
-  /**
-   * Set all controls for a risk treatment (sync operation)
-   *
-   * Adds new links, removes old links, and keeps existing ones.
-   */
-  async setTreatmentControls(treatmentId: string, controlIds: string[]): Promise<void> {
-    // Get existing links
-    const existing = await this.db
-      .select({ id: riskControlLinks.id, isoControlId: riskControlLinks.isoControlId })
-      .from(riskControlLinks)
-      .where(eq(riskControlLinks.riskTreatmentId, treatmentId))
-
-    const existingIds = new Set(existing.map(row => row.isoControlId))
-    const nextIds = new Set(controlIds)
-
-    // Determine inserts and deletes
-    const toInsert = controlIds.filter(id => !existingIds.has(id))
-    const toDelete = existing.filter(row => !nextIds.has(row.isoControlId))
-
-    // Insert new links
-    if (toInsert.length > 0) {
-      const now = new Date().toISOString()
-      const insertPayload = toInsert.map(controlId => ({
-        id: crypto.randomUUID(),
-        riskTreatmentId: treatmentId,
-        isoControlId: controlId,
-        createdAt: now,
-        updatedAt: now,
-      }))
-
-      for (const payload of insertPayload) {
-        await this.db.insert(riskControlLinks).values(payload)
-      }
-    }
-
-    // Delete removed links
-    if (toDelete.length > 0) {
-      const deleteIds = toDelete.map(row => row.id)
-      await this.db
-        .delete(riskControlLinks)
-        .where(inArray(riskControlLinks.id, deleteIds))
-    }
-
-    this.logDataAccess('setTreatmentControls', 'n/a', {
-      treatmentId,
-      added: toInsert.length,
-      removed: toDelete.length,
-    })
-  }
-
   // =========================================
   // Private helpers
   // =========================================
@@ -476,25 +388,6 @@ export class SQLiteIsoControlRepository extends BaseSQLiteRepository implements 
       soa_approved_by: row.soaApprovedBy,
       soa_approved_at: row.soaApprovedAt,
       soa_rejection_reason: row.soaRejectionReason,
-      created_at: row.createdAt,
-      updated_at: row.updatedAt,
-    }
-  }
-
-  /**
-   * Maps a Drizzle risk_control_links row to RiskControlLink entity
-   */
-  private mapLinkRowToEntity(row: {
-    id: string
-    riskTreatmentId: string
-    isoControlId: string
-    createdAt: string | null
-    updatedAt: string | null
-  }): RiskControlLink {
-    return {
-      id: row.id,
-      risk_treatment_id: row.riskTreatmentId,
-      iso_control_id: row.isoControlId,
       created_at: row.createdAt,
       updated_at: row.updatedAt,
     }

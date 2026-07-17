@@ -1,6 +1,14 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { getDb } from '@/lib/db/drizzle/client'
-import { auditLogs, userDepartmentScopes } from '@/lib/db/drizzle/schema'
+import { auditLogs, userDepartmentScopes, userMemberships } from '@/lib/db/drizzle/schema'
+import {
+  assertActiveOrganizationMember,
+  assertDepartmentsBelongToOrganization,
+  badMemberMutationRequest,
+  MemberTenantInvariantError,
+  normalizeDepartmentIds,
+  withImmediateMemberTransaction,
+} from '@/lib/services/memberTenantInvariant'
 
 export interface UserDepartmentScope {
   id: string
@@ -14,7 +22,8 @@ export interface UserDepartmentScope {
 interface UpdatePayload {
   organizationId: string
   userId: string
-  departmentIds: string[]
+  departmentIds: unknown
+  actorUserId?: string
 }
 
 function mapScopeRow(row: typeof userDepartmentScopes.$inferSelect): UserDepartmentScope {
@@ -29,6 +38,12 @@ function mapScopeRow(row: typeof userDepartmentScopes.$inferSelect): UserDepartm
 }
 
 export class DepartmentScopeService {
+  constructor(private readonly injectedDb?: ReturnType<typeof getDb>) {}
+
+  private get db(): ReturnType<typeof getDb> {
+    return this.injectedDb ?? getDb()
+  }
+
   async listUserScopes(organizationId: string, userId: string): Promise<UserDepartmentScope[]> {
     if (typeof window !== 'undefined') {
       const url = new URL(`/api/organizations/${organizationId}/members/department-scopes`, window.location.origin)
@@ -41,6 +56,12 @@ export class DepartmentScopeService {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}))
+        if (response.status === 400 || response.status === 404) {
+          throw new MemberTenantInvariantError(
+            response.status,
+            errorBody?.error || '部門スコープの取得に失敗しました'
+          )
+        }
         throw new Error(errorBody?.error || '部門スコープの取得に失敗しました')
       }
 
@@ -48,17 +69,27 @@ export class DepartmentScopeService {
       return payload.scopes ?? []
     }
 
-    const db = getDb()
-    const rows = await db
-      .select()
-      .from(userDepartmentScopes)
-      .where(and(
+    const rows = await this.db
+      .select({
+        membershipId: userMemberships.id,
+        scope: userDepartmentScopes,
+      })
+      .from(userMemberships)
+      .leftJoin(userDepartmentScopes, and(
         eq(userDepartmentScopes.organizationId, organizationId),
         eq(userDepartmentScopes.userId, userId)
       ))
+      .where(and(
+        eq(userMemberships.organizationId, organizationId),
+        eq(userMemberships.userId, userId),
+        eq(userMemberships.status, 'active')
+      ))
       .orderBy(userDepartmentScopes.createdAt)
 
-    return rows.map(mapScopeRow)
+    if (!rows[0]) {
+      throw new MemberTenantInvariantError(404, 'Member not found')
+    }
+    return rows.flatMap(row => row.scope ? [mapScopeRow(row.scope)] : [])
   }
 
   async getUserDepartmentIds(organizationId: string, userId: string): Promise<string[]> {
@@ -69,7 +100,8 @@ export class DepartmentScopeService {
   async updateUserDepartmentScopes({
     organizationId,
     userId,
-    departmentIds
+    departmentIds,
+    actorUserId,
   }: UpdatePayload): Promise<UserDepartmentScope[]> {
     if (typeof window !== 'undefined') {
       const response = await fetch(`/api/organizations/${organizationId}/members/department-scopes`, {
@@ -81,6 +113,12 @@ export class DepartmentScopeService {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}))
+        if (response.status === 400 || response.status === 404) {
+          throw new MemberTenantInvariantError(
+            response.status,
+            errorBody?.error || '部門スコープの更新に失敗しました'
+          )
+        }
         throw new Error(errorBody?.error || '部門スコープの更新に失敗しました')
       }
 
@@ -88,56 +126,67 @@ export class DepartmentScopeService {
       return payload.scopes ?? []
     }
 
-    const db = getDb()
-    const uniqueIds = Array.from(
-      new Set(departmentIds.filter((id): id is string => Boolean(id)))
-    )
+    actorUserId = actorUserId?.trim()
+    if (!actorUserId) badMemberMutationRequest('actorUserId is required')
+    const uniqueIds = normalizeDepartmentIds(departmentIds)
+    const db = this.db
 
-    const existing = await db
-      .select()
-      .from(userDepartmentScopes)
-      .where(and(
-        eq(userDepartmentScopes.organizationId, organizationId),
-        eq(userDepartmentScopes.userId, userId)
-      ))
+    return withImmediateMemberTransaction(db, async tx => {
+      await assertActiveOrganizationMember(tx, organizationId, userId)
+      await assertDepartmentsBelongToOrganization(tx, organizationId, uniqueIds)
 
-    const existingIds = new Map(existing.map(scope => [scope.departmentId, scope.id]))
-    const toDelete = existing
-      .filter(scope => !uniqueIds.includes(scope.departmentId))
-      .map(scope => scope.id)
+      const existing = await tx
+        .select()
+        .from(userDepartmentScopes)
+        .where(and(
+          eq(userDepartmentScopes.organizationId, organizationId),
+          eq(userDepartmentScopes.userId, userId)
+        ))
 
-    if (toDelete.length > 0) {
-      await db
-        .delete(userDepartmentScopes)
-        .where(inArray(userDepartmentScopes.id, toDelete))
-    }
+      const existingIds = new Map(existing.map(scope => [scope.departmentId, scope.id]))
+      const toDelete = existing
+        .filter(scope => !uniqueIds.includes(scope.departmentId))
+        .map(scope => scope.id)
 
-    const now = new Date().toISOString()
-    const toInsert = uniqueIds
-      .filter(id => !existingIds.has(id))
-      .map(id => ({
+      if (toDelete.length > 0) {
+        await tx.delete(userDepartmentScopes).where(inArray(userDepartmentScopes.id, toDelete))
+      }
+
+      const now = new Date().toISOString()
+      const toInsert = uniqueIds
+        .filter(id => !existingIds.has(id))
+        .map(id => ({
+          id: crypto.randomUUID(),
+          organizationId,
+          userId,
+          departmentId: id,
+          createdAt: now,
+          updatedAt: now,
+        }))
+
+      if (toInsert.length > 0) {
+        await tx.insert(userDepartmentScopes).values(toInsert)
+      }
+
+      await tx.insert(auditLogs).values({
         id: crypto.randomUUID(),
         organizationId,
-        userId,
-        departmentId: id,
-        createdAt: now,
-        updatedAt: now,
-      }))
+        userId: actorUserId,
+        action: 'user.department_scopes_updated',
+        resourceType: 'user_department_scope',
+        resourceId: userId,
+        changes: JSON.stringify({ department_ids: uniqueIds, target_user_id: userId }),
+      })
 
-    if (toInsert.length > 0) {
-      await db.insert(userDepartmentScopes).values(toInsert)
-    }
-
-    await db.insert(auditLogs).values({
-      id: crypto.randomUUID(),
-      organizationId,
-      userId,
-      action: 'user.department_scopes_updated',
-      resourceType: 'user_department_scope',
-      resourceId: userId,
-      changes: JSON.stringify({ department_ids: uniqueIds }),
+      const rows = await tx
+        .select()
+        .from(userDepartmentScopes)
+        .where(and(
+          eq(userDepartmentScopes.organizationId, organizationId),
+          eq(userDepartmentScopes.userId, userId)
+        ))
+        .orderBy(userDepartmentScopes.createdAt)
+      return rows.map(mapScopeRow)
     })
-
-    return this.listUserScopes(organizationId, userId)
   }
 }

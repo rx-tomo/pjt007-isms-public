@@ -12,7 +12,7 @@ function main() {
   const reporter = 'line'
   console.log(`[qa-risks-matrix] BASE=${base}`)
   run('npx', ['playwright', 'test', 'tests/e2e/risks-matrix.spec.ts', '--reporter', reporter], {
-    PLAYWRIGHT_SKIP_WEB_SERVER: '1',
+    PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1',
     PLAYWRIGHT_TEST_BASE_URL: base,
     E2E_MODE: '1',
     NEXT_PUBLIC_E2E_MODE: '1'

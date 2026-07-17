@@ -5,6 +5,7 @@ const fs = require('fs')
 const http = require('http')
 const https = require('https')
 const path = require('path')
+const { randomUUID } = require('crypto')
 const { spawn } = require('child_process')
 
 const ROOT_DIR = path.join(__dirname, '..')
@@ -20,8 +21,30 @@ const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/,
 const logPrefix = process.env.QA_UC07_LOG_PREFIX || 'uc07-auditor'
 const logPath = path.join(LOGS_DIR, `${logPrefix}-${timestamp}.log`)
 
+const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://127.0.0.1:3007'
+const parsedBaseUrl = new URL(baseUrl)
+if (
+  parsedBaseUrl.protocol !== 'http:'
+  || parsedBaseUrl.hostname !== '127.0.0.1'
+  || parsedBaseUrl.username
+  || parsedBaseUrl.password
+  || parsedBaseUrl.pathname !== '/'
+  || parsedBaseUrl.search
+  || parsedBaseUrl.hash
+) {
+  throw new Error('PLAYWRIGHT_TEST_BASE_URL must be a canonical 127.0.0.1 origin')
+}
+const serverPort = Number(parsedBaseUrl.port)
+if (!Number.isInteger(serverPort) || serverPort < 1024 || serverPort > 65535) {
+  throw new Error('PLAYWRIGHT_TEST_BASE_URL port must be from 1024 to 65535')
+}
+const configuredRunNonce = process.env.PLAYWRIGHT_RUN_NONCE
+const runNonce = configuredRunNonce || randomUUID()
+
 const basePlaywrightEnv = {
-  PLAYWRIGHT_TEST_BASE_URL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://127.0.0.1:3007',
+  PLAYWRIGHT_TEST_BASE_URL: baseUrl,
+  PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1',
+  PLAYWRIGHT_RUN_NONCE: runNonce,
   E2E_MODE: process.env.E2E_MODE || '1',
   NEXT_PUBLIC_E2E_MODE: process.env.NEXT_PUBLIC_E2E_MODE || '1'
 }
@@ -102,6 +125,11 @@ async function ensureServer() {
   const healthUrl = `${baseUrl}/ja`
 
   if (await probeUrl(healthUrl)) {
+    if (!configuredRunNonce) {
+      throw new Error(
+        '既存E2Eサーバーを使う場合は、サーバーとQAに同じPLAYWRIGHT_RUN_NONCEを設定してください。'
+      )
+    }
     appendLog(`server_status: existing server detected at ${healthUrl}\n`)
     console.log(`既存サーバーを使用します: ${healthUrl}`)
     return
@@ -114,14 +142,23 @@ async function ensureServer() {
   appendLog(`server_status: starting managed dev server at ${healthUrl}\n`)
   console.log(`開発サーバーを起動します: ${healthUrl}`)
 
-  managedServer = spawn(npmCmd, ['run', 'dev', '--', '--hostname', '127.0.0.1', '--port', '3007'], {
+  managedServer = spawn(npmCmd, [
+    'run',
+    'dev',
+    '--',
+    '--hostname',
+    '127.0.0.1',
+    '--port',
+    String(serverPort),
+  ], {
     cwd: ROOT_DIR,
     env: {
       ...process.env,
       BETTER_AUTH_URL: baseUrl,
       NEXT_PUBLIC_APP_URL: baseUrl,
       E2E_MODE: '1',
-      NEXT_PUBLIC_E2E_MODE: '1'
+      NEXT_PUBLIC_E2E_MODE: '1',
+      PLAYWRIGHT_RUN_NONCE: runNonce
     },
     shell: false,
     detached: false

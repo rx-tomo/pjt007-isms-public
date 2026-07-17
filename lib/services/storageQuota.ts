@@ -1,9 +1,13 @@
 import { getDb } from '@/lib/db/drizzle/client'
 import { sql } from 'drizzle-orm'
 import { formatFileSize } from '@/lib/utils/formatters'
+import {
+  STORAGE_MAX_FILE_SIZE as DEFAULT_MAX_FILE_SIZE_BYTES,
+  STORAGE_MAX_ORG_USAGE as DEFAULT_MAX_ORG_STORAGE_BYTES,
+} from '@/lib/storage/storageLimits'
 
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
-const MAX_ORG_STORAGE_BYTES = 5 * 1024 * 1024 * 1024 // 5 GB
+const MAX_FILE_SIZE_BYTES = DEFAULT_MAX_FILE_SIZE_BYTES
+const MAX_ORG_STORAGE_BYTES = DEFAULT_MAX_ORG_STORAGE_BYTES
 
 export class StorageQuotaService {
   async getOrganizationUsage(organizationId: string): Promise<number> {
@@ -60,5 +64,4 @@ export class StorageQuotaService {
   }
 }
 
-export const STORAGE_MAX_FILE_SIZE = MAX_FILE_SIZE_BYTES
-export const STORAGE_MAX_ORG_USAGE = MAX_ORG_STORAGE_BYTES
+export { STORAGE_MAX_FILE_SIZE, STORAGE_MAX_ORG_USAGE } from '@/lib/storage/storageLimits'

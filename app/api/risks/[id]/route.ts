@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
-import { getAuditLogRepository, getRiskRepository } from '@/lib/container'
-import { RiskService } from '@/lib/services/risk'
+import { getDb } from '@/lib/db/drizzle/client'
+import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  RiskTenantLifecycleError,
+  RiskTenantLifecycleService,
+  type RiskPatchInput,
+} from '@/lib/server/risks/riskTenantLifecycleService'
 import type { RiskStatus, RiskUpdate } from '@/lib/services/risk'
-import type { Json } from '@/types/database.types'
 
 type Params = { id: string }
 
-const service = new RiskService()
 const riskStatuses: RiskStatus[] = ['identified', 'analyzing', 'treating', 'monitoring', 'closed']
 
 function isRiskLevel(value: unknown): value is 1 | 2 | 3 | 4 | 5 {
@@ -18,107 +20,114 @@ function isRiskStatus(value: unknown): value is RiskStatus {
   return typeof value === 'string' && riskStatuses.includes(value as RiskStatus)
 }
 
-function normalizeOptionalString(value: unknown): string | null | undefined {
+function parseNullableString(value: unknown): string | null | undefined | false {
   if (value === undefined) return undefined
   if (value === null) return null
-  if (typeof value !== 'string') return undefined
+  if (typeof value !== 'string') return false
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
 }
 
-function parseAssetIds(value: unknown): string[] | undefined {
+function parseAssetIds(value: unknown): string[] | undefined | false {
   if (value === undefined) return undefined
-  if (!Array.isArray(value)) return undefined
-  return value.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+  if (!Array.isArray(value)) return false
+  if (value.some(id => typeof id !== 'string' || id.trim().length === 0)) return false
+  return [...new Set(value.map(id => (id as string).trim()))]
 }
 
-function buildRiskUpdate(body: Record<string, unknown>): RiskUpdate {
+function parsePatch(body: Record<string, unknown>): RiskPatchInput | null {
   const updates: RiskUpdate = {}
+  if (body.title !== undefined) {
+    if (typeof body.title !== 'string' || !body.title.trim()) return null
+    updates.title = body.title.trim()
+  }
+  const description = parseNullableString(body.description)
+  const categoryId = parseNullableString(body.category_id)
+  const identifiedDate = parseNullableString(body.identified_date)
+  const ownerId = parseNullableString(body.owner_id)
+  if ([description, categoryId, identifiedDate, ownerId].includes(false)) return null
+  if (description !== undefined) updates.description = description as string | null
+  if (categoryId !== undefined) updates.category_id = categoryId as string | null
+  if (identifiedDate !== undefined) updates.identified_date = identifiedDate as string | null
+  if (ownerId !== undefined) updates.owner_id = ownerId as string | null
+  if (body.impact_level !== undefined) {
+    if (!isRiskLevel(body.impact_level)) return null
+    updates.impact_level = body.impact_level
+  }
+  if (body.likelihood_level !== undefined) {
+    if (!isRiskLevel(body.likelihood_level)) return null
+    updates.likelihood_level = body.likelihood_level
+  }
+  if (body.status !== undefined) {
+    if (!isRiskStatus(body.status)) return null
+    updates.status = body.status
+  }
+  const assetIds = parseAssetIds(body.assetIds)
+  if (assetIds === false) return null
+  if (typeof body.expected_updated_at !== 'string' || !body.expected_updated_at.trim()) return null
+  if (Object.keys(updates).length === 0 && assetIds === undefined) return null
+  return { updates, assetIds, expectedUpdatedAt: body.expected_updated_at }
+}
 
-  if (typeof body.title === 'string' && body.title.trim()) updates.title = body.title.trim()
-  if (body.description !== undefined) updates.description = normalizeOptionalString(body.description)
-  if (body.category_id !== undefined) updates.category_id = normalizeOptionalString(body.category_id)
-  if (isRiskLevel(body.impact_level)) updates.impact_level = body.impact_level
-  if (isRiskLevel(body.likelihood_level)) updates.likelihood_level = body.likelihood_level
-  if (isRiskStatus(body.status)) updates.status = body.status
-  if (body.identified_date !== undefined) updates.identified_date = normalizeOptionalString(body.identified_date)
-  if (body.owner_id !== undefined) updates.owner_id = normalizeOptionalString(body.owner_id)
-
-  return updates
+function errorResponse(error: unknown) {
+  if (error instanceof RiskTenantLifecycleError) {
+    const status = error.kind === 'malformed' ? 400 : error.kind === 'conflict' ? 409 : 404
+    const message = status === 409 ? 'Conflict' : status === 400 ? 'Invalid request body' : 'Not found'
+    return NextResponse.json({ error: message }, { status })
+  }
+  console.error('Risk detail API failed', error)
+  return NextResponse.json({ error: 'Failed to process risk' }, { status: 500 })
 }
 
 export async function GET(request: NextRequest, props: { params: Promise<Params> }) {
-  const params = await props.params
-  const caller = await resolveCallerOrg(request)
-  if (caller.error) return caller.error
-
-  const risk = await service.getRiskById(params.id)
-
-  if (!risk || risk.organization_id !== caller.organizationId) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const { user, applyCookies } = await getRouteAuth(request)
+  if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  const { id } = await props.params
+  try {
+    const data = await new RiskTenantLifecycleService(getDb()).getRisk(user.id, id)
+    return applyCookies(NextResponse.json({ data }))
+  } catch (error) {
+    return applyCookies(errorResponse(error))
   }
-
-  return NextResponse.json({ data: risk })
 }
 
 export async function PATCH(request: NextRequest, props: { params: Promise<Params> }) {
-  const params = await props.params
-  const caller = await resolveCallerOrg(request)
-  if (caller.error) return caller.error
-
+  const { user, applyCookies } = await getRouteAuth(request)
+  if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   const body = await request.json().catch(() => null)
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-
-  const repo = await getRiskRepository()
-  const existing = await repo.findByIdWithRelations(params.id)
-
-  if (!existing || existing.organization_id !== caller.organizationId) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const input = parsePatch(body as Record<string, unknown>)
+  if (!input) {
+    return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-
-  const updates = buildRiskUpdate(body as Record<string, unknown>)
-  const assetIds = parseAssetIds((body as Record<string, unknown>).assetIds)
-  const updatesCount = Object.keys(updates).length
-  if (updatesCount === 0 && assetIds === undefined) {
-    return NextResponse.json({ data: existing })
+  const { id } = await props.params
+  try {
+    const data = await new RiskTenantLifecycleService(getDb()).patchRisk(
+      user.id,
+      id,
+      input,
+      { userAgent: request.headers.get('user-agent') }
+    )
+    return applyCookies(NextResponse.json({ data }))
+  } catch (error) {
+    return applyCookies(errorResponse(error))
   }
+}
 
-  let updated = existing
-  if (updatesCount > 0) {
-    const updateResult = await repo.update(params.id, updates)
-    if (!updateResult) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-    updated = updateResult
+export async function DELETE(request: NextRequest, props: { params: Promise<Params> }) {
+  const { user, applyCookies } = await getRouteAuth(request)
+  if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  const { id } = await props.params
+  try {
+    await new RiskTenantLifecycleService(getDb()).deleteRisk(
+      user.id,
+      id,
+      { userAgent: request.headers.get('user-agent') }
+    )
+    return applyCookies(NextResponse.json({ success: true }))
+  } catch (error) {
+    return applyCookies(errorResponse(error))
   }
-
-  if (updates.impact_level !== undefined || updates.likelihood_level !== undefined) {
-    await repo.createAssessmentHistory(params.id, caller.userId, {
-      impactLevel: existing.impact_level,
-      likelihoodLevel: existing.likelihood_level,
-    })
-  }
-
-  const auditLog = await getAuditLogRepository()
-  if (assetIds !== undefined) {
-    await repo.setRiskAssets(params.id, assetIds)
-  }
-
-  await auditLog.log({
-    organizationId: caller.organizationId,
-    userId: caller.userId,
-    action: 'risk.updated',
-    resourceType: 'risk',
-    resourceId: params.id,
-    changes: {
-      ...updates,
-      ...(assetIds !== undefined ? { assetIds } : {}),
-    } as Json,
-    userAgent: request.headers.get('user-agent'),
-  })
-
-  const risk = await repo.findByIdWithRelations(params.id)
-  return NextResponse.json({ data: risk ?? updated })
 }

@@ -10,46 +10,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as crypto from 'crypto'
+import {
+  createStorageDownloadHeaders,
+  resolveStorageRoutePath,
+} from '@/lib/storage/storageRoutePolicy'
+import { isGenericDocumentStoragePathDenied } from '@/lib/storage/documentFilePolicy'
 
-const STORAGE_ROOT = path.join(process.cwd(), '.storage')
-
-const MIME_TYPES: Record<string, string> = {
-  '.pdf': 'application/pdf',
-  '.doc': 'application/msword',
-  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  '.xls': 'application/vnd.ms-excel',
-  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.txt': 'text/plain',
-  '.md': 'text/markdown',
-  '.json': 'application/json',
-  '.csv': 'text/csv',
-  '.zip': 'application/zip',
-}
-
-function getMimeType(filePath: string): string {
-  const ext = path.extname(filePath).toLowerCase()
-  return MIME_TYPES[ext] || 'application/octet-stream'
-}
+const STORAGE_ROOT = path.resolve(
+  process.env.LOCAL_STORAGE_ROOT || path.join(process.cwd(), '.storage')
+)
 
 export async function GET(request: NextRequest, props: { params: Promise<{ path: string[] }> }) {
   const params = await props.params;
+  const pathSegments = params.path
+  if (
+    isGenericDocumentStoragePathDenied(pathSegments)
+    || pathSegments?.[0] === 'task-attachments'
+  ) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 })
+  }
+
   // ストレージは現状 LocalFSStorageProvider 固定のため、非本番では既定で配信を許可する。
   // 本番は STORAGE_MODE=local を明示した場合のみ（外部ストレージ移行時の閉塞用ガード）
   const storageMode =
     process.env.STORAGE_MODE || (process.env.NODE_ENV !== 'production' ? 'local' : '')
   if (storageMode !== 'local') {
     return NextResponse.json(
-      { error: 'Local storage API is only available in local mode' },
+      { error: 'File not found' },
       { status: 404 }
     )
   }
 
-  const pathSegments = params.path
   if (!pathSegments || pathSegments.length < 2) {
     return NextResponse.json(
       { error: 'Invalid storage path' },
@@ -65,7 +56,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ path:
   const signingKey = process.env.STORAGE_SIGNING_KEY
   if (!signingKey && process.env.NODE_ENV === 'production') {
     return NextResponse.json(
-      { error: 'Storage signing key is not configured' },
+      { error: 'Storage temporarily unavailable' },
       { status: 503 }
     )
   }
@@ -101,9 +92,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ path:
 
   // Resolve and validate file path (prevent directory traversal)
   // Use separator boundary to block sibling-prefix directories (e.g. .storage-evil)
-  const resolvedPath = path.resolve(STORAGE_ROOT, ...pathSegments)
-  const rootWithSep = STORAGE_ROOT + path.sep
-  if (resolvedPath !== STORAGE_ROOT && !resolvedPath.startsWith(rootWithSep)) {
+  const resolvedPath = resolveStorageRoutePath(pathSegments, STORAGE_ROOT)
+  if (!resolvedPath) {
     return NextResponse.json(
       { error: 'Invalid path' },
       { status: 400 }
@@ -118,14 +108,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ path:
   }
 
   const fileBuffer = fs.readFileSync(resolvedPath)
-  const mimeType = getMimeType(resolvedPath)
-  const fileName = path.basename(resolvedPath)
-
   return new NextResponse(fileBuffer, {
-    headers: {
-      'Content-Type': mimeType,
-      'Content-Disposition': `inline; filename="${fileName}"`,
-      'Cache-Control': 'private, max-age=3600',
-    },
+    headers: createStorageDownloadHeaders(resolvedPath),
   })
 }

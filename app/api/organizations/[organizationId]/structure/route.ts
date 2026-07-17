@@ -14,6 +14,7 @@ type RoleFlag = typeof VALID_ROLE_FLAGS[number]
 export async function GET(request: NextRequest, props: { params: Promise<Params> }) {
   const params = await props.params;
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId: params.organizationId,
     actionName: 'organization.structure.read',
@@ -89,6 +90,7 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
 export async function POST(request: NextRequest, props: { params: Promise<Params> }) {
   const params = await props.params;
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId: params.organizationId,
     actionName: 'organization.structure.write',

@@ -13,6 +13,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { id: organizationId } = await context.params
 
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.organizations.restore'
   })

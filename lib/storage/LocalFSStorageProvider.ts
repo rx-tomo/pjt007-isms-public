@@ -9,19 +9,70 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as crypto from 'crypto'
-import type { IStorageProvider, StorageUploadOptions, StorageListItem } from './IStorageProvider'
+import {
+  StorageObjectTooLargeError,
+  type IStorageProvider,
+  type StorageDownloadOptions,
+  type StorageUploadOptions,
+  type StorageListItem,
+} from './IStorageProvider'
 
-const STORAGE_ROOT = path.join(process.cwd(), '.storage')
+const DEFAULT_STORAGE_ROOT = path.resolve(
+  process.env.LOCAL_STORAGE_ROOT || path.join(process.cwd(), '.storage')
+)
 
 export class LocalFSStorageProvider implements IStorageProvider {
+  constructor(private readonly storageRoot: string = DEFAULT_STORAGE_ROOT) {}
+
   private ensureDir(dirPath: string): void {
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true })
     }
   }
 
+  private assertNoSymlinks(resolvedPath: string): void {
+    const root = path.resolve(this.storageRoot)
+    const relativePath = path.relative(root, resolvedPath)
+    let currentPath = root
+
+    for (const segment of relativePath.split(path.sep).filter(Boolean)) {
+      currentPath = path.join(currentPath, segment)
+      if (fs.existsSync(currentPath) && fs.lstatSync(currentPath).isSymbolicLink()) {
+        throw new Error('Storage path must not traverse symbolic links')
+      }
+    }
+  }
+
+  private resolveBucketPath(bucket: string): string {
+    if (!bucket || bucket === '.' || bucket === '..' || bucket.includes('/') || bucket.includes('\\')) {
+      throw new Error('Invalid storage bucket')
+    }
+
+    const root = path.resolve(this.storageRoot)
+    const bucketRoot = path.resolve(root, bucket)
+    const rootWithSeparator = `${root}${path.sep}`
+
+    if (!bucketRoot.startsWith(rootWithSeparator)) {
+      throw new Error('Invalid storage bucket')
+    }
+    this.assertNoSymlinks(bucketRoot)
+    return bucketRoot
+  }
+
   private resolvePath(bucket: string, filePath: string): string {
-    return path.join(STORAGE_ROOT, bucket, filePath)
+    const bucketRoot = this.resolveBucketPath(bucket)
+    const resolvedPath = path.resolve(bucketRoot, filePath)
+    const bucketWithSeparator = `${bucketRoot}${path.sep}`
+
+    if (resolvedPath !== bucketRoot && !resolvedPath.startsWith(bucketWithSeparator)) {
+      throw new Error('Invalid storage path')
+    }
+    if (resolvedPath === bucketRoot) {
+      throw new Error('Storage path must reference a file or directory below the bucket')
+    }
+
+    this.assertNoSymlinks(resolvedPath)
+    return resolvedPath
   }
 
   async upload(
@@ -56,8 +107,10 @@ export class LocalFSStorageProvider implements IStorageProvider {
 
   async download(
     bucket: string,
-    filePath: string
+    filePath: string,
+    options?: StorageDownloadOptions
   ): Promise<{ data: Blob | null; error?: Error }> {
+    let descriptor: number | null = null
     try {
       const fullPath = this.resolvePath(bucket, filePath)
 
@@ -65,14 +118,43 @@ export class LocalFSStorageProvider implements IStorageProvider {
         return { data: null, error: new Error('File not found') }
       }
 
-      const buffer = fs.readFileSync(fullPath)
-      const blob = new Blob([buffer])
+      const maxBytes = options?.maxBytes
+      if (maxBytes !== undefined && (!Number.isSafeInteger(maxBytes) || maxBytes < 0)) {
+        throw new Error('Invalid storage download limit')
+      }
+
+      descriptor = fs.openSync(
+        fullPath,
+        fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0)
+      )
+      const stats = fs.fstatSync(descriptor)
+      if (!stats.isFile()) {
+        throw new Error('Storage path must reference a regular file')
+      }
+      if (maxBytes !== undefined && stats.size > maxBytes) {
+        throw new StorageObjectTooLargeError()
+      }
+
+      const buffer = Buffer.alloc(stats.size)
+      let offset = 0
+      while (offset < buffer.length) {
+        const bytesRead = fs.readSync(descriptor, buffer, offset, buffer.length - offset, offset)
+        if (bytesRead === 0) break
+        offset += bytesRead
+      }
+      const overflowProbe = Buffer.alloc(1)
+      if (fs.readSync(descriptor, overflowProbe, 0, 1, offset) > 0) {
+        throw new StorageObjectTooLargeError()
+      }
+      const blob = new Blob([buffer.subarray(0, offset)])
       return { data: blob }
     } catch (err) {
       return {
         data: null,
         error: err instanceof Error ? err : new Error('Download failed')
       }
+    } finally {
+      if (descriptor !== null) fs.closeSync(descriptor)
     }
   }
 
@@ -99,6 +181,7 @@ export class LocalFSStorageProvider implements IStorageProvider {
     expiresIn: number = 3600
   ): Promise<{ signedUrl: string; error?: Error }> {
     try {
+      this.resolvePath(bucket, filePath)
       const expires = Date.now() + expiresIn * 1000
       const token = crypto
         .createHmac('sha256', process.env.STORAGE_SIGNING_KEY || 'local-dev-key')
@@ -116,6 +199,7 @@ export class LocalFSStorageProvider implements IStorageProvider {
   }
 
   getPublicUrl(bucket: string, filePath: string): string {
+    this.resolvePath(bucket, filePath)
     return `/api/storage/${bucket}/${filePath}`
   }
 
@@ -126,7 +210,7 @@ export class LocalFSStorageProvider implements IStorageProvider {
     try {
       const fullPath = dirPath
         ? this.resolvePath(bucket, dirPath)
-        : path.join(STORAGE_ROOT, bucket)
+        : this.resolveBucketPath(bucket)
 
       if (!fs.existsSync(fullPath)) {
         return { data: [] }

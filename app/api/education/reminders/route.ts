@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'system-job',
       allowedRoles: ['system_operator'],
       actionName: 'education.reminders'
     })

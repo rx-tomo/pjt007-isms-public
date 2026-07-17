@@ -429,7 +429,8 @@ export async function POST(request: NextRequest) {
         db,
         resolvedOrganization.id,
         userId,
-        scenario.departmentScopes
+        scenario.departmentScopes,
+        keepExisting
       )
     }
 
@@ -657,7 +658,8 @@ async function ensureUserDepartmentScopes(
   db: DrizzleDb,
   organizationId: string,
   userId: string,
-  departmentNames: string[] | undefined
+  departmentNames: string[] | undefined,
+  preserveExisting: boolean
 ) {
   const targetNames = Array.from(new Set(departmentNames ?? []))
 
@@ -679,6 +681,10 @@ async function ensureUserDepartmentScopes(
         eq(userDepartmentScopes.organizationId, organizationId),
         eq(userDepartmentScopes.userId, userId)
       ))
+
+    if (preserveExisting && existing.length > 0) {
+      return
+    }
 
     const existingIds = new Map(existing.map(row => [row.departmentId, row.id]))
     const deleteIds = existing

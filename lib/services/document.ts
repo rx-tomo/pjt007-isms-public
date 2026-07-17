@@ -14,12 +14,9 @@
 import { getDb } from '@/lib/db/drizzle/client'
 import { organizations, userProfiles } from '@/lib/db/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getDocumentRepository, getAuditLogRepository, getAuthProvider, getUserRepository } from '@/lib/container'
-import { NotificationService } from '@/lib/services/notification'
-import { StorageQuotaService } from '@/lib/services/storageQuota'
+import { getDocumentRepository, getAuditLogRepository, getAuthProvider } from '@/lib/container'
+import type { StorageQuotaService } from '@/lib/services/storageQuota'
 import { ApprovalService } from '@/lib/services/approval'
-import { getStorageProvider } from '@/lib/storage'
-import type { IUserRepository, UserProfile } from '@/lib/db/repositories/interfaces/IUserRepository'
 import type {
   IDocumentRepository,
   DocumentFilters,
@@ -36,14 +33,15 @@ import type {
 import type { IAuditLogRepository } from '@/lib/db/repositories/interfaces/IAuditLogRepository'
 import type { IAuthProvider } from '@/lib/auth/interfaces/IAuthProvider'
 import type { Json } from '@/types/database.types'
-import { DEPARTMENT_UNASSIGNED_VALUE } from '@/lib/constants/departments'
-import { hasFullDepartmentAccess } from '@/lib/utils/departmentScope'
+import type { TenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import { applyDepartmentAccessFilters } from '@/lib/server/auth/departmentAccessFilters'
 
 export interface DocumentApprovalProgress {
   currentStep: number
   totalSteps: number
   currentStatus: 'pending' | 'approved' | 'rejected' | 'none'
   overallStatus: 'not_submitted' | 'in_review' | 'approved' | 'rejected'
+  currentRequestId?: string
   currentApprover?: string
   dueAt?: string
 }
@@ -76,22 +74,29 @@ interface DocumentServiceOptions {
 export const APPROVER_DUE_SOON_THRESHOLD_HOURS = 48
 export const APPROVER_ESCALATION_THRESHOLD_HOURS = 96
 export const APPROVER_HISTORY_WINDOW_DAYS = 30
+const DOCUMENT_APPROVER_ROLES = new Set(['approver', 'org_admin', 'system_operator'])
+
+export function isEligibleDocumentApproverCandidate(
+  candidate: { id: string; role: string; is_active?: boolean | null },
+  currentUserId?: string | null
+): boolean {
+  return candidate.id !== currentUserId
+    && candidate.is_active === true
+    && DOCUMENT_APPROVER_ROLES.has(candidate.role)
+}
 
 export { ApproverDashboardMetrics }
 
 export class DocumentService {
-  private storageQuota: StorageQuotaService
   private fetcher: typeof fetch
   private approvalService: ApprovalService
   private repositoryPromise: Promise<IDocumentRepository> | null = null
   private auditLogPromise: Promise<IAuditLogRepository> | null = null
   private authProviderPromise: Promise<IAuthProvider> | null = null
-  private userRepositoryPromise: Promise<IUserRepository> | null = null
 
   constructor(options?: DocumentServiceOptions) {
     const defaultFetcher: typeof fetch = (...args) => fetch(...args)
     this.fetcher = options?.fetcher ?? defaultFetcher
-    this.storageQuota = options?.storageQuotaService ?? new StorageQuotaService()
     this.approvalService = new ApprovalService()
   }
 
@@ -155,21 +160,9 @@ export class DocumentService {
     return this.authProviderPromise
   }
 
-  private async getUserRepository(): Promise<IUserRepository> {
-    if (!this.userRepositoryPromise) {
-      this.userRepositoryPromise = getUserRepository()
-    }
-    return this.userRepositoryPromise
-  }
-
   private async getCurrentUser(): Promise<{ id: string } | null> {
     const auth = await this.getAuth()
     return auth.getUser()
-  }
-
-  private async getRequestingUserProfile(requestingUserId: string): Promise<UserProfile | null> {
-    const userRepository = await this.getUserRepository()
-    return userRepository.findById(requestingUserId)
   }
 
   /**
@@ -177,8 +170,19 @@ export class DocumentService {
    * step_number 順で解決する。
    */
   private resolveCurrentPendingApprovalRequest(
-    requests: Array<{ id: string; step_number: number | null; approver_id: string | null; status: string }>
-  ): { id: string; step_number: number | null; approver_id: string | null } | null {
+    requests: Array<{
+      id: string
+      step_number: number | null
+      approver_id: string | null
+      status: string
+      due_at?: string | null
+    }>
+  ): {
+    id: string
+    step_number: number | null
+    approver_id: string | null
+    due_at?: string | null
+  } | null {
     const current = requests
       .filter(r => r.status === 'pending')
       .sort((a, b) => (a.step_number ?? 0) - (b.step_number ?? 0))[0]
@@ -187,7 +191,8 @@ export class DocumentService {
     return {
       id: current.id,
       step_number: current.step_number,
-      approver_id: current.approver_id
+      approver_id: current.approver_id,
+      due_at: current.due_at,
     }
   }
 
@@ -225,9 +230,17 @@ export class DocumentService {
   async getDocumentVersions(documentId: string): Promise<DocumentVersion[]> {
     const user = await this.getCurrentUser()
     if (!user) throw new Error('Not authenticated')
-
-    const repo = await this.getRepository()
-    return repo.getVersions(documentId)
+    const response = await this.fetcher(`/api/documents/${documentId}/versions`, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? '文書バージョンの取得に失敗しました')
+    }
+    const body = await response.json() as { data?: DocumentVersion[] }
+    return body.data ?? []
   }
 
   /**
@@ -265,32 +278,36 @@ export class DocumentService {
    */
   async getDocumentsScoped(
     organizationId: string,
-    requestingUserId: string,
+    _requestingUserId: string,
     folderId?: string
   ): Promise<DocumentWithFolder[]> {
     if (typeof window !== 'undefined') {
       return this.fetchDocumentsApi<DocumentWithFolder[]>({
         action: 'documentsScoped',
         organizationId,
-        requestingUserId,
         folderId,
       })
     }
 
-    const requestingUser = await this.getRequestingUserProfile(requestingUserId)
-    if (!requestingUser) {
-      throw new Error('Requesting user not found')
+    throw new Error('getDocumentsScoped is browser-only; use getDocumentsForDepartmentAccess on the server')
+  }
+
+  async getDocumentsForDepartmentAccess(
+    organizationId: string,
+    departmentAccess: TenantAuthorizationContext['departmentAccess'],
+    folderId?: string,
+    filters?: Omit<DocumentFilters, 'folderId'>
+  ): Promise<DocumentWithFolder[]> {
+    if (typeof window !== 'undefined') {
+      throw new Error('getDocumentsForDepartmentAccess must only be called from the server')
     }
 
-    if (hasFullDepartmentAccess(requestingUser.role)) {
-      return this.getDocuments(organizationId, folderId)
-    }
-
-    const departmentId = requestingUser.primary_department_id ?? DEPARTMENT_UNASSIGNED_VALUE
-    return this.getDocuments(organizationId, folderId, {
-      departmentId,
-      includeNoDepartment: true
-    })
+    const repo = await this.getRepository()
+    const effectiveFilters = applyDepartmentAccessFilters({
+      ...(filters ?? {}),
+      folderId: folderId ?? null,
+    }, departmentAccess)
+    return repo.findByOrganizationId(organizationId, effectiveFilters)
   }
 
   /**
@@ -305,8 +322,16 @@ export class DocumentService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document,
-          userId: user.id
+          document: {
+            organization_id: document.organization_id,
+            title: document.title,
+            description: document.description ?? null,
+            category: document.category ?? null,
+            folder_id: document.folder_id ?? null,
+            tags: document.tags ?? null,
+            retention_delete_at: document.retention_delete_at ?? null,
+            status: document.status ?? 'draft',
+          },
         })
       })
 
@@ -331,112 +356,110 @@ export class DocumentService {
     const user = await this.getCurrentUser()
     if (!user) throw new Error('Not authenticated')
 
-    const repo = await this.getRepository()
-    const data = await repo.update(id, {
-      ...updates,
-      updated_by: user.id
+    const response = await this.fetcher(`/api/documents/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updates),
     })
-
-    if (data) {
-      await this.logAudit({
-        action: 'document.updated',
-        resourceType: 'document',
-        resourceId: id,
-        changes: updates as Record<string, unknown>
-      })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? '文書の更新に失敗しました')
     }
-
-    return data
+    const body = await response.json() as { data?: Document | null }
+    return body.data ?? null
   }
 
   /**
    * 文書を削除
    */
-  async deleteDocument(id: string): Promise<void> {
-    const repo = await this.getRepository()
-
-    // まず文書情報を取得
-    const document = await repo.findById(id)
-
-    if (document?.file_path) {
-      // ストレージからファイルを削除
-      const storage = getStorageProvider()
-      const { error: storageError } = await storage.remove('documents', [document.file_path])
-
-      if (storageError) {
-        console.error('Storage deletion error:', storageError)
-      }
-    }
-
-    // データベースから削除
-    await repo.delete(id)
-
-    await this.logAudit({
-      action: 'document.deleted',
-      resourceType: 'document',
-      resourceId: id
+  async deleteDocument(id: string, organizationId: string): Promise<void> {
+    const user = await this.getCurrentUser()
+    if (!user) throw new Error('Not authenticated')
+    const response = await this.fetcher(`/api/documents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Idempotency-Key': crypto.randomUUID(),
+        'X-Organization-Id': organizationId,
+      },
+      credentials: 'include',
     })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? '文書の削除に失敗しました')
+    }
+  }
+
+  async deleteDocumentVersion(
+    documentId: string,
+    versionId: string
+  ): Promise<void> {
+    const user = await this.getCurrentUser()
+    if (!user) throw new Error('Not authenticated')
+    const params = new URLSearchParams({ versionId })
+    const response = await this.fetcher(`/api/documents/${documentId}/versions?${params}`, {
+      method: 'DELETE',
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? '文書版の削除に失敗しました')
+    }
   }
 
   /**
    * ファイルをアップロード
    */
   async uploadFile(
-    organizationId: string,
+    _organizationId: string,
     file: File,
-    documentId: string
-  ): Promise<{ path: string; url: string }> {
-    await this.storageQuota.ensureUploadAllowed(organizationId, file)
-
-    const originalName = file.name.trim()
-    const extension = originalName.includes('.')
-      ? originalName.split('.').pop() ?? null
-      : null
-    const safeExtension = extension ? extension.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : null
-    const fileName = safeExtension ? `${documentId}.${safeExtension}` : documentId
-    const filePath = `${organizationId}/documents/${documentId}/${fileName}`
-
-    const storage = getStorageProvider()
-    const { error: uploadError } = await storage.upload('documents', filePath, file, {
-      cacheControl: '3600',
-      upsert: true
-    })
-
-    if (uploadError) {
-      console.error('File upload error:', uploadError)
-      throw new Error('ファイルのアップロードに失敗しました')
+    documentId: string,
+    version?: {
+      title?: string
+      description?: string | null
+      changes?: string | null
+      mode?: 'normal' | 'revision'
     }
-
-    const publicUrl = storage.getPublicUrl('documents', filePath)
-
-    return { path: filePath, url: publicUrl }
+  ): Promise<{ versionNumber: number }> {
+    const user = await this.getCurrentUser()
+    if (!user) throw new Error('Not authenticated')
+    const formData = new FormData()
+    formData.set('file', file)
+    if (version?.title) formData.set('title', version.title)
+    if (version?.description !== undefined && version.description !== null) {
+      formData.set('description', version.description)
+    }
+    if (version?.changes) formData.set('changes', version.changes)
+    if (version?.mode) formData.set('mode', version.mode)
+    const response = await this.fetcher(`/api/documents/${documentId}/file`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      credentials: 'include',
+      body: formData,
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? 'ファイルのアップロードに失敗しました')
+    }
+    const body = await response.json() as { data?: { version_number?: number } }
+    return { versionNumber: body.data?.version_number ?? 0 }
   }
 
-  /**
-   * ファイルをダウンロード
-   */
-  async downloadFile(filePath: string): Promise<Blob> {
-    const demoSeedMatch = filePath.match(/^demo-seed\/([0-9a-f-]{36})\.md$/i)
-    if (demoSeedMatch && typeof window !== 'undefined') {
-      const response = await this.fetcher(`/demo-documents/${demoSeedMatch[1]}.md`, {
-        method: 'GET',
-        cache: 'no-store'
-      })
-      if (!response.ok) {
-        throw new Error('ファイルのダウンロードに失敗しました')
-      }
-      return response.blob()
+  async downloadDocumentFile(documentId: string, versionId?: string): Promise<Blob> {
+    const user = await this.getCurrentUser()
+    if (!user) throw new Error('Not authenticated')
+    const suffix = versionId ? `?versionId=${encodeURIComponent(versionId)}` : ''
+    const response = await this.fetcher(`/api/documents/${documentId}/file${suffix}`, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? 'ファイルのダウンロードに失敗しました')
     }
-
-    const storage = getStorageProvider()
-    const { data, error } = await storage.download('documents', filePath)
-
-    if (error || !data) {
-      console.error('File download error:', error)
-      throw new Error('ファイルのダウンロードに失敗しました')
-    }
-
-    return data
+    return response.blob()
   }
 
   /**
@@ -470,7 +493,7 @@ export class DocumentService {
     }
 
     const repo = await this.getRepository()
-    return repo.getFolders(organizationId, parentId ?? null)
+    return repo.getFolders(organizationId, parentId)
   }
 
   /**
@@ -481,59 +504,35 @@ export class DocumentService {
     name: string,
     parentId?: string
   ): Promise<DocumentFolder | null> {
-    const user = await this.getCurrentUser()
-    if (!user) throw new Error('Not authenticated')
-
-    const repo = await this.getRepository()
-    const data = await repo.createFolder({
-      organization_id: organizationId,
-      name,
-      parent_id: parentId || null,
-      created_by: user.id,
-      path: '' // トリガーで自動設定される
+    const response = await this.fetcher('/api/documents/folders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        organizationId,
+        folder: { name, parentId: parentId ?? null },
+      }),
     })
-
-    if (data) {
-      await this.logAudit({
-        action: 'document.folder_created',
-        resourceType: 'document_folder',
-        resourceId: data.id,
-        changes: {
-          name,
-          parent_id: parentId ?? null
-        }
-      })
+    const body = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error((body as { error?: string }).error ?? 'フォルダーの作成に失敗しました')
     }
-
-    return data
+    return (body as { data?: DocumentFolder }).data ?? null
   }
 
   /**
    * フォルダーを削除
    */
   async deleteFolder(organizationId: string, id: string): Promise<void> {
-    const repo = await this.getRepository()
-
-    // フォルダー内の文書を確認
-    const documentCount = await repo.countDocumentsInFolder(id)
-    if (documentCount > 0) {
-      throw new Error('フォルダー内に文書が存在するため削除できません')
-    }
-
-    // サブフォルダーを確認
-    const subfolderCount = await repo.countSubfolders(id)
-    if (subfolderCount > 0) {
-      throw new Error('サブフォルダーが存在するため削除できません')
-    }
-
-    await repo.deleteFolder(organizationId, id)
-
-    await this.logAudit({
-      action: 'document.folder_deleted',
-      resourceType: 'document_folder',
-      resourceId: id,
-      changes: null
+    const params = new URLSearchParams({ organizationId, folderId: id })
+    const response = await this.fetcher(`/api/documents/folders?${params.toString()}`, {
+      method: 'DELETE',
+      credentials: 'include',
     })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { error?: string }).error ?? 'フォルダーの削除に失敗しました')
+    }
   }
 
   /**
@@ -578,7 +577,7 @@ export class DocumentService {
       description: template.description,
       category: template.category,
       folder_id: options.folderId ?? null,
-      status: options.status ?? 'draft',
+      status: 'draft',
       tags: null,
       file_name: null,
       file_path: null,
@@ -610,26 +609,18 @@ export class DocumentService {
         type: 'text/markdown;charset=utf-8'
       })
 
-      const { path } = await this.uploadFile(organizationId, file, document.id)
-
-      await this.updateDocument(document.id, {
-        file_name: file.name,
-        file_path: path,
-        file_size: file.size,
-        mime_type: file.type
-      })
-
-      await this.createDocumentVersion(document.id, {
+      const uploaded = await this.uploadFile(organizationId, file, document.id, {
         title: trimmedTitle,
         description: template.description,
-        fileName: file.name,
-        filePath: path,
-        fileSize: file.size,
         changes: 'template_initialized'
       })
-
-      const refreshedDocument = await repo.findById(document.id)
-      return refreshedDocument ?? document
+      return {
+        ...document,
+        file_name: file.name,
+        file_size: file.size,
+        mime_type: file.type,
+        version_number: uploaded.versionNumber,
+      }
     } catch (error) {
       console.error('Failed to create document from template', error)
       throw error instanceof Error
@@ -669,7 +660,6 @@ export class DocumentService {
     const description = options.description?.trim() || null
     const category = options.category ?? null
     const folderId = options.folderId ?? null
-    const status = options.status
     const language = options.language ?? 'ja'
 
     try {
@@ -692,40 +682,24 @@ export class DocumentService {
         retention_delete_at: null,
         approved_by: null,
         approved_at: null,
-        status
+        status: 'draft'
       })
 
       if (!document) {
         throw new Error('文書の作成に失敗しました')
       }
 
-      const { path } = await this.uploadFile(organizationId, file, document.id)
-
-      await this.updateDocument(document.id, {
-        file_path: path,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type
-      })
-
-      await this.createDocumentVersion(document.id, {
+      const uploaded = await this.uploadFile(organizationId, file, document.id, {
         title: trimmedTitle,
         description,
-        fileName: file.name,
-        filePath: path,
-        fileSize: file.size,
-        changes: status === 'in_review' ? 'initial_submission' : 'initial_draft'
+        changes: 'initial_draft'
       })
-
-      const repo = await this.getRepository()
-      const refreshedDocument = await repo.findById(document.id)
-
-      return refreshedDocument ?? {
+      return {
         ...document,
-        file_path: path,
         file_name: file.name,
         file_size: file.size,
-        mime_type: file.type
+        mime_type: file.type,
+        version_number: uploaded.versionNumber,
       }
     } catch (error) {
       console.error('Failed to create document from editor', error)
@@ -807,44 +781,6 @@ export class DocumentService {
   }
 
   /**
-   * 文書バージョンを作成
-   */
-  async createDocumentVersion(
-    documentId: string,
-    versionData: {
-      title: string
-      description?: string | null
-      fileName?: string | null
-      filePath?: string | null
-      fileSize?: number | null
-      changes?: string | null
-    }
-  ): Promise<void> {
-    const user = await this.getCurrentUser()
-    if (!user) throw new Error('Not authenticated')
-
-    const response = await this.fetcher(`/api/documents/${documentId}/versions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: versionData.title,
-        description: versionData.description ?? null,
-        fileName: versionData.fileName ?? null,
-        filePath: versionData.filePath ?? null,
-        fileSize: versionData.fileSize ?? null,
-        changes: versionData.changes ?? null,
-        userId: user.id
-      })
-    })
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}))
-      const message = (body as { error?: string }).error ?? '文書バージョンの作成に失敗しました'
-      throw new Error(message)
-    }
-  }
-
-  /**
    * 文書の承認フローを開始
    *
    * approval_requests テーブルのみを使用して承認フローを管理する。
@@ -852,8 +788,7 @@ export class DocumentService {
    */
   async submitApprovalRequest(
     documentId: string,
-    step1ApproverId: string,
-    step2ApproverId: string
+    approverId: string
   ): Promise<void> {
     if (typeof window !== 'undefined') {
       const response = await this.fetcher(`/api/documents/${documentId}/approval`, {
@@ -862,8 +797,7 @@ export class DocumentService {
         credentials: 'include',
         body: JSON.stringify({
           action: 'request',
-          step1ApproverId,
-          step2ApproverId,
+          approverId,
         }),
       })
       if (!response.ok) {
@@ -873,120 +807,7 @@ export class DocumentService {
       return
     }
 
-    const user = await this.getCurrentUser()
-    if (!user) throw new Error('Not authenticated')
-
-    if (!step1ApproverId || !step2ApproverId) {
-      throw new Error('承認者を選択してください')
-    }
-
-    const repo = await this.getRepository()
-    const document = await repo.findById(documentId)
-
-    if (!document) {
-      throw new Error('文書が見つかりません')
-    }
-
-    if (document.status !== 'draft') {
-      throw new Error('下書き状態の文書のみ承認依頼できます')
-    }
-
-    // 既存の approval_requests を確認
-    const existingRequests = await this.approvalService.listRequestsByResource(
-      document.organization_id,
-      'document',
-      documentId
-    )
-
-    if (existingRequests.some(r => r.status === 'pending')) {
-      throw new Error('承認フローが既に開始されています')
-    }
-
-    // 既存リクエストがある場合はリセット（reject all pending）
-    if (existingRequests.length > 0) {
-      await this.approvalService.rejectAllPendingForResource(
-        document.organization_id,
-        'document',
-        documentId,
-        user.id,
-        'Resubmitted approval workflow'
-      )
-    }
-
-    // approval_requests に step_number 付きでリクエストを作成
-    if (step1ApproverId === step2ApproverId) {
-      // 同一承認者の場合、step 1 を approved 状態で作成（スキップ扱い）
-      await this.approvalService.createRequest({
-        organization_id: document.organization_id,
-        resource_type: 'document',
-        resource_id: documentId,
-        requested_by: user.id,
-        approver_id: step1ApproverId,
-        step_number: 1,
-        status: 'approved'
-      })
-      await this.approvalService.createRequest({
-        organization_id: document.organization_id,
-        resource_type: 'document',
-        resource_id: documentId,
-        requested_by: user.id,
-        approver_id: step2ApproverId,
-        step_number: 2
-      })
-    } else {
-      await this.approvalService.createRequest({
-        organization_id: document.organization_id,
-        resource_type: 'document',
-        resource_id: documentId,
-        requested_by: user.id,
-        approver_id: step1ApproverId,
-        step_number: 1
-      })
-      await this.approvalService.createRequest({
-        organization_id: document.organization_id,
-        resource_type: 'document',
-        resource_id: documentId,
-        requested_by: user.id,
-        approver_id: step2ApproverId,
-        step_number: 2
-      })
-    }
-
-    await repo.update(documentId, {
-      status: 'in_review',
-      approved_by: null,
-      approved_at: null,
-      updated_by: user.id
-    })
-
-    await this.logAudit({
-      action: 'document.approval_requested',
-      resourceType: 'document',
-      resourceId: documentId,
-      changes: {
-        step1_approver: step1ApproverId,
-        step2_approver: step2ApproverId,
-        skipped_step1: step1ApproverId === step2ApproverId
-      }
-    })
-
-    // 最初の pending リクエストの承認者に通知
-    const freshRequests = await this.approvalService.listRequestsByResource(
-      document.organization_id,
-      'document',
-      documentId
-    )
-    const firstPending = this.resolveCurrentPendingApprovalRequest(freshRequests)
-
-    if (firstPending?.approver_id) {
-      await NotificationService.createDocumentApprovalRequest(
-        document.organization_id,
-        firstPending.approver_id,
-        document.title,
-        documentId,
-        user.id
-      )
-    }
+    throw new Error('submitApprovalRequest must only be called from the browser')
   }
 
   /**
@@ -994,7 +815,11 @@ export class DocumentService {
    *
    * approval_requests テーブルのみを使用。
    */
-  async approveDocument(documentId: string, comment?: string): Promise<void> {
+  async approveDocument(
+    documentId: string,
+    expectedRequestId: string,
+    comment?: string
+  ): Promise<void> {
     if (typeof window !== 'undefined') {
       const response = await this.fetcher(`/api/documents/${documentId}/approval`, {
         method: 'POST',
@@ -1002,6 +827,7 @@ export class DocumentService {
         credentials: 'include',
         body: JSON.stringify({
           action: 'approve',
+          expectedRequestId,
           comment,
         }),
       })
@@ -1012,72 +838,7 @@ export class DocumentService {
       return
     }
 
-    const user = await this.getCurrentUser()
-    if (!user) throw new Error('Not authenticated')
-
-    const repo = await this.getRepository()
-    const document = await repo.findById(documentId)
-
-    if (!document) {
-      throw new Error('文書が見つかりません')
-    }
-
-    const requests = await this.approvalService.listRequestsByResource(
-      document.organization_id,
-      'document',
-      documentId
-    )
-    const currentRequest = this.resolveCurrentPendingApprovalRequest(requests)
-    if (!currentRequest || currentRequest.approver_id !== user.id) {
-      throw new Error('現在の承認ステップではありません')
-    }
-
-    const approvalComment = comment?.trim() ? comment.trim() : null
-
-    await this.approvalService.approveRequest({
-      requestId: currentRequest.id,
-      actorId: user.id,
-      comment: approvalComment ?? undefined
-    })
-
-    // 承認後の残りの pending リクエストを確認
-    const refreshedRequests = await this.approvalService.listRequestsByResource(
-      document.organization_id,
-      'document',
-      documentId
-    )
-    const pendingRequests = refreshedRequests.filter(r => r.status === 'pending')
-
-    if (pendingRequests.length === 0) {
-      const nowIso = new Date().toISOString()
-      await repo.update(documentId, {
-        status: 'approved',
-        approved_by: user.id,
-        approved_at: nowIso,
-        updated_by: user.id
-      })
-
-      await this.logAudit({
-        action: 'document.approved',
-        resourceType: 'document',
-        resourceId: documentId,
-        changes: { approved_by: user.id }
-      })
-    } else {
-      const nextRequest = pendingRequests.sort(
-        (a, b) => (a.step_number ?? 0) - (b.step_number ?? 0)
-      )[0]
-
-      if (nextRequest.approver_id) {
-        await NotificationService.createDocumentApprovalRequest(
-          document.organization_id,
-          nextRequest.approver_id,
-          document.title,
-          documentId,
-          user.id
-        )
-      }
-    }
+    throw new Error('approveDocument must only be called from the browser')
   }
 
   /**
@@ -1085,7 +846,11 @@ export class DocumentService {
    *
    * approval_requests テーブルのみを使用。
    */
-  async rejectDocument(documentId: string, reason?: string): Promise<void> {
+  async rejectDocument(
+    documentId: string,
+    expectedRequestId: string,
+    reason?: string
+  ): Promise<void> {
     if (typeof window !== 'undefined') {
       const response = await this.fetcher(`/api/documents/${documentId}/approval`, {
         method: 'POST',
@@ -1093,6 +858,7 @@ export class DocumentService {
         credentials: 'include',
         body: JSON.stringify({
           action: 'reject',
+          expectedRequestId,
           reason,
         }),
       })
@@ -1103,69 +869,22 @@ export class DocumentService {
       return
     }
 
-    const user = await this.getCurrentUser()
-    if (!user) throw new Error('Not authenticated')
-
-    const repo = await this.getRepository()
-    const document = await repo.findById(documentId)
-    if (!document) {
-      throw new Error('文書が見つかりません')
-    }
-
-    const requests = await this.approvalService.listRequestsByResource(
-      document.organization_id,
-      'document',
-      documentId
-    )
-    const currentRequest = this.resolveCurrentPendingApprovalRequest(requests)
-    if (!currentRequest || currentRequest.approver_id !== user.id) {
-      throw new Error('現在の承認ステップではありません')
-    }
-
-    const rejectionReason = reason?.trim() ? reason.trim() : 'No reason provided'
-
-    // 現在のリクエストを reject
-    await this.approvalService.rejectRequest({
-      requestId: currentRequest.id,
-      actorId: user.id,
-      reason: rejectionReason
-    })
-
-    // 残りの pending リクエストも全て reject（後続ステップのキャンセル）
-    await this.approvalService.rejectAllPendingForResource(
-      document.organization_id,
-      'document',
-      documentId,
-      user.id,
-      'Cancelled due to rejection at earlier step'
-    )
-
-    await repo.update(documentId, {
-      status: 'draft',
-      approved_by: null,
-      approved_at: null,
-      updated_by: user.id
-    })
-
-    await this.logAudit({
-      action: 'document.rejected',
-      resourceType: 'document',
-      resourceId: documentId,
-      changes: { reason: rejectionReason }
-    })
+    throw new Error('rejectDocument must only be called from the browser')
   }
 
-  async getApproverDashboardMetrics(_organizationId?: string): Promise<ApproverDashboardMetrics> {
+  async getApproverDashboardMetrics(organizationId?: string): Promise<ApproverDashboardMetrics> {
     if (typeof window !== 'undefined') {
-      if (!_organizationId) throw new Error('organizationId is required')
-      return this.fetchApproverMetricsApi(_organizationId)
+      if (!organizationId) throw new Error('organizationId is required')
+      return this.fetchApproverMetricsApi(organizationId)
     }
+
+    if (!organizationId) throw new Error('organizationId is required')
 
     const user = await this.getCurrentUser()
     if (!user) throw new Error('Not authenticated')
 
     const repo = await this.getRepository()
-    return repo.getApproverDashboardMetrics(user.id, {
+    return repo.getApproverDashboardMetrics(user.id, organizationId, {
       dueSoonHours: APPROVER_DUE_SOON_THRESHOLD_HOURS,
       escalationHours: APPROVER_ESCALATION_THRESHOLD_HOURS,
       historyWindowDays: APPROVER_HISTORY_WINDOW_DAYS
@@ -1186,7 +905,7 @@ export class DocumentService {
     if (requests.length === 0) {
       return {
         currentStep: 0,
-        totalSteps: 2,
+        totalSteps: 1,
         currentStatus: 'none',
         overallStatus: 'not_submitted'
       }
@@ -1200,13 +919,13 @@ export class DocumentService {
 
     const approvedEvents = allEvents.filter(e => e.event_type === 'approved')
     const rejectedEvents = allEvents.filter(e => e.event_type === 'rejected')
-    const pendingRequest = requests.find(r => r.status === 'pending')
+    const pendingRequest = this.resolveCurrentPendingApprovalRequest(requests)
 
     if (rejectedEvents.length > 0 && !pendingRequest) {
       const latestRejected = requests.find(r => r.status === 'rejected')
       return {
-        currentStep: approvedEvents.length >= 1 ? 2 : 1,
-        totalSteps: 2,
+        currentStep: 1,
+        totalSteps: 1,
         currentStatus: 'rejected',
         overallStatus: 'rejected',
         currentApprover: latestRejected?.approver_id ?? undefined,
@@ -1216,20 +935,20 @@ export class DocumentService {
 
     if (!pendingRequest && approvedEvents.length > 0) {
       return {
-        currentStep: 2,
-        totalSteps: 2,
+        currentStep: 1,
+        totalSteps: 1,
         currentStatus: 'approved',
         overallStatus: 'approved'
       }
     }
 
     if (pendingRequest) {
-      const step = approvedEvents.length >= 1 ? 2 : 1
       return {
-        currentStep: step,
-        totalSteps: 2,
+        currentStep: 1,
+        totalSteps: 1,
         currentStatus: 'pending',
         overallStatus: 'in_review',
+        currentRequestId: pendingRequest.id,
         currentApprover: pendingRequest.approver_id ?? undefined,
         dueAt: pendingRequest.due_at ?? undefined
       }
@@ -1237,7 +956,7 @@ export class DocumentService {
 
     return {
       currentStep: 0,
-      totalSteps: 2,
+      totalSteps: 1,
       currentStatus: 'none',
       overallStatus: 'not_submitted'
     }
@@ -1257,7 +976,7 @@ export class DocumentService {
             ...doc,
             approvalProgress: {
               currentStep: 0,
-              totalSteps: 2,
+              totalSteps: 1,
               currentStatus: 'none' as const,
               overallStatus: 'not_submitted' as const
             }
@@ -1274,7 +993,7 @@ export class DocumentService {
             ...doc,
             approvalProgress: {
               currentStep: 0,
-              totalSteps: 2,
+              totalSteps: 1,
               currentStatus: 'none' as const,
               overallStatus: 'not_submitted' as const
             }

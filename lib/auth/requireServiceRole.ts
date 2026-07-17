@@ -1,18 +1,14 @@
 /**
- * Require Service Role Guard
- *
- * Provides authentication and authorization for API routes.
- * Validates user authentication and role-based access control.
- * Uses Better Auth for authentication.
- *
- * @module lib/auth/requireServiceRole
+ * Tenant-primary compatibility guard used by AI API routes.
  */
-
+import { userRoleValues } from '@/lib/db/drizzle/schema'
+import type { getDb } from '@/lib/db/drizzle/client'
+import {
+  resolveTenantAuthorizationContext,
+  type TenantAuthorizationResult,
+} from '@/lib/server/auth/authorizationContext'
 import { NextRequest, NextResponse } from 'next/server'
 
-/**
- * User profile with role information
- */
 export interface UserProfile {
   id: string
   organization_id: string
@@ -22,128 +18,157 @@ export interface UserProfile {
   language_preference?: 'ja' | 'en'
 }
 
-/**
- * Guard options for role-based access control
- */
 export interface RequireServiceRoleOptions {
-  /** List of roles allowed to access the endpoint */
-  allowedRoles: string[]
-  /** Action name for audit logging */
+  mode: 'tenant-primary'
+  allowedRoles: readonly string[]
   actionName: string
 }
 
-/**
- * Authenticated guard result
- */
 export interface AuthGuard {
-  /** User profile information */
   profile: UserProfile
-  /** User ID */
   userId: string
-  /** Helper to create JSON responses */
   json: <T>(data: T, init?: ResponseInit) => NextResponse<T>
-  /** Helper to log audit events */
   logEvent: (action: string, details: Record<string, unknown>) => Promise<void>
 }
 
-/**
- * Guard result type
- */
 export interface RequireServiceRoleResult {
   guard: AuthGuard
   error: NextResponse | null
 }
 
-/**
- * Require authenticated user with specific role
- *
- * Validates the request has a valid authenticated user and the user
- * has one of the allowed roles.
- *
- * @param request - The NextRequest object
- * @param options - Guard options including allowed roles
- * @returns Guard result with authenticated context or error response
- *
- * @example
- * ```typescript
- * const { guard, error } = await requireServiceRole(request, {
- *   allowedRoles: ['org_admin', 'risk_manager'],
- *   actionName: 'ai.risks.analyze'
- * })
- * if (error) return error
- *
- * const { profile, userId, json, logEvent } = guard
- * ```
- */
+type ProfileRecord = {
+  id: string
+  organizationId: string | null
+  role: string
+  isActive: boolean | null
+  email: string
+  fullName: string | null
+  languagePreference: string | null
+}
+
+type GuardDb = ReturnType<typeof getDb>
+
+export interface AiServiceRoleDependencies {
+  getSession: (request: NextRequest) => Promise<{ user: { id: string } } | null>
+  getDb: () => GuardDb
+  getProfile: (db: GuardDb, userId: string) => Promise<ProfileRecord | null>
+  resolveTenantContext: (
+    db: GuardDb,
+    userId: string,
+    organizationId: string
+  ) => Promise<TenantAuthorizationResult>
+}
+
+const isKnownRole = (value: string) => (userRoleValues as readonly string[]).includes(value)
+
+async function getDefaultDependencies(): Promise<AiServiceRoleDependencies> {
+  const { auth } = await import('@/lib/auth/better-auth')
+  const { getDb } = await import('@/lib/db/drizzle/client')
+  const { userProfiles } = await import('@/lib/db/drizzle/schema/users')
+  const { eq } = await import('drizzle-orm')
+
+  return {
+    getSession: request => auth.api.getSession({ headers: request.headers }),
+    getDb,
+    getProfile: async (db, userId) => {
+      const [profile] = await db
+        .select({
+          id: userProfiles.id,
+          organizationId: userProfiles.organizationId,
+          role: userProfiles.role,
+          isActive: userProfiles.isActive,
+          email: userProfiles.email,
+          fullName: userProfiles.fullName,
+          languagePreference: userProfiles.languagePreference,
+        })
+        .from(userProfiles)
+        .where(eq(userProfiles.id, userId))
+        .limit(1)
+      return profile ?? null
+    },
+    resolveTenantContext: resolveTenantAuthorizationContext,
+  }
+}
+
 export async function requireServiceRole(
   request: NextRequest,
-  options: RequireServiceRoleOptions
+  options: RequireServiceRoleOptions,
+  injectedDependencies?: AiServiceRoleDependencies
 ): Promise<RequireServiceRoleResult> {
-  const { allowedRoles, actionName } = options
-
-  const json = <T>(data: T, init?: ResponseInit): NextResponse<T> => {
-    return NextResponse.json(data, init)
-  }
+  const json = <T>(data: T, init?: ResponseInit): NextResponse<T> =>
+    NextResponse.json(data, init)
 
   try {
-    const { auth } = await import('@/lib/auth/better-auth')
-    const session = await auth.api.getSession({ headers: request.headers })
-
-    if (!session?.user) {
+    const runtimeOptions = options as RequireServiceRoleOptions | undefined
+    if (runtimeOptions?.mode !== 'tenant-primary') {
       return {
         guard: null as unknown as AuthGuard,
-        error: json({ error: 'Unauthorized' }, { status: 401 })
+        error: json({ error: 'Forbidden' }, { status: 403 }),
+      }
+    }
+    if (
+      runtimeOptions.allowedRoles.length === 0 ||
+      runtimeOptions.allowedRoles.some(role => !isKnownRole(role))
+    ) {
+      return {
+        guard: null as unknown as AuthGuard,
+        error: json({ error: 'Forbidden' }, { status: 403 }),
       }
     }
 
-    // Query user profile from Drizzle DB for role and organization info
-    const { getDb } = await import('@/lib/db/drizzle/client')
-    const { userProfiles } = await import('@/lib/db/drizzle/schema/users')
-    const { eq } = await import('drizzle-orm')
-    const db = getDb()
-
-    const profiles = await db
-      .select({
-        id: userProfiles.id,
-        organizationId: userProfiles.organizationId,
-        role: userProfiles.role,
-        email: userProfiles.email,
-        fullName: userProfiles.fullName,
-        languagePreference: userProfiles.languagePreference,
-      })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, session.user.id))
-      .limit(1)
-
-    const profileRow = profiles[0]
-    if (!profileRow) {
+    const dependencies = injectedDependencies ?? await getDefaultDependencies()
+    const session = await dependencies.getSession(request)
+    if (!session?.user) {
       return {
         guard: null as unknown as AuthGuard,
-        error: json({ error: 'User profile not found' }, { status: 404 })
+        error: json({ error: 'Unauthorized' }, { status: 401 }),
+      }
+    }
+
+    const db = dependencies.getDb()
+    const profileRecord = await dependencies.getProfile(db, session.user.id)
+    if (!profileRecord || profileRecord.isActive !== true || !profileRecord.organizationId) {
+      return {
+        guard: null as unknown as AuthGuard,
+        error: json({ error: 'Forbidden' }, { status: 403 }),
+      }
+    }
+
+    const authorization = await dependencies.resolveTenantContext(
+      db,
+      session.user.id,
+      profileRecord.organizationId
+    )
+    if (!authorization.ok) {
+      return {
+        guard: null as unknown as AuthGuard,
+        error: json({ error: 'Forbidden' }, { status: 403 }),
+      }
+    }
+
+    const effectiveRole = authorization.context.role
+    if (!runtimeOptions.allowedRoles.includes(effectiveRole)) {
+      return {
+        guard: null as unknown as AuthGuard,
+        error: json(
+          { error: `Permission denied: requires one of ${runtimeOptions.allowedRoles.join(', ')} role` },
+          { status: 403 }
+        ),
       }
     }
 
     const profile: UserProfile = {
-      id: profileRow.id,
-      organization_id: profileRow.organizationId ?? '',
-      role: profileRow.role,
-      email: profileRow.email,
-      full_name: profileRow.fullName ?? undefined,
-      language_preference: (profileRow.languagePreference as 'ja' | 'en') ?? undefined,
+      id: profileRecord.id,
+      organization_id: authorization.context.organizationId,
+      role: effectiveRole,
+      email: profileRecord.email,
+      full_name: profileRecord.fullName ?? undefined,
+      language_preference:
+        profileRecord.languagePreference === 'ja' || profileRecord.languagePreference === 'en'
+          ? profileRecord.languagePreference
+          : undefined,
     }
 
-    // Check role authorization
-    if (!allowedRoles.includes(profile.role)) {
-      return {
-        guard: null as unknown as AuthGuard,
-        error: json(
-          { error: `Permission denied: requires one of ${allowedRoles.join(', ')} role` },
-          { status: 403 }
-        )
-      }
-    }
-
-    // Create audit log helper using Drizzle
     const logEvent = async (action: string, details: Record<string, unknown>): Promise<void> => {
       try {
         const { auditLogs } = await import('@/lib/db/drizzle/schema/audit-logs')
@@ -151,7 +176,7 @@ export async function requireServiceRole(
           id: crypto.randomUUID(),
           organizationId: profile.organization_id,
           userId: session.user.id,
-          action: `${actionName}.${action}`,
+          action: `${runtimeOptions.actionName}.${action}`,
           resourceType: 'ai_analysis',
           changes: JSON.stringify(details),
           createdAt: new Date().toISOString(),
@@ -162,19 +187,14 @@ export async function requireServiceRole(
     }
 
     return {
-      guard: {
-        profile,
-        userId: session.user.id,
-        json,
-        logEvent
-      },
-      error: null
+      guard: { profile, userId: session.user.id, json, logEvent },
+      error: null,
     }
   } catch (err) {
     console.error('[requireServiceRole] Error:', err)
     return {
       guard: null as unknown as AuthGuard,
-      error: json({ error: 'Internal server error' }, { status: 500 })
+      error: json({ error: 'Internal server error' }, { status: 500 }),
     }
   }
 }

@@ -6,7 +6,13 @@
  */
 import type { IStorageProvider } from './IStorageProvider'
 
-export type { IStorageProvider, StorageUploadOptions, StorageListItem } from './IStorageProvider'
+export {
+  StorageObjectTooLargeError,
+  type IStorageProvider,
+  type StorageDownloadOptions,
+  type StorageUploadOptions,
+  type StorageListItem,
+} from './IStorageProvider'
 
 let cachedProvider: IStorageProvider | null = null
 

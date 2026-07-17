@@ -205,6 +205,7 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Authentication with requireServiceRole
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'tenant-primary',
       allowedRoles: ALLOWED_ROLES,
       actionName: 'ai.usage.stats'
     })

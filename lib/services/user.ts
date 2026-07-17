@@ -18,9 +18,19 @@ import type { IAuthProvider } from '@/lib/auth/interfaces/IAuthProvider'
 import type { Json } from '@/types/database.types'
 import { DEPARTMENT_UNASSIGNED_VALUE } from '@/lib/constants/departments'
 import { hasFullDepartmentAccess } from '@/lib/utils/departmentScope'
+import type {
+  ApprovalCandidate,
+  ApprovalCandidatePurpose,
+  ApprovalCandidateResponse,
+} from '@/lib/approvals/approvalCandidateContract'
 
 // Re-export types for backward compatibility
 export type { UserProfile, UserRole }
+
+export interface CurrentUserProfile extends UserProfile {
+  effective_role: UserRole | null
+  effective_organization_id: string | null
+}
 
 export class UserService {
   private repositoryPromise: Promise<IUserRepository> | null = null
@@ -54,7 +64,7 @@ export class UserService {
     return user?.id ?? null
   }
 
-  private async getCurrentUserViaApi(): Promise<UserProfile | null> {
+  private async getCurrentUserViaApi(): Promise<CurrentUserProfile | null> {
     try {
       const response = await fetch('/api/auth/profile', {
         method: 'GET',
@@ -70,12 +80,46 @@ export class UserService {
         throw new Error(`Failed to fetch current user profile: ${response.status}`)
       }
 
-      const payload = await response.json() as { profile?: UserProfile | null }
+      const payload = await response.json() as { profile?: CurrentUserProfile | null }
       return payload.profile ?? null
     } catch (error) {
       console.error('Failed to fetch current user via API:', error)
       return null
     }
+  }
+
+  async getApprovalCandidates(
+    organizationId: string,
+    purpose: ApprovalCandidatePurpose,
+    resourceId?: string,
+    departmentId?: string
+  ): Promise<ApprovalCandidate[]> {
+    if (typeof window === 'undefined') {
+      throw new Error('getApprovalCandidates must only be called from the browser')
+    }
+
+    const url = new URL('/api/approval-candidates', window.location.origin)
+    url.searchParams.set('organizationId', organizationId)
+    url.searchParams.set('purpose', purpose)
+    if (resourceId) url.searchParams.set('resourceId', resourceId)
+    if (departmentId) url.searchParams.set('departmentId', departmentId)
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+    })
+
+    const payload = await response.json().catch(() => ({})) as Partial<ApprovalCandidateResponse> & {
+      error?: string
+    }
+    if (!response.ok) {
+      throw new Error(payload.error ?? `API error ${response.status}`)
+    }
+    if (payload.purpose !== purpose || !Array.isArray(payload.candidates)) {
+      throw new Error('Invalid approval candidate response')
+    }
+
+    return payload.candidates
   }
 
   private async fetchStructureApi<T>(organizationId: string, action: string): Promise<T> {
@@ -139,7 +183,7 @@ export class UserService {
   /**
    * 現在のユーザープロファイルを取得
    */
-  async getCurrentUser(): Promise<UserProfile | null> {
+  async getCurrentUser(): Promise<CurrentUserProfile | null> {
     // Never access DB repositories directly in the browser.
     // Client runtime must resolve the profile via API.
     if (typeof window !== 'undefined') {
@@ -154,13 +198,18 @@ export class UserService {
     }
 
     const repo = await this.getRepository()
-    return repo.findByAuthId(user.id)
+    const profile = await repo.findByAuthId(user.id)
+    return profile ? {
+      ...profile,
+      effective_role: null,
+      effective_organization_id: null,
+    } : null
   }
 
   /**
    * ユーザープロファイルを取得（getCurrentUserのエイリアス）
    */
-  async getUserProfile(): Promise<UserProfile | null> {
+  async getUserProfile(): Promise<CurrentUserProfile | null> {
     return this.getCurrentUser()
   }
 
