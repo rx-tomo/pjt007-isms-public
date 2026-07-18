@@ -13,11 +13,61 @@ import {
 } from '@/lib/db/drizzle/schema/organizations'
 import { userProfiles, userMemberships, organizationInvitations } from '@/lib/db/drizzle/schema/users'
 import { informationAssets, isoControls } from '@/lib/db/drizzle/schema/risks'
-import { eq, ne, inArray, asc } from 'drizzle-orm'
+import { eq, and, inArray, asc } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
 
 const BOOL = (value: boolean) => (value ? 'true' : 'false')
+
+type RelatedProfileEmail = {
+  id: string
+  email: string | null
+}
+
+type RelatedMembership = {
+  userId: string
+  organizationId: string
+  status?: string | null
+}
+
+type RelatedInvitationEmail = {
+  id: string
+  organizationId: string
+  email: string
+}
+
+function buildTenantBoundRelatedEmailMaps({
+  organizationId,
+  profiles,
+  memberships,
+  invitations,
+}: {
+  organizationId: string
+  profiles: RelatedProfileEmail[]
+  memberships: RelatedMembership[]
+  invitations: RelatedInvitationEmail[]
+}) {
+  const memberUserIds = new Set(
+    memberships
+      .filter(membership => membership.organizationId === organizationId)
+      .map(membership => membership.userId)
+  )
+  const userEmailMap = new Map<string, string>()
+  for (const profile of profiles) {
+    if (profile.email && memberUserIds.has(profile.id)) {
+      userEmailMap.set(profile.id, profile.email)
+    }
+  }
+
+  const invitationEmailMap = new Map<string, string>()
+  for (const invitation of invitations) {
+    if (invitation.organizationId === organizationId) {
+      invitationEmailMap.set(invitation.id, invitation.email)
+    }
+  }
+
+  return { userEmailMap, invitationEmailMap }
+}
 
 function buildTemplateRows() {
   return {
@@ -97,6 +147,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'organization_data.export',
@@ -227,21 +278,51 @@ export async function GET(request: NextRequest) {
     const roleIdToKey = new Map<string, string>()
     roles.forEach(role => roleIdToKey.set(role.id, role.key))
 
-    // Resolve assignment user/invitation emails
+    // Resolve related profile/invitation emails through tenant-owned relations.
     const assignmentUserIds = assignmentRows.map(a => a.userId).filter(Boolean) as string[]
     const assignmentInvitationIds = assignmentRows.map(a => a.invitationId).filter(Boolean) as string[]
+    const ownerIds = Array.from(new Set(assets.map(a => a.ownerId).filter((v): v is string => Boolean(v))))
+    const relatedUserIds = Array.from(new Set([...assignmentUserIds, ...ownerIds]))
 
-    const userEmailMap = new Map<string, string>()
-    if (assignmentUserIds.length > 0) {
-      const userRows = await db.select({ id: userProfiles.id, email: userProfiles.email }).from(userProfiles).where(inArray(userProfiles.id, assignmentUserIds))
-      for (const u of userRows) if (u.email) userEmailMap.set(u.id, u.email)
+    const membershipRows = await db
+      .select({
+        userId: userMemberships.userId,
+        organizationId: userMemberships.organizationId,
+        role: userMemberships.role,
+        status: userMemberships.status,
+      })
+      .from(userMemberships)
+      .where(eq(userMemberships.organizationId, organizationId))
+
+    let relatedProfiles: RelatedProfileEmail[] = []
+    if (relatedUserIds.length > 0) {
+      relatedProfiles = await db
+        .select({ id: userProfiles.id, email: userProfiles.email })
+        .from(userProfiles)
+        .where(inArray(userProfiles.id, relatedUserIds))
     }
 
-    const invitationEmailMap = new Map<string, string>()
+    let relatedInvitations: RelatedInvitationEmail[] = []
     if (assignmentInvitationIds.length > 0) {
-      const invRows = await db.select({ id: organizationInvitations.id, email: organizationInvitations.email }).from(organizationInvitations).where(inArray(organizationInvitations.id, assignmentInvitationIds))
-      for (const inv of invRows) invitationEmailMap.set(inv.id, inv.email)
+      relatedInvitations = await db
+        .select({
+          id: organizationInvitations.id,
+          organizationId: organizationInvitations.organizationId,
+          email: organizationInvitations.email,
+        })
+        .from(organizationInvitations)
+        .where(and(
+          eq(organizationInvitations.organizationId, organizationId),
+          inArray(organizationInvitations.id, assignmentInvitationIds)
+        ))
     }
+
+    const { userEmailMap, invitationEmailMap } = buildTenantBoundRelatedEmailMaps({
+      organizationId,
+      profiles: relatedProfiles,
+      memberships: membershipRows,
+      invitations: relatedInvitations,
+    })
 
     const assignmentCsv = toCsv(
       ['role_key', 'email', 'note'],
@@ -251,12 +332,6 @@ export async function GET(request: NextRequest) {
         a.note ?? ''
       ])
     )
-
-    // Get user memberships for role lookup
-    const membershipRows = await db
-      .select({ userId: userMemberships.userId, role: userMemberships.role })
-      .from(userMemberships)
-      .where(eq(userMemberships.organizationId, organizationId))
 
     const membershipMap = new Map<string, string>()
     membershipRows.forEach(row => membershipMap.set(row.userId, row.role))
@@ -273,14 +348,6 @@ export async function GET(request: NextRequest) {
       ])
     )
 
-    // Resolve asset owner emails
-    const ownerIds = Array.from(new Set(assets.map(a => a.ownerId).filter((v): v is string => Boolean(v))))
-    const ownerEmailMap = new Map<string, string>()
-    if (ownerIds.length > 0) {
-      const ownerRows = await db.select({ id: userProfiles.id, email: userProfiles.email }).from(userProfiles).where(inArray(userProfiles.id, ownerIds))
-      for (const o of ownerRows) if (o.email) ownerEmailMap.set(o.id, o.email)
-    }
-
     const assetsCsv = toCsv(
       ['name', 'asset_type', 'classification', 'criticality', 'status', 'owner_email', 'owner_name', 'location', 'description'],
       assets.map(asset => [
@@ -289,7 +356,7 @@ export async function GET(request: NextRequest) {
         asset.classification,
         asset.criticality,
         asset.status,
-        asset.ownerId ? ownerEmailMap.get(asset.ownerId) ?? '' : '',
+        asset.ownerId ? userEmailMap.get(asset.ownerId) ?? '' : '',
         '',
         asset.location ?? '',
         asset.description ?? ''
@@ -344,7 +411,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (err) {
     console.error('[organization-data/export] failed', err)
-    const msg = err instanceof Error ? err.message : JSON.stringify(err)
-    return NextResponse.json({ error: 'Failed to export organization data', message: msg }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to export organization data' }, { status: 500 })
   }
 }

@@ -1,8 +1,21 @@
 export function escapeTaskCsvField(value: string) {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
+  const leadingCharacters = value.match(/^[ \t\r\n]*/)?.[0] ?? ''
+  const firstContentCharacter = value.slice(leadingCharacters.length, leadingCharacters.length + 1)
+  const hasLeadingControl = /[\t\r\n]/.test(leadingCharacters)
+  const startsWithFormula = /^[=+\-@]$/.test(firstContentCharacter)
+  const neutralizedValue = value !== '-' && (hasLeadingControl || startsWithFormula)
+    ? `'${value}`
+    : value
+
+  if (
+    neutralizedValue.includes(',')
+    || neutralizedValue.includes('"')
+    || neutralizedValue.includes('\n')
+    || neutralizedValue.includes('\r')
+  ) {
+    return `"${neutralizedValue.replace(/"/g, '""')}"`
   }
-  return value
+  return neutralizedValue
 }
 
 export function sanitizeTaskFileName(value: string) {

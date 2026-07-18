@@ -3,6 +3,90 @@ interface ZipFileEntry {
   content: string | Buffer
 }
 
+interface ZipCreationLimits {
+  maxEntries: number
+  maxEntryUncompressedBytes: number
+  maxTotalUncompressedBytes: number
+}
+
+const ZIP_FORMAT_MAX_ENTRIES = 65_535
+const ZIP_ENTRY_NAME_MAX_BYTES = 512
+
+export const BACKUP_ZIP_LIMITS: ZipCreationLimits = Object.freeze({
+  maxEntries: 1_024,
+  maxEntryUncompressedBytes: 25 * 1024 * 1024,
+  maxTotalUncompressedBytes: 64 * 1024 * 1024,
+})
+
+export class ZipLimitError extends Error {
+  constructor() {
+    super('ZIP creation limit exceeded')
+    this.name = 'ZipLimitError'
+  }
+}
+
+function validateZipLimits(limits: ZipCreationLimits): void {
+  if (
+    !Number.isSafeInteger(limits.maxEntries)
+    || limits.maxEntries < 1
+    || limits.maxEntries > ZIP_FORMAT_MAX_ENTRIES
+    || !Number.isSafeInteger(limits.maxEntryUncompressedBytes)
+    || limits.maxEntryUncompressedBytes < 0
+    || !Number.isSafeInteger(limits.maxTotalUncompressedBytes)
+    || limits.maxTotalUncompressedBytes < 0
+  ) {
+    throw new ZipLimitError()
+  }
+}
+
+export function assertZipEntryByteLengths(
+  byteLengths: readonly number[],
+  limits: ZipCreationLimits
+): void {
+  validateZipLimits(limits)
+  if (byteLengths.length > limits.maxEntries || byteLengths.length > ZIP_FORMAT_MAX_ENTRIES) {
+    throw new ZipLimitError()
+  }
+
+  let totalBytes = 0
+  for (const byteLength of byteLengths) {
+    if (
+      !Number.isSafeInteger(byteLength)
+      || byteLength < 0
+      || byteLength > limits.maxEntryUncompressedBytes
+    ) {
+      throw new ZipLimitError()
+    }
+    totalBytes += byteLength
+    if (!Number.isSafeInteger(totalBytes) || totalBytes > limits.maxTotalUncompressedBytes) {
+      throw new ZipLimitError()
+    }
+  }
+}
+
+function getContentByteLength(content: ZipFileEntry['content']): number {
+  return Buffer.isBuffer(content) ? content.byteLength : Buffer.byteLength(content, 'utf8')
+}
+
+export function assertZipEntryNames(files: readonly ZipFileEntry[]): void {
+  const names = new Set<string>()
+  for (const file of files) {
+    const segments = file.name.split('/')
+    if (
+      !file.name
+      || file.name.startsWith('/')
+      || file.name.includes('\\')
+      || file.name.includes('\0')
+      || Buffer.byteLength(file.name, 'utf8') > ZIP_ENTRY_NAME_MAX_BYTES
+      || segments.some(segment => !segment || segment === '.' || segment === '..')
+      || names.has(file.name)
+    ) {
+      throw new ZipLimitError()
+    }
+    names.add(file.name)
+  }
+}
+
 const CRC32_TABLE = (() => {
   const table = new Uint32Array(256)
   for (let i = 0; i < 256; i += 1) {
@@ -23,10 +107,20 @@ function crc32(buffer: Buffer): number {
   return (crc ^ -1) >>> 0
 }
 
-export function createZipBuffer(files: ZipFileEntry[]): Buffer {
+export function createZipBuffer(files: ZipFileEntry[], limits?: ZipCreationLimits): Buffer {
   if (!files.length) {
     return Buffer.from([])
   }
+
+  assertZipEntryNames(files)
+  assertZipEntryByteLengths(
+    files.map(file => getContentByteLength(file.content)),
+    limits ?? {
+      maxEntries: ZIP_FORMAT_MAX_ENTRIES,
+      maxEntryUncompressedBytes: 0xffff_ffff,
+      maxTotalUncompressedBytes: 0xffff_ffff,
+    }
+  )
 
   const localParts: Buffer[] = []
   const centralParts: Buffer[] = []
@@ -97,4 +191,4 @@ export function createZipBuffer(files: ZipFileEntry[]): Buffer {
   return Buffer.concat([...localParts, centralDirectory, endRecord])
 }
 
-export type { ZipFileEntry }
+export type { ZipCreationLimits, ZipFileEntry }

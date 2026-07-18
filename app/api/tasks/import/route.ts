@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
-import { parseCsvToObjects, splitList } from '@/lib/utils/importers/csv'
-import { getDb } from '@/lib/db/drizzle/client'
-import { tasks, taskCategories, taskTags, taskTagRelations } from '@/lib/db/drizzle/schema/tasks'
-import { userProfiles } from '@/lib/db/drizzle/schema/users'
-import { eq, and } from 'drizzle-orm'
+import { parseLimitedFormData } from '@/lib/server/http/limitedFormData'
+import { parseCsvToObjects } from '@/lib/utils/importers/csv'
+import { TaskTenantMutationService } from '@/lib/server/tasks/taskTenantMutationService'
+import {
+  getTaskImportMaxFileSizeBytes,
+  getTaskImportMaxRequestSizeBytes,
+  isTaskImportRowError,
+  TASK_IMPORT_MAX_CELL_LENGTH,
+  TASK_IMPORT_MAX_COLUMNS,
+  TASK_IMPORT_MAX_ROWS,
+  TASK_IMPORT_MAX_TOTAL_CELLS,
+} from '@/lib/services/taskImport'
 
 export const runtime = 'nodejs'
 
@@ -14,260 +22,147 @@ type SummaryBlock = {
   updated: number
   skipped: number
   errors: string[]
+  omittedErrors: number
 }
 
-const VALID_STATUSES = new Set([
-  'todo',
-  'in_progress',
-  'review',
-  'done',
-  'cancelled'
-])
+const MAX_DETAILED_ERRORS = 100
 
-const VALID_PRIORITIES = new Set([
-  'low',
-  'medium',
-  'high',
-  'urgent'
-])
-
-function parseDateOrNull(raw: string | undefined): string | null {
-  if (!raw) return null
-  const trimmed = raw.trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null
-  const d = new Date(trimmed + 'T00:00:00Z')
-  if (isNaN(d.getTime())) return null
-  return trimmed
+function formDataError(reason: 'too_large' | 'invalid_content_length' | 'invalid_form_data') {
+  if (reason === 'too_large') {
+    return NextResponse.json({ error: 'Import request is too large' }, { status: 413 })
+  }
+  return NextResponse.json({ error: 'Invalid multipart form data' }, { status: 400 })
 }
 
-function parsePositiveNumberOrNull(raw: string | undefined): number | null {
-  if (!raw) return null
-  const n = Number(raw.trim())
-  if (isNaN(n) || n <= 0) return null
-  return n
+function addSummaryError(summary: SummaryBlock, message: string): void {
+  if (summary.errors.length < MAX_DETAILED_ERRORS) {
+    summary.errors.push(message)
+  } else {
+    summary.omittedErrors += 1
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const formData = await request.formData()
-  const file = formData.get('file')
-  const organizationId = (formData.get('organizationId') as string | null)?.trim()
+  const { user, applyCookies } = await getRouteAuth(request)
+  const respond = <T extends NextResponse>(response: T): T => applyCookies(response)
+
+  if (!user) {
+    return respond(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  }
+
+  const limitedFormData = await parseLimitedFormData(
+    request,
+    getTaskImportMaxRequestSizeBytes()
+  )
+  if (!limitedFormData.ok) return respond(formDataError(limitedFormData.reason))
+
+  const file = limitedFormData.formData.get('file')
+  const organizationEntry = limitedFormData.formData.get('organizationId')
+  const organizationId = typeof organizationEntry === 'string'
+    ? organizationEntry.trim()
+    : ''
 
   if (!(file instanceof Blob)) {
-    return NextResponse.json({ error: 'file is required' }, { status: 400 })
+    return respond(NextResponse.json({ error: 'file is required' }, { status: 400 }))
+  }
+  const fileName = typeof (file as Blob & { name?: unknown }).name === 'string'
+    ? String((file as Blob & { name: string }).name)
+    : ''
+  if (!fileName.toLowerCase().endsWith('.csv')) {
+    return respond(NextResponse.json({ error: 'A .csv file is required' }, { status: 400 }))
+  }
+  if (file.size > getTaskImportMaxFileSizeBytes()) {
+    return respond(NextResponse.json({ error: 'CSV file is too large' }, { status: 413 }))
   }
   if (!organizationId) {
-    return NextResponse.json({ error: 'organizationId is required' }, { status: 400 })
+    return respond(NextResponse.json({ error: 'organizationId is required' }, { status: 400 }))
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'tasks.import'
   })
 
   if (error || !guard) {
-    return error ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return respond(error ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
   const { logEvent, json, userId } = guard
-  const db = getDb()
-
   const summary: SummaryBlock = {
     processed: 0,
     created: 0,
     updated: 0,
     skipped: 0,
-    errors: []
+    errors: [],
+    omittedErrors: 0,
   }
 
+  let rows: ReturnType<typeof parseCsvToObjects>
   try {
-    const buffer = await file.arrayBuffer()
-    const rows = parseCsvToObjects(buffer, ['title'])
-
-    // Pre-fetch task_categories lookup
-    const categories = await db
-      .select({ id: taskCategories.id, name: taskCategories.name })
-      .from(taskCategories)
-      .where(eq(taskCategories.organizationId, organizationId))
-
-    const categoryMap = new Map<string, string>()
-    for (const cat of categories) {
-      categoryMap.set(cat.name.toLowerCase(), cat.id)
+    rows = parseCsvToObjects(await file.arrayBuffer(), ['title'], {
+      strictColumnCount: true,
+      strictQuoteSyntax: true,
+      maxColumns: TASK_IMPORT_MAX_COLUMNS,
+      maxRows: TASK_IMPORT_MAX_ROWS,
+      maxCellLength: TASK_IMPORT_MAX_CELL_LENGTH,
+      maxTotalCells: TASK_IMPORT_MAX_TOTAL_CELLS,
+    })
+    if (rows.length > TASK_IMPORT_MAX_ROWS) {
+      return respond(NextResponse.json({ error: 'CSV contains too many rows' }, { status: 400 }))
     }
-
-    // Pre-fetch user_profiles lookup
-    const profiles = await db
-      .select({ id: userProfiles.id, email: userProfiles.email })
-      .from(userProfiles)
-      .where(eq(userProfiles.organizationId, organizationId))
-
-    const profileMap = new Map<string, string>()
-    for (const p of profiles) {
-      if (p.email) {
-        profileMap.set(p.email.toLowerCase(), p.id)
-      }
+    if (rows.some(row => Object.values(row).some(value => (
+      value.length > TASK_IMPORT_MAX_CELL_LENGTH
+    )))) {
+      return respond(NextResponse.json(
+        { error: 'CSV contains a cell that is too long' },
+        { status: 400 }
+      ))
     }
+  } catch (parseError) {
+    console.warn('[tasks/import] invalid CSV', parseError)
+    return respond(NextResponse.json({ error: 'Invalid CSV file' }, { status: 400 }))
+  }
 
-    // Pre-fetch task_tags lookup
-    const tags = await db
-      .select({ id: taskTags.id, name: taskTags.name })
-      .from(taskTags)
-      .where(eq(taskTags.organizationId, organizationId))
-
-    const tagMap = new Map<string, string>()
-    for (const t of tags) {
-      tagMap.set(t.name.toLowerCase(), t.id)
-    }
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]
+  const taskService = new TaskTenantMutationService()
+  try {
+    for (let index = 0; index < rows.length; index += 1) {
+      const lineNumber = index + 2
       summary.processed += 1
-      const lineNumber = i + 2 // header is line 1
 
       try {
-        const title = (row['title'] ?? '').trim()
-        if (!title) {
-          summary.errors.push(`Line ${lineNumber}: title is required`)
-          summary.skipped += 1
-          continue
-        }
-        if (title.length > 200) {
-          summary.errors.push(`Line ${lineNumber}: title exceeds 200 characters`)
-          summary.skipped += 1
-          continue
-        }
-
-        const description = (row['description'] ?? '').trim() || null
-
-        // Category lookup
-        const categoryRaw = (row['category'] ?? '').trim()
-        const categoryId = categoryRaw
-          ? categoryMap.get(categoryRaw.toLowerCase()) ?? null
-          : null
-
-        // Assignee lookup
-        const assigneeEmail = (row['assignee_email'] ?? '').trim()
-        const assigneeId = assigneeEmail
-          ? profileMap.get(assigneeEmail.toLowerCase()) ?? null
-          : null
-
-        // Status field
-        const statusRaw = (row['status'] ?? '').trim().toLowerCase()
-        const status = VALID_STATUSES.has(statusRaw) ? statusRaw : 'todo'
-
-        // Priority field
-        const priorityRaw = (row['priority'] ?? '').trim().toLowerCase()
-        const priority = VALID_PRIORITIES.has(priorityRaw) ? priorityRaw : 'medium'
-
-        // Due date
-        const dueDate = parseDateOrNull(row['due_date'])
-
-        // Estimated hours
-        const estimatedHours = parsePositiveNumberOrNull(row['estimated_hours'])
-
-        // Tags (semicolon-separated)
-        const tagNames = splitList(row['tags'])
-        const tagIds: string[] = []
-        for (const tagName of tagNames) {
-          const tagId = tagMap.get(tagName.toLowerCase())
-          if (tagId) {
-            tagIds.push(tagId)
-          }
-        }
-
-        // Check for existing entry (organization_id + title)
-        const [existing] = await db
-          .select({ id: tasks.id })
-          .from(tasks)
-          .where(and(eq(tasks.organizationId, organizationId), eq(tasks.title, title)))
-          .limit(1)
-
-        const now = new Date().toISOString()
-
-        if (existing) {
-          // Update existing record
-          try {
-            await db
-              .update(tasks)
-              .set({
-                description,
-                categoryId,
-                assigneeId,
-                reporterId: userId,
-                status,
-                priority,
-                dueDate,
-                estimatedHours,
-                updatedAt: now,
-              })
-              .where(eq(tasks.id, existing.id))
-
-            // Update tag assignments: delete existing, re-insert
-            await db
-              .delete(taskTagRelations)
-              .where(eq(taskTagRelations.taskId, existing.id))
-
-            if (tagIds.length > 0) {
-              await db.insert(taskTagRelations).values(
-                tagIds.map((tagId, idx) => ({ taskId: existing.id, tagId, displayOrder: idx }))
-              )
-            }
-
-            summary.updated += 1
-          } catch (updateErr) {
-            summary.errors.push(`Line ${lineNumber}: failed to update "${title}" - ${updateErr instanceof Error ? updateErr.message : String(updateErr)}`)
-            summary.skipped += 1
-          }
-        } else {
-          // Insert new record
-          const newId = crypto.randomUUID()
-          try {
-            await db.insert(tasks).values({
-              id: newId,
-              organizationId,
-              title,
-              description,
-              categoryId,
-              assigneeId,
-              reporterId: userId,
-              status,
-              priority,
-              dueDate,
-              estimatedHours,
-              createdAt: now,
-              updatedAt: now,
-            })
-
-            // Insert tag assignments
-            if (tagIds.length > 0) {
-              await db.insert(taskTagRelations).values(
-                tagIds.map((tagId, idx) => ({ taskId: newId, tagId, displayOrder: idx }))
-              )
-            }
-
-            summary.created += 1
-          } catch (insertErr) {
-            summary.errors.push(`Line ${lineNumber}: failed to insert "${title}" - ${insertErr instanceof Error ? insertErr.message : String(insertErr)}`)
-            summary.skipped += 1
-          }
-        }
-      } catch (rowErr) {
-        summary.errors.push(`Line ${lineNumber}: ${rowErr instanceof Error ? rowErr.message : String(rowErr)}`)
+        const result = await taskService.importTaskRow({
+          organizationId,
+          reporterId: userId,
+          row: rows[index]!,
+        })
+        if (result.action === 'created') summary.created += 1
+        else summary.updated += 1
+      } catch (rowError) {
         summary.skipped += 1
+        if (isTaskImportRowError(rowError)) {
+          addSummaryError(summary, `Line ${lineNumber}: ${rowError.message}`)
+        } else {
+          console.error('[tasks/import] row import failed', {
+            organizationId,
+            lineNumber,
+            error: rowError,
+          })
+          addSummaryError(summary, `Line ${lineNumber}: failed to import row`)
+        }
       }
     }
 
     await logEvent('success', { summary })
-    return json({ message: 'Import completed', summary })
-  } catch (err) {
-    console.error('[tasks/import] failed', err)
-    await logEvent('error', { reason: err instanceof Error ? err.message : String(err) })
-    return NextResponse.json(
-      {
-        error: 'Failed to import tasks',
-        details: err instanceof Error ? err.message : String(err)
-      },
-      { status: 500 }
-    )
+    return respond(json({ message: 'Import completed', summary }))
+  } catch (error) {
+    console.error('[tasks/import] failed', error)
+    try {
+      await logEvent('error', { reason: 'task_import_failed' })
+    } catch (auditError) {
+      console.error('[tasks/import] failed to record audit event', auditError)
+    }
+    return respond(NextResponse.json({ error: 'Failed to import tasks' }, { status: 500 }))
   }
 }

@@ -1,3 +1,5 @@
+import { isTrustedE2EServerEnvironment } from '@/lib/testing/e2eEnvironment'
+
 export function isDevApiAvailable() {
   if (process.env.NODE_ENV !== 'production') {
     return true
@@ -7,5 +9,5 @@ export function isDevApiAvailable() {
     return true
   }
 
-  return process.env.E2E_MODE === '1' && process.env.NEXT_PUBLIC_E2E_MODE === '1'
+  return isTrustedE2EServerEnvironment() && process.env.NEXT_PUBLIC_E2E_MODE === '1'
 }

@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { toCsv } from '@/lib/utils/exporters/csv'
-import { createZipBuffer, type ZipFileEntry } from '@/lib/utils/exporters/zip'
+import {
+  assertZipEntryByteLengths,
+  BACKUP_ZIP_LIMITS,
+  createZipBuffer,
+  ZipLimitError,
+  type ZipFileEntry,
+} from '@/lib/utils/exporters/zip'
 import { getDb } from '@/lib/db/drizzle/client'
 import {
   documents,
+  documentFolders,
   documentVersions,
-  documentApprovals,
+  approvalEvents,
+  approvalRequests,
   risks,
   tasks,
   taskAttachments,
@@ -23,10 +31,13 @@ import {
   followUpRecords,
 } from '@/lib/db/drizzle/schema/audit'
 import { managementReviews, managementReviewActions } from '@/lib/db/drizzle/schema/management-reviews'
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { logExportEvent } from '@/lib/server/logging/exportEvents'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
-import { getStorageProvider } from '@/lib/storage'
+import { getStorageProvider, StorageObjectTooLargeError } from '@/lib/storage'
+import { projectDocumentStoragePath } from '@/lib/server/documents/documentOutputProjection'
+import { userMemberships } from '@/lib/db/drizzle/schema/users'
+import { isTaskAttachmentStoragePath } from '@/lib/storage/taskAttachmentPolicy'
 
 export const runtime = 'nodejs'
 
@@ -36,6 +47,8 @@ type BackupFileCandidate = {
   id: string
   fileName: string | null
   filePath: string | null
+  fileSize: number | null
+  pathValid?: boolean
 }
 
 type BackupFileManifestRow = {
@@ -53,6 +66,113 @@ type BackupFileManifestRow = {
   responsibility_boundary: string
 }
 
+const BACKUP_STATIC_ZIP_ENTRY_COUNT = 21
+const APPROVAL_EVENT_PAYLOAD_MAX_BYTES = 64 * 1024
+const APPROVAL_EVENT_TEXT_MAX_LENGTH = 10_000
+const APPROVAL_REQUEST_STATUSES = new Set(['pending', 'approved', 'rejected', 'expired'])
+
+type ApprovalEventPayloadProjectionContext = {
+  approvalRequestId: string
+  resourceId: string
+  validUserIds: ReadonlySet<string>
+}
+
+function parseApprovalEventPayload(rawPayload: string): Record<string, unknown> | null {
+  if (Buffer.byteLength(rawPayload, 'utf8') > APPROVAL_EVENT_PAYLOAD_MAX_BYTES) {
+    return null
+  }
+  try {
+    const payload: unknown = JSON.parse(rawPayload)
+    return payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? payload as Record<string, unknown>
+      : null
+  } catch {
+    return null
+  }
+}
+
+function collectApprovalEventPayloadUserIds(rawPayload: string): string[] {
+  const payload = parseApprovalEventPayload(rawPayload)
+  if (!payload) return []
+
+  const userIds: string[] = []
+  if (typeof payload.approver_id === 'string') {
+    userIds.push(payload.approver_id)
+  }
+  if (Array.isArray(payload.escalation_user_ids)) {
+    userIds.push(...payload.escalation_user_ids.filter(
+      (value): value is string => typeof value === 'string'
+    ).slice(0, 100))
+  }
+  return userIds
+}
+
+function projectApprovalEventPayload(
+  rawPayload: string,
+  context: ApprovalEventPayloadProjectionContext
+): string {
+  const source = parseApprovalEventPayload(rawPayload)
+  if (!source) return '{}'
+  const projected: Record<string, unknown> = {}
+  const copyText = (key: 'comment' | 'reason') => {
+    const value = source[key]
+    if (typeof value === 'string' && value.length <= APPROVAL_EVENT_TEXT_MAX_LENGTH) {
+      projected[key] = value
+    }
+  }
+
+  copyText('comment')
+  copyText('reason')
+
+  if (
+    typeof source.due_at === 'string'
+    && source.due_at.length <= 64
+    && Number.isFinite(Date.parse(source.due_at))
+  ) {
+    projected.due_at = source.due_at
+  }
+  if (
+    typeof source.step_number === 'number'
+    && Number.isSafeInteger(source.step_number)
+    && source.step_number >= 1
+    && source.step_number <= 1_000
+  ) {
+    projected.step_number = source.step_number
+  }
+  if (
+    typeof source.previous_status === 'string'
+    && APPROVAL_REQUEST_STATUSES.has(source.previous_status)
+  ) {
+    projected.previous_status = source.previous_status
+  }
+  for (const key of ['skipped_duplicate_approver', 'cancelled_later_step'] as const) {
+    if (typeof source[key] === 'boolean') {
+      projected[key] = source[key]
+    }
+  }
+
+  if (typeof source.approver_id === 'string' && context.validUserIds.has(source.approver_id)) {
+    projected.approver_id = source.approver_id
+  }
+  if (Array.isArray(source.escalation_user_ids)) {
+    projected.escalation_user_ids = [...new Set(source.escalation_user_ids.filter(
+      (value): value is string => typeof value === 'string' && context.validUserIds.has(value)
+    ))].slice(0, 100)
+  }
+
+  if (source.resource_id === context.resourceId) {
+    projected.resource_id = context.resourceId
+  }
+  if (source.document_id === context.resourceId) {
+    projected.document_id = context.resourceId
+  }
+  if (source.approval_request_id === context.approvalRequestId) {
+    projected.approval_request_id = context.approvalRequestId
+  }
+
+  return JSON.stringify(projected)
+}
+
 function safeZipSegment(value: string | null | undefined, fallback: string): string {
   const cleaned = (value ?? fallback)
     .replace(/\\/g, '/')
@@ -61,13 +181,25 @@ function safeZipSegment(value: string | null | undefined, fallback: string): str
     ?.replace(/[^a-zA-Z0-9._-]/g, '_')
     .replace(/^_+|_+$/g, '')
 
-  return cleaned || fallback
+  return cleaned && cleaned !== '.' && cleaned !== '..' ? cleaned : fallback
 }
 
 function isSafeStoragePath(filePath: string | null | undefined): filePath is string {
   if (!filePath) return false
   if (filePath.startsWith('/') || filePath.includes('\\')) return false
   return !filePath.split('/').some(segment => segment === '..')
+}
+
+function isAuditEvidenceStoragePath(
+  filePath: string | null | undefined,
+  organizationId: string,
+  checklistId: string
+): filePath is string {
+  if (!filePath || !isSafeStoragePath(filePath)) return false
+  const prefix = `${organizationId}/${checklistId}/`
+  if (!filePath.startsWith(prefix)) return false
+  const fileName = filePath.slice(prefix.length)
+  return Boolean(fileName && !fileName.includes('/'))
 }
 
 function buildBackupReadme(params: {
@@ -116,8 +248,10 @@ async function buildBackupFileEntries(candidates: BackupFileCandidate[]): Promis
   const storage = getStorageProvider()
   const entries: ZipFileEntry[] = []
   const manifestRows: BackupFileManifestRow[] = []
+  const includedByteLengths: number[] = []
 
   for (const candidate of candidates) {
+    const pathValid = candidate.pathValid ?? isSafeStoragePath(candidate.filePath)
     const fileName = safeZipSegment(candidate.fileName, `${candidate.id}.bin`)
     const zipPath = `files/${candidate.source}/${safeZipSegment(candidate.id, 'unknown')}/${fileName}`
     const baseRow = {
@@ -125,15 +259,17 @@ async function buildBackupFileEntries(candidates: BackupFileCandidate[]): Promis
       id: candidate.id,
       bucket: candidate.bucket,
       file_name: candidate.fileName ?? '',
-      file_path: candidate.filePath ?? '',
+      file_path: pathValid ? candidate.filePath ?? '' : '',
       zip_path: zipPath,
     }
 
-    if (!isSafeStoragePath(candidate.filePath)) {
+    if (!pathValid || !isSafeStoragePath(candidate.filePath)) {
       manifestRows.push({
         ...baseRow,
         status: 'skipped',
-        reason: 'missing_or_unsafe_storage_path',
+        reason: candidate.pathValid === false
+          ? 'storage_ownership_unverified'
+          : 'missing_or_unsafe_storage_path',
         retrievable: 'false',
         deletion_scope: 'not_exported',
         deletion_exception_reason: 'source_path_missing_or_unsafe',
@@ -142,12 +278,22 @@ async function buildBackupFileEntries(candidates: BackupFileCandidate[]): Promis
       continue
     }
 
-    const { data, error } = await storage.download(candidate.bucket, candidate.filePath)
+    const remainingTotalBytes = BACKUP_ZIP_LIMITS.maxTotalUncompressedBytes
+      - includedByteLengths.reduce((sum, byteLength) => sum + byteLength, 0)
+    const { data, error } = await storage.download(candidate.bucket, candidate.filePath, {
+      maxBytes: Math.min(
+        BACKUP_ZIP_LIMITS.maxEntryUncompressedBytes,
+        Math.max(remainingTotalBytes, 0)
+      ),
+    })
+    if (error instanceof StorageObjectTooLargeError) {
+      throw new ZipLimitError()
+    }
     if (error || !data) {
       manifestRows.push({
         ...baseRow,
         status: 'missing',
-        reason: error?.message ?? 'file_not_found',
+        reason: 'file_unavailable',
         retrievable: 'false',
         deletion_scope: 'storage_reference_only',
         deletion_exception_reason: 'file_unavailable_at_export_time',
@@ -156,7 +302,24 @@ async function buildBackupFileEntries(candidates: BackupFileCandidate[]): Promis
       continue
     }
 
+    assertZipEntryByteLengths(
+      [
+        ...Array.from({ length: BACKUP_STATIC_ZIP_ENTRY_COUNT }, () => 0),
+        ...includedByteLengths,
+        data.size,
+      ],
+      BACKUP_ZIP_LIMITS
+    )
     const buffer = Buffer.from(await data.arrayBuffer())
+    assertZipEntryByteLengths(
+      [
+        ...Array.from({ length: BACKUP_STATIC_ZIP_ENTRY_COUNT }, () => 0),
+        ...includedByteLengths,
+        buffer.byteLength,
+      ],
+      BACKUP_ZIP_LIMITS
+    )
+    includedByteLengths.push(buffer.byteLength)
     entries.push({ name: zipPath, content: buffer })
     manifestRows.push({
       ...baseRow,
@@ -180,6 +343,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'organization_backup.export',
@@ -339,7 +503,7 @@ export async function GET(request: NextRequest) {
         }).from(educationRecords).where(inArray(educationRecords.planId, educationPlanIds))
       : []
 
-    const [documentVersionsData, documentApprovalsData, taskAttachmentsData] = await Promise.all([
+    const [documentVersionsData, documentApprovalRequestsData, taskAttachmentsData] = await Promise.all([
       documentIds.length > 0
         ? db.select({
             id: documentVersions.id,
@@ -357,16 +521,29 @@ export async function GET(request: NextRequest) {
         : [],
       documentIds.length > 0
         ? db.select({
-            id: documentApprovals.id,
-            document_id: documentApprovals.documentId,
-            step: documentApprovals.step,
-            approver_id: documentApprovals.approverId,
-            status: documentApprovals.status,
-            comment: documentApprovals.comment,
-            acted_at: documentApprovals.actedAt,
-            created_by: documentApprovals.createdBy,
-            created_at: documentApprovals.createdAt,
-          }).from(documentApprovals).where(inArray(documentApprovals.documentId, documentIds))
+            id: approvalRequests.id,
+            organization_id: approvalRequests.organizationId,
+            resource_type: approvalRequests.resourceType,
+            resource_id: approvalRequests.resourceId,
+            status: approvalRequests.status,
+            requested_by: approvalRequests.requestedBy,
+            requested_at: approvalRequests.requestedAt,
+            approver_id: approvalRequests.approverId,
+            approved_at: approvalRequests.approvedAt,
+            rejection_reason: approvalRequests.rejectionReason,
+            due_at: approvalRequests.dueAt,
+            notified_at: approvalRequests.notifiedAt,
+            escalation_notified_at: approvalRequests.escalationNotifiedAt,
+            step_number: approvalRequests.stepNumber,
+            reverted_at: approvalRequests.revertedAt,
+            revert_reason: approvalRequests.revertReason,
+            created_at: approvalRequests.createdAt,
+            updated_at: approvalRequests.updatedAt,
+          }).from(approvalRequests).where(and(
+            eq(approvalRequests.organizationId, organizationId),
+            eq(approvalRequests.resourceType, 'document'),
+            inArray(approvalRequests.resourceId, documentIds)
+          ))
         : [],
       taskIds.length > 0
         ? db.select({
@@ -381,6 +558,21 @@ export async function GET(request: NextRequest) {
           }).from(taskAttachments).where(inArray(taskAttachments.taskId, taskIds))
         : [],
     ])
+
+    const documentApprovalRequestIds = documentApprovalRequestsData.map(requestRow => requestRow.id)
+    const documentApprovalEventsData = documentApprovalRequestIds.length > 0
+      ? await db.select({
+          id: approvalEvents.id,
+          approval_request_id: approvalEvents.approvalRequestId,
+          event_type: approvalEvents.eventType,
+          actor_id: approvalEvents.actorId,
+          payload: approvalEvents.payload,
+          created_at: approvalEvents.createdAt,
+        }).from(approvalEvents).where(inArray(
+          approvalEvents.approvalRequestId,
+          documentApprovalRequestIds
+        ))
+      : []
 
     const auditPlanIds = auditPlansData.map(plan => plan.id)
     const managementReviewIds = managementReviewsData.map(review => review.id)
@@ -479,16 +671,100 @@ export async function GET(request: NextRequest) {
         }).from(correctiveActions).where(inArray(correctiveActions.nonconformityId, nonconformityIds))
       : []
 
+    const documentFolderIds = [...new Set(documentsData
+      .map(document => document.folder_id)
+      .filter((id): id is string => Boolean(id)))]
+    const validDocumentFolderIds = new Set(documentFolderIds.length > 0
+      ? (await db.select({ id: documentFolders.id })
+          .from(documentFolders)
+          .where(and(
+            eq(documentFolders.organizationId, organizationId),
+            inArray(documentFolders.id, documentFolderIds)
+          )))
+          .map(folder => folder.id)
+      : [])
+
+    const documentRelatedUserIds = [...new Set([
+      ...documentsData.flatMap(document => [document.created_by, document.updated_by]),
+      ...documentVersionsData.map(version => version.created_by),
+      ...documentApprovalRequestsData.flatMap(requestRow => [
+        requestRow.requested_by,
+        requestRow.approver_id,
+      ]),
+      ...documentApprovalEventsData.map(event => event.actor_id),
+      ...documentApprovalEventsData.flatMap(event => (
+        collectApprovalEventPayloadUserIds(event.payload)
+      )),
+    ].filter((id): id is string => Boolean(id)))]
+    const validDocumentUserIds = new Set(documentRelatedUserIds.length > 0
+      ? (await db.select({ userId: userMemberships.userId })
+          .from(userMemberships)
+          .where(and(
+            eq(userMemberships.organizationId, organizationId),
+            inArray(userMemberships.userId, documentRelatedUserIds)
+          )))
+          .map(membership => membership.userId)
+      : [])
+    const projectDocumentUserId = (userId: string | null): string | null => (
+      userId && validDocumentUserIds.has(userId) ? userId : null
+    )
+
+    const projectedDocumentsData = documentsData.map(document => ({
+      ...document,
+      folder_id: document.folder_id && validDocumentFolderIds.has(document.folder_id)
+        ? document.folder_id
+        : null,
+      file_path: projectDocumentStoragePath(
+        document.file_path,
+        organizationId,
+        document.id
+      ),
+      created_by: projectDocumentUserId(document.created_by),
+      updated_by: projectDocumentUserId(document.updated_by),
+    }))
+    const projectedDocumentVersionsData = documentVersionsData.map(version => ({
+      ...version,
+      file_path: projectDocumentStoragePath(
+        version.file_path,
+        organizationId,
+        version.document_id
+      ),
+      created_by: projectDocumentUserId(version.created_by),
+    }))
+    const projectedDocumentApprovalRequestsData = documentApprovalRequestsData.map(requestRow => ({
+      ...requestRow,
+      requested_by: projectDocumentUserId(requestRow.requested_by),
+      approver_id: projectDocumentUserId(requestRow.approver_id),
+    }))
+    const documentApprovalRequestMap = new Map(
+      projectedDocumentApprovalRequestsData.map(requestRow => [requestRow.id, requestRow])
+    )
+    const projectedDocumentApprovalEventsData = documentApprovalEventsData.flatMap(event => {
+      const requestRow = documentApprovalRequestMap.get(event.approval_request_id)
+      if (!requestRow || !documentIds.includes(requestRow.resource_id)) {
+        return []
+      }
+      return [{
+        ...event,
+        actor_id: projectDocumentUserId(event.actor_id),
+        payload: projectApprovalEventPayload(event.payload, {
+          approvalRequestId: requestRow.id,
+          resourceId: requestRow.resource_id,
+          validUserIds: validDocumentUserIds,
+        }),
+      }]
+    })
+
     const documentsCsv = toCsv(
       ['id', 'title', 'status', 'category', 'folder_id', 'file_name', 'file_path', 'file_size', 'mime_type', 'created_at', 'updated_at', 'created_by', 'updated_by'],
-      documentsData.map(d => [
+      projectedDocumentsData.map(d => [
         d.id, d.title, d.status, d.category, d.folder_id, d.file_name, d.file_path, d.file_size, d.mime_type, d.created_at, d.updated_at, d.created_by, d.updated_by
       ])
     )
 
     const documentVersionsCsv = toCsv(
       ['id', 'document_id', 'version_number', 'title', 'description', 'file_name', 'file_path', 'file_size', 'changes', 'created_by', 'created_at'],
-      documentVersionsData.map(version => [
+      projectedDocumentVersionsData.map(version => [
         version.id,
         version.document_id,
         version.version_number,
@@ -503,18 +779,44 @@ export async function GET(request: NextRequest) {
       ])
     )
 
-    const documentApprovalsCsv = toCsv(
-      ['id', 'document_id', 'step', 'approver_id', 'status', 'comment', 'acted_at', 'created_by', 'created_at'],
-      documentApprovalsData.map(approval => [
-        approval.id,
-        approval.document_id,
-        approval.step,
-        approval.approver_id,
-        approval.status,
-        approval.comment,
-        approval.acted_at,
-        approval.created_by,
-        approval.created_at,
+    const documentApprovalRequestsCsv = toCsv(
+      [
+        'id', 'organization_id', 'resource_type', 'resource_id', 'status',
+        'requested_by', 'requested_at', 'approver_id', 'approved_at',
+        'rejection_reason', 'due_at', 'notified_at', 'escalation_notified_at',
+        'step_number', 'reverted_at', 'revert_reason', 'created_at', 'updated_at',
+      ],
+      projectedDocumentApprovalRequestsData.map(requestRow => [
+        requestRow.id,
+        requestRow.organization_id,
+        requestRow.resource_type,
+        requestRow.resource_id,
+        requestRow.status,
+        requestRow.requested_by,
+        requestRow.requested_at,
+        requestRow.approver_id,
+        requestRow.approved_at,
+        requestRow.rejection_reason,
+        requestRow.due_at,
+        requestRow.notified_at,
+        requestRow.escalation_notified_at,
+        requestRow.step_number,
+        requestRow.reverted_at,
+        requestRow.revert_reason,
+        requestRow.created_at,
+        requestRow.updated_at,
+      ])
+    )
+
+    const documentApprovalEventsCsv = toCsv(
+      ['id', 'approval_request_id', 'event_type', 'actor_id', 'payload', 'created_at'],
+      projectedDocumentApprovalEventsData.map(event => [
+        event.id,
+        event.approval_request_id,
+        event.event_type,
+        event.actor_id,
+        event.payload,
+        event.created_at,
       ])
     )
 
@@ -851,28 +1153,54 @@ export async function GET(request: NextRequest) {
     const backupFileCandidates: BackupFileCandidate[] = [
       ...documentsData
         .filter(document => document.file_path)
-        .map(document => ({
-          bucket: 'documents',
-          source: 'document' as const,
-          id: document.id,
-          fileName: document.file_name,
-          filePath: document.file_path,
-        })),
+        .map(document => {
+          const filePath = projectDocumentStoragePath(
+            document.file_path,
+            organizationId,
+            document.id
+          )
+          return {
+            bucket: 'documents',
+            source: 'document' as const,
+            id: document.id,
+            fileName: document.file_name,
+            filePath: filePath ?? document.file_path,
+            fileSize: document.file_size,
+            pathValid: Boolean(filePath),
+          }
+        }),
       ...documentVersionsData
         .filter(version => version.file_path)
-        .map(version => ({
-          bucket: 'documents',
-          source: 'document_version' as const,
-          id: version.id,
-          fileName: version.file_name,
-          filePath: version.file_path,
-        })),
+        .map(version => {
+          const filePath = projectDocumentStoragePath(
+            version.file_path,
+            organizationId,
+            version.document_id
+          )
+          return {
+            bucket: 'documents',
+            source: 'document_version' as const,
+            id: version.id,
+            fileName: version.file_name,
+            filePath: filePath ?? version.file_path,
+            fileSize: version.file_size,
+            pathValid: Boolean(filePath),
+          }
+        }),
       ...taskAttachmentsData.map(attachment => ({
         bucket: 'task-attachments',
         source: 'task_attachment' as const,
         id: attachment.id,
         fileName: attachment.file_name,
         filePath: attachment.file_path,
+        fileSize: attachment.file_size,
+        pathValid: attachment.task_id
+          ? isTaskAttachmentStoragePath(
+              attachment.file_path,
+              organizationId,
+              attachment.task_id
+            )
+          : false,
       })),
       ...auditEvidenceData.map(evidence => ({
         bucket: 'audit-evidence',
@@ -880,6 +1208,14 @@ export async function GET(request: NextRequest) {
         id: evidence.id,
         fileName: evidence.file_name,
         filePath: evidence.file_path,
+        fileSize: evidence.file_size,
+        pathValid: evidence.audit_checklist_id
+          ? isAuditEvidenceStoragePath(
+              evidence.file_path,
+              organizationId,
+              evidence.audit_checklist_id
+            )
+          : false,
       })),
     ]
     const { entries: backupFileEntries, manifestRows: backupFileManifestRows } = await buildBackupFileEntries(backupFileCandidates)
@@ -924,7 +1260,8 @@ export async function GET(request: NextRequest) {
         counts: {
           documents: documentsData.length,
           document_versions: documentVersionsData.length,
-          document_approvals: documentApprovalsData.length,
+          document_approval_requests: documentApprovalRequestsData.length,
+          document_approval_events: documentApprovalEventsData.length,
           risks: risksData.length,
           tasks: tasksData.length,
           task_attachments: taskAttachmentsData.length,
@@ -952,7 +1289,8 @@ export async function GET(request: NextRequest) {
     const csvEntries: ZipFileEntry[] = [
       { name: 'documents.csv', content: documentsCsv },
       { name: 'document_versions.csv', content: documentVersionsCsv },
-      { name: 'document_approvals.csv', content: documentApprovalsCsv },
+      { name: 'document_approval_requests.csv', content: documentApprovalRequestsCsv },
+      { name: 'document_approval_events.csv', content: documentApprovalEventsCsv },
       { name: 'risks.csv', content: risksCsv },
       { name: 'tasks.csv', content: tasksCsv },
       { name: 'task_attachments.csv', content: taskAttachmentsCsv },
@@ -983,7 +1321,7 @@ export async function GET(request: NextRequest) {
       ...csvEntries,
       { name: 'metadata.json', content: metadata },
       ...backupFileEntries
-    ])
+    ], BACKUP_ZIP_LIMITS)
 
     await logExportEvent({
       userId: guard.userId,
@@ -1000,15 +1338,27 @@ export async function GET(request: NextRequest) {
       }
     }))
   } catch (err) {
-    console.error('Failed to load export data', err)
+    const exportLimitExceeded = err instanceof ZipLimitError
+    console.error('Backup export failed', {
+      reason: exportLimitExceeded
+        ? 'backup_export_limit_exceeded'
+        : 'failed_to_load_export_data',
+    })
     await logExportEvent({
       userId: guard.userId,
       organizationId: organizationId,
       documentId: null,
       format: 'organization_backup_zip',
       status: 'error',
-      context: { reason: 'failed_to_load_export_data' }
+      context: {
+        reason: exportLimitExceeded
+          ? 'backup_export_limit_exceeded'
+          : 'failed_to_load_export_data'
+      }
     })
-    return guard.json({ error: 'Failed to load export data' }, { status: 500 })
+    return guard.json(
+      { error: exportLimitExceeded ? 'Backup exceeds export limits' : 'Failed to load export data' },
+      { status: exportLimitExceeded ? 413 : 500 }
+    )
   }
 }

@@ -17,6 +17,7 @@ function isPublicDemoMode() {
 
 export async function GET(request: NextRequest) {
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.invitations.list'
   })
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
   }
 
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.invitations.accept'
   })
@@ -223,6 +225,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.invitations.delete'
   })

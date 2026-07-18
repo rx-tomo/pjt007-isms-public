@@ -11,6 +11,7 @@ function canAccessUserNotifications(actorRole: string | null, actorUserId: strin
 
 export async function GET(request: NextRequest) {
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant-primary',
     allowedRoles: ALLOWED_ROLES,
     actionName: 'notifications.read',
   })
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant-primary',
     allowedRoles: ALLOWED_ROLES,
     actionName: 'notifications.write',
   })

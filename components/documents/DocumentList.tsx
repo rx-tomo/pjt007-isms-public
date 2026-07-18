@@ -3,13 +3,16 @@
 import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import type { DocumentWithFolder, DocumentApproval } from '@/lib/services/document'
-import type { UserProfile } from '@/lib/services/user'
+import type { UserProfile, UserRole } from '@/lib/services/user'
+import { isApprovalCandidateRole } from '@/lib/approvals/approvalCandidateContract'
 
 interface DocumentListProps {
   documents: DocumentWithFolder[]
   currentUserId?: string | null
+  currentUserEffectiveRole?: UserRole | null
   onRequestApproval: (document: DocumentWithFolder) => void
   onApprove: (document: DocumentWithFolder) => void
+  onReject: (document: DocumentWithFolder) => void
   onDelete: (documentId: string) => void
   onDownload: (document: DocumentWithFolder) => void
   onExport: (document: DocumentWithFolder, format: 'pdf' | 'word') => void
@@ -20,8 +23,10 @@ interface DocumentListProps {
 export default function DocumentList({
   documents,
   currentUserId,
+  currentUserEffectiveRole,
   onRequestApproval,
   onApprove,
+  onReject,
   onDelete,
   onDownload,
   onExport,
@@ -29,6 +34,7 @@ export default function DocumentList({
   users
 }: DocumentListProps) {
   const t = useTranslations('documents')
+  const approvalT = useTranslations('approvals')
 
   const userDirectory = useMemo(() => {
     if (!users) return new Map<string, UserProfile>()
@@ -126,7 +132,10 @@ export default function DocumentList({
                 : undefined)
             const canApprove =
               !!currentUserId &&
-              currentPendingApprover === currentUserId
+              currentPendingApprover === currentUserId &&
+              !!document.approvalProgress?.currentRequestId &&
+              !!currentUserEffectiveRole &&
+              isApprovalCandidateRole(currentUserEffectiveRole)
             const owner = document.created_by ? userDirectory.get(document.created_by) : undefined
             const ownerDepartment = owner?.department ?? null
 
@@ -256,7 +265,7 @@ export default function DocumentList({
                                     isRejected ? 'bg-red-500' :
                                     'bg-surface-elevated'
                                   }`}
-                                  title={t('approval.stepLabel', { step: stepNum })}
+                                  title={t('approval.decisionLabel')}
                                 />
                               )
                             })}
@@ -272,18 +281,23 @@ export default function DocumentList({
                           >
                             {document.approvalProgress.overallStatus === 'approved' && t('approval.progress.approved')}
                             {document.approvalProgress.overallStatus === 'rejected' && t('approval.progress.rejected')}
-                            {document.approvalProgress.overallStatus === 'in_review' && t('approval.progress.stepPending', {
-                              current: document.approvalProgress.currentStep,
-                              total: document.approvalProgress.totalSteps
-                            })}
+                            {document.approvalProgress.overallStatus === 'in_review' && t('approval.progress.pending')}
                           </span>
                           {canApprove && (
-                            <button
-                              onClick={() => onApprove(document)}
-                              className="inline-flex items-center rounded-md border border-transparent bg-green-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                            >
-                              {t('actions.approve')}
-                            </button>
+                            <>
+                              <button
+                                onClick={() => onApprove(document)}
+                                className="inline-flex items-center rounded-md border border-transparent bg-green-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                              >
+                                {t('actions.approve')}
+                              </button>
+                              <button
+                                onClick={() => onReject(document)}
+                                className="inline-flex items-center rounded-md border border-red-300 bg-surface px-2 py-1 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              >
+                                {approvalT('reject')}
+                              </button>
+                            </>
                           )}
                         </div>
                       )}

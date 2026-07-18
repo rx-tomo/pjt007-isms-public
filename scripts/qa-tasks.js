@@ -21,7 +21,7 @@ const scripts = [
     name: 'タスクE2Eリグレッション (Playwright)',
     command: ['npx', 'playwright', 'test', 'tests/e2e/tasks.spec.ts', '--reporter=line'],
     extraEnv: {
-      PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+      PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1'
     }
   }
 ];

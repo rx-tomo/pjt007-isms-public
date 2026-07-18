@@ -10,6 +10,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { applyDatabaseInvariants } from './database-invariant-application.mjs';
+import { renderDropInvariantTriggersSql } from './database-invariant-definitions.mjs';
 
 const args = process.argv.slice(2);
 const reset = args.includes('--reset');
@@ -27,6 +29,7 @@ const now = new Date().toISOString();
 const nowMs = Date.now();
 const seedSource = 'practical-verification-v1';
 const bcryptPlaceholder = '$2b$10$placeholderHashForPracticalSeedOnlyXXXXXXXXXX';
+let activeSeedClient = null;
 
 const ids = {
   initialOrg: '70000000-0000-4000-8000-000000000001',
@@ -309,6 +312,10 @@ const documents = [
   doc('suspended', '02', 'ISMS再開準備チェックリスト', '休止状態から再開するための最低限の確認項目。', 'draft', 'checklist', '02', null, null),
 ];
 
+function dateAfterDays(days) {
+  return new Date(nowMs + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 const documentVersionsSeed = documents.map(documentVersion);
 
 const riskCategories = [
@@ -502,6 +509,22 @@ const followUpRecordsSeed = [
   followUpRecord('surveillance', '01', '02', '01', '訓練後改善タスクの週次確認', '期限超過した改善タスクを週次確認へ載せ、完了まで追跡する。', '04', 'in_progress', '2026-06-18', null, null, null, '03'),
 ];
 
+const approvalRequestsSeed = [
+  approvalRequest('initial', '01', 'document', id('initial', 'document', '02'), '02', '03', 1),
+  approvalRequest('surveillance', '01', 'audit_plan', id('surveillance', 'auditPlan', '01'), '02', '04', 2),
+  approvalRequest('enterprise', '01', 'document', id('enterprise', 'document', '02'), '05', '03', 4),
+];
+
+const approvalEventsSeed = approvalRequestsSeed.map((request) => ({
+  scenario: request.scenario,
+  id: id(request.scenario, 'approvalEvent', request.id.slice(-2)),
+  approval_request_id: request.id,
+  event_type: 'requested',
+  actor_id: request.requested_by,
+  payload: JSON.stringify({ approver_id: request.approver_id, due_at: request.due_at, seed_source: seedSource }),
+  created_at: now,
+}));
+
 const managementReviewsSeed = [
   managementReview('surveillance', '11', '2025年度 年度末 マネジメントレビュー', '2026-03-25', 'completed', ['前年度内部監査結果', 'リスク対応状況', '教育訓練結果', '次年度改善計画'], ['01', '02', '03', '04'], '東京本社会議室', 'FY2025年度末レビューを実施し、内部監査結果、リスク対応、教育訓練の完了状況を確認した。', 'ISMSは有効に運用されている。月次アクセスレビュー証跡の統一と訓練後改善タスクの追跡をFY2026重点改善とする。', '01'),
   managementReview('surveillance', '01', '2026年度 第1回 マネジメントレビュー', '2026-07-10', 'scheduled', ['内部監査計画', 'リスク見直し', '不適合と是正', '改善機会'], ['01', '02', '03', '04'], 'オンライン会議', null, null, '01'),
@@ -666,6 +689,8 @@ function id(s, entity, n) {
     educationRecord: '7e01',
     educationMaterial: '7e02',
     educationPlanMaterial: '7e03',
+    approvalRequest: '7f00',
+    approvalEvent: '7f01',
   };
   return `${codes[entity]}0000-0000-4000-8000-${story}${String(n).padStart(8, '0')}`;
 }
@@ -1398,6 +1423,7 @@ function treatment(s, n, riskNo, treatmentType, description, responsibleNo, dueD
     residual_approved_at: null,
     residual_rejection_reason: null,
     residual_review_due_date: treatmentType === 'accept' ? dueDate : null,
+    material_version: 1,
     cost_estimate: null,
     actual_cost: null,
     effectiveness_rating: null,
@@ -1512,6 +1538,30 @@ function auditUnit(s, n, name, unitType, description) {
     unit_type: unitType,
     description,
     is_active: 1,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+function approvalRequest(s, n, resourceType, resourceId, requestedByNo, approverNo, dueInDays) {
+  return {
+    scenario: s,
+    id: id(s, 'approvalRequest', n),
+    organization_id: orgIdFor(s),
+    resource_type: resourceType,
+    resource_id: resourceId,
+    status: 'pending',
+    requested_by: id(s, 'user', requestedByNo),
+    requested_at: now,
+    approver_id: id(s, 'user', approverNo),
+    approved_at: null,
+    rejection_reason: null,
+    due_at: dateAfterDays(dueInDays),
+    notified_at: now,
+    escalation_notified_at: null,
+    step_number: 1,
+    reverted_at: null,
+    revert_reason: null,
     created_at: now,
     updated_at: now,
   };
@@ -1887,6 +1937,19 @@ function schemaStatements() {
       args: [],
     },
     {
+      sql: `create table if not exists residual_acceptance_approval_bindings (
+        approval_request_id text primary key not null
+          references approval_requests(id) on delete cascade,
+        organization_id text not null,
+        resource_id text not null,
+        risk_id text,
+        approver_id text not null,
+        responsible_id text not null,
+        resource_material_version integer not null
+      )`,
+      args: [],
+    },
+    {
       sql: `create table if not exists soa_versions (
         id text primary key,
         organization_id text not null references organizations(id) on delete cascade,
@@ -2024,6 +2087,7 @@ async function ensureSchemaColumns(client) {
     ['risk_treatments', 'residual_approved_at', 'text'],
     ['risk_treatments', 'residual_rejection_reason', 'text'],
     ['risk_treatments', 'residual_review_due_date', 'text'],
+    ['risk_treatments', 'material_version', 'integer not null default 1'],
   ];
 
   const results = [];
@@ -2092,6 +2156,8 @@ function deleteStatementsForReset(extraOrgIds = [], extraUserIds = []) {
   const userMarks = placeholders(userIds);
 
   return [
+    makeDelete(`delete from approval_events where approval_request_id in (select id from approval_requests where organization_id in (${orgMarks}))`, orgIds),
+    makeDelete(`delete from approval_requests where organization_id in (${orgMarks})`, orgIds),
     makeDelete(`delete from organization_notification_channel_logs where notification_id in (select id from notifications where organization_id in (${orgMarks}) or user_id in (${userMarks}))`, [...orgIds, ...userIds]),
     makeDelete(`delete from organization_notification_channels where organization_id in (${orgMarks})`, orgIds),
     makeDelete(`delete from email_logs where notification_id in (select id from notifications where organization_id in (${orgMarks}) or user_id in (${userMarks})) or user_id in (${userMarks})`, [...orgIds, ...userIds, ...userIds]),
@@ -2180,6 +2246,7 @@ async function main() {
   let client = null;
   if (!dryRun) {
     client = await createSeedClient(dbUrl);
+    activeSeedClient = client;
   }
 
   const outputDir = process.env.SEED_OUTPUT_DIR || path.join(process.cwd(), 'test-results');
@@ -2191,6 +2258,14 @@ async function main() {
   summary.push(...await ensureSchemaColumns(client));
 
   if (reset) {
+    if (!dryRun) {
+      await client.executeMultiple(renderDropInvariantTriggersSql());
+    }
+    summary.push({
+      label: 'suspend database invariants for deterministic demo reset',
+      statements: dryRun ? 0 : 6,
+      affected: 0,
+    });
     const cleanupTargets = await discoverResetTargets(client);
     summary.push({
       label: 'discover stale Playwright/E2E seed rows',
@@ -2258,6 +2333,18 @@ async function main() {
         updated_at: now,
       };
     });
+  const delegatedApprovalScopes = scenarioUsers.flatMap((row) => (
+    row.email === 'suzuki.initial@isms-practical.local'
+      ? [{
+          id: id('initial', 'departmentScope', '103'),
+          organization_id: ids.initialOrg,
+          user_id: row.id,
+          department_id: id('initial', 'dept', '02'),
+          created_at: now,
+          updated_at: now,
+        }]
+      : []
+  ));
 
   const batches = [
     ['organizations', statements('organizations', [
@@ -2347,7 +2434,7 @@ async function main() {
     ], scenarioPermissions)],
     ['user_department_scopes', statements('user_department_scopes', [
       'id', 'organization_id', 'user_id', 'department_id', 'created_at', 'updated_at',
-    ], scenarioDepartmentScopes)],
+    ], [...scenarioDepartmentScopes, ...delegatedApprovalScopes])],
     ['organization_isms_scopes', statements('organization_isms_scopes', [
       'id', 'organization_id', 'physical_locations', 'it_systems', 'departments',
       'processes', 'exclusions', 'created_at', 'updated_at',
@@ -2413,7 +2500,7 @@ async function main() {
       'id', 'risk_id', 'treatment_type', 'description', 'responsible_id',
       'due_date', 'status', 'cost_estimate', 'actual_cost', 'effectiveness_rating',
       'residual_approval_status', 'residual_approved_by', 'residual_approved_at',
-      'residual_rejection_reason', 'residual_review_due_date',
+      'residual_rejection_reason', 'residual_review_due_date', 'material_version',
       'created_at', 'updated_at',
     ], filterScenario(riskTreatments))],
     ['iso_controls', statements('iso_controls', [
@@ -2483,6 +2570,15 @@ async function main() {
       'description', 'assigned_to', 'status', 'due_date', 'completed_at',
       'verified_at', 'verified_by', 'created_by', 'created_at', 'updated_at',
     ], filterScenario(followUpRecordsSeed))],
+    ['approval_requests', statements('approval_requests', [
+      'id', 'organization_id', 'resource_type', 'resource_id', 'status', 'requested_by',
+      'requested_at', 'approver_id', 'approved_at', 'rejection_reason', 'due_at',
+      'notified_at', 'escalation_notified_at', 'step_number', 'reverted_at',
+      'revert_reason', 'created_at', 'updated_at',
+    ], filterScenario(approvalRequestsSeed))],
+    ['approval_events', statements('approval_events', [
+      'id', 'approval_request_id', 'event_type', 'actor_id', 'payload', 'created_at',
+    ], filterScenario(approvalEventsSeed))],
     ['management_reviews', statements('management_reviews', [
       'id', 'organization_id', 'title', 'review_date', 'status', 'agenda',
       'participants', 'location', 'minutes', 'conclusions', 'created_by',
@@ -2506,6 +2602,18 @@ async function main() {
   }
   summary.push(writeDocumentSeedFiles(filterScenario(documents)));
 
+  if (!dryRun) {
+    await client.close();
+    client = null;
+    activeSeedClient = null;
+    await applyDatabaseInvariants(dbUrl, process.env.TURSO_AUTH_TOKEN);
+  }
+  summary.push({
+    label: 'apply and verify canonical database invariants',
+    statements: dryRun ? 0 : 6,
+    affected: 0,
+  });
+
   const payload = {
     ok: true,
     generatedAt: now,
@@ -2528,9 +2636,23 @@ async function main() {
   console.log(JSON.stringify({ ...payload, outputPath }, null, 2));
 
   await client?.close();
+  activeSeedClient = null;
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
+  try {
+    await activeSeedClient?.close();
+    activeSeedClient = null;
+    if (!dryRun) {
+      await applyDatabaseInvariants(resolveDbUrl(), process.env.TURSO_AUTH_TOKEN);
+    }
+  } catch (restoreError) {
+    console.error(JSON.stringify({
+      ok: false,
+      error: 'failed to restore database invariants after seed failure',
+      detail: restoreError instanceof Error ? restoreError.message : String(restoreError),
+    }, null, 2));
+  }
   console.error(JSON.stringify({ ok: false, error: error.message }, null, 2));
   process.exit(1);
 });

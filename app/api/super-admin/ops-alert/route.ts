@@ -18,6 +18,7 @@ type OpsAlertPayload = {
 
 export async function POST(request: NextRequest) {
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.ops_alert'
   })

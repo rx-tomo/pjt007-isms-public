@@ -1711,6 +1711,8 @@ export class AuditService {
     description?: string
     assignedTo?: string
     dueDate?: string
+    organizationId?: string
+    userId?: string
   }): Promise<FollowUpRecord> {
     if (typeof window !== 'undefined') {
       return this.mutateAuditApi<FollowUpRecord>('POST', {
@@ -1726,14 +1728,12 @@ export class AuditService {
       })
     }
 
-    const [userId, organizationId] = await Promise.all([
-      this.getCurrentUserId(),
-      this.getCurrentOrganizationId()
-    ])
-
-    if (!userId || !organizationId) {
+    if (!input.userId || !input.organizationId) {
       throw new Error('ユーザー情報または組織情報が取得できません')
     }
+
+    const userId = input.userId
+    const organizationId = input.organizationId
 
     try {
       const db = getDb()

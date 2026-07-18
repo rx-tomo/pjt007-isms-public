@@ -21,6 +21,7 @@ type ImportResult = {
   updated: number
   skipped: number
   errors: string[]
+  omittedErrors?: number
 }
 
 type SectionCounts = {
@@ -70,6 +71,8 @@ function StatusBadge({ count, t }: { count: number; t: ReturnType<typeof useTran
 }
 
 function ImportResultDisplay({ result, t }: { result: ImportResult; t: (key: string) => string }) {
+  const errorCount = result.errors.length + (result.omittedErrors ?? 0)
+
   return (
     <div className="mt-4 bg-surface border rounded-lg p-4">
       <h4 className="text-sm font-semibold text-text-primary mb-3">{t('result')}</h4>
@@ -86,9 +89,9 @@ function ImportResultDisplay({ result, t }: { result: ImportResult; t: (key: str
           <p className="text-xl font-bold text-yellow-700">{result.skipped}</p>
           <p className="text-xs text-yellow-600">{t('skipped')}</p>
         </div>
-        <div className={`rounded-lg p-2 text-center ${result.errors.length > 0 ? 'bg-red-50' : 'bg-surface-elevated'}`}>
-          <p className={`text-xl font-bold ${result.errors.length > 0 ? 'text-red-700' : 'text-text-secondary'}`}>{result.errors.length}</p>
-          <p className={`text-xs ${result.errors.length > 0 ? 'text-red-600' : 'text-text-muted'}`}>{t('errors')}</p>
+        <div className={`rounded-lg p-2 text-center ${errorCount > 0 ? 'bg-red-50' : 'bg-surface-elevated'}`}>
+          <p className={`text-xl font-bold ${errorCount > 0 ? 'text-red-700' : 'text-text-secondary'}`}>{errorCount}</p>
+          <p className={`text-xs ${errorCount > 0 ? 'text-red-600' : 'text-text-muted'}`}>{t('errors')}</p>
         </div>
       </div>
 
@@ -103,7 +106,7 @@ function ImportResultDisplay({ result, t }: { result: ImportResult; t: (key: str
         </div>
       )}
 
-      {result.errors.length === 0 && (
+      {errorCount === 0 && (
         <p className="text-sm text-green-600 mt-1">{t('importSuccess')}</p>
       )}
     </div>
@@ -349,9 +352,11 @@ export default function SetupPage(
 
   const handleGenericTemplateDownload = useCallback(async (type: 'risks' | 'tasks') => {
     try {
-      const url = type === 'risks'
-        ? '/api/risks/export?template=true&format=csv'
-        : '/api/tasks/export?template=true'
+      let url = '/api/risks/export?template=true&format=csv'
+      if (type === 'tasks') {
+        if (!organizationId) return
+        url = `/api/tasks/export?template=true&organizationId=${encodeURIComponent(organizationId)}`
+      }
       const response = await fetch(url)
       if (!response.ok) throw new Error('Download failed')
       const blob = await response.blob()
@@ -364,7 +369,7 @@ export default function SetupPage(
     } catch {
       // silently fail for template download
     }
-  }, [])
+  }, [organizationId])
 
   const handleRisksFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setRisksResult(null)

@@ -843,6 +843,7 @@
     "approval": {
       "inReviewStatus": "Awaiting approval",
       "stepLabel": "Step {step}",
+      "decisionLabel": "Approver decision",
       "status": {
         "pending": "Pending",
         "approved": "Approved",
@@ -851,11 +852,11 @@
       },
       "modal": {
         "title": "Request approval for “{title}”",
-        "description": "Select approvers for each step. When the same person handles both steps, the first step will be skipped automatically.",
-        "step1Label": "Step 1 approver",
-        "step2Label": "Step 2 approver",
+        "description": "Select the person responsible for reviewing and deciding on this document.",
+        "approverLabel": "Approver",
         "selectPlaceholder": "Select a user",
-        "hint": "Approvers must belong to your organization. The system operator or organization admin should be set as the final approver.",
+        "loadingCandidates": "Checking eligible approvers",
+        "hint": "The approver must belong to the same organization and be able to access this document.",
         "submit": "Send request",
         "saving": "Sending…",
         "cancel": "Cancel"
@@ -870,12 +871,14 @@
         "cancel": "Cancel"
       },
       "errors": {
-        "missingApprovers": "Select both approvers before sending the request"
+        "missingApprover": "Select an approver before sending the request",
+        "candidatesLoadFailed": "Eligible approvers for this document could not be loaded"
       },
       "progress": {
         "title": "Approval Progress",
         "stepComplete": "Step {current}/{total} Complete",
         "stepPending": "Step {current}/{total} Pending",
+        "pending": "Awaiting approver decision",
         "notSubmitted": "Not Submitted",
         "approved": "Approved",
         "rejected": "Rejected"
@@ -923,7 +926,11 @@
       "empty": "No version history yet",
       "close": "Close",
       "loadFailed": "Failed to load version history",
-      "downloadFailed": "Failed to download version file"
+      "downloadFailed": "Failed to download version file",
+      "delete": "Delete history",
+      "deleting": "Deleting",
+      "confirmDelete": "Delete version {version}? This action cannot be undone.",
+      "deleteFailed": "Failed to delete version history"
     },
     "templates": {
       "title": "ISMS Templates",
@@ -1032,7 +1039,7 @@
       "draftSaved": "Draft saved successfully",
       "submittedForReview": "Submitted for review"
     },
-    "allDocuments": "All documents",
+    "allDocuments": "Documents in root",
     "folderDocuments": "Documents in folder",
     "emptyState": "No documents",
     "updatedAt": "Updated on {date}",
@@ -2289,23 +2296,23 @@
         }
       },
       "admin": {
-        "title": "Admin Dashboard",
-        "subtitle": "Organization-wide KPIs, stalled work, and today's actions",
+        "title": "ISMS operating status",
+        "subtitle": "Review organization-wide progress and the actions that need attention next",
         "viewAll": "View All",
         "sections": {
           "kpi": {
-            "title": "Key Performance Indicators",
+            "title": "Organization-wide status",
             "pendingApprovals": "Pending Approvals",
             "activeUsers": "Active Users",
-            "openRisks": "Open Risks",
+            "openRisks": "Risks under treatment",
             "overdueTasks": "Overdue Tasks"
           },
           "workbench": {
-            "title": "ISMS operations workbench",
-            "subtitle": "Track initial registration preparation and monthly operations by state, next screen, completion condition, and evidence impact.",
+            "title": "Preparation and operation checks",
+            "subtitle": "Review the current state, next action, expected result, and retained record for initial preparation and monthly operation.",
             "labels": {
-              "done": "Done when:",
-              "impact": "Evidence:"
+              "done": "Ready when:",
+              "impact": "Record retained:"
             },
             "groups": {
               "initialPreparation": {
@@ -2317,7 +2324,7 @@
                     "title": "Confirm scope and organization structure",
                     "next": "Open organization settings to confirm scope, sites, owners, and governance roles.",
                     "done": "Scope and accountable owners can be explained",
-                    "impact": "Feeds the organization and scope section of the bundle"
+                    "impact": "Used for organization and scope details in pre-assessment review materials"
                   },
                   "assetsRisks": {
                     "status": "{count} risks",
@@ -2330,8 +2337,8 @@
                     "status": "{count} pending",
                     "title": "Move documents and controls toward approval",
                     "next": "Open documents and the control library to reduce pending approvals and missing rationale.",
-                    "done": "Core documents and SoA decisions are reviewable",
-                    "impact": "Becomes core evidence in the assessment bundle"
+                    "done": "Core documents and control applicability decisions can be reviewed",
+                    "impact": "Used as key records in pre-assessment review materials"
                   }
                 }
               },
@@ -2341,9 +2348,9 @@
                 "items": {
                   "overdueTasks": {
                     "status": "{count} overdue",
-                    "title": "Bring stalled tasks back on track",
+                    "title": "Decide how to address overdue tasks",
                     "next": "Open overdue tasks and update owner, due date, and completion condition.",
-                    "done": "Overdue and review-waiting reasons are cleared",
+                    "done": "An owner, revised due date, and next action are agreed",
                     "impact": "Captured as continual improvement and operating records"
                   },
                   "educationReview": {
@@ -2375,15 +2382,15 @@
               },
               "pendingApprovals": {
                 "title": "Process pending approvals",
-                "description": "{count} documents are waiting for approval decisions."
+                "description": "{count} items are awaiting approval. Review the subject and downstream impact."
               },
               "educationFollowUp": {
                 "title": "Follow up education",
                 "description": "{count} education plans need follow-up for missing or incomplete records."
               },
               "openRisks": {
-                "title": "Review open risks",
-                "description": "{count} risks are still open and should be reviewed."
+                "title": "Review risks under treatment",
+                "description": "{count} risks are under treatment. Review the owner, due date, and residual risk."
               }
             }
           },
@@ -4311,10 +4318,11 @@
         "minor": "Minor NC"
       },
       "ncStatus": {
-        "open": "Open",
-        "in_progress": "In progress",
-        "resolved": "Resolved",
-        "verified": "Verified",
+          "open": "Open",
+          "in_progress": "In progress",
+          "resolved": "Resolved",
+          "pending_verification": "Pending verification",
+          "verified": "Verified",
         "closed": "Closed"
       },
       "actions": {
@@ -4466,6 +4474,7 @@
         "open": "Open",
         "in_progress": "In progress",
         "resolved": "Resolved",
+        "pending_verification": "Pending verification",
         "verified": "Verified",
         "closed": "Closed"
       },
@@ -4779,6 +4788,7 @@
       "dueDate": "Due Date",
       "status": "Status",
       "open": "Open",
+      "in_progress": "In Progress",
       "inProgress": "In Progress",
       "completed": "Completed",
       "verified": "Verified",
@@ -5128,6 +5138,8 @@
       "description": "Description",
       "severity": "Severity",
       "occurredAt": "Occurred At",
+      "department": "Department",
+      "selectDepartment": "Select department",
       "approver": "Approver",
       "autoApprover": "Auto-select (rule based)",
       "approverHint": "If omitted, approver is resolved by per-resource escalation rules.",
@@ -5166,6 +5178,7 @@
       "saveFailed": "Failed to save incident.",
       "notFound": "Incident not found.",
       "organizationMissing": "Organization information is missing."
+      ,"departmentMissing": "Select a department."
     },
     "links": {
       "title": "Related Links",
@@ -5199,7 +5212,25 @@
     "cancel": "Cancel",
     "processing": "Processing...",
     "empty": "No approvals pending.",
-    "emptyFiltered": "No matching requests found."
+    "emptyFiltered": "No approval requests match these filters.",
+    "description": "Review the subject, change summary, requester, due date, and downstream impact before deciding.",
+    "forbidden": "You do not have permission to view this page.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "requester": "Requester",
+    "approver": "Approver",
+    "unassigned": "Unassigned",
+    "unknown": "Not available",
+    "reference": "Reference: {value}",
+    "requestedAt": "Requested at: {value}",
+    "summary": { "pending": "Pending {count}", "dueSoon": "Due soon {count}", "escalated": "Admin notified {count}" },
+    "filters": { "due": "Showing approvals due soon", "escalation": "Showing approvals also notified to an admin", "clear": "Clear filter" },
+    "columns": { "subject": "Decision subject", "people": "Requester and approver", "due": "Due", "impact": "Impact after approval", "actions": "Decision" },
+    "statuses": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected", "expired": "Expired" },
+    "resourceTypes": { "document": "Document", "incident": "Incident", "audit_plan": "Audit plan", "audit_report": "Audit report", "nonconformity_closure": "Corrective action closure", "followup_record": "Follow-up", "iso_control_soa": "SoA control", "soa_version": "SoA version", "risk_residual_acceptance": "Residual risk acceptance" },
+    "impacts": { "document": "Moves the document to approved status and the next workflow stage.", "incident": "Marks the incident report approved and records the decision.", "audit_plan": "Finalizes the audit plan so execution can begin.", "audit_report": "Finalizes the report for corrective action and management review.", "nonconformity_closure": "Closes the corrective action and records audit evidence.", "followup_record": "Completes follow-up verification and records effectiveness evidence.", "iso_control_soa": "Approves the control applicability decision for the SoA.", "soa_version": "Approves the SoA version and preserves the review record.", "risk_residual_acceptance": "Records the organization's acceptance of the residual risk." },
+    "decision": { "approveTitle": "Approve this item?", "rejectTitle": "Reject this item?", "rejectReasonLabel": "Rejection reason", "rejectReasonPlaceholder": "Required changes and reason", "confirmApprove": "Confirm approval", "confirmReject": "Confirm rejection" },
+    "revertReasonLabel": "Revert reason"
   },
   "bcp": {
     "title": "Business Continuity Plan (BCP)",
@@ -5534,36 +5565,36 @@
   },
   "examination": {
     "submissionBundle": {
-      "title": "Audit Preparation Package",
-      "description": "Organize review materials for initial certification: scope, structure, documents, assets, risks, applicability decisions, and initial tasks. This does not guarantee certification or auditor acceptance, but it makes internal review status, gaps, and next actions easier to review.",
+      "title": "Pre-assessment review materials",
+      "description": "Review the scope, structure, documents, risks, controls, and operating records your organization should check before an assessment.",
       "organizationLine": "{name} / Phase: {phase} / Role: {role}",
       "reviewNotice": {
-        "title": "Audit preparation support material",
-        "body": "This package organizes evidence for audit preparation and internal review. It does not guarantee ISO 27001 certification or audit acceptance, but it helps teams review required information, gaps, and next actions."
+        "title": "For internal review",
+        "body": "Use these materials to review gaps, next actions, and accountable owners before sharing anything externally."
       },
       "safetyBoundary": {
-        "title": "Support package for pre-submission review",
-        "body": "The PDF/ZIP output on this screen organizes information for assessment submission or internal review. It does not guarantee certification, auditor acceptance, or any assessment body decision.",
+        "title": "This screen does not send files to an assessment body",
+        "body": "PDF and ZIP files are saved for internal review. After saving, the ISMS manager or internal audit owner reviews the contents and your organization decides how to submit them. Certification or assessment acceptance is not guaranteed.",
         "demoReset": "Content entered in the public demo is reset periodically. Do not enter real data or confidential information."
       },
       "actions": {
-        "refresh": "Refresh",
-        "downloadZip": "Download ZIP",
-        "downloadingZip": "Preparing ZIP...",
-        "downloadPdf": "Download PDF",
-        "downloadingPdf": "Preparing PDF..."
+        "refresh": "Refresh review status",
+        "downloadZip": "Save internal-review ZIP",
+        "downloadingZip": "Creating internal-review ZIP...",
+        "downloadPdf": "Save review PDF",
+        "downloadingPdf": "Creating review PDF..."
       },
       "readiness": {
-        "label": "Internal review status",
+        "label": "Material review status",
         "readyItems": "Ready",
-        "gapItems": "Gaps",
-        "generatedAt": "Generated",
+        "gapItems": "Needs action",
+        "generatedAt": "Checked at",
         "latestSoa": "Latest applicability decision",
         "soaVersion": "v{version}",
         "noSoa": "Not published",
         "status": {
-          "ready": "Materials for internal review are ready",
-          "ready_with_gaps": "Some items are missing or need review first"
+          "ready": "The materials needed for internal review are ready",
+          "ready_with_gaps": "Some items need action before internal review"
         }
       },
       "nextAction": {
@@ -5571,13 +5602,14 @@
         "gapTitle": "Start by completing {item}",
         "gapFallback": "Review the gap details and update evidence, owners, or decision rationale on the related page.",
         "openTarget": "Open related page",
-        "readyTitle": "The review package is ready to export",
-        "readyDescription": "Export the prepared evidence as PDF or ZIP for executive, ISMS manager, and stakeholder review. This does not guarantee auditor acceptance.",
-        "readyOutputHint": "Use the PDF or ZIP buttons at the top of the page to export."
+        "readyTitle": "Internal-review files can now be created",
+        "readyDescription": "Save a PDF or ZIP from the top of the page. This action does not send anything to an assessment body or another external party.",
+        "readyOutputHint": "After saving, an accountable owner reviews the contents and your organization decides how to submit them."
       },
       "items": {
+        "count": "{count} records",
         "countAndSources": "{count} records / {sources}",
-        "evidence": "Evidence",
+        "evidence": "Records checked",
         "gaps": "Gaps and review items",
         "nextAction": "Next action:",
         "openRelated": "Open related page",
@@ -5590,9 +5622,9 @@
         }
       },
       "messages": {
-        "refreshed": "Audit preparation package refreshed",
-        "downloaded": "Audit preparation package ZIP downloaded",
-        "pdfDownloaded": "Audit preparation package PDF downloaded"
+        "refreshed": "Material review status refreshed",
+        "downloaded": "Internal-review ZIP saved. Nothing was sent externally",
+        "pdfDownloaded": "Review PDF saved. Nothing was sent externally"
       },
       "errors": {
         "loadFailed": "Could not load the audit preparation package",
@@ -5600,7 +5632,7 @@
         "pdfDownloadFailed": "Could not download the audit preparation package PDF"
       },
       "noAccess": {
-        "title": "Audit preparation package is not available",
+        "title": "Pre-assessment review materials are not available",
         "description": "Sign in as an organization admin, system operator, or auditor.",
         "back": "Back to home"
       }

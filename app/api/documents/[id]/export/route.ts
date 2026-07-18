@@ -9,12 +9,19 @@ import {
   sanitizeDocumentFileName,
   type DocumentExportModel
 } from '@/lib/utils/exporters/documentExport'
-import { requireServiceRole } from '@/lib/server/auth/secureClient'
+import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
+import { logExportEvent } from '@/lib/server/logging/exportEvents'
+import {
+  projectDocumentStoragePath,
+  projectDocumentTags,
+} from '@/lib/server/documents/documentOutputProjection'
 import { getDb } from '@/lib/db/drizzle/client'
-import { documents, documentVersions, documentFolders } from '@/lib/db/drizzle/schema/documents'
+import { documentVersions, documentFolders } from '@/lib/db/drizzle/schema/documents'
 import { approvalRequests } from '@/lib/db/drizzle/schema/approvals'
 import { organizations } from '@/lib/db/drizzle/schema/organizations'
-import { userProfiles } from '@/lib/db/drizzle/schema/users'
+import { userMemberships, userProfiles } from '@/lib/db/drizzle/schema/users'
 import { getStorageProvider } from '@/lib/storage'
 import { eq, and, asc, inArray } from 'drizzle-orm'
 import {
@@ -54,9 +61,14 @@ async function readDocumentBody(
   filePath: string | null,
   mimeType: string | null,
   fileSize: number | null,
-  fallback: PracticalDocumentFixture | null
+  fallback: PracticalDocumentFixture | null,
+  organizationId: string,
+  documentId: string
 ) {
   if (!filePath) return fallback?.body ?? null
+  if (!projectDocumentStoragePath(filePath, organizationId, documentId)) {
+    return fallback?.body ?? null
+  }
   const baseMimeType = mimeType?.toLowerCase().split(';')[0]?.trim()
   if (baseMimeType && !TEXT_MIME_TYPES.has(baseMimeType)) return fallback?.body ?? null
   if (fileSize && fileSize > MAX_EXPORT_BODY_BYTES) return fallback?.body ?? null
@@ -88,48 +100,42 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   if (!format) {
     return NextResponse.json({ error: 'Unsupported format' }, { status: 400 })
   }
-
-  const { guard, error } = await requireServiceRole(request, {
-    allowedRoles: ['org_admin', 'approver', 'system_operator'],
-    actionName: 'service_role.document_export',
-    logContext: { documentId: params.id }
-  })
-
-  if (error) {
-    return error
+  const { user, applyCookies } = await getRouteAuth(request)
+  if (!user) {
+    return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
-
-  if (!guard) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const { profile, wrapResponse, json, logEvent } = guard
   const docId = params.id
   const db = getDb()
-
-  const [document] = await db
-    .select()
-    .from(documents)
-    .where(eq(documents.id, docId))
-    .limit(1)
-
+  const service = new DocumentTenantMutationService()
+  const organizationId = await service.getOrganizationId(docId)
+  const authorization = organizationId
+    ? await resolveTenantAuthorizationContext(db, user.id, organizationId)
+    : null
+  const allowedRoles = new Set(['org_admin', 'approver', 'system_operator'])
+  if (
+    !organizationId
+    || !authorization?.ok
+    || !allowedRoles.has(authorization.context.role)
+  ) {
+    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  }
+  const document = await service.getDocument(authorization.context, docId)
   if (!document) {
-    await logEvent('error', { reason: 'document_not_found' }, { format, documentId: docId })
-    return json({ error: 'Document not found' }, { status: 404 })
+    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
-
-  if (!profile.organization_id || document.organizationId !== profile.organization_id) {
-    await logEvent(
-      'denied',
-      {
-        reason: 'cross_tenant_request',
-        requestedOrganizationId: document.organizationId,
-        resolvedOrganizationId: profile.organization_id
-      },
-      { format, documentId: document.id }
-    )
-    return json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const json = (body: unknown, init?: ResponseInit) => applyCookies(NextResponse.json(body, init))
+  const logEvent = (
+    status: 'success' | 'denied' | 'error',
+    context?: Record<string, unknown>,
+    metadata?: { format?: string; documentId?: string | null }
+  ) => logExportEvent({
+    userId: user.id,
+    organizationId,
+    documentId: metadata?.documentId ?? document.id,
+    format: metadata?.format ?? format,
+    status,
+    context,
+  })
 
   const [approvalsResult, versionsResult, folderResult] = await Promise.all([
     db
@@ -142,7 +148,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       .from(approvalRequests)
       .where(and(
         eq(approvalRequests.resourceType, 'document'),
-        eq(approvalRequests.resourceId, document.id)
+        eq(approvalRequests.resourceId, document.id),
+        eq(approvalRequests.organizationId, organizationId)
       ))
       .orderBy(asc(approvalRequests.stepNumber)),
     db
@@ -155,11 +162,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       .from(documentVersions)
       .where(eq(documentVersions.documentId, document.id))
       .orderBy(asc(documentVersions.versionNumber)),
-    document.folderId
+    document.folder_id
       ? db
           .select({ id: documentFolders.id, name: documentFolders.name })
           .from(documentFolders)
-          .where(eq(documentFolders.id, document.folderId))
+          .where(and(
+            eq(documentFolders.id, document.folder_id),
+            eq(documentFolders.organizationId, organizationId)
+          ))
           .limit(1)
           .then(rows => rows[0] ?? null)
       : Promise.resolve(null)
@@ -169,12 +179,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   const versions = versionsResult
   const folderName = folderResult?.name ?? null
   const exportedAt = new Date().toISOString()
-  const latestVersionNumber = versions.length > 0 ? versions[versions.length - 1].versionNumber : 1
+  const latestVersionNumber = versions.length > 0
+    ? versions[versions.length - 1].versionNumber
+    : document.version_number ?? 1
 
   const [org] = await db
     .select({ name: organizations.name })
     .from(organizations)
-    .where(eq(organizations.id, document.organizationId))
+    .where(eq(organizations.id, organizationId))
     .limit(1)
   const organizationName = org?.name ?? 'Unknown organization'
 
@@ -185,9 +197,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   }
 
   const userIds = new Set<string>()
-  userIds.add(document.createdBy)
-  if (document.updatedBy) userIds.add(document.updatedBy)
-  if (document.approvedBy) userIds.add(document.approvedBy)
+  userIds.add(document.created_by)
+  if (document.updated_by) userIds.add(document.updated_by)
+  if (document.approved_by) userIds.add(document.approved_by)
   approvals.forEach(approval => {
     if (approval.approverId) userIds.add(approval.approverId)
   })
@@ -199,6 +211,11 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     ? await db
         .select({ id: userProfiles.id, fullName: userProfiles.fullName, email: userProfiles.email })
         .from(userProfiles)
+        .innerJoin(userMemberships, and(
+          eq(userMemberships.userId, userProfiles.id),
+          eq(userMemberships.organizationId, organizationId),
+          eq(userMemberships.status, 'active')
+        ))
         .where(inArray(userProfiles.id, Array.from(userIds)))
     : []
 
@@ -211,21 +228,13 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   })
 
   // Parse tags from JSON string
-  let tagsList: string[] = []
-  if (document.tags) {
-    try {
-      const parsed = JSON.parse(document.tags)
-      if (Array.isArray(parsed)) tagsList = parsed
-    } catch {
-      // ignore parse error
-    }
-  }
+  const tagsList = projectDocumentTags(document.tags)
 
-  const createdBy = users.get(document.createdBy)
-  const updatedBy = document.updatedBy ? users.get(document.updatedBy) : null
+  const createdBy = users.get(document.created_by)
+  const updatedBy = document.updated_by ? users.get(document.updated_by) : null
   let approvedByName: string | null = null
-  if (document.approvedBy) {
-    const approvedBy = users.get(document.approvedBy)
+  if (document.approved_by) {
+    const approvedBy = users.get(document.approved_by)
     if (approvedBy) {
       approvedByName = approvedBy.name
     }
@@ -237,25 +246,27 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     const status = approval.status ?? 'pending'
     const updatedAt = approval.updatedAt ? formatDocumentDate(approval.updatedAt) : '\u2014'
     return {
-      label: `Step ${approval.stepNumber ?? '\u2014'}: ${status}`,
-      detail: `${approverName}, ${updatedAt}`
+      label: `承認段階 ${approval.stepNumber ?? '\u2014'}: ${status}`,
+      detail: `${approverName} / ${updatedAt}`
     }
   })
 
   const versionItems = versions.map(version => {
     const author = users.get(version.createdBy)
-    const authorName = author?.name ?? version.createdBy
+    const authorName = author?.name ?? '\u2014'
     return {
       label: `v${version.versionNumber}`,
-      detail: `${formatDocumentDate(version.createdAt ?? '')} by ${authorName}${version.changes ? ` - ${version.changes}` : ''}`
+      detail: `${formatDocumentDate(version.createdAt ?? '')} / 作成者: ${authorName}${version.changes ? ` / ${version.changes}` : ''}`
     }
   })
 
   const bodyMarkdown = await readDocumentBody(
-    document.filePath,
-    document.mimeType,
-    document.fileSize,
-    getPracticalDocumentFixture(document.id)
+    document.file_path,
+    document.mime_type,
+    document.file_size,
+    getPracticalDocumentFixture(document.id),
+    organizationId,
+    document.id
   )
   const exportModel: DocumentExportModel = {
     title: document.title,
@@ -268,9 +279,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       status: document.status ?? 'unknown',
       category: document.category,
       folder: folderName,
-      createdAt: formatDocumentDate(document.createdAt ?? ''),
+      createdAt: formatDocumentDate(document.created_at ?? ''),
       createdBy: createdBy?.name ?? null,
-      updatedAt: document.updatedAt ? formatDocumentDate(document.updatedAt) : null,
+      updatedAt: document.updated_at ? formatDocumentDate(document.updated_at) : null,
       updatedBy: updatedBy?.name ?? null,
       approvedBy: approvedByName,
       tags: tagsList
@@ -291,7 +302,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       }
     })
 
-    return wrapResponse(response)
+    return applyCookies(response)
   }
 
   if (format === 'excel') {
@@ -304,11 +315,11 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       }
     })
 
-    return wrapResponse(response)
+    return applyCookies(response)
   }
 
   let pdfBuffer: Buffer
-  if (!consumePdfExportAllowance(profile.id)) {
+  if (!consumePdfExportAllowance(user.id)) {
     await logEvent(
       'denied',
       { ...exportContext, reason: 'pdf_rate_limit_exceeded' },
@@ -346,5 +357,5 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     }
   })
 
-  return wrapResponse(response)
+  return applyCookies(response)
 }

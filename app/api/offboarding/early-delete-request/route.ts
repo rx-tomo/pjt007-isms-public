@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'offboarding.early_delete.request',

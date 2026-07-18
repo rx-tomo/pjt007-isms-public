@@ -187,7 +187,7 @@ export const ROLE_SCENARIOS: Record<RoleKey, RoleScenario> = {
       can_manage_controls: false
     },
     department: '開発部',
-    departmentScopes: ['開発部']
+    departmentScopes: ['開発部', '情報システム部']
   }
 }
 

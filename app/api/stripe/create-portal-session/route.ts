@@ -26,8 +26,9 @@ export async function POST(request: NextRequest) {
     const normalizedOrgId = organizationId?.trim()
 
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'tenant',
       allowedRoles: ['org_admin', 'system_operator'],
-      organizationId: normalizedOrgId || undefined,
+      organizationId: normalizedOrgId || '',
       actionName: 'stripe.create_portal_session',
       logContext: returnUrl ? { returnUrl } : undefined
     })

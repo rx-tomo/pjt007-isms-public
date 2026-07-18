@@ -11,6 +11,7 @@ export async function GET(
   const params = await props.params;
   const { organizationId } = params
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     organizationId,
     actionName: 'organization.departments.list',
     logContext: { organizationId }

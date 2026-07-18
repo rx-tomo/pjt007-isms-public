@@ -81,7 +81,7 @@ function runPlaywright() {
     env: {
       ...process.env,
       PLAYWRIGHT_JSON_OUTPUT_NAME: path.join('playwright-report', 'test-results.json'),
-      PLAYWRIGHT_SKIP_WEB_SERVER: '1',
+      PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1',
       PLAYWRIGHT_TEST_BASE_URL: BASE_URL,
       E2E_MODE: '1',
       NEXT_PUBLIC_E2E_MODE: '1'

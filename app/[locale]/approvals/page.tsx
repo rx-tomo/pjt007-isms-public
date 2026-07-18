@@ -5,44 +5,16 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import type { ApprovalRequest } from '@/lib/services/approval'
+import type { ApprovalQueueItem } from '@/lib/services/approval'
 import { UserService } from '@/lib/services/user'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { EmptyState } from '@/components/ui/EmptyState'
-
-const APPROVAL_VIEWER_ROLES = new Set(['approver', 'org_admin', 'system_operator'])
-const REVERT_ROLES = new Set(['org_admin', 'system_operator'])
-
-/** Map from resource_type to a human-readable Japanese label */
-const RESOURCE_TYPE_LABELS: Record<string, string> = {
-  document: '文書',
-  incident: 'インシデント',
-  audit_plan: '監査計画',
-  audit_report: '監査報告書',
-  nonconformity_closure: '不適合クローズ',
-  followup_record: 'フォローアップ記録',
-  iso_control_soa: '適用管理策の判断',
-  soa_version: '適用管理策判断の版レビュー',
-  risk_residual_acceptance: '残留リスク受容'
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: '承認待ち',
-  approved: '承認済み',
-  rejected: '却下済み',
-  expired: '期限切れ'
-}
+import { canDecideApproval, canRevertApproval, canViewApprovals } from '@/lib/utils/approvalUiPermissions'
 
 type TabKey = 'pending' | 'approved' | 'rejected' | 'all'
 type UrgencyFilter = 'due' | 'escalation' | ''
-
-const TAB_LABELS: Record<TabKey, string> = {
-  pending: '承認待ち',
-  approved: '承認済み',
-  rejected: '却下済み',
-  all: 'すべて'
-}
+type DecisionAction = 'approve' | 'reject'
 
 const normalizeTab = (value: string | null | undefined): TabKey => {
   return value === 'approved' || value === 'rejected' || value === 'all' || value === 'pending'
@@ -62,9 +34,9 @@ const isDueSoon = (dueAt: string | null): boolean => {
   return dueTime >= now && dueTime - now <= 24 * 60 * 60 * 1000
 }
 
-const formatDateTime = (value: string | null): string => {
+const formatDateTime = (value: string | null, locale: string): string => {
   if (!value) return '-'
-  return new Date(value).toLocaleString()
+  return new Date(value).toLocaleString(locale)
 }
 
 export default function ApprovalsPage(
@@ -86,10 +58,10 @@ export default function ApprovalsPage(
   const [loading, setLoading] = useState(true)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [profileRole, setProfileRole] = useState<string | null>(null)
+  const [effectiveRole, setEffectiveRole] = useState<string | null>(null)
   const [profileId, setProfileId] = useState<string | null>(null)
   const [organizationId, setOrganizationId] = useState<string | null>(null)
-  const [requests, setRequests] = useState<ApprovalRequest[]>([])
+  const [requests, setRequests] = useState<ApprovalQueueItem[]>([])
   const [activeTab, setActiveTab] = useState<TabKey>(() => normalizeTab(searchParams?.get('status')))
   const [urgencyFilter, setUrgencyFilter] = useState<UrgencyFilter>(() => {
     return normalizeTab(searchParams?.get('status')) === 'pending'
@@ -99,9 +71,11 @@ export default function ApprovalsPage(
   const [revertModalRequestId, setRevertModalRequestId] = useState<string | null>(null)
   const [revertReason, setRevertReason] = useState('')
   const [revertLoading, setRevertLoading] = useState(false)
+  const [decisionRequestId, setDecisionRequestId] = useState<string | null>(null)
+  const [decisionAction, setDecisionAction] = useState<DecisionAction | null>(null)
+  const [decisionReason, setDecisionReason] = useState('')
 
-  const canView = profileRole ? APPROVAL_VIEWER_ROLES.has(profileRole) : false
-  const canRevert = profileRole ? REVERT_ROLES.has(profileRole) : false
+  const canView = canViewApprovals(effectiveRole)
   const pendingCount = requests.filter((request) => request.status === 'pending').length
   const dueSoonCount = requests.filter((request) => request.status === 'pending' && isDueSoon(request.due_at)).length
   const escalationCount = requests.filter((request) => request.escalation_notified_at).length
@@ -132,34 +106,8 @@ export default function ApprovalsPage(
     replaceApprovalUrl('pending')
   }, [replaceApprovalUrl])
 
-  const getResourceLink = (request: ApprovalRequest): string => {
-    switch (request.resource_type) {
-      case 'document':
-        return `/${locale}/documents`
-      case 'incident':
-        return `/${locale}/incidents/${request.resource_id}`
-      case 'audit_plan':
-        return `/${locale}/audit/plans/${request.resource_id}`
-      case 'audit_report':
-        // resource_id is the report ID; link to the plan's report page
-        // requires async resolution of plan_id which we cannot do here.
-        // Fall back to the audit reports list for now.
-        return `/${locale}/audit/reports`
-      case 'nonconformity_closure':
-        // resource_id is the corrective action ID; link to the nonconformity overview
-        return `/${locale}/audit/nonconformities`
-      case 'followup_record':
-        // resource_id is the follow-up record ID; link to the audit overview
-        return `/${locale}/audit`
-      case 'iso_control_soa':
-        return `/${locale}/settings/controls`
-      case 'soa_version':
-        return `/${locale}/settings/controls`
-      case 'risk_residual_acceptance':
-        return `/${locale}/risks`
-      default:
-        return '#'
-    }
+  const getResourceLink = (request: ApprovalQueueItem): string => {
+    return `/${locale}${request.context.target_path}`
   }
 
   const loadRequests = useCallback(async () => {
@@ -167,22 +115,25 @@ export default function ApprovalsPage(
     setError(null)
 
     try {
-      const profile = await userService.getUserProfile()
-      if (!profile?.organization_id) {
-        throw new Error('organization_missing')
+      const profile = await userService.getUserProfile() as {
+        id: string
+        effective_role?: string | null
+        effective_organization_id?: string | null
+      } | null
+      if (!profile) {
+        throw new Error('profile_missing')
       }
 
-      setProfileRole(profile.role)
+      setEffectiveRole(profile.effective_role ?? null)
       setProfileId(profile.id)
-      setOrganizationId(profile.organization_id)
+      setOrganizationId(profile.effective_organization_id ?? null)
 
-      if (!APPROVAL_VIEWER_ROLES.has(profile.role)) {
+      if (!canViewApprovals(profile.effective_role) || !profile.effective_organization_id) {
         setRequests([])
         return
       }
 
-      const params = new URLSearchParams({ organizationId: profile.organization_id })
-      if (activeTab !== 'all') params.set('status', activeTab)
+      const params = new URLSearchParams({ organizationId: profile.effective_organization_id })
       const response = await fetch(`/api/approvals?${params.toString()}`, { cache: 'no-store' })
       if (!response.ok) {
         throw new Error('approval_queue_fetch_failed')
@@ -195,21 +146,25 @@ export default function ApprovalsPage(
     } finally {
       setLoading(false)
     }
-  }, [userService, activeTab])
+  }, [userService])
 
   const filteredRequests = useMemo(() => {
-    if (!urgencyFilter) return requests
-
-    const now = Date.now()
-    const thresholdHours = urgencyFilter === 'due' ? 48 : 96
-    const threshold = now + thresholdHours * 60 * 60 * 1000
-
-    return requests.filter(request => {
-      if (request.status !== 'pending' || !request.due_at) return false
-      const dueTime = new Date(request.due_at).getTime()
-      return Number.isFinite(dueTime) && dueTime <= threshold
+    let items = activeTab === 'all' ? [...requests] : requests.filter((request) => request.status === activeTab)
+    if (urgencyFilter === 'due') {
+      const threshold = Date.now() + 48 * 60 * 60 * 1000
+      items = items.filter((request) => request.due_at && new Date(request.due_at).getTime() <= threshold)
+    } else if (urgencyFilter === 'escalation') {
+      items = items.filter((request) => Boolean(request.escalation_notified_at))
+    }
+    return items.sort((a, b) => {
+      if (activeTab === 'pending') {
+        const aDue = a.due_at ? new Date(a.due_at).getTime() : Number.MAX_SAFE_INTEGER
+        const bDue = b.due_at ? new Date(b.due_at).getTime() : Number.MAX_SAFE_INTEGER
+        return aDue - bDue
+      }
+      return new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime()
     })
-  }, [requests, urgencyFilter])
+  }, [activeTab, requests, urgencyFilter])
 
   useEffect(() => {
     void loadRequests()
@@ -243,10 +198,9 @@ export default function ApprovalsPage(
     }
   }
 
-  const handleReject = async (requestId: string) => {
+  const handleReject = async (requestId: string, reason: string) => {
     if (!profileId) return
-    const reason = window.prompt('却下理由を入力してください')
-    if (!reason || !reason.trim()) return
+    if (!reason.trim()) return
 
     setActionLoadingId(requestId)
     setError(null)
@@ -272,6 +226,22 @@ export default function ApprovalsPage(
     } finally {
       setActionLoadingId(null)
     }
+  }
+
+  const closeDecisionModal = () => {
+    setDecisionRequestId(null)
+    setDecisionAction(null)
+    setDecisionReason('')
+  }
+
+  const handleDecisionSubmit = async () => {
+    if (!decisionRequestId || !decisionAction) return
+    if (decisionAction === 'approve') {
+      await handleApprove(decisionRequestId)
+    } else {
+      await handleReject(decisionRequestId, decisionReason)
+    }
+    closeDecisionModal()
   }
 
   const handleRevert = async (requestId: string) => {
@@ -301,28 +271,31 @@ export default function ApprovalsPage(
     }
   }
 
+  const decisionRequest = decisionRequestId ? requests.find((request) => request.id === decisionRequestId) ?? null : null
+  const revertRequest = revertModalRequestId ? requests.find((request) => request.id === revertModalRequestId) ?? null : null
+
   return (
     <DashboardLayout locale={locale}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6 rounded-xl border border-border bg-surface p-5 shadow-sm">
+      <div className="container mx-auto min-w-0 px-3 py-5 sm:px-4 sm:py-8">
+        <div className="mb-6 rounded-lg border border-border bg-surface p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 data-testid="approval-queue-title" className="text-3xl font-bold text-text-primary">
+              <h1 data-testid="approval-queue-title" className="text-2xl font-bold text-text-primary sm:text-3xl">
                 {t('title')}
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-text-secondary">
-                対象を開いて内容と期限を確認し、承認、却下、差し戻しを選びます。
+                {t('description')}
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
               <span className="rounded-full border border-border bg-surface-elevated px-3 py-1 font-medium text-text-primary">
-                承認待ち {pendingCount}
+                {t('summary.pending', { count: pendingCount })}
               </span>
               <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-medium text-amber-900">
-                期限接近 {dueSoonCount}
+                {t('summary.dueSoon', { count: dueSoonCount })}
               </span>
               <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 font-medium text-rose-900">
-                要注意 {escalationCount}
+                {t('summary.escalated', { count: escalationCount })}
               </span>
             </div>
           </div>
@@ -336,7 +309,7 @@ export default function ApprovalsPage(
 
         {!loading && !canView && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-            この画面を閲覧する権限がありません。
+            {t('forbidden')}
           </div>
         )}
 
@@ -348,7 +321,7 @@ export default function ApprovalsPage(
 
         {!loading && canView && (
           <>
-            <div className="mb-4 flex gap-2">
+            <div className="mb-4 flex max-w-full gap-2 overflow-x-auto pb-1">
               {(['pending', 'approved', 'rejected', 'all'] as const).map((tab) => (
                 <button
                   key={tab}
@@ -356,13 +329,13 @@ export default function ApprovalsPage(
                   onClick={() => handleTabChange(tab)}
                   aria-pressed={activeTab === tab}
                   data-testid={`approval-tab-${tab}`}
-                  className={`rounded-md px-4 py-2 text-sm font-medium ${
+                  className={`shrink-0 rounded-md px-4 py-2 text-sm font-medium ${
                     activeTab === tab
                       ? 'bg-blue-600 text-white'
                       : 'bg-surface-elevated text-text-secondary hover:bg-surface-hover'
                   }`}
                 >
-                  {TAB_LABELS[tab]}
+                  {t(tab)}
                 </button>
               ))}
             </div>
@@ -374,8 +347,8 @@ export default function ApprovalsPage(
               >
                 <span>
                   {urgencyFilter === 'due'
-                    ? '期限が近い承認依頼のみ表示中'
-                    : 'エスカレーション対象の承認依頼のみ表示中'}
+                    ? t('filters.due')
+                    : t('filters.escalation')}
                 </span>
                 <button
                   type="button"
@@ -383,31 +356,10 @@ export default function ApprovalsPage(
                   data-testid="approval-clear-urgency-filter"
                   className="rounded-md border border-amber-300 bg-surface px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100"
                 >
-                  絞り込みを解除
+                  {t('filters.clear')}
                 </button>
               </div>
             )}
-
-            <section
-              data-testid="approval-decision-workflow-guide"
-              className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-950"
-            >
-              <h2 className="font-semibold">承認判断の見方</h2>
-              <div className="mt-3 grid gap-3 md:grid-cols-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-indigo-700">判断材料</p>
-                  <p className="mt-1 text-xs leading-5">対象画面で本文、変更理由、担当者、証跡、関連リスクを確認します。</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-indigo-700">承認すると進むこと</p>
-                  <p className="mt-1 text-xs leading-5">文書、監査、リスク、管理策などの次工程へ進み、証跡や台帳に反映されます。</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-indigo-700">却下時の戻り先</p>
-                  <p className="mt-1 text-xs leading-5">却下理由を残し、起案者または担当画面で修正して再申請します。</p>
-                </div>
-              </div>
-            </section>
 
             {filteredRequests.length === 0 ? (
               <EmptyState
@@ -415,85 +367,71 @@ export default function ApprovalsPage(
               />
             ) : (
             <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-              <table className="min-w-full divide-y divide-border text-sm">
-                <thead className="bg-surface-elevated text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
+              <table className="hidden min-w-full table-fixed divide-y divide-border text-sm md:table">
+                <thead className="bg-surface-elevated text-left text-xs font-semibold text-text-muted">
                   <tr>
-                    <th className="px-4 py-3">判断対象</th>
-                    <th className="px-4 py-3">ステータス</th>
-                    <th className="px-4 py-3">申請日時</th>
-                    <th className="px-4 py-3">期限</th>
-                    <th className="px-4 py-3">承認者</th>
-                    <th className="px-4 py-3 text-right">操作</th>
+                    <th className="w-[34%] px-4 py-3">{t('columns.subject')}</th>
+                    <th className="w-[20%] px-4 py-3">{t('columns.people')}</th>
+                    <th className="w-[18%] px-4 py-3">{t('columns.due')}</th>
+                    <th className="w-[18%] px-4 py-3">{t('columns.impact')}</th>
+                    <th className="w-[10%] px-4 py-3 text-right">{t('columns.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredRequests.map((request) => {
                     const disabled = actionLoadingId === request.id
                       const link = getResourceLink(request)
-                      const typeLabel = RESOURCE_TYPE_LABELS[request.resource_type] ?? request.resource_type
-                      const statusLabel = STATUS_LABELS[request.status] ?? request.status
+                      const typeLabel = t(`resourceTypes.${request.resource_type}`)
+                      const statusLabel = t(`statuses.${request.status}`)
                       return (
                         <tr key={request.id} data-testid={`approval-row-${request.resource_type}-${request.resource_id}`}>
-                          <td className="px-4 py-3">
-                            <div className="space-y-1">
-                              {link === '#' ? (
-                                <span className="font-medium text-text-primary">{typeLabel}</span>
-                              ) : (
-                                <Link href={link} className="font-medium text-blue-700 underline">
-                                  {typeLabel}を確認
-                                </Link>
-                              )}
-                              <p className="text-[11px] text-text-muted">
-                                詳細確認用の参照番号: {request.resource_id}
-                              </p>
+                          <td className="px-4 py-4 align-top">
+                            <div className="space-y-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded bg-surface-elevated px-2 py-0.5 text-xs font-semibold text-text-secondary">{typeLabel}</span>
+                                <span className={`rounded px-2 py-0.5 text-xs font-semibold ${request.status === 'approved' ? 'bg-green-100 text-green-800' : request.status === 'rejected' ? 'bg-red-100 text-red-800' : request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-surface-elevated text-text-primary'}`}>{statusLabel}</span>
+                              </div>
+                              <Link href={link} className="block font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2">
+                                {request.context.title}
+                              </Link>
+                              {request.context.summary && <p className="line-clamp-2 text-xs leading-5 text-text-secondary">{request.context.summary}</p>}
+                              <p className="break-all text-[11px] text-text-muted">{t('reference', { value: request.context.reference })}</p>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              request.status === 'approved' ? 'bg-green-100 text-green-800'
-                                : request.status === 'rejected' ? 'bg-red-100 text-red-800'
-                                : request.status === 'pending' ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-surface-elevated text-text-primary'
-                            }`}>
-                              {statusLabel}
-                            </span>
+                          <td className="px-4 py-4 align-top text-xs leading-5 text-text-secondary">
+                            <p><span className="font-semibold text-text-primary">{t('requester')}:</span> {request.context.requester_name ?? t('unknown')}</p>
+                            <p><span className="font-semibold text-text-primary">{t('approver')}:</span> {request.context.approver_name ?? t('unassigned')}</p>
                           </td>
-                          <td className="px-4 py-3 text-text-secondary">{formatDateTime(request.requested_at)}</td>
-                          <td className={`px-4 py-3 ${isDueSoon(request.due_at) ? 'font-semibold text-amber-700' : 'text-text-secondary'}`}>
-                            {formatDateTime(request.due_at)}
+                          <td className={`px-4 py-4 align-top text-xs leading-5 ${isDueSoon(request.due_at) ? 'font-semibold text-amber-700' : 'text-text-secondary'}`}>
+                            <p>{formatDateTime(request.due_at, locale)}</p>
+                            <p className="mt-1 font-normal text-text-muted">{t('requestedAt', { value: formatDateTime(request.requested_at, locale) })}</p>
                           </td>
-                          <td className="px-4 py-3 text-text-secondary">{request.approver_id ? '割当済み' : '未割当'}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-4 align-top text-xs leading-5 text-text-secondary">{t(`impacts.${request.resource_type}`)}</td>
+                          <td className="px-4 py-4 align-top">
                             <div className="flex flex-col items-end gap-2">
-                              {request.status === 'pending' && (
-                                <p className="max-w-44 text-right text-[11px] text-text-muted">
-                                  操作すると対象の承認状態が更新されます。
-                                </p>
-                              )}
-                              <div className="flex justify-end gap-2">
-                              {request.status === 'pending' && (
+                              {canDecideApproval(request, profileId) && (
                                 <>
                                   <button
                                     type="button"
                                     disabled={disabled}
-                                    onClick={() => handleApprove(request.id)}
+                                    onClick={() => { setDecisionRequestId(request.id); setDecisionAction('approve'); setDecisionReason('') }}
                                     data-testid={`approval-approve-${request.id}`}
                                     className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                                   >
-                                    承認
+                                    {t('approve')}
                                   </button>
                                   <button
                                     type="button"
                                     disabled={disabled}
-                                    onClick={() => handleReject(request.id)}
+                                    onClick={() => { setDecisionRequestId(request.id); setDecisionAction('reject'); setDecisionReason('') }}
                                     data-testid={`approval-reject-${request.id}`}
                                     className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                                   >
-                                    却下
+                                    {t('reject')}
                                   </button>
                                 </>
                               )}
-                              {canRevert && (request.status === 'approved' || request.status === 'rejected') && (
+                              {canRevertApproval(effectiveRole, request, profileId) && (
                                 <button
                                   type="button"
                                   disabled={disabled}
@@ -503,10 +441,9 @@ export default function ApprovalsPage(
                                   }}
                                   className="rounded-md bg-orange-600 px-3 py-1 text-xs font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                  差し戻し
+                                  {t('revert')}
                                 </button>
                               )}
-                              </div>
                             </div>
                           </td>
                         </tr>
@@ -514,18 +451,86 @@ export default function ApprovalsPage(
                   })}
                 </tbody>
               </table>
+              <div className="divide-y divide-border md:hidden">
+                {filteredRequests.map((request) => {
+                  const disabled = actionLoadingId === request.id
+                  return (
+                    <article key={request.id} data-testid={`approval-mobile-row-${request.resource_type}-${request.resource_id}`} className="space-y-4 p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded bg-surface-elevated px-2 py-0.5 text-xs font-semibold text-text-secondary">{t(`resourceTypes.${request.resource_type}`)}</span>
+                        <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">{t(`statuses.${request.status}`)}</span>
+                      </div>
+                      <div>
+                        <Link href={getResourceLink(request)} className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2">{request.context.title}</Link>
+                        {request.context.summary && <p className="mt-2 text-sm leading-6 text-text-secondary">{request.context.summary}</p>}
+                      </div>
+                      <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-2 text-xs leading-5">
+                        <dt className="font-semibold text-text-muted">{t('requester')}</dt><dd className="text-text-primary">{request.context.requester_name ?? t('unknown')}</dd>
+                        <dt className="font-semibold text-text-muted">{t('approver')}</dt><dd className="text-text-primary">{request.context.approver_name ?? t('unassigned')}</dd>
+                        <dt className="font-semibold text-text-muted">{t('columns.due')}</dt><dd className={isDueSoon(request.due_at) ? 'font-semibold text-amber-700' : 'text-text-primary'}>{formatDateTime(request.due_at, locale)}</dd>
+                        <dt className="font-semibold text-text-muted">{t('columns.impact')}</dt><dd className="text-text-primary">{t(`impacts.${request.resource_type}`)}</dd>
+                      </dl>
+                      <p className="break-all text-[11px] text-text-muted">{t('reference', { value: request.context.reference })}</p>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {canDecideApproval(request, profileId) && <>
+                          <button type="button" disabled={disabled} onClick={() => { setDecisionRequestId(request.id); setDecisionAction('approve'); setDecisionReason('') }} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{t('approve')}</button>
+                          <button type="button" disabled={disabled} onClick={() => { setDecisionRequestId(request.id); setDecisionAction('reject'); setDecisionReason('') }} className="rounded-md border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60">{t('reject')}</button>
+                        </>}
+                        {canRevertApproval(effectiveRole, request, profileId) && <button type="button" disabled={disabled} onClick={() => { setRevertModalRequestId(request.id); setRevertReason('') }} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{t('revert')}</button>}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
             </div>
             )}
 
+            {decisionRequest && decisionAction && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation">
+                <div role="dialog" aria-modal="true" aria-labelledby="approval-decision-title" className="w-full max-w-md rounded-lg bg-surface p-6 shadow-xl">
+                  <h2 id="approval-decision-title" className="text-lg font-bold text-text-primary">
+                    {decisionAction === 'approve' ? t('decision.approveTitle') : t('decision.rejectTitle')}
+                  </h2>
+                  <p className="mt-2 font-semibold text-text-primary">{decisionRequest.context.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-text-secondary">{t(`impacts.${decisionRequest.resource_type}`)}</p>
+                  {decisionAction === 'reject' && (
+                    <textarea
+                      className="mt-4 w-full rounded-md border border-border p-3 text-sm"
+                      id="approval-reject-reason"
+                      aria-label={t('decision.rejectReasonLabel')}
+                      rows={4}
+                      placeholder={t('decision.rejectReasonPlaceholder')}
+                      value={decisionReason}
+                      onChange={(event) => setDecisionReason(event.target.value)}
+                    />
+                  )}
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button type="button" disabled={Boolean(actionLoadingId)} onClick={closeDecisionModal} className="rounded-md border border-border px-4 py-2 text-sm text-text-secondary hover:bg-surface-elevated">{t('cancel')}</button>
+                    <button
+                      type="button"
+                      disabled={Boolean(actionLoadingId) || (decisionAction === 'reject' && !decisionReason.trim())}
+                      onClick={() => void handleDecisionSubmit()}
+                      className={decisionAction === 'approve' ? 'rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60' : 'rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60'}
+                    >
+                      {actionLoadingId ? t('processing') : decisionAction === 'approve' ? t('decision.confirmApprove') : t('decision.confirmReject')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {revertModalRequestId && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="w-full max-w-md rounded-lg bg-surface p-6 shadow-xl">
-                  <h2 className="mb-4 text-lg font-bold text-text-primary">承認の差し戻し</h2>
-                  <p className="mb-3 text-sm text-text-secondary">この承認を差し戻しますか？差し戻し理由を入力してください。</p>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div role="dialog" aria-modal="true" aria-labelledby="approval-revert-title" className="w-full max-w-md rounded-lg bg-surface p-6 shadow-xl">
+                  <h2 id="approval-revert-title" className="text-lg font-bold text-text-primary">{t('revertModalTitle')}</h2>
+                  {revertRequest && <p className="mt-2 font-semibold text-text-primary">{revertRequest.context.title}</p>}
+                  <p className="mb-3 mt-2 text-sm text-text-secondary">{t('revertModalDescription')}</p>
                   <textarea
                     className="mb-4 w-full rounded-md border border-border p-2 text-sm"
+                    id="approval-revert-reason"
+                    aria-label={t('revertReasonLabel')}
                     rows={3}
-                    placeholder="差し戻し理由（必須）"
+                    placeholder={t('revertReasonPlaceholder')}
                     value={revertReason}
                     onChange={(e) => setRevertReason(e.target.value)}
                   />
@@ -542,7 +547,7 @@ export default function ApprovalsPage(
                       }}
                       className="rounded-md border border-border px-4 py-2 text-sm text-text-secondary hover:bg-surface-elevated"
                     >
-                      キャンセル
+                      {t('cancel')}
                     </button>
                     <button
                       type="button"
@@ -550,7 +555,7 @@ export default function ApprovalsPage(
                       onClick={() => handleRevert(revertModalRequestId)}
                       className="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {revertLoading ? '処理中...' : '差し戻す'}
+                      {revertLoading ? t('processing') : t('revert')}
                     </button>
                   </div>
                 </div>

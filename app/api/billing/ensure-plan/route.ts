@@ -32,8 +32,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'tenant',
       allowedRoles: ['org_admin', 'system_operator'],
-      organizationId: normalizedOrgId || undefined,
+      organizationId: normalizedOrgId || '',
       actionName: 'billing.ensure_plan',
       logContext: normalizedOrgId ? { organizationId: normalizedOrgId } : undefined
     })

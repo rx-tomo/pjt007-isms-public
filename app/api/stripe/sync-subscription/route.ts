@@ -26,8 +26,9 @@ export async function POST(request: NextRequest) {
   const organizationId = body.organizationId?.trim()
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator'],
-    organizationId: organizationId || undefined,
+    organizationId: organizationId || '',
     actionName: 'stripe.sync_subscription',
     logContext: organizationId ? { organizationId } : undefined
   })

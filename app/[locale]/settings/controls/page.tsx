@@ -248,7 +248,7 @@ export default function ControlsManagementPage(
     if (!confirmed) return
 
     try {
-      await isoControlService.deleteControl(control.id)
+      await isoControlService.deleteControl(control.id, organizationId)
       pushToast({ message: t('messages.deleted', { title: control.title }), variant: 'success' })
       await loadControls()
       await loadSoaReadiness()

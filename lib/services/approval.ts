@@ -1,7 +1,11 @@
 import { getDb } from '@/lib/db/drizzle/client'
 import { approvalRequests, approvalEvents } from '@/lib/db/drizzle/schema'
-import { eq, and, lt, desc, asc, sql } from 'drizzle-orm'
+import { eq, and, ne, lt, desc, asc, sql } from 'drizzle-orm'
 import { NotificationService } from '@/lib/services/notification'
+import {
+  RESIDUAL_ACCEPTANCE_RESOURCE_TYPE,
+  assertGenericApprovalMutationAllowed,
+} from '@/lib/approvals/residualAcceptanceMutationBoundary'
 
 export type ApprovalResourceType =
   | 'document'
@@ -35,6 +39,19 @@ export interface ApprovalRequest {
   revert_reason: string | null
   created_at: string
   updated_at: string
+}
+
+export interface ApprovalQueueContext {
+  title: string
+  summary: string | null
+  requester_name: string | null
+  approver_name: string | null
+  target_path: string
+  reference: string
+}
+
+export interface ApprovalQueueItem extends ApprovalRequest {
+  context: ApprovalQueueContext
 }
 
 export interface ApprovalEvent {
@@ -142,6 +159,8 @@ export class ApprovalService {
     step_number?: number | null
     status?: ApprovalRequestStatus
   }): Promise<ApprovalRequest> {
+    assertGenericApprovalMutationAllowed(input.resource_type)
+
     const db = this.getDb()
 
     // For due_at calculation, we use a simple default of 7 days from now
@@ -230,6 +249,8 @@ export class ApprovalService {
     actorId: string,
     reason: string
   ): Promise<void> {
+    assertGenericApprovalMutationAllowed(resourceType)
+
     const pendingRequests = await this.listRequests(organizationId, {
       status: 'pending',
       resourceType
@@ -251,6 +272,12 @@ export class ApprovalService {
     actorId: string
     comment?: string
   }): Promise<ApprovalRequest> {
+    const existing = await this.getRequestById(input.requestId)
+    if (!existing) {
+      throw new Error('Failed to approve request')
+    }
+    assertGenericApprovalMutationAllowed(existing.resource_type)
+
     const db = this.getDb()
     const now = new Date().toISOString()
 
@@ -262,7 +289,10 @@ export class ApprovalService {
         rejectionReason: null,
         updatedAt: now,
       })
-      .where(eq(approvalRequests.id, input.requestId))
+      .where(and(
+        eq(approvalRequests.id, input.requestId),
+        ne(approvalRequests.resourceType, RESIDUAL_ACCEPTANCE_RESOURCE_TYPE)
+      ))
 
     const [updated] = await db
       .select()
@@ -273,6 +303,7 @@ export class ApprovalService {
     if (!updated) {
       throw new Error('Failed to approve request')
     }
+    assertGenericApprovalMutationAllowed(updated.resourceType)
 
     await this.appendEvent({
       approval_request_id: updated.id,
@@ -289,6 +320,12 @@ export class ApprovalService {
     actorId: string
     reason: string
   }): Promise<ApprovalRequest> {
+    const existing = await this.getRequestById(input.requestId)
+    if (!existing) {
+      throw new Error('Failed to reject request')
+    }
+    assertGenericApprovalMutationAllowed(existing.resource_type)
+
     const db = this.getDb()
     const now = new Date().toISOString()
 
@@ -300,7 +337,10 @@ export class ApprovalService {
         approvedAt: null,
         updatedAt: now,
       })
-      .where(eq(approvalRequests.id, input.requestId))
+      .where(and(
+        eq(approvalRequests.id, input.requestId),
+        ne(approvalRequests.resourceType, RESIDUAL_ACCEPTANCE_RESOURCE_TYPE)
+      ))
 
     const [updated] = await db
       .select()
@@ -311,6 +351,7 @@ export class ApprovalService {
     if (!updated) {
       throw new Error('Failed to reject request')
     }
+    assertGenericApprovalMutationAllowed(updated.resourceType)
 
     await this.appendEvent({
       approval_request_id: updated.id,
@@ -333,13 +374,12 @@ export class ApprovalService {
     reason: string
     organizationId: string
   }): Promise<ApprovalRequest> {
-    const db = this.getDb()
-
     // 1. Fetch and validate
     const existing = await this.getRequestById(input.requestId)
     if (!existing) {
       throw new Error('承認リクエストが見つかりません')
     }
+    assertGenericApprovalMutationAllowed(existing.resource_type)
     if (existing.organization_id !== input.organizationId) {
       throw new Error('組織が一致しません')
     }
@@ -353,6 +393,7 @@ export class ApprovalService {
     }
 
     const now = new Date().toISOString()
+    const db = this.getDb()
 
     // 3. Revert to pending
     await db
@@ -365,7 +406,10 @@ export class ApprovalService {
         revertReason: input.reason,
         updatedAt: now,
       })
-      .where(eq(approvalRequests.id, input.requestId))
+      .where(and(
+        eq(approvalRequests.id, input.requestId),
+        ne(approvalRequests.resourceType, RESIDUAL_ACCEPTANCE_RESOURCE_TYPE)
+      ))
 
     const [updated] = await db
       .select()
@@ -376,6 +420,7 @@ export class ApprovalService {
     if (!updated) {
       throw new Error('差し戻しに失敗しました')
     }
+    assertGenericApprovalMutationAllowed(updated.resourceType)
 
     // 4. Record revert event
     await this.appendEvent({

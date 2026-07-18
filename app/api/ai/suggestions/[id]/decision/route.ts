@@ -62,6 +62,7 @@ export async function POST(
   try {
     const { id } = await props.params
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'tenant-primary',
       allowedRoles: ALLOWED_ROLES,
       actionName: 'ai.suggestions.decide',
     })

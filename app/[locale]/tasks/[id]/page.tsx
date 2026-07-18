@@ -779,7 +779,7 @@ export default function TaskDetailPage(
                         </div>
                         <div className="flex items-center gap-2">
                           <a
-                            href={`/api/storage/task-attachments/${attachment.file_path}`}
+                            href={`/api/tasks/${encodeURIComponent(task.id)}/attachments?attachmentId=${encodeURIComponent(attachment.id)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 text-sm"

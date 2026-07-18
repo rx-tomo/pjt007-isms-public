@@ -22,6 +22,9 @@ const ids = {
   sharedOperatorInitialPermission: '72030000-0000-4000-8000-999900000001',
   sharedOperatorSurveillancePermission: '72030000-0000-4000-8000-999900000002',
   sharedOperatorEnterprisePermission: '72030000-0000-4000-8000-999900000003',
+  initialApproverUser: '72000000-0000-4000-8000-000100000003',
+  initialInformationSystemsDepartment: '71000000-0000-4000-8000-000100000002',
+  initialApprovalDelegatedScope: '72040000-0000-4000-8000-000100000103',
 };
 
 const expectedOrgs = [
@@ -82,7 +85,7 @@ const expectedRows = [
     scenario: 'shared_operator',
     ids: [ids.sharedOperatorInitialPermission, ids.sharedOperatorSurveillancePermission, ids.sharedOperatorEnterprisePermission],
   },
-  tableIds('user_department_scopes', 'initial', 'departmentScope', 3, ['03', '04', '05']),
+  tableIds('user_department_scopes', 'initial', 'departmentScope', 4, ['03', '04', '05', '103']),
   tableIds('user_department_scopes', 'surveillance', 'departmentScope', 3, ['03', '04', '05']),
   tableIds('user_department_scopes', 'enterprise', 'departmentScope', 3, ['03', '04', '05']),
   tableIds('user_department_scopes', 'suspended', 'departmentScope', 3, ['03', '04', '05']),
@@ -159,6 +162,12 @@ const expectedRows = [
   tableIds('management_reviews', 'surveillance', 'managementReview', 1),
   tableIds('management_review_items', 'surveillance', 'managementReviewItem', 4),
   tableIds('management_review_actions', 'surveillance', 'managementReviewAction', 2),
+  tableIds('approval_requests', 'initial', 'approvalRequest', 1),
+  tableIds('approval_requests', 'surveillance', 'approvalRequest', 1),
+  tableIds('approval_requests', 'enterprise', 'approvalRequest', 1),
+  tableIds('approval_events', 'initial', 'approvalEvent', 1),
+  tableIds('approval_events', 'surveillance', 'approvalEvent', 1),
+  tableIds('approval_events', 'enterprise', 'approvalEvent', 1),
   {
     table: 'document_templates',
     scenario: 'global',
@@ -217,6 +226,8 @@ function id(scenario, entity, value) {
     managementReview: '7d00',
     managementReviewItem: '7d01',
     managementReviewAction: '7d02',
+    approvalRequest: '7f00',
+    approvalEvent: '7f01',
   };
   return `${codes[entity]}0000-0000-4000-8000-${story}${String(value).padStart(8, '0')}`;
 }
@@ -298,6 +309,30 @@ async function main() {
     failures.push('shared_operator:user_profiles expected system_operator profile, got missing or mismatched row');
   }
   summary.push({ table: 'user_profiles', scenario: 'shared_operator', expected: 1, actual: sharedOperatorProfile });
+
+  const delegatedApprovalScope = await scalar(
+    client,
+    `SELECT COUNT(*) AS value FROM user_department_scopes
+      WHERE id = ?
+        AND organization_id = ?
+        AND user_id = ?
+        AND department_id = ?`,
+    [
+      ids.initialApprovalDelegatedScope,
+      ids.initialOrg,
+      ids.initialApproverUser,
+      ids.initialInformationSystemsDepartment,
+    ],
+  );
+  if (delegatedApprovalScope !== 1) {
+    failures.push(`initial:user_department_scopes expected delegated approval scope, got ${delegatedApprovalScope}`);
+  }
+  summary.push({
+    table: 'user_department_scopes',
+    scenario: 'initial_delegated_approval',
+    expected: 1,
+    actual: delegatedApprovalScope,
+  });
 
   const sharedOperatorMemberships = await scalar(
     client,

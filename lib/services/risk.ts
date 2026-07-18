@@ -8,7 +8,7 @@
  * The repository is obtained through the DI container, allowing seamless
  * switching between different database backends via DI container.
  */
-import { getRiskRepository, getAuditLogRepository, getAuthProvider, getUserRepository } from '@/lib/container'
+import { getRiskRepository, getAuditLogRepository, getAuthProvider } from '@/lib/container'
 import type {
   IRiskRepository,
   RiskCategory,
@@ -18,11 +18,10 @@ import type {
 } from '@/lib/db/repositories/interfaces/IRiskRepository'
 import type { IAuditLogRepository } from '@/lib/db/repositories/interfaces/IAuditLogRepository'
 import type { IAuthProvider } from '@/lib/auth/interfaces/IAuthProvider'
-import type { IUserRepository, UserProfile } from '@/lib/db/repositories/interfaces/IUserRepository'
 import type { Database, Json } from '@/types/database.types'
 import type { RiskAssetWithDetails } from '@/lib/services/informationAsset'
-import { DEPARTMENT_UNASSIGNED_VALUE } from '@/lib/constants/departments'
-import { hasFullDepartmentAccess } from '@/lib/utils/departmentScope'
+import type { TenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import { applyDepartmentAccessFilters } from '@/lib/server/auth/departmentAccessFilters'
 
 // Re-export types from the repository interface
 export type {
@@ -46,6 +45,10 @@ export type { RiskAssetWithDetails }
 type RiskInsert = Database['public']['Tables']['risks']['Insert']
 type RiskUpdate = Database['public']['Tables']['risks']['Update']
 type RiskTreatment = Database['public']['Tables']['risk_treatments']['Row']
+type RiskApiUpdate = RiskUpdate & {
+  assetIds?: string[]
+  expected_updated_at: string
+}
 
 // Re-export for backward compatibility
 export type { RiskInsert, RiskUpdate }
@@ -54,7 +57,6 @@ export class RiskService {
   private repositoryPromise: Promise<IRiskRepository> | null = null
   private auditLogPromise: Promise<IAuditLogRepository> | null = null
   private authProviderPromise: Promise<IAuthProvider> | null = null
-  private userRepositoryPromise: Promise<IUserRepository> | null = null
 
   private async fetchRisksApi<T>(params: Record<string, string | undefined>): Promise<T> {
     if (typeof window === 'undefined') {
@@ -102,7 +104,7 @@ export class RiskService {
     return payload.data
   }
 
-  private async updateRiskApi<T>(id: string, updates: RiskUpdate): Promise<T> {
+  private async updateRiskApi<T>(id: string, updates: RiskApiUpdate): Promise<T> {
     if (typeof window === 'undefined') {
       throw new Error('updateRiskApi must only be called from the browser')
     }
@@ -227,22 +229,10 @@ export class RiskService {
     return this.authProviderPromise
   }
 
-  private async getUserRepository(): Promise<IUserRepository> {
-    if (!this.userRepositoryPromise) {
-      this.userRepositoryPromise = getUserRepository()
-    }
-    return this.userRepositoryPromise
-  }
-
   private async getCurrentUserId(): Promise<string | null> {
     const auth = await this.getAuth()
     const user = await auth.getUser()
     return user?.id ?? null
-  }
-
-  private async getRequestingUserProfile(requestingUserId: string): Promise<UserProfile | null> {
-    const userRepository = await this.getUserRepository()
-    return userRepository.findById(requestingUserId)
   }
 
   private async logAudit(params: {
@@ -303,7 +293,7 @@ export class RiskService {
    */
   async getRisksScoped(
     organizationId: string,
-    requestingUserId: string,
+    _requestingUserId: string,
     filters?: {
       status?: 'identified' | 'analyzing' | 'treating' | 'monitoring' | 'closed'
       assessmentPeriod?: string
@@ -313,27 +303,26 @@ export class RiskService {
       return this.fetchRisksApi<RiskWithRelations[]>({
         action: 'risksScoped',
         organizationId,
-        requestingUserId,
         status: filters?.status,
         assessmentPeriod: filters?.assessmentPeriod,
       })
     }
 
-    const requestingUser = await this.getRequestingUserProfile(requestingUserId)
-    if (!requestingUser) {
-      throw new Error('Requesting user not found')
+    throw new Error('getRisksScoped is browser-only; use getRisksForDepartmentAccess on the server')
+  }
+
+  async getRisksForDepartmentAccess(
+    organizationId: string,
+    departmentAccess: TenantAuthorizationContext['departmentAccess'],
+    filters?: RiskFilters
+  ): Promise<RiskWithRelations[]> {
+    if (typeof window !== 'undefined') {
+      throw new Error('getRisksForDepartmentAccess must only be called from the server')
     }
 
-    if (hasFullDepartmentAccess(requestingUser.role)) {
-      return this.getRisks(organizationId, filters)
-    }
-
-    const departmentId = requestingUser.primary_department_id ?? DEPARTMENT_UNASSIGNED_VALUE
-    return this.getRisks(organizationId, {
-      ...(filters ?? {}),
-      departmentId,
-      includeNoDepartment: true
-    })
+    const repo = await this.getRepository()
+    const effectiveFilters = applyDepartmentAccessFilters(filters, departmentAccess)
+    return repo.findByOrganizationId(organizationId, effectiveFilters)
   }
 
   /**
@@ -359,76 +348,44 @@ export class RiskService {
       return this.createRiskApi<RiskWithRelations>(risk, assetIds)
     }
 
-    const userId = await this.getCurrentUserId()
-    if (!userId) throw new Error('Not authenticated')
-
-    const repo = await this.getRepository()
-    const data = await repo.create({
-      ...risk,
-      identified_by: userId
-    })
-
-    if (assetIds.length > 0) {
-      await repo.setRiskAssets(data.id, assetIds)
-    }
-
-    await this.logAudit({
-      action: 'risk.created',
-      resourceType: 'risk',
-      resourceId: data.id,
-      changes: { title: risk.title, assetIds }
-    })
-
-    return data
+    throw new Error('RiskService creation is a browser API adapter operation only')
   }
 
   /**
    * Update a risk
    */
-  async updateRisk(id: string, updates: RiskUpdate) {
+  async updateRisk(id: string, updates: RiskApiUpdate) {
     if (typeof window !== 'undefined') {
+      if (!updates.expected_updated_at) {
+        throw new Error('expected_updated_at is required for browser risk updates')
+      }
       return this.updateRiskApi<RiskWithRelations | null>(id, updates)
     }
 
-    const repo = await this.getRepository()
-    const previousRisk = updates.impact_level !== undefined || updates.likelihood_level !== undefined
-      ? await repo.findById(id)
-      : null
-    const data = await repo.update(id, updates)
-
-    await this.logAudit({
-      action: 'risk.updated',
-      resourceType: 'risk',
-      resourceId: id,
-      changes: updates as Record<string, unknown>
-    })
-
-    // Create assessment history if impact or likelihood changed
-    if (updates.impact_level !== undefined || updates.likelihood_level !== undefined) {
-      const userId = await this.getCurrentUserId()
-      if (userId) {
-        await repo.createAssessmentHistory(id, userId, {
-          impactLevel: previousRisk?.impact_level ?? null,
-          likelihoodLevel: previousRisk?.likelihood_level ?? null,
-        })
-      }
+    if (updates.owner_id !== undefined) {
+      throw new Error('Risk owner changes must use RiskTenantLifecycleService')
     }
 
-    return data
+    throw new Error('RiskService updates are browser API adapter operations only')
   }
 
   /**
    * Delete a risk
    */
   async deleteRisk(id: string): Promise<void> {
-    const repo = await this.getRepository()
-    await repo.delete(id)
+    if (typeof window !== 'undefined') {
+      const response = await fetch(`/api/risks/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error(errorBody?.error ?? `API error ${response.status}`)
+      }
+      return
+    }
 
-    await this.logAudit({
-      action: 'risk.deleted',
-      resourceType: 'risk',
-      resourceId: id
-    })
+    throw new Error('RiskService deletion is a browser API adapter operation only')
   }
 
   /**
@@ -446,8 +403,9 @@ export class RiskService {
       return this.createTreatmentApi<RiskTreatment>(riskId, treatment, controlIds)
     }
 
-    const repo = await this.getRepository()
-    return repo.createTreatment(riskId, treatment, controlIds)
+    throw new Error(
+      'RiskService treatment mutations are browser API adapter operations only'
+    )
   }
 
   /**
@@ -473,14 +431,28 @@ export class RiskService {
       return this.updateTreatmentApi<RiskTreatment>(id, updates, controlIds)
     }
 
-    const repo = await this.getRepository()
-    return repo.updateTreatment(id, updates, controlIds)
+    throw new Error(
+      'RiskService treatment mutations are browser API adapter operations only'
+    )
   }
 
   /**
    * Set risk assets (replace existing)
    */
-  async setRiskAssets(riskId: string, assetIds: string[]): Promise<void> {
+  async setRiskAssets(
+    riskId: string,
+    assetIds: string[],
+    expectedUpdatedAt?: string
+  ): Promise<void> {
+    if (typeof window !== 'undefined') {
+      const current = expectedUpdatedAt
+        ? null
+        : await this.fetchRiskDetailApi<RiskWithRelations | null>(riskId)
+      const expected = expectedUpdatedAt ?? current?.updated_at
+      if (!expected) throw new Error('expected_updated_at is required for browser risk asset updates')
+      await this.updateRiskApi(riskId, { assetIds, expected_updated_at: expected })
+      return
+    }
     const repo = await this.getRepository()
     return repo.setRiskAssets(riskId, assetIds)
   }

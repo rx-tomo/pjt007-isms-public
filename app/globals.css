@@ -330,6 +330,61 @@
   @apply flex items-center gap-4;
 }
 
+@media (max-width: 640px) {
+  .dashboard-sidebar,
+  .dashboard-sidebar.sidebar-open,
+  .dashboard-sidebar.sidebar-closed {
+    width: 3.5rem;
+    min-width: 3.5rem;
+  }
+
+  .dashboard-main {
+    min-width: 0;
+  }
+
+  .sidebar-logo,
+  .nav-item-text,
+  .submenu {
+    display: none;
+  }
+
+  .sidebar-header {
+    min-height: 4rem;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .sidebar-toggle {
+    padding: 0.375rem;
+  }
+
+  .sidebar-nav {
+    padding: 1rem 0.5rem;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .header-content {
+    min-width: 0;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .header-actions {
+    min-width: 0;
+    gap: 0.5rem;
+  }
+
+  .header-actions > a,
+  .user-menu-text {
+    display: none;
+  }
+}
+
 .tenant-switch {
   @apply flex flex-col gap-1 min-w-64;
 }

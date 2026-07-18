@@ -961,13 +961,14 @@
       "draftSaved": "下書きを保存しました",
       "submittedForReview": "レビュー依頼を送信しました"
     },
-    "allDocuments": "すべての文書",
+    "allDocuments": "ルートにある文書",
     "folderDocuments": "フォルダー内の文書",
     "emptyState": "文書がありません",
     "updatedAt": "{date}に更新",
     "approval": {
       "inReviewStatus": "承認待ち",
       "stepLabel": "ステップ{step}",
+      "decisionLabel": "承認者の判断",
       "status": {
         "pending": "未承認",
         "approved": "承認済み",
@@ -976,11 +977,11 @@
       },
       "modal": {
         "title": "「{title}」の承認依頼",
-        "description": "各ステップの承認者を選択してください。同じ担当者を設定した場合は、一次承認を自動的に省略します。",
-        "step1Label": "ステップ1（一次承認）",
-        "step2Label": "ステップ2（最終承認）",
+        "description": "この文書を確認して判断する承認者を選択してください。",
+        "approverLabel": "承認者",
         "selectPlaceholder": "ユーザーを選択",
-        "hint": "承認者は同一組織に所属している必要があります。最終承認者にはシステム管理者または組織管理者を指定してください。",
+        "loadingCandidates": "承認者候補を確認中",
+        "hint": "承認者は同一組織に所属し、この文書を参照できる必要があります。",
         "submit": "承認依頼を送信",
         "saving": "保存中",
         "cancel": "キャンセル"
@@ -995,12 +996,14 @@
         "cancel": "キャンセル"
       },
       "errors": {
-        "missingApprovers": "ステップ1とステップ2の承認者を選択してください"
+        "missingApprover": "承認者を選択してください",
+        "candidatesLoadFailed": "この文書を確認できる承認者候補を取得できませんでした"
       },
       "progress": {
         "title": "承認進捗",
         "stepComplete": "ステップ {current}/{total} 完了",
         "stepPending": "ステップ {current}/{total} 承認待ち",
+        "pending": "承認者の判断待ち",
         "notSubmitted": "未提出",
         "approved": "承認済み",
         "rejected": "却下"
@@ -1048,7 +1051,11 @@
       "empty": "バージョン履歴がまだありません",
       "close": "閉じる",
       "loadFailed": "バージョン履歴の取得に失敗しました",
-      "downloadFailed": "バージョンファイルのダウンロードに失敗しました"
+      "downloadFailed": "バージョンファイルのダウンロードに失敗しました",
+      "delete": "履歴版を削除",
+      "deleting": "削除中",
+      "confirmDelete": "バージョン {version} を削除しますか？この操作は元に戻せません。",
+      "deleteFailed": "履歴版の削除に失敗しました"
     }
   },
   "nav": {
@@ -1895,10 +1902,11 @@
         "minor": "軽微不適合"
       },
       "ncStatus": {
-        "open": "未処理",
-        "in_progress": "対応中",
-        "resolved": "是正済み",
-        "verified": "検証済み",
+          "open": "未処理",
+          "in_progress": "対応中",
+          "resolved": "是正済み",
+          "pending_verification": "検証待ち",
+          "verified": "検証済み",
         "closed": "完了"
       },
       "actions": {
@@ -2050,6 +2058,7 @@
         "open": "未処理",
         "in_progress": "対応中",
         "resolved": "是正済み",
+        "pending_verification": "検証待ち",
         "verified": "検証済み",
         "closed": "完了"
       },
@@ -2363,6 +2372,7 @@
       "dueDate": "期限",
       "status": "ステータス",
       "open": "未対応",
+      "in_progress": "対応中",
       "inProgress": "対応中",
       "completed": "完了",
       "verified": "検証済み",
@@ -3064,23 +3074,23 @@
         }
       },
       "admin": {
-        "title": "管理者ダッシュボード",
-        "subtitle": "組織全体のKPI、滞留、今日確認する対応を把握します",
+        "title": "ISMS運用状況",
+        "subtitle": "組織全体の進み具合と、次に確認する対応を把握します",
         "viewAll": "すべて表示",
         "sections": {
           "kpi": {
-            "title": "主要パフォーマンス指標",
+            "title": "組織全体の状況",
             "pendingApprovals": "承認待ち",
             "activeUsers": "有効ユーザー",
-            "openRisks": "オープンリスク",
+            "openRisks": "対応中のリスク",
             "overdueTasks": "期限超過タスク"
           },
           "workbench": {
-            "title": "ISMS運用の作業台",
-            "subtitle": "初回登録準備と月次運用を、状態、次画面、完了条件、証跡への影響で確認します。",
+            "title": "準備と運用の確認",
+            "subtitle": "初回登録準備と月次運用について、現在の状態、次の対応、確認できる状態、残る記録を確認します。",
             "labels": {
-              "done": "完了条件:",
-              "impact": "証跡:"
+              "done": "確認できる状態:",
+              "impact": "記録に残ること:"
             },
             "groups": {
               "initialPreparation": {
@@ -3092,7 +3102,7 @@
                     "title": "適用範囲と組織体制を固める",
                     "next": "組織設定で適用範囲、拠点、責任者、体制を確認します。",
                     "done": "適用範囲と責任者が説明できる",
-                    "impact": "提出束の組織・範囲説明に使う"
+                    "impact": "審査前の確認資料で組織・範囲の説明に使う"
                   },
                   "assetsRisks": {
                     "status": "リスク {count} 件",
@@ -3105,8 +3115,8 @@
                     "status": "承認待ち {count} 件",
                     "title": "文書と管理策を承認状態に近づける",
                     "next": "文書管理と管理策ライブラリを開き、未承認や理由不足を減らします。",
-                    "done": "基準文書とSoA判断がレビュー可能",
-                    "impact": "審査準備パッケージの主要証跡になる"
+                    "done": "基準文書と適用管理策の判断を確認できる",
+                    "impact": "審査前の確認資料で主要な記録として使う"
                   }
                 }
               },
@@ -3116,9 +3126,9 @@
                 "items": {
                   "overdueTasks": {
                     "status": "期限超過 {count} 件",
-                    "title": "止まっているタスクを戻す",
+                    "title": "期限超過タスクの対応を決める",
                     "next": "期限超過タスクを開き、担当者、期限、完了条件を更新します。",
-                    "done": "期限超過とレビュー待ちの理由が消える",
+                    "done": "担当者と新しい期限、次の対応が決まる",
                     "impact": "継続改善と運用記録として残る"
                   },
                   "educationReview": {
@@ -3150,15 +3160,15 @@
               },
               "pendingApprovals": {
                 "title": "承認待ちを処理",
-                "description": "{count} 件の承認待ち文書があります。判断待ちを減らしてください。"
+                "description": "{count} 件の承認待ちがあります。対象と承認後の影響を確認してください。"
               },
               "educationFollowUp": {
                 "title": "教育・訓練をフォロー",
                 "description": "{count} 件の教育計画にフォローが必要です。未受講や記録不足を確認してください。"
               },
               "openRisks": {
-                "title": "オープンリスクを確認",
-                "description": "{count} 件の未クローズリスクがあります。対応状況を見直してください。"
+                "title": "対応中のリスクを確認",
+                "description": "{count} 件の対応中リスクがあります。担当者、対応期限、残るリスクを確認してください。"
               }
             }
           },
@@ -5128,6 +5138,8 @@
       "description": "概要",
       "severity": "重大度",
       "occurredAt": "発生日時",
+      "department": "担当部門",
+      "selectDepartment": "部門を選択",
       "approver": "承認担当者",
       "autoApprover": "自動選択（ルールに従う）",
       "approverHint": "未選択の場合は案件別エスカレーションルールで承認者を決定します。",
@@ -5166,6 +5178,7 @@
       "saveFailed": "インシデントの保存に失敗しました。",
       "notFound": "インシデントが見つかりません。",
       "organizationMissing": "組織情報が取得できません。"
+      ,"departmentMissing": "担当部門を選択してください。"
     },
     "links": {
       "title": "関連リンク",
@@ -5199,7 +5212,25 @@
     "cancel": "キャンセル",
     "processing": "処理中...",
     "empty": "承認待ちはありません。",
-    "emptyFiltered": "該当するリクエストはありません。"
+    "emptyFiltered": "この条件に該当する申請はありません。",
+    "description": "対象名、変更内容、申請者、期限と承認後の影響を確認して判断します。",
+    "forbidden": "この画面を閲覧する権限がありません。",
+    "approve": "承認",
+    "reject": "却下",
+    "requester": "申請者",
+    "approver": "承認者",
+    "unassigned": "未割当",
+    "unknown": "確認できません",
+    "reference": "参照番号: {value}",
+    "requestedAt": "申請日時: {value}",
+    "summary": { "pending": "承認待ち {count}", "dueSoon": "期限接近 {count}", "escalated": "管理者にも通知 {count}" },
+    "filters": { "due": "期限が近い承認依頼のみ表示中", "escalation": "管理者にも通知された承認依頼のみ表示中", "clear": "絞り込みを解除" },
+    "columns": { "subject": "判断対象", "people": "申請者・承認者", "due": "期限", "impact": "承認後の影響", "actions": "判断" },
+    "statuses": { "pending": "承認待ち", "approved": "承認済み", "rejected": "却下済み", "expired": "期限切れ" },
+    "resourceTypes": { "document": "文書", "incident": "インシデント", "audit_plan": "監査計画", "audit_report": "監査報告書", "nonconformity_closure": "是正完了", "followup_record": "フォローアップ", "iso_control_soa": "適用管理策", "soa_version": "適用管理策の版", "risk_residual_acceptance": "残留リスク受容" },
+    "impacts": { "document": "承認済み文書として公開・次工程へ進みます。", "incident": "インシデント報告が承認済みとなり、対応記録へ反映されます。", "audit_plan": "監査計画が確定し、監査実施へ進めます。", "audit_report": "監査報告が確定し、是正とマネジメントレビューへ引き渡されます。", "nonconformity_closure": "是正処置を完了扱いにし、監査証跡へ反映します。", "followup_record": "フォローアップ確認を完了し、是正の有効性記録へ反映します。", "iso_control_soa": "管理策の適用判断が承認済みとなり、SoAへ反映されます。", "soa_version": "適用管理策判断の版を承認し、レビュー済み記録として残します。", "risk_residual_acceptance": "残留リスクを組織として受容した記録を残します。" },
+    "decision": { "approveTitle": "この内容を承認しますか？", "rejectTitle": "この内容を却下しますか？", "rejectReasonLabel": "却下理由", "rejectReasonPlaceholder": "修正してほしい内容と理由（必須）", "confirmApprove": "承認を確定", "confirmReject": "却下を確定" },
+    "revertReasonLabel": "差し戻し理由"
   },
   "bcp": {
     "title": "事業継続計画（BCP）",
@@ -5534,36 +5565,36 @@
   },
   "examination": {
     "submissionBundle": {
-      "title": "審査準備パッケージ",
-      "description": "初回審査登録に向けて、適用範囲、体制、文書、資産、リスク、適用管理策の判断、初期タスクを審査準備パッケージとして整理します。審査での受理や認証取得は保証せず、内部レビューで確認したい状況、不足、次の対応を確認しやすくします。",
+      "title": "審査前の確認資料",
+      "description": "審査前に社内で確認したい適用範囲、体制、文書、リスク、管理策、運用記録をまとめて点検します。",
       "organizationLine": "{name} / フェーズ: {phase} / ロール: {role}",
       "reviewNotice": {
-        "title": "審査準備を支援する確認資料です",
-        "body": "このパッケージは、審査準備や内部レビューに必要な証跡を整理するものです。ISO 27001の認証取得や審査での受理を保証するものではありませんが、確認したい情報、不足、次の対応を把握しやすくします。"
+        "title": "社内確認用の資料です",
+        "body": "不足と次の対応を確認し、責任者が内容を確かめるために使います。"
       },
       "safetyBoundary": {
-        "title": "提出前レビュー用の支援パッケージです",
-        "body": "この画面のPDF/ZIPは、審査提出や内部確認に向けて情報を整理するための出力です。認証取得、審査での受理、審査機関の判断を保証するものではありません。",
+        "title": "この画面から審査機関への送信は行いません",
+        "body": "PDF/ZIPは社内確認用のファイルとして保存されます。保存後はISMS管理者や内部監査責任者が内容を確認し、提出方法を組織内で決めてください。認証取得や審査での受理を保証するものではありません。",
         "demoReset": "公開デモ環境で入力した内容は定期的に初期化されます。実データや機密情報は入力しないでください。"
       },
       "actions": {
-        "refresh": "再読み込み",
-        "downloadZip": "ZIPをダウンロード",
-        "downloadingZip": "ZIPを準備中...",
-        "downloadPdf": "PDFをダウンロード",
-        "downloadingPdf": "PDFを準備中..."
+        "refresh": "最新状態に更新",
+        "downloadZip": "内部確認用ZIPを保存",
+        "downloadingZip": "内部確認用ZIPを作成中...",
+        "downloadPdf": "確認用PDFを保存",
+        "downloadingPdf": "確認用PDFを作成中..."
       },
       "readiness": {
-        "label": "内部レビュー状況",
+        "label": "資料の確認状況",
         "readyItems": "準備済み",
-        "gapItems": "不足項目",
-        "generatedAt": "生成日時",
+        "gapItems": "要対応",
+        "generatedAt": "確認日時",
         "latestSoa": "最新の適用管理策判断",
         "soaVersion": "v{version}",
         "noSoa": "未発行",
         "status": {
-          "ready": "内部レビューで確認したい資料を一通り確認できます",
-          "ready_with_gaps": "不足または確認待ちがあり、先に整える項目があります"
+          "ready": "社内確認に必要な資料が揃っています",
+          "ready_with_gaps": "社内確認の前に対応する項目があります"
         }
       },
       "nextAction": {
@@ -5571,13 +5602,14 @@
         "gapTitle": "まず「{item}」を整えましょう",
         "gapFallback": "不足項目の詳細を確認し、関連する画面で証跡、担当者、判断理由を更新してください。",
         "openTarget": "関連画面を開く",
-        "readyTitle": "審査準備パッケージを出力できます",
-        "readyDescription": "準備済みの証跡をPDFまたはZIPで出力し、経営者・管理責任者の確認や関係者レビューに使えます。審査での受理を保証するものではありません。",
-        "readyOutputHint": "出力は画面上部のPDFまたはZIPボタンから行えます。"
+        "readyTitle": "社内確認用ファイルを作成できます",
+        "readyDescription": "画面上部からPDFまたはZIPを保存できます。この操作では審査機関や外部の関係者へ送信されません。",
+        "readyOutputHint": "保存後は責任者が内容を確認し、提出方法を組織内で決めます。"
       },
       "items": {
+        "count": "{count}件",
         "countAndSources": "{count}件 / {sources}",
-        "evidence": "証跡",
+        "evidence": "確認した記録",
         "gaps": "不足・確認事項",
         "nextAction": "次に行うこと:",
         "openRelated": "関連画面を開く",
@@ -5590,9 +5622,9 @@
         }
       },
       "messages": {
-        "refreshed": "審査準備パッケージを再読み込みしました",
-        "downloaded": "審査準備パッケージZIPをダウンロードしました",
-        "pdfDownloaded": "審査準備パッケージPDFをダウンロードしました"
+        "refreshed": "資料の確認状況を更新しました",
+        "downloaded": "内部確認用ZIPを保存しました。外部には送信していません",
+        "pdfDownloaded": "確認用PDFを保存しました。外部には送信していません"
       },
       "errors": {
         "loadFailed": "審査準備パッケージを読み込めませんでした",
@@ -5600,7 +5632,7 @@
         "pdfDownloadFailed": "審査準備パッケージPDFをダウンロードできませんでした"
       },
       "noAccess": {
-        "title": "審査準備パッケージを表示できません",
+        "title": "審査前の確認資料を表示できません",
         "description": "組織管理者、システム運営者、監査員のいずれかでアクセスしてください。",
         "back": "ホームへ戻る"
       }
