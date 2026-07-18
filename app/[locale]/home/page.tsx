@@ -662,9 +662,12 @@ export default function HomePage(
           t={t}
           stats={stats}
           approverMetrics={approverMetrics}
+          myTraining={myTraining}
         />
 
-        <PhaseSummaryCard locale={locale} t={t} phase={phaseSummary} />
+        {phaseSummary.alert === 'missing' && (
+          <PhaseSummaryCard locale={locale} t={t} phase={phaseSummary} />
+        )}
 
         <HomeActionRow locale={locale} unreadCount={unreadNotificationCount} t={t} />
 
@@ -995,67 +998,75 @@ function localized(locale: string, values: Record<string, string>) {
   return values.ja
 }
 
-function getPrimaryAction(role: RoleKey, locale: string, stats: DashboardStats | null, approverMetrics: ApproverDashboardMetrics | null) {
+interface HomePriorityAction {
+  id: string
+  href: string
+  label: string
+  helper: string
+}
+
+function getHomePriorityActions(
+  role: RoleKey,
+  locale: string,
+  stats: DashboardStats | null,
+  approverMetrics: ApproverDashboardMetrics | null,
+  myTraining: MyTrainingSummary | null
+): HomePriorityAction[] {
   if (role === 'approver') {
-    return {
-      href: `/${locale}/approvals?status=pending`,
-      label: localized(locale, {
-        ja: '承認待ちを確認',
-        en: 'Review approvals',
-        zh: '查看待审批'
-      }),
-      helper: localized(locale, {
-        ja: `${approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0}件の判断待ち`,
-        en: `${approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0} pending decisions`,
-        zh: `${approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0} 个待判断`
-      })
-    }
+    const pending = approverMetrics?.pendingCount ?? stats?.pendingReviewDocumentCount ?? 0
+    const due = approverMetrics?.dueSoonCount ?? 0
+    return [
+      priorityAction('approvals', `/${locale}/approvals?status=pending`, locale, '承認待ちを確認', 'Review approvals', '查看待审批', `${pending}件の判断待ち`, `${pending} pending decisions`, `${pending} 个待判断`),
+      priorityAction('due-approvals', `/${locale}/approvals?status=pending&urgency=due`, locale, '期限が近い申請を確認', 'Check due approvals', '查看临近期限的审批', `${due}件を優先確認`, `${due} require prompt review`, `${due} 个需优先确认`),
+      priorityAction('approval-history', `/${locale}/notifications?view=approvals`, locale, '判断後の通知を確認', 'Review approval updates', '查看审批后的通知', '差戻しや追加連絡を確認', 'Check returns and follow-ups', '确认退回与后续通知')
+    ]
   }
 
   if (role === 'auditor') {
-    return {
-      href: `/${locale}/audit`,
-      label: localized(locale, {
-        ja: '監査の進捗を確認',
-        en: 'Review audit progress',
-        zh: '查看审核进度'
-      }),
-      helper: localized(locale, {
-        ja: `${stats?.inProgressAuditCount ?? 0}件の監査が進行中`,
-        en: `${stats?.inProgressAuditCount ?? 0} audits in progress`,
-        zh: `${stats?.inProgressAuditCount ?? 0} 个审核进行中`
-      })
-    }
+    const audits = stats?.inProgressAuditCount ?? 0
+    return [
+      priorityAction('audits', `/${locale}/audit`, locale, '担当監査の進捗を確認', 'Review assigned audits', '查看负责的审核', `${audits}件の監査が進行中`, `${audits} audits in progress`, `${audits} 个审核进行中`),
+      priorityAction('findings', `/${locale}/audit/nonconformities`, locale, '指摘と是正状況を確認', 'Review findings and actions', '查看发现与纠正措施', '未完了の是正とフォローを確認', 'Check open corrective actions', '确认未完成的纠正与跟进'),
+      priorityAction('audit-reports', `/${locale}/audit/reports`, locale, '監査報告書を確認', 'Review audit reports', '查看审核报告', '報告内容と承認状況を確認', 'Check report and approval status', '确认报告与审批状态')
+    ]
   }
 
   if (role === 'user') {
-    return {
-      href: `/${locale}/tasks`,
-      label: localized(locale, {
-        ja: '自分の担当タスクを開く',
-        en: 'Open my tasks',
-        zh: '打开我的任务'
-      }),
-      helper: localized(locale, {
-        ja: `${stats?.activeTaskCount ?? 0}件のアクティブタスク`,
-        en: `${stats?.activeTaskCount ?? 0} active tasks`,
-        zh: `${stats?.activeTaskCount ?? 0} 个进行中任务`
-      })
-    }
+    const tasks = stats?.activeTaskCount ?? 0
+    const training = myTraining?.incomplete_count ?? 0
+    return [
+      priorityAction('my-tasks', `/${locale}/tasks?view=personal`, locale, '自分の担当タスクを確認', 'Review my tasks', '查看我的任务', `${tasks}件の進行中タスク`, `${tasks} active tasks`, `${tasks} 个进行中任务`),
+      priorityAction('training', `/${locale}/education`, locale, '未完了の教育を進める', 'Continue required training', '继续未完成的培训', `${training}件が未完了`, `${training} training items incomplete`, `${training} 个培训未完成`),
+      priorityAction('documents', `/${locale}/documents?status=approved`, locale, '適用文書を確認', 'Review applicable documents', '查看适用文件', '最新版のルールと手順を確認', 'Check current rules and procedures', '确认最新版规则与流程')
+    ]
   }
 
+  const overdue = stats?.overdueTaskCount ?? 0
+  const pending = stats?.pendingReviewDocumentCount ?? 0
+  const risks = stats?.activeRiskCount ?? 0
+  return [
+    priorityAction('overdue-tasks', `/${locale}/tasks?due=overdue`, locale, '期限超過タスクを確認', 'Review overdue tasks', '查看逾期任务', `${overdue}件の担当と期限を確認`, `Check owners for ${overdue} tasks`, `确认 ${overdue} 个任务的负责人`),
+    priorityAction('pending-approvals', `/${locale}/approvals?status=pending`, locale, '承認待ちを確認', 'Review pending approvals', '查看待审批', `${pending}件の文書・申請が判断待ち`, `${pending} documents or requests pending`, `${pending} 个文件或申请待判断`),
+    priorityAction('open-risks', `/${locale}/risks`, locale, '未対応リスクを確認', 'Review open risks', '查看未处理风险', `${risks}件の対応状況を確認`, `Review treatment for ${risks} risks`, `确认 ${risks} 个风险的应对状态`)
+  ]
+}
+
+function priorityAction(
+  id: string,
+  href: string,
+  locale: string,
+  jaLabel: string,
+  enLabel: string,
+  zhLabel: string,
+  jaHelper: string,
+  enHelper: string,
+  zhHelper: string
+): HomePriorityAction {
   return {
-    href: `/${locale}/tasks?due=overdue`,
-    label: localized(locale, {
-      ja: '優先対応を確認',
-      en: 'Review priority work',
-      zh: '查看优先事项'
-    }),
-    helper: localized(locale, {
-      ja: `${stats?.overdueTaskCount ?? 0}件の期限超過タスク`,
-      en: `${stats?.overdueTaskCount ?? 0} overdue tasks`,
-      zh: `${stats?.overdueTaskCount ?? 0} 个逾期任务`
-    })
+    id,
+    href,
+    label: localized(locale, { ja: jaLabel, en: enLabel, zh: zhLabel }),
+    helper: localized(locale, { ja: jaHelper, en: enHelper, zh: zhHelper })
   }
 }
 
@@ -1374,7 +1385,8 @@ function HomeHero({
   locale,
   t,
   stats,
-  approverMetrics
+  approverMetrics,
+  myTraining
 }: {
   name: string
   organizationName: string
@@ -1386,6 +1398,7 @@ function HomeHero({
   t: ReturnType<typeof useTranslations<'home'>>
   stats: DashboardStats | null
   approverMetrics: ApproverDashboardMetrics | null
+  myTraining: MyTrainingSummary | null
 }) {
   const greeting = getGreeting(name, t)
   const formattedBilling = formatDate(nextBilling, locale)
@@ -1395,7 +1408,7 @@ function HomeHero({
     en: phase === 'initial' ? 'Initial certification preparation' : 'Annual operation',
     zh: phase === 'initial' ? '初次认证准备' : '年度持续运行'
   })
-  const primaryAction = getPrimaryAction(role, locale, stats, approverMetrics)
+  const priorityActions = getHomePriorityActions(role, locale, stats, approverMetrics, myTraining)
   const blockerCount = (stats?.overdueTaskCount ?? 0) + (approverMetrics?.dueSoonCount ?? 0)
   const blockerText = blockerCount > 0
     ? localized(locale, {
@@ -1410,9 +1423,8 @@ function HomeHero({
       })
 
   return (
-    <section className="home-theme-card overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-white">
+    <section className="home-theme-card overflow-hidden border-y border-indigo-100 bg-surface">
       <div className="relative px-6 py-8 sm:px-8">
-        <div className="absolute right-6 top-6 hidden h-28 w-28 rounded-full bg-indigo-100 blur-3xl sm:block" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3 text-xs text-indigo-600">
@@ -1430,21 +1442,38 @@ function HomeHero({
               {greeting}。{t('hero.subtitle', { organization: organizationName })}
             </p>
           </div>
-          <div className="flex min-w-[260px] flex-col gap-3 rounded-2xl border border-indigo-100 bg-surface/80 p-4 text-sm shadow-sm backdrop-blur">
-            <div>
-              <p className="text-xs text-text-muted">{localized(locale, { ja: '最初に見ること', en: 'First thing to check', zh: '优先确认' })}</p>
-              <p className="font-medium text-text-primary">{primaryAction.helper}</p>
+          <div
+            data-testid="home-priority-actions"
+            className="min-w-0 rounded-2xl border border-indigo-100 bg-surface/90 p-4 text-sm shadow-sm backdrop-blur lg:w-[440px]"
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-text-primary">
+                {localized(locale, { ja: '次に対応すること', en: 'Next actions', zh: '下一步处理' })}
+              </p>
+              <span className="text-[11px] text-text-muted">{blockerText}</span>
             </div>
-            <div className="flex items-center justify-between gap-4 text-xs text-text-muted">
-              <span>{blockerText}</span>
-              <span>{t('hero.nextBilling')}: {formattedBilling}</span>
+            <div className="divide-y divide-border">
+              {priorityActions.map((action, index) => (
+                <Link
+                  key={action.id}
+                  href={action.href}
+                  data-testid={`home-priority-action-${action.id}`}
+                  className="group flex min-h-14 items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                >
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${index === 0 ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}`}>
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-text-primary">{action.label}</span>
+                    <span className="block truncate text-xs text-text-muted sm:whitespace-normal">{action.helper}</span>
+                  </span>
+                  <span aria-hidden className="text-indigo-500 transition group-hover:translate-x-0.5">{'>'}</span>
+                </Link>
+              ))}
             </div>
-            <Link
-              href={primaryAction.href}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-            >
-              {primaryAction.label}
-            </Link>
+            <p className="mt-3 border-t border-border pt-2 text-[11px] text-text-muted">
+              {t('hero.nextBilling')}: {formattedBilling}
+            </p>
           </div>
         </div>
       </div>

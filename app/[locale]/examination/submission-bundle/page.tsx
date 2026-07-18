@@ -63,6 +63,76 @@ const ROLE_LABELS: Record<string, string> = {
   auditor: '内部監査員',
 }
 
+const PHASE_LABELS: Record<string, [string, string, string]> = {
+  initial: ['初回登録準備', 'Initial certification preparation', '初次认证准备'],
+  surveillance: ['継続運用', 'Ongoing certification operation', '持续认证运行'],
+}
+
+function formatPhaseLabel(phase: string | null, locale: string) {
+  if (!phase) return '-'
+  const labels = PHASE_LABELS[phase]
+  if (!labels) return phase.replaceAll('_', ' ')
+  return locale.startsWith('zh') ? labels[2] : locale.startsWith('en') ? labels[1] : labels[0]
+}
+
+const EVIDENCE_LABELS: Record<string, [string, string, string]> = {
+  physical_locations: ['拠点', 'Locations', '地点'],
+  it_systems: ['対象システム', 'In-scope systems', '范围内系统'],
+  departments: ['対象部門', 'Departments', '部门'],
+  processes: ['対象業務', 'Processes', '业务流程'],
+  exclusions: ['除外事項', 'Exclusions', '排除项'],
+  required_roles: ['必要な役割', 'Required roles', '必要角色'],
+  assigned_required_roles: ['担当者設定済み', 'Assigned required roles', '已分配必要角色'],
+  documents: ['登録文書', 'Documents', '已登记文件'],
+  approved: ['承認済み', 'Approved', '已批准'],
+  draft_or_review: ['作成・確認中', 'Draft or in review', '草稿或评审中'],
+  assets: ['情報資産', 'Information assets', '信息资产'],
+  risks: ['リスク', 'Risks', '风险'],
+  treatments: ['リスク対応', 'Risk treatments', '风险处置'],
+  completed_treatments: ['完了した対応', 'Completed treatments', '已完成处置'],
+  latest_version: ['最新の版', 'Latest version', '最新版本'],
+  controls: ['管理策', 'Controls', '控制措施'],
+  approved_controls: ['承認済み管理策', 'Approved controls', '已批准控制措施'],
+  tasks: ['タスク', 'Tasks', '任务'],
+  parent_tasks: ['主要タスク', 'Main tasks', '主要任务'],
+  subtasks: ['サブタスク', 'Subtasks', '子任务'],
+  completed_tasks: ['完了タスク', 'Completed tasks', '已完成任务'],
+  open_tasks: ['対応中タスク', 'Open tasks', '进行中任务'],
+  average_progress: ['平均進捗', 'Average progress', '平均进度'],
+  education_plans: ['教育計画', 'Education plans', '教育计划'],
+  education_records: ['受講記録', 'Training records', '培训记录'],
+  passed_records: ['完了・合格記録', 'Completed or passed records', '完成或合格记录'],
+  materials: ['教材', 'Materials', '教材'],
+  audit_plans: ['内部監査計画', 'Internal audit plans', '内部审核计划'],
+  scheduled_or_later: ['予定化済み', 'Scheduled or later', '已计划或以后'],
+  audit_reports: ['内部監査報告書', 'Internal audit reports', '内部审核报告'],
+  nonconformities: ['不適合', 'Nonconformities', '不符合项'],
+  resolved_or_later: ['解決済み', 'Resolved or later', '已解决或以后'],
+  corrective_actions: ['是正処置', 'Corrective actions', '纠正措施'],
+  completed_or_verified: ['完了・検証済み', 'Completed or verified', '已完成或验证'],
+  follow_ups: ['フォローアップ', 'Follow-ups', '跟进记录'],
+  management_reviews: ['マネジメントレビュー', 'Management reviews', '管理评审'],
+  completed: ['完了', 'Completed', '已完成'],
+  review_items: ['確認項目', 'Review items', '评审项目'],
+  review_actions: ['決定後の対応', 'Review actions', '评审行动'],
+  accept_treatments: ['受容を選択したリスク', 'Risks selected for acceptance', '选择接受的风险'],
+  approved_acceptances: ['承認済み受容', 'Approved acceptances', '已批准接受'],
+  review_due_dates: ['再確認日設定済み', 'Review dates set', '已设置复查日期'],
+  audit_evidence: ['監査証跡ファイル', 'Audit evidence files', '审核证据文件']
+}
+
+function formatEvidenceEntry(entry: string, locale: string) {
+  const separator = entry.indexOf(':')
+  if (separator < 0) return entry
+  const key = entry.slice(0, separator)
+  const value = entry.slice(separator + 1)
+  const labels = EVIDENCE_LABELS[key]
+  const label = locale.startsWith('zh') ? labels?.[2] : locale.startsWith('en') ? labels?.[1] : labels?.[0]
+  if (!label) return entry.replaceAll('_', ' ')
+  const suffix = key === 'average_progress' ? '%' : ''
+  return `${label} ${value}${suffix}`
+}
+
 export default function SubmissionBundlePage(
   props: {
     params: Promise<{ locale: string }>
@@ -326,19 +396,19 @@ export default function SubmissionBundlePage(
           <div>
             <h1 className="text-2xl font-semibold text-text-primary">{t('title')}</h1>
             <p className="mt-1 text-sm text-text-secondary">{t('description')}</p>
-            <p
-              className="mt-3 max-w-3xl rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950"
-              data-testid="submission-bundle-review-notice"
+            <div
+              className="mt-3 max-w-3xl border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+              data-testid="submission-bundle-safety-boundary"
             >
-              <span className="font-semibold">{t('reviewNotice.title')}</span>
-              {' '}
-              {t('reviewNotice.body')}
-            </p>
+              <p className="font-semibold">{t('safetyBoundary.title')}</p>
+              <p className="mt-1">{t('safetyBoundary.body')}</p>
+              <p className="mt-2 text-xs text-amber-900">{t('safetyBoundary.demoReset')}</p>
+            </div>
             {bundle && (
               <p className="mt-3 text-sm text-text-muted">
                 {t('organizationLine', {
                   name: bundle.organization.name,
-                  phase: bundle.organization.ismsPhase ?? '-',
+                  phase: formatPhaseLabel(bundle.organization.ismsPhase, locale),
                   role: currentRoleLabel,
                 })}
               </p>
@@ -379,15 +449,6 @@ export default function SubmissionBundlePage(
             {error}
           </div>
         )}
-      </div>
-
-      <div
-        data-testid="submission-bundle-safety-boundary"
-        className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
-      >
-        <p className="font-semibold">{t('safetyBoundary.title')}</p>
-        <p className="mt-1">{t('safetyBoundary.body')}</p>
-        <p className="mt-2 text-amber-900">{t('safetyBoundary.demoReset')}</p>
       </div>
 
       {bundle && (
@@ -471,12 +532,7 @@ export default function SubmissionBundlePage(
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold text-text-primary">{item.label}</h2>
-                    <p className="mt-1 text-sm text-text-muted">
-                      {t('items.countAndSources', {
-                        count: item.count,
-                        sources: item.sources.join(', '),
-                      })}
-                    </p>
+                    <p className="mt-1 text-sm text-text-muted">{t('items.count', { count: item.count })}</p>
                   </div>
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusClass(item.status)}`}>
                     {t(`items.status.${item.status}`)}
@@ -489,7 +545,7 @@ export default function SubmissionBundlePage(
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.evidence.length > 0 ? item.evidence.map((entry) => (
                         <span key={`${item.key}-${entry}`} className="rounded-md bg-surface-elevated px-2 py-1 text-xs text-text-secondary">
-                          {entry}
+                          {formatEvidenceEntry(entry, locale)}
                         </span>
                       )) : (
                         <span className="text-sm text-text-muted">{t('items.none')}</span>

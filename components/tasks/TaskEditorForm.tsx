@@ -19,6 +19,7 @@ import {
 import { RiskService, type RiskWithRelations } from "@/lib/services/risk";
 import { canCreateTask, canEditTask } from "@/lib/constants/taskPermissions";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { buildTaskEditorPayload } from "@/lib/utils/taskEditorPayload";
 
 export type TaskEditorMode = "create" | "edit";
 
@@ -74,6 +75,9 @@ export function TaskEditorForm({
   const [formData, setFormData] = useState<TaskFormState>(() =>
     createInitialState(),
   );
+  const [initialFormData, setInitialFormData] = useState<TaskFormState>(() =>
+    createInitialState(),
+  );
   const [categories, setCategories] = useState<TaskCategory[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [documents, setDocuments] = useState<DocumentWithFolder[]>([]);
@@ -87,7 +91,7 @@ export function TaskEditorForm({
   const [permissionDenied, setPermissionDenied] = useState(false);
 
   const setFormFromTask = useCallback((task: TaskWithRelations) => {
-    setFormData({
+    const nextFormData: TaskFormState = {
       title: task.title,
       description: task.description ?? "",
       categoryId: task.category_id ?? "",
@@ -99,7 +103,9 @@ export function TaskEditorForm({
       progress: task.progress ?? 0,
       relatedDocumentId: task.related_document_id ?? "",
       relatedRiskId: task.related_risk_id ?? "",
-    });
+    };
+    setFormData(nextFormData);
+    setInitialFormData(nextFormData);
   }, []);
 
   const loadResources = useCallback(async () => {
@@ -125,38 +131,46 @@ export function TaskEditorForm({
       }
 
       setPermissionDenied(false);
-      setOrganizationId(profile.organization_id);
       setProfileId(profile.id);
 
+      let existingTask: TaskWithRelations | null = null;
+      if (mode === "edit" && taskId) {
+        existingTask = await taskService.getTaskById(taskId);
+        if (!existingTask) {
+          throw new Error("task_not_found");
+        }
+      }
+      const targetOrganizationId =
+        existingTask?.organization_id ?? profile.organization_id;
+      setOrganizationId(targetOrganizationId);
+
       let fetchedCategories = await taskService.getTaskCategories(
-        profile.organization_id,
+        targetOrganizationId,
       );
       if (fetchedCategories.length === 0) {
-        await taskService.createDefaultTaskCategories(profile.organization_id);
+        await taskService.createDefaultTaskCategories(targetOrganizationId);
         fetchedCategories = await taskService.getTaskCategories(
-          profile.organization_id,
+          targetOrganizationId,
         );
       }
       setCategories(fetchedCategories);
 
       const [orgUsers, orgDocuments, orgRisks] = await Promise.all([
-        userService.getOrganizationUsers(profile.organization_id),
-        documentService.getDocuments(profile.organization_id),
-        riskService.getRisks(profile.organization_id),
+        userService.getOrganizationUsers(targetOrganizationId),
+        documentService.getDocuments(targetOrganizationId),
+        riskService.getRisks(targetOrganizationId),
       ]);
 
       setUsers(orgUsers);
       setDocuments(orgDocuments);
       setRisks(orgRisks);
 
-      if (mode === "edit" && taskId) {
-        const existingTask = await taskService.getTaskById(taskId);
-        if (!existingTask) {
-          throw new Error("task_not_found");
-        }
+      if (existingTask) {
         setFormFromTask(existingTask);
       } else {
-        setFormData(createInitialState());
+        const initialState = createInitialState();
+        setFormData(initialState);
+        setInitialFormData(initialState);
       }
     } catch (err) {
       console.error("[TaskEditorForm] Failed to load form resources", err);
@@ -205,6 +219,7 @@ export function TaskEditorForm({
     setSaving(true);
     try {
       if (mode === "create") {
+        const taskPayload = buildTaskEditorPayload("create", formData);
         if (!organizationId) {
           throw new Error("organization_missing");
         }
@@ -215,20 +230,8 @@ export function TaskEditorForm({
         }
 
         const created = await taskService.createTask({
-          title: formData.title,
-          description: formData.description || undefined,
-          category_id: formData.categoryId || undefined,
-          assignee_id: formData.assigneeId || undefined,
+          ...taskPayload,
           reporter_id: reporterId,
-          status: formData.status,
-          priority: formData.priority,
-          due_date: formData.dueDate || undefined,
-          estimated_hours: formData.estimatedHours
-            ? parseFloat(formData.estimatedHours)
-            : undefined,
-          progress: formData.progress,
-          related_document_id: formData.relatedDocumentId || undefined,
-          related_risk_id: formData.relatedRiskId || undefined,
           organization_id: organizationId,
         });
 
@@ -238,21 +241,12 @@ export function TaskEditorForm({
           router.push(`/${locale}/tasks`);
         }
       } else if (taskId) {
-        await taskService.updateTask(taskId, {
-          title: formData.title,
-          description: formData.description || undefined,
-          category_id: formData.categoryId || undefined,
-          assignee_id: formData.assigneeId || undefined,
-          status: formData.status,
-          priority: formData.priority,
-          due_date: formData.dueDate || undefined,
-          estimated_hours: formData.estimatedHours
-            ? parseFloat(formData.estimatedHours)
-            : undefined,
-          progress: formData.progress,
-          related_document_id: formData.relatedDocumentId || undefined,
-          related_risk_id: formData.relatedRiskId || undefined,
-        });
+        const taskPayload = buildTaskEditorPayload(
+          "edit",
+          formData,
+          initialFormData,
+        );
+        await taskService.updateTask(taskId, taskPayload);
 
         if (onSuccess) {
           onSuccess(taskId);
@@ -351,6 +345,7 @@ export function TaskEditorForm({
               {t("form.category")}
             </label>
             <select
+              data-testid="task-category-select"
               value={formData.categoryId}
               onChange={(event) =>
                 handleChange("categoryId", event.target.value)
@@ -454,6 +449,7 @@ export function TaskEditorForm({
             <input
               type="number"
               step="0.5"
+              data-testid="task-estimated-hours-input"
               value={formData.estimatedHours}
               onChange={(event) =>
                 handleChange("estimatedHours", event.target.value)
@@ -491,6 +487,7 @@ export function TaskEditorForm({
               {t("form.relatedDocument")}
             </label>
             <select
+              data-testid="task-related-document-select"
               value={formData.relatedDocumentId}
               onChange={(event) =>
                 handleChange("relatedDocumentId", event.target.value)
@@ -511,6 +508,7 @@ export function TaskEditorForm({
               {t("form.relatedRisk")}
             </label>
             <select
+              data-testid="task-related-risk-select"
               value={formData.relatedRiskId}
               onChange={(event) =>
                 handleChange("relatedRiskId", event.target.value)

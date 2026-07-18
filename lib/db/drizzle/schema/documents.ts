@@ -28,6 +28,16 @@ export type DocumentTemplateCategory = (typeof documentTemplateCategoryValues)[n
 export const documentApprovalStatusValues = ['pending', 'approved', 'rejected', 'skipped'] as const
 export type DocumentApprovalStatus = (typeof documentApprovalStatusValues)[number]
 
+export const documentStorageOperationKindValues = ['upload', 'delete'] as const
+export type DocumentStorageOperationKind = (typeof documentStorageOperationKindValues)[number]
+export const documentStorageOperationStatusValues = [
+  'pending',
+  'completed',
+  'cleanup_pending',
+  'cleaned',
+] as const
+export type DocumentStorageOperationStatus = (typeof documentStorageOperationStatusValues)[number]
+
 // =========================================
 // Document Folders Table
 // =========================================
@@ -129,11 +139,57 @@ export const documentVersions = sqliteTable(
   (table) => [
     index('idx_document_versions_document').on(table.documentId),
     index('idx_document_versions_created_at').on(table.createdAt),
+    uniqueIndex('idx_document_versions_document_number_unique').on(
+      table.documentId,
+      table.versionNumber
+    ),
   ]
 )
 
 export type DocumentVersion = typeof documentVersions.$inferSelect
 export type DocumentVersionInsert = typeof documentVersions.$inferInsert
+
+// =========================================
+// Durable document storage operations
+// =========================================
+export const documentStorageOperations = sqliteTable(
+  'document_storage_operations',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    documentId: text('document_id').notNull(),
+    operationKey: text('operation_key').notNull(),
+    kind: text('kind').notNull(),
+    operationMode: text('operation_mode').notNull().default('normal'),
+    status: text('status').notNull(),
+    requestFingerprint: text('request_fingerprint'),
+    filePaths: text('file_paths').notNull().default('[]'),
+    versionId: text('version_id'),
+    createdBy: text('created_by').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    leaseToken: text('lease_token'),
+    leaseExpiresAt: text('lease_expires_at'),
+    createdAt: text('created_at').default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    updatedAt: text('updated_at').default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+  },
+  (table) => [
+    uniqueIndex('idx_document_storage_operations_org_key_unique').on(
+      table.organizationId,
+      table.operationKey
+    ),
+    index('idx_document_storage_operations_org_status').on(
+      table.organizationId,
+      table.status
+    ),
+    index('idx_document_storage_operations_document').on(table.documentId),
+  ]
+)
+
+export type DocumentStorageOperation = typeof documentStorageOperations.$inferSelect
+export type DocumentStorageOperationInsert = typeof documentStorageOperations.$inferInsert
 
 // =========================================
 // Document Templates Table

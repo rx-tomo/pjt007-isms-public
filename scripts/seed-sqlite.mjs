@@ -15,8 +15,12 @@ import crypto from 'node:crypto';
 // ─────────────────────────────────────────────
 // 接続
 // ─────────────────────────────────────────────
+const sqlitePath = process.env.SQLITE_DB_PATH ?? 'local.db';
+const databaseUrl = process.env.TURSO_DATABASE_URL
+  ?? (sqlitePath.startsWith('file:') ? sqlitePath : `file:${sqlitePath}`);
+
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL ?? 'file:local.db',
+  url: databaseUrl,
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
@@ -760,7 +764,7 @@ async function main() {
   console.log(' Riscala AI for ISMS シードスクリプト (SQLite/libSQL)');
   console.log(' モデル企業: Dev Manufacturing 株式会社 + Dev Solutions 株式会社');
   console.log('========================================');
-  console.log(`接続先: ${process.env.TURSO_DATABASE_URL ?? 'file:local.db'}`);
+  console.log(`接続先: ${databaseUrl}`);
   console.log(`実行日時: ${now}`);
 
   let n;

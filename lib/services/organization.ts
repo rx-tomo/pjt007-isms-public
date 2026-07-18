@@ -8,7 +8,12 @@
  * The repository is obtained through the DI container, allowing seamless
  * switching between different database backends via DI container.
  */
-import { getOrganizationRepository, getAuditLogRepository, getAuthProvider } from '@/lib/container'
+import {
+  getOrganizationRepository,
+  getAuditLogRepository,
+  getAuthProvider,
+  getUserRepository,
+} from '@/lib/container'
 import type { IOrganizationRepository } from '@/lib/db/repositories/interfaces/IOrganizationRepository'
 import type { IAuditLogRepository } from '@/lib/db/repositories/interfaces/IAuditLogRepository'
 import type { IAuthProvider } from '@/lib/auth/interfaces/IAuthProvider'
@@ -331,7 +336,16 @@ export class OrganizationService {
    */
   async getOrganizationDepartments(organizationId: string): Promise<DepartmentRow[]> {
     if (typeof window !== 'undefined') {
-      return this.fetchSettingsApi(organizationId, 'departments')
+      const response = await fetch(`/api/organizations/${organizationId}/departments`, {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+      })
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error(errorBody.error ?? `API error ${response.status}`)
+      }
+      return response.json()
     }
     const repo = await this.getRepository()
     return repo.getDepartments(organizationId)
@@ -697,36 +711,44 @@ export class OrganizationService {
   /**
    * 組織メンバー一覧を取得（CISO選択用）
    */
-  async getOrganizationMembers(organizationId: string): Promise<{ id: string; full_name: string | null; email: string; role: string; is_ciso: boolean; primary_department_id?: string | null }[]> {
+  async getOrganizationMembers(organizationId: string): Promise<{
+    id: string
+    full_name: string | null
+    email: string
+    role: string
+    is_active: boolean | null
+    is_ciso: boolean
+    primary_department_id?: string | null
+  }[]> {
     if (typeof window !== 'undefined') {
       return this.fetchStructureApi(organizationId, 'members')
     }
-    const { getDb } = await import('@/lib/db/drizzle/client')
-    const { userProfiles } = await import('@/lib/db/drizzle/schema')
-    const { eq, asc } = await import('drizzle-orm')
-    const db = getDb()
-
-    const rows = await db
-      .select({
-        id: userProfiles.id,
-        full_name: userProfiles.fullName,
-        email: userProfiles.email,
-        role: userProfiles.role,
-        is_ciso: userProfiles.isCiso,
-        primary_department_id: userProfiles.primaryDepartmentId,
-      })
+    const repository = await getUserRepository()
+    const members = await repository.getOrganizationUsers(organizationId)
+    if (members.length === 0) return []
+    const [{ getDb }, { userProfiles }, { inArray }] = await Promise.all([
+      import('@/lib/db/drizzle/client'),
+      import('@/lib/db/drizzle/schema'),
+      import('drizzle-orm'),
+    ])
+    const cisoRows = await getDb()
+      .select({ id: userProfiles.id, isCiso: userProfiles.isCiso })
       .from(userProfiles)
-      .where(eq(userProfiles.organizationId, organizationId))
-      .orderBy(asc(userProfiles.fullName))
-
-    return rows.map(r => ({
-      id: r.id,
-      full_name: r.full_name,
-      email: r.email,
-      role: r.role,
-      is_ciso: r.is_ciso ?? false,
-      primary_department_id: r.primary_department_id,
-    }))
+      .where(inArray(userProfiles.id, members.map(member => member.id)))
+    const cisoByUserId = new Map(cisoRows.map(row => [row.id, row.isCiso ?? false]))
+    return members
+      .map(member => ({
+        id: member.id,
+        full_name: member.full_name,
+        email: member.email,
+        role: member.role,
+        is_active: member.is_active,
+        is_ciso: cisoByUserId.get(member.id) ?? false,
+        primary_department_id: member.primary_department_id,
+      }))
+      .sort((left, right) => (
+        (left.full_name ?? left.email).localeCompare(right.full_name ?? right.email)
+      ))
   }
 
   /**

@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '@/lib/db/drizzle/client';
 import { userPreferences } from '@/lib/db/drizzle/schema';
 import { handleRouteError } from '@/lib/errors/handleRouteError';
-import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg';
+import { resolveActiveProfileUser } from '@/lib/server/auth/resolveActiveProfileUser';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +17,7 @@ function isAppTheme(value: unknown): value is AppTheme {
 }
 
 export async function GET(request: NextRequest) {
-  const caller = await resolveCallerOrg(request);
+  const caller = await resolveActiveProfileUser(request);
   if (caller.error) return NextResponse.json(defaultPreferences);
 
   try {
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const caller = await resolveCallerOrg(request);
+  const caller = await resolveActiveProfileUser(request);
   if (caller.error) return caller.error;
 
   try {

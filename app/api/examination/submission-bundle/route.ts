@@ -5,6 +5,7 @@ import path from 'node:path'
 import { and, desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/drizzle/client'
 import { toCsv } from '@/lib/utils/exporters/csv'
+import { resolvePuppeteerExecutablePath } from '@/lib/utils/exporters/documentExport'
 import { createZipBuffer } from '@/lib/utils/exporters/zip'
 import {
   auditLogs,
@@ -89,8 +90,8 @@ type SubmissionBundle = {
 }
 
 const SUBMISSION_BUNDLE_REVIEW_NOTICE = {
-  title: 'Audit preparation support notice',
-  body: 'This package organizes evidence for audit preparation and internal review. It does not guarantee ISO 27001 certification or audit acceptance, but it helps teams review required information and open gaps.',
+  title: '審査前の社内確認に関する注意',
+  body: 'この資料は審査前の社内確認用です。審査機関への送信、ISO 27001認証の取得、審査での受理を保証するものではありません。ISMS管理者と内部監査責任者が内容を確認し、提出方法を組織内で決定してください。',
 }
 
 const escapeHtml = (value: string) =>
@@ -170,14 +171,37 @@ function buildBundlePdfLines(bundle: SubmissionBundle): string[] {
 function buildBundlePdfHtml(bundle: SubmissionBundle) {
   const lines = buildBundlePdfLines(bundle)
   const phaseStory = bundle.organization.ismsPhase === 'surveillance'
-    ? 'Certified organization annual operation'
-    : 'Initial certification preparation'
+    ? '認証取得後の継続運用'
+    : '初回登録に向けた準備'
   const bundleType = bundle.organization.ismsPhase === 'surveillance'
-    ? 'Annual operation evidence package'
-    : 'Initial certification preparation package'
+    ? '継続運用の確認資料'
+    : '初回登録準備の確認資料'
   const latestSoa = bundle.latestSoaVersion
-    ? `v${bundle.latestSoaVersion.versionNumber} / controls ${bundle.latestSoaVersion.controlCount} / approved ${bundle.latestSoaVersion.approvedControlCount}`
-    : 'not published'
+    ? `第${bundle.latestSoaVersion.versionNumber}版 / 管理策 ${bundle.latestSoaVersion.controlCount}件 / 承認済み ${bundle.latestSoaVersion.approvedControlCount}件`
+    : '未発行'
+  const statusLabel = (status: BundleItemStatus) => status === 'ready' ? '準備済み' : status === 'needs_review' ? '要確認' : '不足'
+  const evidenceLabels: Record<string, string> = {
+    physical_locations: '拠点', it_systems: '対象システム', departments: '対象部門', processes: '対象業務', exclusions: '除外事項',
+    required_roles: '必要な役割', assigned_required_roles: '担当者設定済み', documents: '登録文書', approved: '承認済み',
+    draft_or_review: '作成・確認中', assets: '情報資産', risks: 'リスク', treatments: 'リスク対応', completed_treatments: '完了した対応',
+    latest_version: '最新の版', controls: '管理策', approved_controls: '承認済み管理策', tasks: 'タスク', parent_tasks: '主要タスク',
+    subtasks: 'サブタスク', completed_tasks: '完了タスク', open_tasks: '対応中タスク', average_progress: '平均進捗',
+    education_plans: '教育計画', education_records: '受講記録', passed_records: '完了・合格記録', materials: '教材',
+    audit_plans: '内部監査計画', scheduled_or_later: '予定化済み', audit_reports: '内部監査報告書', nonconformities: '不適合',
+    resolved_or_later: '解決済み', corrective_actions: '是正処置', completed_or_verified: '完了・検証済み', follow_ups: 'フォローアップ',
+    management_reviews: 'マネジメントレビュー', completed: '完了', review_items: '確認項目', review_actions: '決定後の対応',
+    accept_treatments: '受容を選択したリスク', approved_acceptances: '承認済み受容', review_due_dates: '再確認日設定済み', audit_evidence: '監査証跡ファイル',
+  }
+  const evidenceLabel = (entry: string) => {
+    const separator = entry.indexOf(':')
+    if (separator < 0) return entry
+    const key = entry.slice(0, separator)
+    const value = entry.slice(separator + 1)
+    return `${evidenceLabels[key] ?? key.replaceAll('_', ' ')} ${value}${key === 'average_progress' ? '%' : ''}`
+  }
+  const certificationStatusLabels: Record<string, string> = {
+    planning: '準備中', in_progress: '認証取得手続中', certified: '認証取得済み',
+  }
   const gapActions = bundle.items.flatMap((item) =>
     item.gapActions.map((action) => ({
       key: item.key,
@@ -189,23 +213,23 @@ function buildBundlePdfHtml(bundle: SubmissionBundle) {
   )
   const evidenceRows = bundle.items.map((item) => `
     <tr>
-      <td><strong>${escapeHtml(item.key)}</strong><br><span>${escapeHtml(item.label)}</span></td>
-      <td><span class="status ${item.status}">${escapeHtml(item.status)}</span></td>
+      <td><strong>${escapeHtml(item.label)}</strong></td>
+      <td><span class="status ${item.status}">${statusLabel(item.status)}</span></td>
       <td class="count">${item.count}</td>
-      <td>${escapeHtml(item.sources.join(', '))}</td>
-      <td>${escapeHtml(item.evidence.length > 0 ? item.evidence.join('; ') : '-')}</td>
+      <td>${item.sources.length}種類</td>
+      <td>${escapeHtml(item.evidence.length > 0 ? item.evidence.map(evidenceLabel).join(' / ') : '-')}</td>
     </tr>
   `).join('')
   const gapRows = gapActions.length > 0
     ? gapActions.map((gap) => `
       <tr>
-        <td><strong>${escapeHtml(gap.key)}</strong><br><span>${escapeHtml(gap.label)}</span></td>
+        <td><strong>${escapeHtml(gap.label)}</strong></td>
         <td>${escapeHtml(gap.reason)}</td>
         <td>${escapeHtml(gap.nextAction)}</td>
         <td>${escapeHtml(gap.route)}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="4">No open gaps</td></tr>'
+    : '<tr><td colspan="4">不足・確認事項はありません</td></tr>'
   const hiddenText = lines.map((line) => `<span>${escapeHtml(line)}</span>`).join('\n')
 
   return `<!doctype html>
@@ -367,77 +391,77 @@ function buildBundlePdfHtml(bundle: SubmissionBundle) {
 </head>
 <body>
   <div class="cover">
-    <div class="eyebrow">Riscala AI for ISMS - Audit Preparation Package</div>
-    <h1>審査準備パッケージサマリー</h1>
+    <div class="eyebrow">Riscala AI for ISMS</div>
+    <h1>審査前の確認資料</h1>
     <p class="subtitle">審査準備と内部レビューのために、証跡、判断根拠、不足事項を読みやすく整理した確認資料です。</p>
   </div>
 
   <div class="meta-grid">
-    <div class="meta-card"><div class="label">Organization</div><div class="value">${escapeHtml(bundle.organization.name)}</div></div>
-    <div class="meta-card"><div class="label">Generated</div><div class="value">${escapeHtml(bundle.generatedAt)}</div></div>
-    <div class="meta-card"><div class="label">Bundle type</div><div class="value">${escapeHtml(bundleType)}</div></div>
-    <div class="meta-card"><div class="label">Phase story</div><div class="value">${escapeHtml(phaseStory)}</div></div>
-    <div class="meta-card"><div class="label">Ready items</div><div class="value">${bundle.readiness.readyItems} / ${bundle.readiness.totalItems}</div></div>
-    <div class="meta-card"><div class="label">Latest applicability decision</div><div class="value">${escapeHtml(latestSoa)}</div></div>
+    <div class="meta-card"><div class="label">組織</div><div class="value">${escapeHtml(bundle.organization.name)}</div></div>
+    <div class="meta-card"><div class="label">作成日時</div><div class="value">${escapeHtml(bundle.generatedAt)}</div></div>
+    <div class="meta-card"><div class="label">資料区分</div><div class="value">${escapeHtml(bundleType)}</div></div>
+    <div class="meta-card"><div class="label">運用段階</div><div class="value">${escapeHtml(phaseStory)}</div></div>
+    <div class="meta-card"><div class="label">準備済み項目</div><div class="value">${bundle.readiness.readyItems} / ${bundle.readiness.totalItems}</div></div>
+    <div class="meta-card"><div class="label">最新の適用管理策判断</div><div class="value">${escapeHtml(latestSoa)}</div></div>
   </div>
 
   <div class="notice">
-    <strong>Audit preparation notice / 審査準備上の注意</strong><br>
+    <strong>${escapeHtml(bundle.reviewNotice.title)}</strong><br>
     ${escapeHtml(bundle.reviewNotice.body)}
   </div>
 
   <section>
-    <h2>Document profile / 文書プロファイル</h2>
+    <h2>資料の用途</h2>
     <table>
       <tbody>
-        <tr><th>Intended use</th><td>Audit preparation and internal review support</td></tr>
-        <tr><th>Export package</th><td>manifest JSON, summary CSV, items CSV, gaps CSV, summary PDF</td></tr>
-        <tr><th>Decision basis</th><td>Readiness status, evidence checklist, and open gap review</td></tr>
-        <tr><th>ISMS phase</th><td>${escapeHtml(bundle.organization.ismsPhase ?? '-')}</td></tr>
-        <tr><th>Certification status</th><td>${escapeHtml(bundle.organization.isoCertificationStatus ?? '-')}</td></tr>
+        <tr><th>利用目的</th><td>審査前の社内確認と不足事項の整理</td></tr>
+        <tr><th>同梱内容</th><td>確認結果、項目一覧、不足事項、機械確認用JSON・CSV</td></tr>
+        <tr><th>判断根拠</th><td>準備状況、確認した記録、不足事項と次の対応</td></tr>
+        <tr><th>運用段階</th><td>${escapeHtml(phaseStory)}</td></tr>
+        <tr><th>認証状況</th><td>${escapeHtml(bundle.organization.isoCertificationStatus ? certificationStatusLabels[bundle.organization.isoCertificationStatus] ?? bundle.organization.isoCertificationStatus : '未設定')}</td></tr>
       </tbody>
     </table>
   </section>
 
   <section>
-    <h2>Readiness summary / 準備状況サマリー</h2>
+    <h2>資料の確認状況</h2>
     <table>
       <tbody>
-        <tr><th>Status</th><td>${escapeHtml(bundle.readiness.status)}</td></tr>
-        <tr><th>Gap item keys</th><td>${escapeHtml(bundle.readiness.gapItems.length > 0 ? bundle.readiness.gapItems.join(', ') : 'none')}</td></tr>
+        <tr><th>全体状況</th><td>${bundle.readiness.status === 'ready' ? '社内確認を開始できます' : '社内確認の前に対応する項目があります'}</td></tr>
+        <tr><th>要対応項目</th><td>${bundle.readiness.gapItems.length > 0 ? `${bundle.readiness.gapItems.length}件` : 'なし'}</td></tr>
       </tbody>
     </table>
   </section>
 
   <section>
-    <h2>Evidence checklist / 証跡チェックリスト</h2>
+    <h2>確認項目と記録</h2>
     <table>
       <thead>
-        <tr><th>Item</th><th>Status</th><th>Count</th><th>Sources</th><th>Evidence</th></tr>
+        <tr><th>確認項目</th><th>状況</th><th>件数</th><th>登録元</th><th>確認した記録</th></tr>
       </thead>
       <tbody>${evidenceRows}</tbody>
     </table>
   </section>
 
   <section>
-    <h2>Gap review / 不足確認</h2>
+    <h2>不足・確認事項</h2>
     <table>
       <thead>
-        <tr><th>Item</th><th>Reason</th><th>Next action</th><th>Route</th></tr>
+        <tr><th>確認項目</th><th>不足理由</th><th>次に行うこと</th><th>関連画面</th></tr>
       </thead>
       <tbody>${gapRows}</tbody>
     </table>
   </section>
 
   <section>
-    <h2>Reviewer sign-off / 確認欄</h2>
+    <h2>社内確認欄</h2>
     <div class="signoff">
       <div class="signoff-grid">
-        <div><strong>Prepared by</strong><div class="line">system_operator</div></div>
-        <div><strong>Reviewed by</strong><div class="line"></div></div>
-        <div><strong>Review date</strong><div class="line"></div></div>
-        <div><strong>Decision</strong><div class="line">Ready for audit preparation review / Needs follow-up</div></div>
-        <div class="notes"><strong>Notes</strong><div class="line notes"></div></div>
+        <div><strong>作成者</strong><div class="line"></div></div>
+        <div><strong>確認者</strong><div class="line"></div></div>
+        <div><strong>確認日</strong><div class="line"></div></div>
+        <div><strong>確認結果</strong><div class="line">審査準備へ進む / 追加対応が必要</div></div>
+        <div class="notes"><strong>確認メモ</strong><div class="line notes"></div></div>
       </div>
     </div>
   </section>
@@ -449,6 +473,10 @@ function buildBundlePdfHtml(bundle: SubmissionBundle) {
 
 async function renderBundlePdfWithChromium(bundle: SubmissionBundle): Promise<Buffer> {
   const puppeteer = await import('puppeteer')
+  const executablePath = await resolvePuppeteerExecutablePath()
+  if (!executablePath) {
+    throw new Error('No Chromium executable is available for audit preparation PDF rendering')
+  }
   const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'isms-submission-pdf-'))
   const cacheDir = path.join(userDataDir, 'cache')
   const crashDumpsDir = path.join(userDataDir, 'crash-dumps')
@@ -460,6 +488,9 @@ async function renderBundlePdfWithChromium(bundle: SubmissionBundle): Promise<Bu
     browser = await puppeteer.default.launch({
       headless: true,
       userDataDir,
+      executablePath,
+      timeout: 10_000,
+      protocolTimeout: 30_000,
       env: {
         ...process.env,
         HOME: userDataDir,
@@ -533,7 +564,7 @@ const BUNDLE_ITEM_REMEDIATION: Record<string, { nextAction: string; route: strin
     route: '/settings/structure',
   },
   approved_documents: {
-    nextAction: '提出候補にする文書を作成し、承認済みにする',
+    nextAction: '審査前に社内確認する文書を作成し、承認済みにする',
     route: '/documents',
   },
   information_assets: {
@@ -673,6 +704,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator', 'auditor'],
     organizationId,
     actionName: 'examination.submission_bundle.viewed',
@@ -899,7 +931,7 @@ export async function GET(request: NextRequest) {
           ],
           gaps: [],
         },
-        '提出候補になる承認済み文書がありません'
+        '審査前に社内確認できる承認済み文書がありません'
       ),
       readyWhen(
         assetRows.length > 0,

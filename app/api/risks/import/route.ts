@@ -5,6 +5,8 @@ import { getDb } from '@/lib/db/drizzle/client'
 import { risks, riskCategories } from '@/lib/db/drizzle/schema/risks'
 import { userProfiles } from '@/lib/db/drizzle/schema/users'
 import { eq, and } from 'drizzle-orm'
+import { RiskTenantLifecycleService } from '@/lib/server/risks/riskTenantLifecycleService'
+import type { RiskStatus } from '@/lib/db/repositories/interfaces/IRiskRepository'
 
 export const runtime = 'nodejs'
 
@@ -24,11 +26,13 @@ const VALID_STATUSES = new Set([
   'closed'
 ])
 
-function clampLevel(raw: string | undefined, defaultVal: number): number {
+type RiskLevel = 1 | 2 | 3 | 4 | 5
+
+function clampLevel(raw: string | undefined, defaultVal: RiskLevel): RiskLevel {
   if (!raw) return defaultVal
   const n = Number(raw)
   if (!Number.isInteger(n) || n < 1 || n > 5) return defaultVal
-  return n
+  return n as RiskLevel
 }
 
 export async function POST(request: NextRequest) {
@@ -44,6 +48,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'risks.import'
@@ -53,8 +58,9 @@ export async function POST(request: NextRequest) {
     return error ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { logEvent, json } = guard
+  const { logEvent, json, userId } = guard
   const db = getDb()
+  const lifecycle = new RiskTenantLifecycleService(db)
 
   const summary: SummaryBlock = {
     processed: 0,
@@ -121,11 +127,10 @@ export async function POST(request: NextRequest) {
         // Level fields
         const impactLevel = clampLevel(row['impact_level']?.trim(), 3)
         const likelihoodLevel = clampLevel(row['likelihood_level']?.trim(), 3)
-        const riskScore = impactLevel * likelihoodLevel
 
         // Status field
         const statusRaw = (row['status'] ?? '').trim().toLowerCase()
-        const status = VALID_STATUSES.has(statusRaw) ? statusRaw : 'identified'
+        const status = (VALID_STATUSES.has(statusRaw) ? statusRaw : 'identified') as RiskStatus
 
         // Owner lookup
         const ownerEmail = (row['owner_email'] ?? '').trim()
@@ -135,29 +140,26 @@ export async function POST(request: NextRequest) {
 
         // Check for existing entry (organization_id + title)
         const [existing] = await db
-          .select({ id: risks.id })
+          .select({ id: risks.id, updatedAt: risks.updatedAt })
           .from(risks)
           .where(and(eq(risks.organizationId, organizationId), eq(risks.title, title)))
           .limit(1)
 
-        const now = new Date().toISOString()
-
         if (existing) {
           // Update existing record
           try {
-            await db
-              .update(risks)
-              .set({
+            if (!existing.updatedAt) throw new Error('existing risk has no update version')
+            await lifecycle.patchRisk(userId, existing.id, {
+              updates: {
                 description,
-                categoryId,
-                impactLevel,
-                likelihoodLevel,
-                riskScore,
+                category_id: categoryId,
+                impact_level: impactLevel,
+                likelihood_level: likelihoodLevel,
                 status,
-                ownerId,
-                updatedAt: now,
-              })
-              .where(eq(risks.id, existing.id))
+                owner_id: ownerId,
+              },
+              expectedUpdatedAt: existing.updatedAt,
+            }, { userAgent: request.headers.get('user-agent') })
 
             summary.updated += 1
           } catch (updateErr) {
@@ -167,20 +169,18 @@ export async function POST(request: NextRequest) {
         } else {
           // Insert new record
           try {
-            await db.insert(risks).values({
-              id: crypto.randomUUID(),
+            await lifecycle.createRisk(userId, {
               organizationId,
               title,
               description,
               categoryId,
               impactLevel,
               likelihoodLevel,
-              riskScore,
               status,
               ownerId,
-              createdAt: now,
-              updatedAt: now,
-            })
+              identifiedDate: null,
+              assetIds: [],
+            }, { userAgent: request.headers.get('user-agent') })
 
             summary.created += 1
           } catch (insertErr) {

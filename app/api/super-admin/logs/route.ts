@@ -4,6 +4,7 @@ import { SuperAdminService } from '@/lib/services/superAdmin'
 
 export async function GET(request: NextRequest) {
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.logs.list',
   })

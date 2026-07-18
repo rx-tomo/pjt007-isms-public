@@ -6,6 +6,11 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // Keep middleware/proxy body clones above the 25 MiB attachment limit.
+    // The task attachment route independently enforces a hard streaming limit.
+    proxyClientMaxBodySize: '27mb',
+  },
   outputFileTracingRoot: path.join(__dirname),
   outputFileTracingIncludes: {
     '/api/cron/reset-demo': [

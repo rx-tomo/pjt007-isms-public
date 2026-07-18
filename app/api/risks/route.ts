@@ -1,183 +1,134 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { and, eq } from 'drizzle-orm'
-import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userProfiles, userMemberships } from '@/lib/db/drizzle/schema'
-import { getAuditLogRepository, getRiskRepository } from '@/lib/container'
+import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  RiskTenantLifecycleError,
+  RiskTenantLifecycleService,
+  type RiskCreateInput,
+} from '@/lib/server/risks/riskTenantLifecycleService'
 import { RiskService } from '@/lib/services/risk'
 import type { RiskStatus } from '@/lib/db/repositories/interfaces/IRiskRepository'
-import type { Json } from '@/types/database.types'
 
-async function assertOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
-  const [[profile], [membership]] = await Promise.all([
-    db
-      .select({ organizationId: userProfiles.organizationId })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({ id: userMemberships.id })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.status, 'active')
-      ))
-      .limit(1),
-  ])
+const statuses: RiskStatus[] = ['identified', 'analyzing', 'treating', 'monitoring', 'closed']
 
-  return profile?.organizationId === organizationId || Boolean(membership)
-}
-
-function parseStatus(value: string | null): RiskStatus | undefined {
-  if (!value) return undefined
-  if (['identified', 'analyzing', 'treating', 'monitoring', 'closed'].includes(value)) {
-    return value as RiskStatus
-  }
-  return undefined
+function parseStatus(value: unknown): RiskStatus | undefined {
+  return typeof value === 'string' && statuses.includes(value as RiskStatus)
+    ? value as RiskStatus
+    : undefined
 }
 
 function isRiskLevel(value: unknown): value is 1 | 2 | 3 | 4 | 5 {
   return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 5
 }
 
-function normalizeOptionalString(value: unknown): string | null {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
+function nullableString(value: unknown): string | null | false {
+  if (value === undefined || value === null) return null
+  if (typeof value !== 'string') return false
+  const normalized = value.trim()
+  return normalized || null
 }
 
-function parseAssetIds(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  return value.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+function requiredString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+function assetIds(value: unknown): string[] | null {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) return null
+  if (value.some(id => typeof id !== 'string' || !id.trim())) return null
+  return [...new Set(value.map(id => (id as string).trim()))]
+}
+
+function parseCreate(payload: Record<string, unknown>): RiskCreateInput | null {
+  const organizationId = requiredString(payload.organization_id)
+  const title = requiredString(payload.title)
+  const description = nullableString(payload.description)
+  const categoryId = nullableString(payload.category_id)
+  const ownerId = nullableString(payload.owner_id)
+  const identifiedDate = nullableString(payload.identified_date)
+  const assets = assetIds(payload.assetIds)
+  if (!organizationId || !title || description === false || categoryId === false
+    || ownerId === false || identifiedDate === false || assets === null
+    || !isRiskLevel(payload.impact_level) || !isRiskLevel(payload.likelihood_level)) return null
+  if (payload.status !== undefined && !parseStatus(payload.status)) return null
+  return {
+    organizationId,
+    title,
+    description,
+    categoryId,
+    impactLevel: payload.impact_level,
+    likelihoodLevel: payload.likelihood_level,
+    ownerId,
+    identifiedDate,
+    status: parseStatus(payload.status) ?? 'identified',
+    assetIds: assets,
+  }
+}
+
+function lifecycleError(error: unknown) {
+  if (error instanceof RiskTenantLifecycleError) {
+    const status = error.kind === 'conflict' ? 409 : error.kind === 'malformed' ? 400 : 404
+    return NextResponse.json({ error: status === 404 ? 'Not found' : status === 409 ? 'Conflict' : 'Invalid request body' }, { status })
+  }
+  console.error('Risks API failed', error)
+  return NextResponse.json({ error: 'Failed to process risks' }, { status: 500 })
 }
 
 export async function GET(request: NextRequest) {
   const { user, applyCookies } = await getRouteAuth(request)
-
-  if (!user) {
-    return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-  }
-
+  if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   const { searchParams } = new URL(request.url)
-  const action = searchParams.get('action') ?? 'risks'
   const organizationId = searchParams.get('organizationId')
-
   if (!organizationId) {
     return applyCookies(NextResponse.json({ error: 'Missing organizationId' }, { status: 400 }))
   }
-
   const db = getDb()
-  const hasAccess = await assertOrganizationAccess(db, user.id, organizationId)
-  if (!hasAccess) {
+  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  if (!authorization.ok) {
     return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-
-  const service = new RiskService()
-
   try {
+    const action = searchParams.get('action') ?? 'risks'
     if (action === 'categories') {
-      const data = await service.getCategories(organizationId)
-      return applyCookies(NextResponse.json(data))
+      return applyCookies(NextResponse.json(await new RiskService().getCategories(organizationId)))
     }
-
-    const filters = {
-      status: parseStatus(searchParams.get('status')),
+    if (action !== 'risks' && action !== 'risksScoped') {
+      return applyCookies(NextResponse.json({ error: 'Unsupported action' }, { status: 400 }))
+    }
+    const statusValue = searchParams.get('status')
+    if (statusValue && !parseStatus(statusValue)) {
+      return applyCookies(NextResponse.json({ error: 'Invalid status' }, { status: 400 }))
+    }
+    const data = await new RiskTenantLifecycleService(db).listRisks(authorization.context, {
+      status: parseStatus(statusValue),
       assessmentPeriod: searchParams.get('assessmentPeriod') ?? undefined,
-    }
-
-    if (action === 'risksScoped') {
-      const requestingUserId = searchParams.get('requestingUserId') ?? user.id
-      const data = await service.getRisksScoped(organizationId, requestingUserId, filters)
-      return applyCookies(NextResponse.json(data))
-    }
-
-    if (action === 'risks') {
-      const data = await service.getRisks(organizationId, {
-        ...filters,
-        departmentId: searchParams.get('departmentId') ?? undefined,
-        includeNoDepartment: searchParams.get('includeNoDepartment') === 'true',
-      })
-      return applyCookies(NextResponse.json(data))
-    }
-
-    return applyCookies(NextResponse.json({ error: 'Unsupported action' }, { status: 400 }))
+    })
+    return applyCookies(NextResponse.json(data))
   } catch (error) {
-    console.error('Risks API GET failed', error)
-    return applyCookies(NextResponse.json({ error: 'Failed to load risks' }, { status: 500 }))
+    return applyCookies(lifecycleError(error))
   }
 }
 
 export async function POST(request: NextRequest) {
   const { user, applyCookies } = await getRouteAuth(request)
-
-  if (!user) {
-    return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-  }
-
+  if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   const body = await request.json().catch(() => null)
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-
-  const payload = body as Record<string, unknown>
-  const organizationId = normalizeOptionalString(payload.organization_id)
-  const title = normalizeOptionalString(payload.title)
-  const categoryId = normalizeOptionalString(payload.category_id)
-
-  if (!organizationId || !title || !categoryId) {
-    return applyCookies(NextResponse.json({ error: 'Missing required fields' }, { status: 400 }))
+  const input = parseCreate(body as Record<string, unknown>)
+  if (!input) {
+    return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-
-  if (!isRiskLevel(payload.impact_level) || !isRiskLevel(payload.likelihood_level)) {
-    return applyCookies(NextResponse.json({ error: 'Invalid risk level' }, { status: 400 }))
-  }
-
-  const db = getDb()
-  const hasAccess = await assertOrganizationAccess(db, user.id, organizationId)
-  if (!hasAccess) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
-  }
-
-  const repo = await getRiskRepository()
-  const assetIds = parseAssetIds(payload.assetIds)
-
   try {
-    const created = await repo.create({
-      organization_id: organizationId,
-      title,
-      description: normalizeOptionalString(payload.description),
-      category_id: categoryId,
-      impact_level: payload.impact_level,
-      likelihood_level: payload.likelihood_level,
-      owner_id: normalizeOptionalString(payload.owner_id),
-      identified_date: normalizeOptionalString(payload.identified_date),
-      identified_by: user.id,
-      status: parseStatus(typeof payload.status === 'string' ? payload.status : null) ?? 'identified',
-    })
-
-    if (assetIds.length > 0) {
-      await repo.setRiskAssets(created.id, assetIds)
-    }
-
-    const auditLog = await getAuditLogRepository()
-    await auditLog.log({
-      organizationId,
-      userId: user.id,
-      action: 'risk.created',
-      resourceType: 'risk',
-      resourceId: created.id,
-      changes: {
-        title: created.title,
-        assetIds,
-      } as Json,
-      userAgent: request.headers.get('user-agent'),
-    })
-
-    const risk = await repo.findByIdWithRelations(created.id)
-    return applyCookies(NextResponse.json({ data: risk ?? created }))
+    const data = await new RiskTenantLifecycleService(getDb()).createRisk(
+      user.id,
+      input,
+      { userAgent: request.headers.get('user-agent') }
+    )
+    return applyCookies(NextResponse.json({ data }))
   } catch (error) {
-    console.error('Risks API POST failed', error)
-    return applyCookies(NextResponse.json({ error: 'Failed to create risk' }, { status: 500 }))
+    return applyCookies(lifecycleError(error))
   }
 }

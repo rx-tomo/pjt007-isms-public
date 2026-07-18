@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { and, eq, inArray } from 'drizzle-orm'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
-import { getAuditLogRepository, getRiskRepository } from '@/lib/container'
 import { getDb } from '@/lib/db/drizzle/client'
-import { isoControls } from '@/lib/db/drizzle/schema/risks'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  isResidualAcceptanceSubmissionError,
+  ResidualAcceptanceSubmissionService,
+} from '@/lib/server/approvals/residualAcceptanceSubmissionService'
 import type { TreatmentPayload } from '@/lib/services/risk'
-import type { Json } from '@/types/database.types'
 
 type Params = { id: string }
 
@@ -35,20 +36,6 @@ function buildTreatmentPayload(body: Record<string, unknown>): TreatmentPayload 
   }
 }
 
-async function assertControlsBelongToOrganization(controlIds: string[], organizationId: string) {
-  if (controlIds.length === 0) return true
-  const db = getDb()
-  const rows = await db
-    .select({ id: isoControls.id })
-    .from(isoControls)
-    .where(and(
-      eq(isoControls.organizationId, organizationId),
-      inArray(isoControls.id, controlIds)
-    ))
-
-  return new Set(rows.map(row => row.id)).size === controlIds.length
-}
-
 export async function POST(request: NextRequest, props: { params: Promise<Params> }) {
   const params = await props.params
   const caller = await resolveCallerOrg(request)
@@ -59,37 +46,37 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const repo = await getRiskRepository()
-  const risk = await repo.findByIdWithRelations(params.id)
-  if (!risk || risk.organization_id !== caller.organizationId) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-
   const controlIds = Array.isArray((body as Record<string, unknown>).controlIds)
     ? ((body as Record<string, unknown>).controlIds as unknown[]).filter((value): value is string => typeof value === 'string')
     : []
-  const controlsOk = await assertControlsBelongToOrganization(controlIds, caller.organizationId)
-  if (!controlsOk) {
-    return NextResponse.json({ error: 'Invalid controlIds' }, { status: 400 })
-  }
-
   const payload = buildTreatmentPayload(body as Record<string, unknown>)
   if (!payload) {
     return NextResponse.json({ error: 'Invalid treatment payload' }, { status: 400 })
   }
 
-  const treatment = await repo.createTreatment(params.id, payload, controlIds)
+  const db = getDb()
+  const authorization = await resolveTenantAuthorizationContext(
+    db,
+    caller.userId,
+    caller.organizationId
+  )
+  if (!authorization.ok) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
-  const auditLog = await getAuditLogRepository()
-  await auditLog.log({
-    organizationId: caller.organizationId,
-    userId: caller.userId,
-    action: 'risk.treatment.created',
-    resourceType: 'risk_treatment',
-    resourceId: treatment.id,
-    changes: { risk_id: params.id, controlIds } as Json,
-    userAgent: request.headers.get('user-agent'),
-  })
-
-  return NextResponse.json({ data: treatment }, { status: 201 })
+  try {
+    const treatment = await new ResidualAcceptanceSubmissionService(db).createTreatment({
+      authorization: authorization.context,
+      riskId: params.id,
+      treatment: payload,
+      controlIds,
+      userAgent: request.headers.get('user-agent'),
+    })
+    return NextResponse.json({ data: treatment }, { status: 201 })
+  } catch (error) {
+    if (isResidualAcceptanceSubmissionError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    throw error
+  }
 }

@@ -41,6 +41,21 @@ export interface DepartmentPayload {
   description?: string
 }
 
+export type DepartmentHierarchyErrorCode = 'not_found' | 'cycle'
+
+export class DepartmentHierarchyError extends Error {
+  readonly status: 404 | 409
+
+  constructor(
+    readonly code: DepartmentHierarchyErrorCode,
+    message: string
+  ) {
+    super(message)
+    this.name = 'DepartmentHierarchyError'
+    this.status = code === 'not_found' ? 404 : 409
+  }
+}
+
 export interface ProjectRolePayload {
   key: string
   name: string

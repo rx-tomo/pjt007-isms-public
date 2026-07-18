@@ -3,16 +3,19 @@
 import { FormEvent, useCallback, useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { IncidentService, type IncidentSeverity, type IncidentLinkType } from '@/lib/services/incident'
+import type {
+  IncidentLinkType,
+  IncidentRecord,
+  IncidentSeverity,
+} from '@/lib/services/incident'
 import { OrganizationService } from '@/lib/services/organization'
-import { UserService, type UserProfile } from '@/lib/services/user'
+import { UserService } from '@/lib/services/user'
+import type { ApprovalCandidate } from '@/lib/approvals/approvalCandidateContract'
 import { TaskService } from '@/lib/services/task'
 import { RiskService } from '@/lib/services/risk'
 import { InformationAssetService } from '@/lib/services/informationAsset'
-import { useAuth } from '@/lib/hooks/useAuth'
 import { useTranslations } from 'next-intl'
 
-const incidentService = new IncidentService()
 const organizationService = new OrganizationService()
 const userService = new UserService()
 const taskService = new TaskService()
@@ -31,6 +34,11 @@ interface LinkTarget {
   label: string
 }
 
+interface DepartmentOption {
+  id: string
+  label: string
+}
+
 export default function NewIncidentPage(props: { params: Promise<{ locale: string }> }) {
   const params = use(props.params);
 
@@ -40,14 +48,15 @@ export default function NewIncidentPage(props: { params: Promise<{ locale: strin
 
   const t = useTranslations('incidents')
   const router = useRouter()
-  const { user: authUser } = useAuth()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [severity, setSeverity] = useState<IncidentSeverity>('medium')
   const [occurredAt, setOccurredAt] = useState(() => new Date().toISOString().slice(0, 16))
   const [organizationId, setOrganizationId] = useState<string | null>(null)
+  const [departmentId, setDepartmentId] = useState('')
+  const [departments, setDepartments] = useState<DepartmentOption[]>([])
   const [approverId, setApproverId] = useState('')
-  const [approverCandidates, setApproverCandidates] = useState<UserProfile[]>([])
+  const [approverCandidates, setApproverCandidates] = useState<ApprovalCandidate[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -70,12 +79,24 @@ export default function NewIncidentPage(props: { params: Promise<{ locale: strin
         }
 
         setOrganizationId(organization.id)
-        const users = await userService.getOrganizationUsers(organization.id)
-        const candidates = users.filter(user =>
-          ['org_admin', 'system_operator', 'approver'].includes(user.role)
-        )
-        setApproverCandidates(candidates)
-        setApproverId(candidates[0]?.id ?? '')
+        const profile = await userService.getCurrentUser()
+        let departmentRows: DepartmentOption[] = []
+        try {
+          departmentRows = (await organizationService.getOrganizationDepartments(organization.id))
+            .map(department => ({
+              id: department.id,
+              label: department.name,
+            }))
+        } catch {
+          if (profile?.primary_department_id) {
+            departmentRows = [{
+              id: profile.primary_department_id,
+              label: profile.department || profile.primary_department_id,
+            }]
+          }
+        }
+        setDepartments(departmentRows)
+        setDepartmentId(departmentRows[0]?.id ?? '')
       } catch (loadError) {
         console.error(loadError)
         setError(t('errors.organizationMissing'))
@@ -84,6 +105,34 @@ export default function NewIncidentPage(props: { params: Promise<{ locale: strin
 
     void loadContext()
   }, [t])
+
+  useEffect(() => {
+    if (!organizationId || !departmentId) {
+      setApproverCandidates([])
+      setApproverId('')
+      return
+    }
+    let cancelled = false
+    void userService.getApprovalCandidates(
+      organizationId,
+      'incident',
+      undefined,
+      departmentId
+    ).then(candidates => {
+      if (cancelled) return
+      setApproverCandidates(candidates)
+      setApproverId(candidates[0]?.id ?? '')
+    }).catch(loadError => {
+      console.error('Failed to load incident approval candidates', loadError)
+      if (!cancelled) {
+        setApproverCandidates([])
+        setApproverId('')
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [departmentId, organizationId])
 
   const loadCandidates = useCallback(async (linkType: IncidentLinkType) => {
     if (!organizationId) return
@@ -178,27 +227,36 @@ export default function NewIncidentPage(props: { params: Promise<{ locale: strin
       if (!organizationId) {
         throw new Error(t('errors.organizationMissing'))
       }
-
-      const incident = await incidentService.create({
-        organization_id: organizationId,
-        title,
-        description,
-        occurred_at: new Date(occurredAt).toISOString(),
-        severity,
-        reporter_id: authUser?.id ?? null,
-        approver_id: approverId || null
-      })
-
-      // Create pending links after incident is created
-      if (pendingLinks.length > 0) {
-        await Promise.all(
-          pendingLinks.map(link =>
-            incidentService.createIncidentLink(incident.id, link.linkType, link.targetId)
-          )
-        )
+      if (!departmentId) {
+        throw new Error(t('errors.departmentMissing'))
       }
 
-      router.push(`/${locale}/incidents/${incident.id}`)
+      const response = await fetch('/api/incidents', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          occurred_at: new Date(occurredAt).toISOString(),
+          severity,
+          department_id: departmentId,
+          approver_id: approverId || null,
+          links: pendingLinks.map(link => ({
+            link_type: link.linkType,
+            link_id: link.targetId,
+          })),
+        }),
+      })
+      const payload = await response.json().catch(() => ({})) as {
+        data?: IncidentRecord
+        error?: string
+      }
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error || t('errors.saveFailed'))
+      }
+
+      router.push(`/${locale}/incidents/${payload.data.id}`)
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : t('errors.saveFailed'))
@@ -249,6 +307,21 @@ export default function NewIncidentPage(props: { params: Promise<{ locale: strin
           </div>
 
           <div>
+            <label className='mb-1 block text-sm font-medium text-text-secondary'>{t('form.department')}</label>
+            <select
+              value={departmentId}
+              onChange={event => setDepartmentId(event.target.value)}
+              required
+              className='w-full rounded-md border border-border px-3 py-2 text-sm'
+            >
+              <option value=''>{t('form.selectDepartment')}</option>
+              {departments.map(department => (
+                <option key={department.id} value={department.id}>{department.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className='mb-1 block text-sm font-medium text-text-secondary'>{t('form.approver')}</label>
             <select
               value={approverId}
@@ -258,7 +331,7 @@ export default function NewIncidentPage(props: { params: Promise<{ locale: strin
               <option value=''>{t('form.autoApprover')}</option>
               {approverCandidates.map(user => (
                 <option key={user.id} value={user.id}>
-                  {user.full_name || user.email} ({user.role})
+                  {user.displayName} ({user.role})
                 </option>
               ))}
             </select>

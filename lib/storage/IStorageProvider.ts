@@ -16,6 +16,17 @@ export interface StorageListItem {
   size: number
 }
 
+export interface StorageDownloadOptions {
+  maxBytes?: number
+}
+
+export class StorageObjectTooLargeError extends Error {
+  constructor() {
+    super('Storage object exceeds download limit')
+    this.name = 'StorageObjectTooLargeError'
+  }
+}
+
 export interface IStorageProvider {
   upload(
     bucket: string,
@@ -26,7 +37,8 @@ export interface IStorageProvider {
 
   download(
     bucket: string,
-    path: string
+    path: string,
+    options?: StorageDownloadOptions
   ): Promise<{ data: Blob | null; error?: Error }>
 
   remove(

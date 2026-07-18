@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireServiceRole, isMultiOrgRole } from '@/lib/server/auth/secureClient'
+import { requireServiceRole } from '@/lib/server/auth/secureClient'
 import { getDb } from '@/lib/db/drizzle/client'
 import { informationAssets, informationAssetImportJobs, informationAssetImportRows } from '@/lib/db/drizzle/schema/risks'
 import { userProfiles } from '@/lib/db/drizzle/schema/users'
@@ -124,9 +124,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file')
     const organizationId = formData.get('organizationId')
-    const userId = formData.get('userId')
     const normalizedOrgId = typeof organizationId === 'string' ? organizationId.trim() : ''
-    const normalizedUserId = typeof userId === 'string' ? userId.trim() : ''
     const modeInput = formData.get('mode')
     const normalizedMode =
       typeof modeInput === 'string' && modeInput.trim().length > 0
@@ -134,8 +132,9 @@ export async function POST(request: NextRequest) {
         : 'insert'
 
     const { guard, error } = await requireServiceRole(request, {
+      mode: 'tenant',
       allowedRoles: ['org_admin', 'system_operator'],
-      organizationId: normalizedOrgId || undefined,
+      organizationId: normalizedOrgId || '',
       actionName: 'information_assets.import',
       logContext: normalizedOrgId ? { organizationId: normalizedOrgId, mode: normalizedMode } : undefined
     })
@@ -147,7 +146,7 @@ export async function POST(request: NextRequest) {
     if (!guard) {
       return new Response('Service role guard unavailable', { status: 500 })
     }
-    const { profile, userId: sessionUserId, json, logEvent } = guard
+    const { userId: sessionUserId, json, logEvent } = guard
     jsonResponse = json
 
     if (!(file instanceof Blob)) {
@@ -156,19 +155,6 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedOrgId) {
       return json({ error: 'organizationId is required' }, { status: 400 })
-    }
-
-    if (!normalizedUserId) {
-      return json({ error: 'userId is required' }, { status: 400 })
-    }
-
-    if (normalizedUserId !== sessionUserId && !isMultiOrgRole(profile.role)) {
-      await logEvent('denied', {
-        reason: 'user_mismatch',
-        requestedUserId: normalizedUserId,
-        sessionUserId
-      })
-      return json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const text = await file.text()
@@ -187,7 +173,7 @@ export async function POST(request: NextRequest) {
     await db.insert(informationAssetImportJobs).values({
       id: jobId,
       organizationId: normalizedOrgId,
-      createdBy: normalizedUserId,
+      createdBy: sessionUserId,
       originalFilename: 'name' in file ? (file as File).name : undefined,
       status: 'processing',
       mode: normalizedMode,

@@ -23,7 +23,7 @@ function run(command, commandArgs, extraEnv = {}) {
       QA_SERVER_HOST: HOST,
       QA_SERVER_PORT: String(PORT),
       PLAYWRIGHT_TEST_BASE_URL: baseUrl,
-      PLAYWRIGHT_SKIP_WEB_SERVER: '1',
+      PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1',
       E2E_MODE: '1',
       NEXT_PUBLIC_E2E_MODE: '1',
       ...extraEnv,

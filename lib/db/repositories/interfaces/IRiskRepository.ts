@@ -18,6 +18,8 @@ import type { RiskAssetWithDetails } from '@/lib/services/informationAsset'
 type Risk = Database['public']['Tables']['risks']['Row']
 type RiskInsert = Database['public']['Tables']['risks']['Insert']
 type RiskUpdate = Database['public']['Tables']['risks']['Update']
+export type RiskRepositoryInsert = Omit<RiskInsert, 'owner_id'>
+export type RiskRepositoryUpdate = Omit<RiskUpdate, 'owner_id'>
 type RiskCategory = Database['public']['Tables']['risk_categories']['Row']
 type RiskTreatment = Database['public']['Tables']['risk_treatments']['Row']
 type RiskControlLink = Database['public']['Tables']['risk_control_links']['Row']
@@ -102,6 +104,7 @@ export interface RiskFilters {
   status?: RiskStatus
   assessmentPeriod?: string
   departmentId?: string | null
+  departmentIds?: string[]
   includeNoDepartment?: boolean
 }
 
@@ -127,7 +130,11 @@ export interface TreatmentPayload {
 /**
  * Risk Repository Interface
  */
-export interface IRiskRepository extends IBaseRepository<Risk, RiskInsert, RiskUpdate> {
+export interface IRiskRepository extends IBaseRepository<
+  Risk,
+  RiskRepositoryInsert,
+  RiskRepositoryUpdate
+> {
   // Risk CRUD with relations
   findByIdWithRelations(id: string): Promise<RiskWithRelations | null>
   findByOrganizationId(
@@ -135,20 +142,6 @@ export interface IRiskRepository extends IBaseRepository<Risk, RiskInsert, RiskU
     filters?: RiskFilters,
     options?: QueryOptions
   ): Promise<RiskWithRelations[]>
-
-  // Risk Treatment operations
-  createTreatment(
-    riskId: string,
-    treatment: TreatmentPayload,
-    controlIds?: string[]
-  ): Promise<RiskTreatment>
-  updateTreatment(
-    id: string,
-    updates: Partial<TreatmentPayload>,
-    controlIds?: string[]
-  ): Promise<RiskTreatment>
-  deleteTreatment(id: string): Promise<void>
-  syncTreatmentControls(treatmentId: string, controlIds: string[]): Promise<void>
 
   // Risk Asset operations
   getRiskAssets(riskId: string): Promise<RiskAssetWithDetails[]>

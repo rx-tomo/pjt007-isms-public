@@ -1,58 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { and, eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import { getAccessibleTaskForUser } from '@/lib/server/auth/taskAccess'
 import { getDb } from '@/lib/db/drizzle/client'
-import { taskComments, tasks, userProfiles, userMemberships } from '@/lib/db/drizzle/schema'
+import { taskComments, userProfiles, userMemberships } from '@/lib/db/drizzle/schema'
 import { getAuditLogRepository } from '@/lib/container'
 import { NotificationService } from '@/lib/services/notification'
 import { TaskService } from '@/lib/services/task'
 import type { Json } from '@/types/database.types'
 
 type Params = { id: string }
-
-async function getUserOrganizationIds(userId: string) {
-  const db = getDb()
-  const [profileRows, membershipRows] = await Promise.all([
-    db
-      .select({ organizationId: userProfiles.organizationId })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({ organizationId: userMemberships.organizationId })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.status, 'active')
-      )),
-  ])
-
-  return new Set([
-    profileRows[0]?.organizationId,
-    ...membershipRows.map((row) => row.organizationId),
-  ].filter((id): id is string => Boolean(id)))
-}
-
-async function getAccessibleTask(taskId: string, userId: string) {
-  const db = getDb()
-  const [task] = await db
-    .select({
-      id: tasks.id,
-      organizationId: tasks.organizationId,
-      title: tasks.title,
-    })
-    .from(tasks)
-    .where(eq(tasks.id, taskId))
-    .limit(1)
-
-  if (!task?.organizationId) return null
-  const organizationId = task.organizationId
-
-  const organizationIds = await getUserOrganizationIds(userId)
-  if (!organizationIds.has(organizationId)) return null
-
-  return { ...task, organizationId }
-}
 
 async function getTaskComment(taskId: string, commentId: string) {
   const db = getDb()
@@ -77,8 +34,12 @@ async function getMentionedUsers(organizationId: string, comment: string, actorU
       fullName: userProfiles.fullName,
     })
     .from(userProfiles)
+    .innerJoin(userMemberships, and(
+      eq(userMemberships.userId, userProfiles.id),
+      eq(userMemberships.organizationId, organizationId),
+      eq(userMemberships.status, 'active')
+    ))
     .where(and(
-      eq(userProfiles.organizationId, organizationId),
       eq(userProfiles.isActive, true)
     ))
 
@@ -149,7 +110,7 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
     return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
-  const task = await getAccessibleTask(params.id, user.id)
+  const task = await getAccessibleTaskForUser(getDb(), params.id, user.id)
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
@@ -174,7 +135,7 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
     return applyCookies(NextResponse.json({ error: 'comment is required' }, { status: 400 }))
   }
 
-  const task = await getAccessibleTask(params.id, user.id)
+  const task = await getAccessibleTaskForUser(getDb(), params.id, user.id)
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
@@ -224,7 +185,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
     return applyCookies(NextResponse.json({ error: 'commentId and comment are required' }, { status: 400 }))
   }
 
-  const task = await getAccessibleTask(params.id, user.id)
+  const task = await getAccessibleTaskForUser(getDb(), params.id, user.id)
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
@@ -279,7 +240,7 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
     return applyCookies(NextResponse.json({ error: 'commentId is required' }, { status: 400 }))
   }
 
-  const task = await getAccessibleTask(params.id, user.id)
+  const task = await getAccessibleTaskForUser(getDb(), params.id, user.id)
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }

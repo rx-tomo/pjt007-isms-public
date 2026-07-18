@@ -7,6 +7,7 @@ type Params = { organizationId: string }
 export async function POST(request: NextRequest, props: { params: Promise<Params> }) {
   const params = await props.params
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId: params.organizationId,
     actionName: 'organization.structure.seed',

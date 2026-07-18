@@ -110,8 +110,7 @@ export type {
   IsoControl,
   IsoControlInsert,
   IsoControlUpdate,
-  ControlTemplate,
-  RiskControlLink
+  ControlTemplate
 } from '@/lib/db/repositories/interfaces/IIsoControlRepository'
 
 export class IsoControlService {
@@ -255,9 +254,23 @@ export class IsoControlService {
   /**
    * Delete an ISO control
    */
-  async deleteControl(id: string) {
-    const repo = await this.getRepository()
-    return repo.delete(id)
+  async deleteControl(id: string, organizationId: string) {
+    if (typeof window !== 'undefined') {
+      const response = await fetch(
+        `/api/controls?id=${encodeURIComponent(id)}&organizationId=${encodeURIComponent(organizationId)}`,
+        {
+        method: 'DELETE',
+        credentials: 'include',
+        }
+      )
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error(errorBody?.error ?? `API error ${response.status}`)
+      }
+      return
+    }
+
+    throw new Error('IsoControlService deletion is a browser API adapter operation only')
   }
 
   /**
@@ -380,28 +393,4 @@ export class IsoControlService {
     return repo.getControlsForTreatment(treatmentId)
   }
 
-  /**
-   * Link a control to a risk treatment
-   */
-  async linkControlToTreatment(treatmentId: string, controlId: string) {
-    const repo = await this.getRepository()
-    return repo.linkControlToTreatment(treatmentId, controlId)
-  }
-
-  /**
-   * Unlink a control from a risk treatment
-   */
-  async unlinkControlFromTreatment(treatmentId: string, controlId: string) {
-    const repo = await this.getRepository()
-    return repo.unlinkControlFromTreatment(treatmentId, controlId)
-  }
-
-  /**
-   * Set all controls for a risk treatment (sync operation)
-   * Adds new links, removes old links, and keeps existing ones
-   */
-  async setTreatmentControls(treatmentId: string, controlIds: string[]) {
-    const repo = await this.getRepository()
-    return repo.setTreatmentControls(treatmentId, controlIds)
-  }
 }

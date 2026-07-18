@@ -22,6 +22,7 @@ import {
   organizationInvitations
 } from '@/lib/db/drizzle/schema'
 import type { IsmsPhase, PhaseHistoryEntry, PhaseHistorySource } from '@/lib/services/onboarding'
+import { DepartmentHierarchyError } from '../interfaces/IOrganizationRepository'
 import type {
   IOrganizationRepository,
   Organization,
@@ -38,6 +39,37 @@ import type {
 } from '../interfaces/IOrganizationRepository'
 import type { QueryOptions } from '../interfaces/IBaseRepository'
 import { parseJsonArray, stringifyJsonArray } from '@/lib/db/drizzle/schema/organizations'
+
+type DepartmentHierarchyNode = {
+  id: string
+  parentDepartmentId: string | null
+}
+
+function assertValidDepartmentParent(
+  departments: DepartmentHierarchyNode[],
+  parentDepartmentId: string,
+  targetDepartmentId?: string
+): void {
+  const departmentsById = new Map(departments.map(department => [department.id, department]))
+  if (!departmentsById.has(parentDepartmentId)) {
+    throw new DepartmentHierarchyError('not_found', 'Parent department not found')
+  }
+
+  const visited = new Set<string>()
+  let currentId: string | null = parentDepartmentId
+  while (currentId !== null) {
+    if (currentId === targetDepartmentId || visited.has(currentId)) {
+      throw new DepartmentHierarchyError('cycle', 'Department hierarchy cycle detected')
+    }
+    visited.add(currentId)
+
+    const current = departmentsById.get(currentId)
+    if (!current) {
+      throw new DepartmentHierarchyError('not_found', 'Parent department not found')
+    }
+    currentId = current.parentDepartmentId
+  }
+}
 
 export class SQLiteOrganizationRepository extends BaseSQLiteRepository implements IOrganizationRepository {
   constructor() {
@@ -241,56 +273,127 @@ export class SQLiteOrganizationRepository extends BaseSQLiteRepository implement
     this.requireOrganizationId(organizationId, 'createDepartment')
     this.logDataAccess('createDepartment', organizationId)
 
-    const result = await this.db
-      .insert(organizationDepartments)
-      .values({
-        id: crypto.randomUUID(),
-        organizationId,
-        name: payload.name,
-        nameEn: payload.name_en ?? null,
-        parentDepartmentId: payload.parent_department_id ?? null,
-        manager: payload.manager ?? null,
-        description: payload.description ?? null,
-        memberCount: 0
-      })
-      .returning()
+    return this.db.transaction(async (tx) => {
+      // libSQL currently ignores Drizzle's immediate behavior option, so acquire
+      // the write lock before hierarchy validation with a no-op write.
+      await tx.run(sql.raw('UPDATE organization_departments SET id = id WHERE 0'))
 
-    return this.mapToDepartmentRow(result[0])
+      const parentDepartmentId = payload.parent_department_id ?? null
+      if (parentDepartmentId !== null) {
+        const departments = await tx
+          .select({
+            id: organizationDepartments.id,
+            parentDepartmentId: organizationDepartments.parentDepartmentId,
+          })
+          .from(organizationDepartments)
+          .where(eq(organizationDepartments.organizationId, organizationId))
+        assertValidDepartmentParent(departments, parentDepartmentId)
+      }
+
+      const result = await tx
+        .insert(organizationDepartments)
+        .values({
+          id: crypto.randomUUID(),
+          organizationId,
+          name: payload.name,
+          nameEn: payload.name_en ?? null,
+          parentDepartmentId,
+          manager: payload.manager ?? null,
+          description: payload.description ?? null,
+          memberCount: 0
+        })
+        .returning()
+
+      return this.mapToDepartmentRow(result[0])
+    }, { behavior: 'immediate' })
   }
 
   async updateDepartment(organizationId: string, departmentId: string, payload: DepartmentPayload): Promise<DepartmentRow> {
     this.requireOrganizationId(organizationId, 'updateDepartment')
     this.logDataAccess('updateDepartment', organizationId, { departmentId })
 
-    const result = await this.db
-      .update(organizationDepartments)
-      .set({
-        name: payload.name,
-        nameEn: payload.name_en,
-        parentDepartmentId: payload.parent_department_id,
-        manager: payload.manager,
-        description: payload.description,
-        updatedAt: new Date().toISOString()
-      })
-      .where(and(
-        eq(organizationDepartments.organizationId, organizationId),
-        eq(organizationDepartments.id, departmentId)
-      ))
-      .returning()
+    return this.db.transaction(async (tx) => {
+      await tx.run(sql.raw('UPDATE organization_departments SET id = id WHERE 0'))
 
-    return this.mapToDepartmentRow(result[0])
+      const departments = await tx
+        .select()
+        .from(organizationDepartments)
+        .where(eq(organizationDepartments.organizationId, organizationId))
+      const departmentsById = new Map(departments.map(department => [department.id, department]))
+      const target = departmentsById.get(departmentId)
+
+      if (!target) {
+        throw new DepartmentHierarchyError('not_found', 'Department not found')
+      }
+
+      const parentDepartmentId = payload.parent_department_id
+      if (parentDepartmentId !== undefined && parentDepartmentId !== null) {
+        assertValidDepartmentParent(departments, parentDepartmentId, departmentId)
+      }
+
+      const result = await tx
+        .update(organizationDepartments)
+        .set({
+          name: payload.name,
+          nameEn: payload.name_en,
+          parentDepartmentId,
+          manager: payload.manager,
+          description: payload.description,
+          updatedAt: new Date().toISOString()
+        })
+        .where(and(
+          eq(organizationDepartments.organizationId, organizationId),
+          eq(organizationDepartments.id, departmentId)
+        ))
+        .returning()
+
+      return this.mapToDepartmentRow(result[0])
+    }, { behavior: 'immediate' })
   }
 
   async deleteDepartment(organizationId: string, departmentId: string): Promise<void> {
     this.requireOrganizationId(organizationId, 'deleteDepartment')
     this.logDataAccess('deleteDepartment', organizationId, { departmentId })
 
-    await this.db
-      .delete(organizationDepartments)
-      .where(and(
-        eq(organizationDepartments.organizationId, organizationId),
-        eq(organizationDepartments.id, departmentId)
-      ))
+    await this.db.transaction(async (tx) => {
+      await tx.run(sql.raw('UPDATE organization_departments SET id = id WHERE 0'))
+
+      const target = await tx
+        .select({ id: organizationDepartments.id })
+        .from(organizationDepartments)
+        .where(and(
+          eq(organizationDepartments.organizationId, organizationId),
+          eq(organizationDepartments.id, departmentId)
+        ))
+        .limit(1)
+
+      if (!target[0]) {
+        throw new DepartmentHierarchyError('not_found', 'Department not found')
+      }
+
+      await tx
+        .update(organizationDepartments)
+        .set({
+          parentDepartmentId: null,
+          updatedAt: new Date().toISOString()
+        })
+        .where(and(
+          eq(organizationDepartments.organizationId, organizationId),
+          eq(organizationDepartments.parentDepartmentId, departmentId)
+        ))
+
+      const deleted = await tx
+        .delete(organizationDepartments)
+        .where(and(
+          eq(organizationDepartments.organizationId, organizationId),
+          eq(organizationDepartments.id, departmentId)
+        ))
+        .returning({ id: organizationDepartments.id })
+
+      if (!deleted[0]) {
+        throw new DepartmentHierarchyError('not_found', 'Department not found')
+      }
+    }, { behavior: 'immediate' })
   }
 
   async getProjectRoles(organizationId: string, _options?: QueryOptions): Promise<ProjectRoleRow[]> {

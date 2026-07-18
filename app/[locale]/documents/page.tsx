@@ -13,7 +13,12 @@ import {
   type DocumentVersion
 } from '@/lib/services/document'
 import { OrganizationService } from '@/lib/services/organization'
-import { UserService, type UserProfile } from '@/lib/services/user'
+import {
+  UserService,
+  type CurrentUserProfile,
+  type UserProfile,
+} from '@/lib/services/user'
+import type { ApprovalCandidate } from '@/lib/approvals/approvalCandidateContract'
 import { StorageQuotaService, STORAGE_MAX_ORG_USAGE } from '@/lib/services/storageQuota'
 import { formatFileSize } from '@/lib/utils/formatters'
 import DocumentList from '@/components/documents/DocumentList'
@@ -52,6 +57,7 @@ export default function DocumentsPage(
   } = params;
 
   const t = useTranslations('documents')
+  const approvalT = useTranslations('approvals')
   const storageText = useTranslations('documents.storage')
   const commonT = useTranslations('common')
   const router = useRouter()
@@ -73,14 +79,18 @@ export default function DocumentsPage(
     category: 'general'
   })
   const [users, setUsers] = useState<UserProfile[]>([])
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [currentUser, setCurrentUser] = useState<CurrentUserProfile | null>(null)
+  const [approvalCandidates, setApprovalCandidates] = useState<ApprovalCandidate[]>([])
+  const [approvalCandidatesLoading, setApprovalCandidatesLoading] = useState(false)
   const [approvalTarget, setApprovalTarget] = useState<DocumentWithFolder | null>(null)
-  const [approvalStep1, setApprovalStep1] = useState<string>('')
-  const [approvalStep2, setApprovalStep2] = useState<string>('')
+  const [approvalApprover, setApprovalApprover] = useState<string>('')
   const [approvalProcessing, setApprovalProcessing] = useState(false)
   const [approveTarget, setApproveTarget] = useState<DocumentWithFolder | null>(null)
   const [approveComment, setApproveComment] = useState('')
   const [approveProcessing, setApproveProcessing] = useState(false)
+  const [rejectTarget, setRejectTarget] = useState<DocumentWithFolder | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectProcessing, setRejectProcessing] = useState(false)
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | ''>(
     (searchParams?.get('status') as DocumentStatus) ?? ''
   )
@@ -95,6 +105,7 @@ export default function DocumentsPage(
   const [versionHistoryLoading, setVersionHistoryLoading] = useState(false)
   const [versionHistoryError, setVersionHistoryError] = useState<string | null>(null)
   const [downloadingVersionId, setDownloadingVersionId] = useState<string | null>(null)
+  const [deletingVersionId, setDeletingVersionId] = useState<string | null>(null)
 
 
 
@@ -103,6 +114,7 @@ export default function DocumentsPage(
   const userService = useMemo(() => new UserService(), [])
   const storageQuotaService = useMemo(() => new StorageQuotaService(), [])
   const userDirectory = useMemo(() => new Map(users.map(user => [user.id, user])), [users])
+  const eligibleApprovers = approvalCandidates
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -121,7 +133,13 @@ export default function DocumentsPage(
       setOrganization(org)
 
       // フォルダーと文書、ストレージ使用量を並行して取得
-      const [foldersData, documentsData, usersData, usageBytes, departmentRows] = await Promise.all([
+      const [
+        foldersData,
+        documentsData,
+        usersData,
+        usageBytes,
+        departmentRows,
+      ] = await Promise.all([
         documentService.getFolders(org.id),
         documentService.getDocumentsScoped(org.id, profile.id, currentFolderId || undefined),
         userService.getOrganizationUsersScoped(org.id, profile.id).catch(() => [profile]),
@@ -269,11 +287,11 @@ export default function DocumentsPage(
   const departmentScope = useMemo(
     () =>
       evaluateDepartmentScope({
-        role: currentUser?.role ?? null,
+        role: currentUser?.effective_role ?? null,
         departmentName: currentUser?.department ?? null,
         departmentNameToId
       }),
-    [currentUser?.department, currentUser?.role, departmentNameToId]
+    [currentUser?.department, currentUser?.effective_role, departmentNameToId]
   )
 
   const appliedDepartmentFilter = departmentScope.enforcedFilterValue ?? departmentFilter
@@ -454,25 +472,16 @@ export default function DocumentsPage(
       }
 
       // 2. ファイルをアップロード
-      const { path } = await documentService.uploadFile(
+      await documentService.uploadFile(
         organization.id,
         selectedFile,
-        document.id
+        document.id,
+        {
+          title: uploadFormData.title,
+          description: uploadFormData.description,
+          changes: 'initial_upload',
+        }
       )
-
-      // 3. 文書レコードを更新
-      await documentService.updateDocument(document.id, {
-        file_path: path
-      })
-
-      await documentService.createDocumentVersion(document.id, {
-        title: uploadFormData.title,
-        description: uploadFormData.description,
-        fileName: selectedFile.name,
-        filePath: path,
-        fileSize: selectedFile.size,
-        changes: 'initial_upload'
-      })
 
       setShowUploadModal(false)
       setSelectedFile(null)
@@ -488,7 +497,8 @@ export default function DocumentsPage(
     if (!confirm(t('confirmations.deleteDocument'))) return
 
     try {
-      await documentService.deleteDocument(documentId)
+      if (!organization) throw new Error(t('errors.deleteFailed'))
+      await documentService.deleteDocument(documentId, organization.id)
       await loadData()
     } catch (error: any) {
       console.error('Error deleting document:', error)
@@ -496,39 +506,47 @@ export default function DocumentsPage(
     }
   }
 
-  const getDefaultApprovers = () => {
-    const step1Candidate =
-      users.find(user => user.role === 'approver') ||
-      users.find(user => user.role === 'org_admin' || user.role === 'system_operator')
-    const step2Candidate =
-      users.find(user => user.role === 'system_operator') ||
-      users.find(user => user.role === 'org_admin') ||
-      users.find(user => user.role === 'approver')
+  const getDefaultApprover = (candidates: ApprovalCandidate[]) => {
+    const candidate =
+      candidates.find(user => user.role === 'approver') ||
+      candidates.find(user => user.role === 'org_admin' || user.role === 'system_operator')
 
-    return {
-      step1: step1Candidate ? step1Candidate.id : '',
-      step2: step2Candidate ? step2Candidate.id : ''
-    }
+    return candidate?.id ?? ''
   }
 
-  const handleRequestApproval = (doc: DocumentWithFolder) => {
-    const defaults = getDefaultApprovers()
+  const handleRequestApproval = async (doc: DocumentWithFolder) => {
+    if (!organization) return
     setApprovalTarget(doc)
-    setApprovalStep1(defaults.step1)
-    setApprovalStep2(defaults.step2)
+    setApprovalCandidates([])
+    setApprovalApprover('')
     setShowApprovalModal(true)
+    setApprovalCandidatesLoading(true)
+    try {
+      const candidates = await userService.getApprovalCandidates(
+        organization.id,
+        'document',
+        doc.id
+      )
+      setApprovalCandidates(candidates)
+      setApprovalApprover(getDefaultApprover(candidates))
+    } catch (error) {
+      console.error('Failed to load document approval candidates', error)
+      alert(t('approval.errors.candidatesLoadFailed'))
+    } finally {
+      setApprovalCandidatesLoading(false)
+    }
   }
 
   const submitApprovalRequest = async () => {
     if (!approvalTarget) return
-    if (!approvalStep1 || !approvalStep2) {
-      alert(t('approval.errors.missingApprovers'))
+    if (!approvalApprover) {
+      alert(t('approval.errors.missingApprover'))
       return
     }
 
     setApprovalProcessing(true)
     try {
-      await documentService.submitApprovalRequest(approvalTarget.id, approvalStep1, approvalStep2)
+      await documentService.submitApprovalRequest(approvalTarget.id, approvalApprover)
       setShowApprovalModal(false)
       setApprovalTarget(null)
       await loadData()
@@ -541,6 +559,10 @@ export default function DocumentsPage(
   }
 
   const handleApproveDocument = (doc: DocumentWithFolder) => {
+    if (!doc.approvalProgress?.currentRequestId) {
+      alert(t('errors.approvalFailed'))
+      return
+    }
     setApproveTarget(doc)
     setApproveComment('')
     setShowApproveModal(true)
@@ -548,9 +570,18 @@ export default function DocumentsPage(
 
   const confirmApproveDocument = async () => {
     if (!approveTarget) return
+    const expectedRequestId = approveTarget.approvalProgress?.currentRequestId
+    if (!expectedRequestId) {
+      alert(t('errors.approvalFailed'))
+      return
+    }
     setApproveProcessing(true)
     try {
-      await documentService.approveDocument(approveTarget.id, approveComment)
+      await documentService.approveDocument(
+        approveTarget.id,
+        expectedRequestId,
+        approveComment
+      )
       setShowApproveModal(false)
       setApproveTarget(null)
       setApproveComment('')
@@ -563,11 +594,43 @@ export default function DocumentsPage(
     }
   }
 
-  const handleDownloadDocument = async (doc: DocumentWithFolder) => {
-    if (!doc.file_path) return
+  const handleRejectDocument = (doc: DocumentWithFolder) => {
+    if (!doc.approvalProgress?.currentRequestId) {
+      alert(t('errors.approvalFailed'))
+      return
+    }
+    setRejectTarget(doc)
+    setRejectReason('')
+  }
 
+  const confirmRejectDocument = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return
+    const expectedRequestId = rejectTarget.approvalProgress?.currentRequestId
+    if (!expectedRequestId) {
+      alert(t('errors.approvalFailed'))
+      return
+    }
+    setRejectProcessing(true)
     try {
-      const blob = await documentService.downloadFile(doc.file_path)
+      await documentService.rejectDocument(
+        rejectTarget.id,
+        expectedRequestId,
+        rejectReason.trim()
+      )
+      setRejectTarget(null)
+      setRejectReason('')
+      await loadData()
+    } catch (error: any) {
+      console.error('Document reject error:', error)
+      alert(error.message || t('errors.approvalFailed'))
+    } finally {
+      setRejectProcessing(false)
+    }
+  }
+
+  const handleDownloadDocument = async (doc: DocumentWithFolder) => {
+    try {
+      const blob = await documentService.downloadDocumentFile(doc.id)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -605,18 +668,35 @@ export default function DocumentsPage(
     setVersionHistory([])
     setVersionHistoryError(null)
     setDownloadingVersionId(null)
+    setDeletingVersionId(null)
+  }
+
+  const handleDeleteVersion = async (version: DocumentVersion) => {
+    if (!versionHistoryTarget) return
+    if (!confirm(t('versionHistory.confirmDelete', { version: version.version_number }))) return
+    setVersionHistoryError(null)
+    setDeletingVersionId(version.id)
+    try {
+      await documentService.deleteDocumentVersion(version.document_id, version.id)
+      setVersionHistory(current => current.filter(item => item.id !== version.id))
+    } catch (error) {
+      console.error('Error deleting document version:', error)
+      const message = error instanceof Error ? error.message : t('versionHistory.deleteFailed')
+      setVersionHistoryError(message)
+    } finally {
+      setDeletingVersionId(null)
+    }
   }
 
   const handleDownloadVersion = async (version: DocumentVersion) => {
-    if (!version.file_path) {
-      return
-    }
-
     setVersionHistoryError(null)
     setDownloadingVersionId(version.id)
 
     try {
-      const blob = await documentService.downloadFile(version.file_path)
+      const blob = await documentService.downloadDocumentFile(
+        version.document_id,
+        version.id
+      )
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       const rawBase = version.file_name?.split('.').slice(0, -1).join('.') ||
@@ -862,8 +942,10 @@ export default function DocumentsPage(
           <DocumentList
             documents={filteredDocuments}
             currentUserId={currentUser?.id}
+            currentUserEffectiveRole={currentUser?.effective_role}
             onRequestApproval={handleRequestApproval}
             onApprove={handleApproveDocument}
+            onReject={handleRejectDocument}
             onDelete={handleDeleteDocument}
             onDownload={handleDownloadDocument}
             onExport={handleExportDocument}
@@ -1091,20 +1173,35 @@ export default function DocumentsPage(
                                 </p>
                               )}
                             </div>
-                            {version.file_path ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDownloadVersion(version)}
-                                className="inline-flex items-center rounded-md border border-transparent px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
-                                disabled={downloadingVersionId === version.id}
-                              >
-                                {downloadingVersionId === version.id
-                                  ? t('versionHistory.downloading')
-                                  : t('versionHistory.download')}
-                              </button>
-                            ) : (
-                              <span className="text-xs text-text-muted">{t('versionHistory.noFile')}</span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {version.file_path ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadVersion(version)}
+                                  className="inline-flex items-center rounded-md border border-transparent px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                                  disabled={downloadingVersionId === version.id}
+                                >
+                                  {downloadingVersionId === version.id
+                                    ? t('versionHistory.downloading')
+                                    : t('versionHistory.download')}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-text-muted">{t('versionHistory.noFile')}</span>
+                              )}
+                              {versionHistoryTarget.status === 'draft'
+                                && version.version_number < (versionHistoryTarget.version_number ?? 0) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteVersion(version)}
+                                  className="inline-flex items-center rounded-md border border-red-200 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60"
+                                  disabled={deletingVersionId === version.id}
+                                >
+                                  {deletingVersionId === version.id
+                                    ? t('versionHistory.deleting')
+                                    : t('versionHistory.delete')}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </li>
                       )
@@ -1144,37 +1241,24 @@ export default function DocumentsPage(
                 <p className="text-sm text-text-secondary mb-4">{t('approval.modal.description')}</p>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="approval-step1" className="block text-sm font-medium text-text-secondary">
-                      {t('approval.modal.step1Label')}
+                    <label htmlFor="approval-approver" className="block text-sm font-medium text-text-secondary">
+                      {t('approval.modal.approverLabel')}
                     </label>
                     <select
-                      id="approval-step1"
-                      value={approvalStep1}
-                      onChange={(event) => setApprovalStep1(event.target.value)}
+                      id="approval-approver"
+                      value={approvalApprover}
+                      onChange={(event) => setApprovalApprover(event.target.value)}
+                      disabled={approvalCandidatesLoading}
                       className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     >
-                      <option value="">{t('approval.modal.selectPlaceholder')}</option>
-                      {users.map(user => (
+                      <option value="">
+                        {approvalCandidatesLoading
+                          ? t('approval.modal.loadingCandidates')
+                          : t('approval.modal.selectPlaceholder')}
+                      </option>
+                      {eligibleApprovers.map(user => (
                         <option key={user.id} value={user.id}>
-                          {user.full_name || user.email} ({user.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="approval-step2" className="block text-sm font-medium text-text-secondary">
-                      {t('approval.modal.step2Label')}
-                    </label>
-                    <select
-                      id="approval-step2"
-                      value={approvalStep2}
-                      onChange={(event) => setApprovalStep2(event.target.value)}
-                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    >
-                      <option value="">{t('approval.modal.selectPlaceholder')}</option>
-                      {users.map(user => (
-                        <option key={user.id} value={user.id}>
-                          {user.full_name || user.email} ({user.role})
+                          {user.displayName} ({user.role})
                         </option>
                       ))}
                     </select>
@@ -1186,7 +1270,7 @@ export default function DocumentsPage(
                 <button
                   type="button"
                   onClick={submitApprovalRequest}
-                  disabled={approvalProcessing}
+                  disabled={approvalProcessing || approvalCandidatesLoading || !approvalApprover}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-60"
                 >
                   {approvalProcessing ? t('approval.modal.saving') : t('approval.modal.submit')}
@@ -1251,6 +1335,54 @@ export default function DocumentsPage(
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
                 >
                   {t('approval.approveModal.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rejectTarget && (
+        <div className="fixed z-20 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div className="inline-block align-bottom bg-surface rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-surface px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
+                  {approvalT('decision.rejectTitle')}
+                </h3>
+                <label htmlFor="reject-reason" className="block text-sm font-medium text-text-secondary mb-1">
+                  {approvalT('decision.rejectReasonLabel')}
+                </label>
+                <textarea
+                  id="reject-reason"
+                  rows={3}
+                  value={rejectReason}
+                  onChange={(event) => setRejectReason(event.target.value)}
+                  className="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                  placeholder={approvalT('decision.rejectReasonPlaceholder')}
+                />
+              </div>
+              <div className="bg-surface-elevated px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={confirmRejectDocument}
+                  disabled={rejectProcessing || !rejectReason.trim()}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-60"
+                >
+                  {rejectProcessing ? commonT('saving') : approvalT('decision.confirmReject')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRejectTarget(null)
+                    setRejectReason('')
+                  }}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:w-auto sm:text-sm"
+                >
+                  {commonT('cancel')}
                 </button>
               </div>
             </div>

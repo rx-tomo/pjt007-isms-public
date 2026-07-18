@@ -31,8 +31,6 @@ interface DocumentFormState {
   folderId: string
 }
 
-type SubmitAction = 'draft' | 'in_review'
-
 interface ToastState {
   type: 'success' | 'error'
   message: string
@@ -248,10 +246,7 @@ export default function NewDocumentPage(
     setSelectedTemplateId(null)
   }
 
-  const handleSubmit = async (
-    event: React.MouseEvent<HTMLButtonElement>,
-    action: SubmitAction
-  ) => {
+  const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     if (isSubmitting) return
 
@@ -288,15 +283,12 @@ export default function NewDocumentPage(
         description: formData.description,
         category: formData.category,
         folderId: formData.folderId || null,
-        status: action,
+        status: 'draft',
         content: formData.content,
         language: locale === 'en' ? 'en' : 'ja'
       })
 
-      const successMessage =
-        action === 'draft' ? t('messages.draftSaved') : t('messages.submittedForReview')
-
-      setToast({ type: 'success', message: successMessage })
+      setToast({ type: 'success', message: t('messages.draftSaved') })
 
       clearDocumentDraft(organizationId)
       refreshDrafts(organizationId)
@@ -569,19 +561,11 @@ export default function NewDocumentPage(
           </Link>
           <button
             type="button"
-            onClick={(event) => handleSubmit(event, 'draft')}
-            disabled={isSubmitting}
-            className="px-4 py-2 border border-border rounded-md hover:bg-surface-elevated transition-colors disabled:opacity-50"
-          >
-            {isSubmitting ? t('form.saving') : t('editor.save_draft')}
-          </button>
-          <button
-            type="button"
-            onClick={(event) => handleSubmit(event, 'in_review')}
+            onClick={handleSubmit}
             disabled={isSubmitting}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {isSubmitting ? t('form.submitting') : t('editor.submit_review')}
+            {isSubmitting ? t('form.saving') : t('editor.save_draft')}
           </button>
         </div>
       </form>

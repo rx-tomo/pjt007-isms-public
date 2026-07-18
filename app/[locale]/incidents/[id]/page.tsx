@@ -3,11 +3,10 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState, use } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import {
-  IncidentService,
-  type IncidentRecord,
-  type IncidentLink,
-  type IncidentLinkType
+import type {
+  IncidentRecord,
+  IncidentLink,
+  IncidentLinkType
 } from '@/lib/services/incident'
 import { TaskService } from '@/lib/services/task'
 import { RiskService } from '@/lib/services/risk'
@@ -15,7 +14,6 @@ import { InformationAssetService } from '@/lib/services/informationAsset'
 import { OrganizationService } from '@/lib/services/organization'
 import { useTranslations } from 'next-intl'
 
-const incidentService = new IncidentService()
 const taskService = new TaskService()
 const riskService = new RiskService()
 const assetService = new InformationAssetService()
@@ -50,6 +48,7 @@ export default function IncidentDetailPage(props: { params: Promise<{ locale: st
   const [selectedTargetId, setSelectedTargetId] = useState('')
   const [candidatesLoading, setCandidatesLoading] = useState(false)
   const [linkSaving, setLinkSaving] = useState(false)
+  const [linkError, setLinkError] = useState<string | null>(null)
   const [organizationId, setOrganizationId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -57,13 +56,20 @@ export default function IncidentDetailPage(props: { params: Promise<{ locale: st
       try {
         setLoading(true)
         setError(null)
-        const record = await incidentService.getById(id)
-        setIncident(record)
-
-        // Load links
         setLinksLoading(true)
-        const incidentLinks = await incidentService.getIncidentLinks(id)
-        setLinks(incidentLinks)
+        const response = await fetch(`/api/incidents/${encodeURIComponent(id)}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to load incident: ${response.status}`)
+        }
+        const payload = await response.json() as {
+          data?: IncidentRecord
+          links?: IncidentLink[]
+        }
+        setIncident(payload.data ?? null)
+        setLinks(payload.links ?? [])
 
         // Load organization for candidate fetching
         const org = await organizationService.getCurrentOrganization()
@@ -141,25 +147,54 @@ export default function IncidentDetailPage(props: { params: Promise<{ locale: st
   const handleAddLink = async () => {
     if (!selectedTargetId) return
     setLinkSaving(true)
+    setLinkError(null)
     try {
-      const newLink = await incidentService.createIncidentLink(id, selectedLinkType, selectedTargetId)
+      const response = await fetch(`/api/incidents/${encodeURIComponent(id)}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          link_type: selectedLinkType,
+          link_id: selectedTargetId,
+        }),
+      })
+      const payload = await response.json().catch(() => ({})) as {
+        data?: IncidentLink
+        error?: string
+      }
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error || t('errors.saveFailed'))
+      }
+      const newLink = payload.data
       setLinks(prev => [...prev, newLink])
       setShowAddLink(false)
       setSelectedTargetId('')
       setTargetCandidates([])
     } catch (err) {
       console.error('Failed to create link', err)
+      setLinkError(err instanceof Error ? err.message : t('errors.saveFailed'))
     } finally {
       setLinkSaving(false)
     }
   }
 
   const handleDeleteLink = async (linkId: string) => {
+    setLinkError(null)
     try {
-      await incidentService.deleteIncidentLink(linkId)
+      const response = await fetch(`/api/incidents/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ link_id: linkId }),
+      })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string }
+        throw new Error(payload.error || t('errors.saveFailed'))
+      }
       setLinks(prev => prev.filter(l => l.id !== linkId))
     } catch (err) {
       console.error('Failed to delete link', err)
+      setLinkError(err instanceof Error ? err.message : t('errors.saveFailed'))
     }
   }
 
@@ -220,6 +255,11 @@ export default function IncidentDetailPage(props: { params: Promise<{ locale: st
 
             {/* Related Links Section */}
             <section className='mt-6 rounded-lg border border-border bg-surface p-6'>
+              {linkError && (
+                <div className='mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700'>
+                  {linkError}
+                </div>
+              )}
               <div className='flex items-center justify-between'>
                 <h2 className='text-lg font-semibold text-text-primary'>{t('links.title')}</h2>
                 <button
