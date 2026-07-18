@@ -22,6 +22,19 @@ The demo is intended for hands-on evaluation with seeded fictional tenants and u
 
 The public demo does not accept real user registration. Billing and Stripe-related screens run in mock mode and do not process real payments.
 
+## 2026年7月18日の主な更新
+
+公開デモを、最新の画面・API・データベース設計へ更新しました。
+
+- 文書、タスク、リスク、承認などの操作で、別組織のデータを誤って扱わないための境界を強化しました。
+- 残余リスクの承認について、誰が依頼し、誰が承認し、どのリスクに対する判断だったかを追跡しやすくしました。
+- デモデータを毎日初期状態へ戻す際も、承認履歴などを守る6件のデータベース保護ルールを復元・確認するようにしました。
+- 公開デモで、デモ管理者のログインからログイン後ホームの表示まで確認しました。
+
+更新時の検証では、94テーブルのローカルDBを新規構築し、デモデータの初期化を2回連続で実行しました。型検査、翻訳検査、公開文言検査、本番ビルド、GitHub CI、Vercelデプロイも完了しています。
+
+詳しい変更範囲と検証結果は、[公開PR #8](https://github.com/rx-tomo/pjt007-isms-public/pull/8)を参照してください。この更新は公開デモとソース評価用スナップショットの改善であり、商用サービスとしての本番準備完了やISO/IEC 27001認証を保証するものではありません。
+
 ## Why This Is Public
 
 This repository is a Build in Public snapshot. It is not a commercial SaaS launch, production service, or certification guarantee.
