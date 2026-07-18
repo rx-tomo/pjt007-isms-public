@@ -597,7 +597,7 @@ export async function createPdfExport(
   }
 }
 
-async function resolvePuppeteerExecutablePath() {
+export async function resolvePuppeteerExecutablePath() {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) {
     return accessibleExecutablePath(process.env.PUPPETEER_EXECUTABLE_PATH)
   }

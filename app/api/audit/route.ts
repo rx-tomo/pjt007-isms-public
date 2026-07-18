@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userMemberships, userProfiles } from '@/lib/db/drizzle/schema'
 import { auditChecklists, auditEvidence, auditPlans, auditReports, auditTeamMembers, correctiveActions, followUpRecords, nonconformities } from '@/lib/db/drizzle/schema/audit'
 import { AuditService } from '@/lib/services/audit'
 import type {
-  AuditApprovalStatus,
   AuditPlan,
   AuditReport,
   AuditStatus,
@@ -36,36 +35,11 @@ const supportedPostActions = new Set([
 ])
 
 async function getOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
-  const [[profile], [membership]] = await Promise.all([
-    db
-      .select({
-        organizationId: userProfiles.organizationId,
-        role: userProfiles.role,
-      })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({
-        id: userMemberships.id,
-        role: userMemberships.role,
-      })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.status, 'active')
-      ))
-      .limit(1),
-  ])
-
-  const profileAccess = profile?.organizationId === organizationId
-  const membershipAccess = Boolean(membership)
-  const role = membership?.role ?? (profileAccess ? profile?.role : null)
+  const result = await resolveTenantAuthorizationContext(db, userId, organizationId)
 
   return {
-    hasAccess: profileAccess || membershipAccess,
-    canManageAudit: Boolean(role && auditManagerRoles.has(role)),
+    hasAccess: result.ok,
+    canManageAudit: result.ok && auditManagerRoles.has(result.context.role),
   }
 }
 
@@ -89,14 +63,6 @@ function parseTeamRole(value: unknown): TeamRole | undefined {
   if (typeof value !== 'string') return undefined
   if (['lead', 'auditor', 'observer'].includes(value)) {
     return value as TeamRole
-  }
-  return undefined
-}
-
-function parseAuditApprovalStatus(value: unknown): AuditApprovalStatus | undefined {
-  if (typeof value !== 'string') return undefined
-  if (['draft', 'submitted', 'approved', 'rejected'].includes(value)) {
-    return value as AuditApprovalStatus
   }
   return undefined
 }
@@ -326,22 +292,41 @@ function parseAuditReportPayload(value: unknown): Partial<AuditReport> | null {
 
   const updates: Partial<AuditReport> = {}
 
-  if ('executive_summary' in value) updates.executive_summary = normalizeNullableString(value.executive_summary)
-  if ('scope' in value) updates.scope = normalizeNullableString(value.scope)
-  if ('methodology' in value) updates.methodology = normalizeNullableString(value.methodology)
-  if ('positive_findings' in value) updates.positive_findings = normalizeNullableString(value.positive_findings)
-  if ('improvement_opportunities' in value) updates.improvement_opportunities = normalizeNullableString(value.improvement_opportunities)
-  if ('conclusion' in value) updates.conclusion = normalizeNullableString(value.conclusion)
-  if ('report_date' in value) updates.report_date = normalizeNullableString(value.report_date)
-
-  if ('approval_status' in value) {
-    const approvalStatus = parseAuditApprovalStatus(value.approval_status)
-    if (!approvalStatus) return null
-    updates.approval_status = approvalStatus
+  if ('executive_summary' in value) {
+    const normalized = normalizeNullableString(value.executive_summary)
+    if (normalized === undefined) return null
+    updates.executive_summary = normalized
   }
-  if ('rejection_reason' in value) updates.rejection_reason = normalizeNullableString(value.rejection_reason)
-  if ('approved_by' in value) updates.approved_by = normalizeNullableString(value.approved_by)
-  if ('approved_at' in value) updates.approved_at = normalizeNullableString(value.approved_at)
+  if ('scope' in value) {
+    const normalized = normalizeNullableString(value.scope)
+    if (normalized === undefined) return null
+    updates.scope = normalized
+  }
+  if ('methodology' in value) {
+    const normalized = normalizeNullableString(value.methodology)
+    if (normalized === undefined) return null
+    updates.methodology = normalized
+  }
+  if ('positive_findings' in value) {
+    const normalized = normalizeNullableString(value.positive_findings)
+    if (normalized === undefined) return null
+    updates.positive_findings = normalized
+  }
+  if ('improvement_opportunities' in value) {
+    const normalized = normalizeNullableString(value.improvement_opportunities)
+    if (normalized === undefined) return null
+    updates.improvement_opportunities = normalized
+  }
+  if ('conclusion' in value) {
+    const normalized = normalizeNullableString(value.conclusion)
+    if (normalized === undefined) return null
+    updates.conclusion = normalized
+  }
+  if ('report_date' in value) {
+    const normalized = normalizeNullableString(value.report_date)
+    if (normalized === undefined) return null
+    updates.report_date = normalized
+  }
 
   return updates
 }
@@ -452,15 +437,23 @@ async function findAuditPlanOrganization(db: ReturnType<typeof getDb>, planId: s
   return row?.organizationId ?? null
 }
 
-async function findAuditReportOrganization(db: ReturnType<typeof getDb>, reportId: string) {
+async function findAuditReportContext(db: ReturnType<typeof getDb>, reportId: string) {
   const [row] = await db
-    .select({ organizationId: auditPlans.organizationId })
+    .select({
+      auditPlanId: auditReports.auditPlanId,
+      organizationId: auditPlans.organizationId,
+    })
     .from(auditReports)
     .innerJoin(auditPlans, eq(auditReports.auditPlanId, auditPlans.id))
     .where(eq(auditReports.id, reportId))
     .limit(1)
 
-  return row?.organizationId ?? null
+  if (!row?.auditPlanId || !row.organizationId) return null
+  return row
+}
+
+async function findAuditReportOrganization(db: ReturnType<typeof getDb>, reportId: string) {
+  return (await findAuditReportContext(db, reportId))?.organizationId ?? null
 }
 
 async function findTeamMemberOrganization(db: ReturnType<typeof getDb>, memberId: string) {
@@ -508,9 +501,33 @@ export async function GET(request: NextRequest) {
   const db = getDb()
   const planId = searchParams.get('planId')
   const nonconformityId = searchParams.get('nonconformityId')
-  const organizationId = searchParams.get('organizationId')
-    ?? (planId ? await findAuditPlanOrganization(db, planId) : null)
-    ?? (nonconformityId ? await findNonconformityOrganization(db, nonconformityId) : null)
+  const requestedOrganizationId = searchParams.get('organizationId')
+  let resourceOrganizationId: string | null = null
+
+  if (action === 'plan' || action === 'followUps') {
+    if (!planId) {
+      return applyCookies(badRequest('Missing planId'))
+    }
+    resourceOrganizationId = await findAuditPlanOrganization(db, planId)
+    if (!resourceOrganizationId) {
+      return applyCookies(NextResponse.json({ error: 'Audit plan not found' }, { status: 404 }))
+    }
+  } else if (action === 'followUpsByNonconformity') {
+    if (!nonconformityId) {
+      return applyCookies(badRequest('Missing nonconformityId'))
+    }
+    resourceOrganizationId = await findNonconformityOrganization(db, nonconformityId)
+    if (!resourceOrganizationId) {
+      return applyCookies(NextResponse.json({ error: 'Nonconformity not found' }, { status: 404 }))
+    }
+  }
+
+  if (requestedOrganizationId && resourceOrganizationId
+    && requestedOrganizationId !== resourceOrganizationId) {
+    return applyCookies(NextResponse.json({ error: 'Audit resource not found' }, { status: 404 }))
+  }
+
+  const organizationId = resourceOrganizationId ?? requestedOrganizationId
 
   if (!organizationId) {
     return applyCookies(NextResponse.json({ error: 'Missing organizationId' }, { status: 400 }))
@@ -775,7 +792,16 @@ export async function POST(request: NextRequest) {
       }
 
       const db = getDb()
-      const organizationId = await findAuditPlanOrganization(db, planId)
+      const reportContext = reportId ? await findAuditReportContext(db, reportId) : null
+      if (reportId && !reportContext) {
+        return applyCookies(NextResponse.json({ error: 'Audit report not found' }, { status: 404 }))
+      }
+      if (reportContext && reportContext.auditPlanId !== planId) {
+        return applyCookies(NextResponse.json({ error: 'Audit report not found' }, { status: 404 }))
+      }
+
+      const organizationId = reportContext?.organizationId
+        ?? await findAuditPlanOrganization(db, planId)
       if (!organizationId) {
         return applyCookies(NextResponse.json({ error: 'Audit plan not found' }, { status: 404 }))
       }
@@ -796,7 +822,7 @@ export async function POST(request: NextRequest) {
         : await service.createAuditReport({
           audit_plan_id: planId,
           ...parsedReport,
-          approval_status: parsedReport.approval_status ?? 'draft',
+          approval_status: 'draft',
         })
       return applyCookies(NextResponse.json(data, { status: reportId ? 200 : 201 }))
     }
@@ -852,9 +878,18 @@ export async function POST(request: NextRequest) {
       }
 
       const db = getDb()
-      const auditPlanId = payload.auditPlanId || (payload.nonconformityId
+      const nonconformityAuditPlanId = payload.nonconformityId
         ? await findNonconformityAuditPlanId(db, payload.nonconformityId)
-        : null)
+        : null
+      if (payload.nonconformityId && !nonconformityAuditPlanId) {
+        return applyCookies(NextResponse.json({ error: 'Nonconformity not found' }, { status: 404 }))
+      }
+      if (payload.auditPlanId && nonconformityAuditPlanId
+        && payload.auditPlanId !== nonconformityAuditPlanId) {
+        return applyCookies(NextResponse.json({ error: 'Follow-up resource not found' }, { status: 404 }))
+      }
+
+      const auditPlanId = nonconformityAuditPlanId ?? payload.auditPlanId
       if (!auditPlanId) {
         return applyCookies(NextResponse.json({ error: 'Audit plan not found' }, { status: 404 }))
       }
@@ -869,7 +904,12 @@ export async function POST(request: NextRequest) {
       }
 
       const service = new AuditService()
-      const data = await service.createFollowUpRecord({ ...payload, auditPlanId })
+      const data = await service.createFollowUpRecord({
+        ...payload,
+        auditPlanId,
+        organizationId,
+        userId: user.id,
+      })
       return applyCookies(NextResponse.json(data, { status: 201 }))
     }
 

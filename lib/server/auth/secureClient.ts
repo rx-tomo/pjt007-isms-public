@@ -1,9 +1,15 @@
-import { logServiceRoleEvent, ServiceRoleEventStatus } from '@/lib/server/logging/serviceRoleEvents'
+import { userRoleValues, type UserRole } from '@/lib/db/drizzle/schema'
+import type { getDb } from '@/lib/db/drizzle/client'
+import {
+  resolveTenantAuthorizationContext,
+  type TenantAuthorizationResult,
+} from '@/lib/server/auth/authorizationContext'
+import type { ServiceRoleEventStatus } from '@/lib/server/logging/serviceRoleEvents'
 import { NextRequest, NextResponse } from 'next/server'
 
 type ProfileRow = {
   id: string
-  role: string | null
+  role: string
   organization_id: string | null
 }
 
@@ -21,84 +27,180 @@ type GuardResult = {
   ) => Promise<void>
 }
 
-type GuardOptions = {
-  allowedRoles?: string[]
-  organizationId?: string
+export type NonEmptyRoles = readonly [UserRole, ...UserRole[]]
+
+type CommonGuardOptions = {
   actionName?: string
   logContext?: Record<string, unknown>
 }
 
-const CROSS_ORG_ROLES = new Set(['system_operator', 'super_admin'])
+export type GuardOptions =
+  | (CommonGuardOptions & {
+      mode: 'tenant'
+      organizationId: string
+      allowedRoles?: readonly string[]
+    })
+  | (CommonGuardOptions & {
+      mode: 'tenant-primary'
+      allowedRoles?: readonly string[]
+    })
+  | (CommonGuardOptions & {
+      mode: 'global'
+      allowedRoles: NonEmptyRoles
+    })
+  | (CommonGuardOptions & {
+      mode: 'system-job'
+      allowedRoles: NonEmptyRoles
+    })
 
-const normalizeRole = (value?: string | null) => value?.toLowerCase() ?? ''
+type ProfileRecord = {
+  id: string
+  role: string
+  organizationId: string | null
+  isActive: boolean | null
+}
+
+type GuardDb = ReturnType<typeof getDb>
+
+export interface ServiceRoleDependencies {
+  getSession: (request: NextRequest) => Promise<{ user: { id: string } } | null>
+  getDb: () => GuardDb
+  getProfile: (db: GuardDb, userId: string) => Promise<ProfileRecord | null>
+  resolveTenantContext: (
+    db: GuardDb,
+    userId: string,
+    organizationId: string
+  ) => Promise<TenantAuthorizationResult>
+}
+
+const AUTHORIZATION_MODES = new Set(['tenant', 'tenant-primary', 'global', 'system-job'])
+const GLOBAL_PROFILE_ROLES = new Set<UserRole>(['system_operator', 'super_admin'])
+
+const isUserRole = (value: string): value is UserRole =>
+  (userRoleValues as readonly string[]).includes(value)
+
+async function getDefaultDependencies(): Promise<ServiceRoleDependencies> {
+  const { auth } = await import('@/lib/auth/better-auth')
+  const { getDb } = await import('@/lib/db/drizzle/client')
+  const { userProfiles } = await import('@/lib/db/drizzle/schema/users')
+  const { eq } = await import('drizzle-orm')
+
+  return {
+    getSession: request => auth.api.getSession({ headers: request.headers }),
+    getDb,
+    getProfile: async (db, userId) => {
+      const [profile] = await db
+        .select({
+          id: userProfiles.id,
+          role: userProfiles.role,
+          organizationId: userProfiles.organizationId,
+          isActive: userProfiles.isActive,
+        })
+        .from(userProfiles)
+        .where(eq(userProfiles.id, userId))
+        .limit(1)
+      return profile ?? null
+    },
+    resolveTenantContext: resolveTenantAuthorizationContext,
+  }
+}
+
+function rolesAreValid(roles: readonly string[] | undefined): boolean {
+  return roles === undefined || roles.every(role => isUserRole(role))
+}
 
 export async function requireServiceRole(
   request: NextRequest,
-  options: GuardOptions = {}
+  options: GuardOptions,
+  injectedDependencies?: ServiceRoleDependencies
 ): Promise<{ guard?: GuardResult; error?: NextResponse }> {
-  const respondJson = (body: unknown, init?: ResponseInit) =>
-    NextResponse.json(body, init)
-
-  const actionName = options.actionName ?? 'service_role'
+  const respondJson = (body: unknown, init?: ResponseInit) => NextResponse.json(body, init)
 
   try {
-    const { auth } = await import('@/lib/auth/better-auth')
-    const session = await auth.api.getSession({ headers: request.headers })
+    const runtimeOptions = options as GuardOptions | undefined
+    if (!runtimeOptions?.mode || !AUTHORIZATION_MODES.has(runtimeOptions.mode)) {
+      return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+    }
+    if (
+      runtimeOptions.mode === 'tenant' &&
+      (typeof runtimeOptions.organizationId !== 'string' || runtimeOptions.organizationId.trim() === '')
+    ) {
+      return { error: respondJson({ error: 'Organization ID is required' }, { status: 400 }) }
+    }
+    if (!rolesAreValid(runtimeOptions.allowedRoles)) {
+      return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+    }
+    if (
+      (runtimeOptions.mode === 'global' || runtimeOptions.mode === 'system-job') &&
+      (!runtimeOptions.allowedRoles || runtimeOptions.allowedRoles.length === 0)
+    ) {
+      return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+    }
 
+    const dependencies = injectedDependencies ?? await getDefaultDependencies()
+    const session = await dependencies.getSession(request)
     if (!session?.user) {
       return { error: respondJson({ error: 'Unauthorized' }, { status: 401 }) }
     }
 
-    // Query user profile from Drizzle DB
-    const { getDb } = await import('@/lib/db/drizzle/client')
-    const { userProfiles } = await import('@/lib/db/drizzle/schema/users')
-    const { eq } = await import('drizzle-orm')
-    const db = getDb()
-
-    const profiles = await db
-      .select({
-        id: userProfiles.id,
-        role: userProfiles.role,
-        organizationId: userProfiles.organizationId,
-      })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, session.user.id))
-      .limit(1)
-
-    const profileRow = profiles[0]
-    if (!profileRow) {
-      console.error('[ServiceRole] failed to resolve user profile')
-      return { error: respondJson({ error: 'Profile not found' }, { status: 403 }) }
+    const db = dependencies.getDb()
+    const profileRecord = await dependencies.getProfile(db, session.user.id)
+    if (!profileRecord || profileRecord.isActive !== true) {
+      return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
     }
 
-    const profile: ProfileRow = {
-      id: profileRow.id,
-      role: profileRow.role,
-      organization_id: profileRow.organizationId,
+    let effectiveRole: UserRole
+    let contextOrganizationId: string | null
+
+    if (runtimeOptions.mode === 'tenant' || runtimeOptions.mode === 'tenant-primary') {
+      const organizationId = runtimeOptions.mode === 'tenant'
+        ? runtimeOptions.organizationId
+        : profileRecord.organizationId
+      if (!organizationId) {
+        return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+      }
+
+      const authorization = await dependencies.resolveTenantContext(
+        db,
+        session.user.id,
+        organizationId
+      )
+      if (!authorization.ok) {
+        return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+      }
+      effectiveRole = authorization.context.role
+      contextOrganizationId = authorization.context.organizationId
+    } else {
+      if (!isUserRole(profileRecord.role)) {
+        return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+      }
+      effectiveRole = profileRecord.role
+      if (!GLOBAL_PROFILE_ROLES.has(effectiveRole)) {
+        return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+      }
+      contextOrganizationId = profileRecord.organizationId
     }
 
-    const role = normalizeRole(profile.role)
-    if (options.allowedRoles && options.allowedRoles.length > 0) {
-      const allowedSet = new Set(options.allowedRoles.map(normalizeRole))
-      if (!allowedSet.has(role)) {
+    if (runtimeOptions.allowedRoles) {
+      const allowedSet = new Set(runtimeOptions.allowedRoles)
+      if (!allowedSet.has(effectiveRole)) {
         return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
       }
     }
 
-    if (options.organizationId) {
-      const orgMismatch = profile.organization_id !== options.organizationId
-      if (orgMismatch && !CROSS_ORG_ROLES.has(role)) {
-        return { error: respondJson({ error: 'Organization mismatch' }, { status: 403 }) }
-      }
+    const actionName = runtimeOptions.actionName ?? 'service_role'
+    const profile: ProfileRow = {
+      id: profileRecord.id,
+      role: effectiveRole,
+      organization_id: contextOrganizationId,
     }
 
-    // Audit log via Drizzle
     const logEvent = async (
       status: ServiceRoleEventStatus,
       context?: Record<string, unknown>,
       metadata?: { format?: string; documentId?: string | null }
     ) => {
-      const organizationId = options.organizationId ?? profile.organization_id
+      const organizationId = contextOrganizationId
       if (!organizationId) {
         console.warn('[ServiceRole] logEvent skipped: missing organization_id')
         return
@@ -112,7 +214,9 @@ export async function requireServiceRole(
           action: actionName,
           resourceType: 'service_role',
           resourceId: metadata?.documentId ?? null,
-          changes: context ? JSON.stringify({ ...options.logContext, ...context, status }) : JSON.stringify({ status }),
+          changes: context
+            ? JSON.stringify({ ...runtimeOptions.logContext, ...context, status })
+            : JSON.stringify({ status }),
           createdAt: new Date().toISOString(),
         })
       } catch (err) {
@@ -120,11 +224,7 @@ export async function requireServiceRole(
       }
     }
 
-    // No-op wrapResponse (no auth cookies to apply)
     const wrapResponse = <T extends NextResponse>(response: T): T => response
-
-    // Backward compat: serviceClient is null in Better Auth mode.
-    // Callers that still use it will be migrated to Drizzle.
     const serviceClient = null as any
 
     return {
@@ -134,13 +234,11 @@ export async function requireServiceRole(
         userId: session.user.id,
         wrapResponse,
         json: respondJson,
-        logEvent
-      }
+        logEvent,
+      },
     }
   } catch (err) {
     console.error('[ServiceRole] Error:', err)
     return { error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) }
   }
 }
-
-export const isMultiOrgRole = (role?: string | null) => CROSS_ORG_ROLES.has(normalizeRole(role))

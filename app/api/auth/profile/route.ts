@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { getUser } from '@/lib/server/auth/getUser'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userProfiles } from '@/lib/db/drizzle/schema/users'
+import { userMemberships, userProfiles, userRoleValues } from '@/lib/db/drizzle/schema/users'
 
 export async function GET() {
   try {
@@ -40,6 +40,32 @@ export async function GET() {
       return NextResponse.json({ error: 'profile not found' }, { status: 404 })
     }
 
+    let effectiveRole: string | null = null
+    let effectiveOrganizationId: string | null = null
+    if (row.isActive === true && row.organizationId) {
+      const [membership] = await db
+        .select({
+          organizationId: userMemberships.organizationId,
+          role: userMemberships.role,
+          status: userMemberships.status,
+        })
+        .from(userMemberships)
+        .where(and(
+          eq(userMemberships.userId, row.id),
+          eq(userMemberships.organizationId, row.organizationId),
+        ))
+        .limit(1)
+
+      if (
+        membership?.organizationId === row.organizationId &&
+        membership.status === 'active' &&
+        (userRoleValues as readonly string[]).includes(membership.role)
+      ) {
+        effectiveRole = membership.role
+        effectiveOrganizationId = membership.organizationId
+      }
+    }
+
     return NextResponse.json({
       profile: {
         id: row.id,
@@ -58,6 +84,8 @@ export async function GET() {
         created_at: row.createdAt,
         updated_at: row.updatedAt,
         last_login_at: row.lastLoginAt,
+        effective_role: effectiveRole,
+        effective_organization_id: effectiveOrganizationId,
       }
     })
   } catch (error) {

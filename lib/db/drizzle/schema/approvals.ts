@@ -27,6 +27,7 @@ export const approvalResourceTypeValues = [
   'incident',
   'iso_control_soa',
   'soa_version',
+  'risk_residual_acceptance',
 ] as const
 export type ApprovalResourceType = (typeof approvalResourceTypeValues)[number]
 
@@ -80,11 +81,45 @@ export const approvalRequests = sqliteTable(
     index('idx_approval_requests_due_at').on(table.dueAt),
     index('idx_approval_requests_resource_step').on(table.resourceType, table.resourceId, table.stepNumber),
     index('idx_approval_requests_reverted_at').on(table.revertedAt),
+    uniqueIndex('idx_document_approval_single_pending_unique')
+      .on(table.organizationId, table.resourceId)
+      .where(sql`${table.resourceType} = 'document' AND ${table.status} = 'pending'`),
+    uniqueIndex('idx_approval_requests_single_pending_unique')
+      .on(table.organizationId, table.resourceType, table.resourceId)
+      .where(sql`${table.status} = 'pending'`),
   ]
 )
 
 export type ApprovalRequest = typeof approvalRequests.$inferSelect
 export type ApprovalRequestInsert = typeof approvalRequests.$inferInsert
+
+// =========================================
+// Residual Acceptance Approval Bindings Table
+// =========================================
+export const residualAcceptanceApprovalBindings = sqliteTable(
+  'residual_acceptance_approval_bindings',
+  {
+    approvalRequestId: text('approval_request_id')
+      .primaryKey()
+      .references(() => approvalRequests.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id').notNull(),
+    resourceId: text('resource_id').notNull(),
+    // Deliberately not an FK: immutable lineage must remain readable if legacy rows are orphaned.
+    riskId: text('risk_id'),
+    approverId: text('approver_id').notNull(),
+    responsibleId: text('responsible_id').notNull(),
+    resourceMaterialVersion: integer('resource_material_version').notNull(),
+  },
+  (table) => [
+    index('idx_residual_acceptance_bindings_risk').on(table.riskId),
+  ]
+)
+
+export type ResidualAcceptanceApprovalBinding = typeof residualAcceptanceApprovalBindings.$inferSelect
+export type ResidualAcceptanceApprovalBindingInsert = Omit<
+  typeof residualAcceptanceApprovalBindings.$inferInsert,
+  'riskId'
+> & { riskId: string }
 
 // =========================================
 // Approval Events Table
@@ -160,7 +195,21 @@ export const approvalRequestsRelations = relations(approvalRequests, ({ one, man
     relationName: 'approvalApprover',
   }),
   events: many(approvalEvents),
+  residualAcceptanceBinding: one(residualAcceptanceApprovalBindings, {
+    fields: [approvalRequests.id],
+    references: [residualAcceptanceApprovalBindings.approvalRequestId],
+  }),
 }))
+
+export const residualAcceptanceApprovalBindingsRelations = relations(
+  residualAcceptanceApprovalBindings,
+  ({ one }) => ({
+    approvalRequest: one(approvalRequests, {
+      fields: [residualAcceptanceApprovalBindings.approvalRequestId],
+      references: [approvalRequests.id],
+    }),
+  })
+)
 
 export const approvalEventsRelations = relations(approvalEvents, ({ one }) => ({
   approvalRequest: one(approvalRequests, {

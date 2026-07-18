@@ -139,6 +139,7 @@ export {
   documents,
   documentFolders,
   documentVersions,
+  documentStorageOperations,
   documentTemplates,
   documentApprovals,
   // Relations
@@ -154,6 +155,8 @@ export {
   type DocumentFolderInsert,
   type DocumentVersion,
   type DocumentVersionInsert,
+  type DocumentStorageOperation,
+  type DocumentStorageOperationInsert,
   type DocumentTemplate,
   type DocumentTemplateInsert,
   type DocumentApproval,
@@ -165,6 +168,10 @@ export {
   type DocumentTemplateCategory,
   documentApprovalStatusValues,
   type DocumentApprovalStatus,
+  documentStorageOperationKindValues,
+  type DocumentStorageOperationKind,
+  documentStorageOperationStatusValues,
+  type DocumentStorageOperationStatus,
 } from './documents'
 
 // =========================================
@@ -223,10 +230,12 @@ export {
   approvalRequests,
   approvalEvents,
   approvalEscalationRules,
+  residualAcceptanceApprovalBindings,
   // Relations
   approvalRequestsRelations,
   approvalEventsRelations,
   approvalEscalationRulesRelations,
+  residualAcceptanceApprovalBindingsRelations,
   // Types
   type ApprovalRequest,
   type ApprovalRequestInsert,
@@ -234,6 +243,8 @@ export {
   type ApprovalEventInsert,
   type ApprovalEscalationRule,
   type ApprovalEscalationRuleInsert,
+  type ResidualAcceptanceApprovalBinding,
+  type ResidualAcceptanceApprovalBindingInsert,
   // Enum values & types
   approvalResourceTypeValues,
   type ApprovalResourceType,
@@ -724,6 +735,7 @@ export {
 // =========================================
 import * as organizationsSchema from './organizations'
 import * as usersSchema from './users'
+import * as userPreferencesSchema from './user-preferences'
 import * as aiSchema from './ai'
 import * as documentsSchema from './documents'
 import * as tasksSchema from './tasks'
@@ -745,6 +757,7 @@ import * as managementReviewsSchema from './management-reviews'
 export const schema = {
   ...organizationsSchema,
   ...usersSchema,
+  ...userPreferencesSchema,
   ...aiSchema,
   ...documentsSchema,
   ...tasksSchema,

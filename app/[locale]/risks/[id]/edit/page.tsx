@@ -138,17 +138,22 @@ export default function EditRiskPage(
         identifiedDate: riskData.identified_date || ''
       })
 
-      const profile = await userService.getCurrentUser()
-      const orgId = profile?.organization_id || riskData.organization_id || null
+      const orgId = riskData.organization_id || null
       if (!orgId) {
         setError('Organization not found')
         return
       }
       setOrganizationId(orgId)
 
+      const profile = await userService.getUserProfile()
+      const canLoadOrganizationMembers = ['system_operator', 'org_admin'].includes(
+        profile?.effective_role ?? ''
+      )
       const [categoriesData, orgUsers, assetList, orgTasks] = await Promise.all([
         riskService.getRiskCategories(orgId),
-        userService.getOrganizationUsers(orgId),
+        canLoadOrganizationMembers
+          ? userService.getOrganizationUsers(orgId)
+          : Promise.resolve(riskData.owner ? [riskData.owner] : []),
         assetService.getAssetsForRisk(orgId),
         taskService.getTasks({ organizationId: orgId })
       ])
@@ -180,6 +185,7 @@ export default function EditRiskPage(
     setError(null)
 
     try {
+      if (!risk?.updated_at) throw new Error('Risk version is missing')
       await riskService.updateRisk(id, {
         title: formData.title,
         description: formData.description,
@@ -187,7 +193,8 @@ export default function EditRiskPage(
         impact_level: formData.impact as 1 | 2 | 3 | 4 | 5,
         likelihood_level: formData.likelihood as 1 | 2 | 3 | 4 | 5,
         owner_id: formData.ownerId,
-        identified_date: formData.identifiedDate
+        identified_date: formData.identifiedDate,
+        expected_updated_at: risk.updated_at
       })
 
       router.push(`/${locale}/risks`)
@@ -203,7 +210,11 @@ export default function EditRiskPage(
     setAssetSaving(true)
     setError(null)
     try {
-      await riskService.setRiskAssets(risk.id, selectedAssetIds)
+      if (!risk.updated_at) throw new Error('Risk version is missing')
+      await riskService.updateRisk(risk.id, {
+        assetIds: selectedAssetIds,
+        expected_updated_at: risk.updated_at,
+      })
       const refreshed = await riskService.getRiskById(risk.id)
       if (refreshed) {
         setRisk(refreshed)

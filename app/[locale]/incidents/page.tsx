@@ -3,12 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState, use } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { IncidentService, type IncidentRecord } from '@/lib/services/incident'
-import { OrganizationService } from '@/lib/services/organization'
+import type { IncidentRecord } from '@/lib/services/incident'
 import { useTranslations } from 'next-intl'
-
-const incidentService = new IncidentService()
-const organizationService = new OrganizationService()
 
 export default function IncidentsPage(props: { params: Promise<{ locale: string }> }) {
   const params = use(props.params);
@@ -27,13 +23,15 @@ export default function IncidentsPage(props: { params: Promise<{ locale: string 
       try {
         setLoading(true)
         setError(null)
-        const organization = await organizationService.getCurrentOrganization()
-        if (!organization?.id) {
-          setIncidents([])
-          return
+        const response = await fetch('/api/incidents', {
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to load incidents: ${response.status}`)
         }
-        const records = await incidentService.list(organization.id)
-        setIncidents(records)
+        const payload = await response.json() as { data?: IncidentRecord[] }
+        setIncidents(payload.data ?? [])
       } catch (err) {
         console.error(err)
         setError(t('errors.loadFailed'))

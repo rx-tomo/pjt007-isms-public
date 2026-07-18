@@ -11,6 +11,7 @@ type Params = { organizationId: string }
 
 async function requireGuard(request: NextRequest, organizationId: string, write = false) {
   return requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId,
     actionName: write ? 'organization.notification_channels.write' : 'organization.notification_channels.read',

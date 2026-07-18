@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
 import { OrganizationService } from '@/lib/services/organization'
+import { DepartmentHierarchyError } from '@/lib/db/repositories/interfaces/IOrganizationRepository'
 
 type Params = { organizationId: string }
 
@@ -10,6 +11,7 @@ type Params = { organizationId: string }
 export async function GET(request: NextRequest, props: { params: Promise<Params> }) {
   const params = await props.params;
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId: params.organizationId,
     actionName: 'organization.settings.read',
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
 export async function POST(request: NextRequest, props: { params: Promise<Params> }) {
   const params = await props.params;
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId: params.organizationId,
     actionName: 'organization.settings.write',
@@ -169,6 +172,9 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
     }
   } catch (err) {
     console.error(`[Settings POST] action=${action} failed`, err)
+    if (err instanceof DepartmentHierarchyError) {
+      return guard.json({ error: err.message, code: err.code }, { status: err.status })
+    }
     const message = err instanceof Error ? err.message : 'Internal server error'
     return guard.json({ error: message }, { status: 500 })
   }

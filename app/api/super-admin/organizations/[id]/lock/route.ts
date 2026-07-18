@@ -10,6 +10,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const { id } = await context.params
 
   const guardResult = await requireServiceRole(request, {
+    mode: 'global',
     allowedRoles: ['super_admin'],
     actionName: 'super_admin.organizations.toggle_lock',
   })

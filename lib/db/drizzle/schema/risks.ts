@@ -174,6 +174,7 @@ export const riskTreatments = sqliteTable(
     residualApprovedAt: text('residual_approved_at'),
     residualRejectionReason: text('residual_rejection_reason'),
     residualReviewDueDate: text('residual_review_due_date'),
+    materialVersion: integer('material_version').notNull().default(1),
     costEstimate: real('cost_estimate'),
     actualCost: real('actual_cost'),
     effectivenessRating: integer('effectiveness_rating'), // CHECK: 1-5 (enforced at app layer)

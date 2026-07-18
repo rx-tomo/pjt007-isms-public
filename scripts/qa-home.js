@@ -30,14 +30,14 @@ const scripts = [
     name: 'ホームダッシュボード フェールセーフ検証 (Playwright)',
     command: ['npx', 'playwright', 'test', 'tests/e2e/home-failsafe.spec.ts', '--reporter=line'],
     extraEnv: {
-      PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+      PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1'
     }
   },
   {
     name: 'ホームサイドバー折りたたみ QA (Playwright)',
     command: ['npx', 'playwright', 'test', 'tests/e2e/home-sidebar-behavior.spec.ts', '--reporter=line'],
     extraEnv: {
-      PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+      PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1'
     }
   },
   {

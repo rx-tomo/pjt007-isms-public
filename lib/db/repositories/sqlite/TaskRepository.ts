@@ -15,7 +15,10 @@
  * @module lib/db/repositories/sqlite/TaskRepository
  */
 
-import { eq, and, asc, desc, gte, lte, isNull, or } from 'drizzle-orm'
+import { eq, and, asc, desc, gte, lte, inArray, isNull, or } from 'drizzle-orm'
+import type { Client } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
+import * as schema from '@/lib/db/drizzle/schema'
 import { BaseSQLiteRepository } from './BaseSQLiteRepository'
 import {
   tasks,
@@ -25,8 +28,12 @@ import {
   taskTags,
   taskTagRelations,
   taskHistory,
+  taskReminders,
 } from '@/lib/db/drizzle/schema/tasks'
-import { userProfiles } from '@/lib/db/drizzle/schema/users'
+import { auditLogs } from '@/lib/db/drizzle/schema/audit-logs'
+import { documents } from '@/lib/db/drizzle/schema/documents'
+import { risks } from '@/lib/db/drizzle/schema/risks'
+import { userMemberships, userProfiles } from '@/lib/db/drizzle/schema/users'
 import type {
   ITaskRepository,
   Task,
@@ -46,9 +53,48 @@ import type {
   TaskTagCreateInput,
   SubtaskCreateInput,
   TaskAttachmentCreateInput,
+  TaskImportMutationInput,
+  TaskImportMutationResult,
+  TaskLifecycleAuditContext,
+  TaskTenantInvariantValidator,
 } from '../interfaces/ITaskRepository'
 import type { QueryOptions } from '../interfaces/IBaseRepository'
 import type { DrizzleDb } from '@/lib/db/drizzle/client'
+import {
+  assertTaskImportReferencesBelongToOrganization,
+  TaskImportRowError,
+  TaskTenantInvariantError,
+} from '@/lib/services/taskTenantInvariant'
+
+type TaskRow = typeof tasks.$inferSelect
+type UserProfileRow = typeof userProfiles.$inferSelect
+type EligibleUser = {
+  profile: Pick<
+    UserProfileRow,
+    'id' | 'organizationId' | 'email' | 'fullName' | 'role' | 'isActive'
+  >
+  membershipRole: string
+}
+
+const taskHistoryFields: Array<{
+  input: keyof TaskUpdateInput
+  row: keyof TaskRow
+}> = [
+  { input: 'title', row: 'title' },
+  { input: 'description', row: 'description' },
+  { input: 'category_id', row: 'categoryId' },
+  { input: 'assignee_id', row: 'assigneeId' },
+  { input: 'reporter_id', row: 'reporterId' },
+  { input: 'status', row: 'status' },
+  { input: 'priority', row: 'priority' },
+  { input: 'due_date', row: 'dueDate' },
+  { input: 'estimated_hours', row: 'estimatedHours' },
+  { input: 'actual_hours', row: 'actualHours' },
+  { input: 'progress', row: 'progress' },
+  { input: 'parent_task_id', row: 'parentTaskId' },
+  { input: 'related_document_id', row: 'relatedDocumentId' },
+  { input: 'related_risk_id', row: 'relatedRiskId' },
+]
 
 export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskRepository {
   /**
@@ -77,6 +123,27 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
     if (rows.length === 0) return null
 
     return this.mapTaskRowToEntity(rows[0])
+  }
+
+  async findOrganizationIdByTaskId(id: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ organizationId: tasks.organizationId })
+      .from(tasks)
+      .where(eq(tasks.id, id))
+      .limit(1)
+
+    return row?.organizationId ?? null
+  }
+
+  async findByIdAndOrganizationId(id: string, organizationId: string): Promise<Task | null> {
+    this.requireOrganizationId(organizationId, 'findByIdAndOrganizationId')
+    const rows = await this.db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
+      .limit(1)
+
+    return rows[0] ? (await this.projectTaskCore(rows[0])).task : null
   }
 
   /**
@@ -139,6 +206,10 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
    * Create a new task
    */
   async create(data: TaskCreateInput): Promise<Task> {
+    return this.createUsingDb(this.db, data)
+  }
+
+  private async createUsingDb(db: DrizzleDb, data: TaskCreateInput): Promise<Task> {
     this.requireOrganizationId(data.organization_id, 'create task')
 
     const id = crypto.randomUUID()
@@ -166,7 +237,7 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
       completedAt: data.status === 'done' ? now : null,
     }
 
-    await this.db.insert(tasks).values(row)
+    await db.insert(tasks).values(row)
 
     this.logDataAccess('create task', data.organization_id, { id })
 
@@ -177,6 +248,34 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
    * Update an existing task
    */
   async update(id: string, updates: TaskUpdateInput): Promise<Task | null> {
+    const existing = await this.findById(id)
+    if (!existing) return null
+    return this.updateByOrganizationId(id, existing.organization_id, updates)
+  }
+
+  async updateByOrganizationId(
+    id: string,
+    organizationId: string,
+    updates: TaskUpdateInput
+  ): Promise<Task | null> {
+    return this.updateUsingDb(this.db, id, organizationId, updates)
+  }
+
+  private async updateUsingDb(
+    db: DrizzleDb,
+    id: string,
+    organizationId: string,
+    updates: TaskUpdateInput,
+    existingRow?: TaskRow
+  ): Promise<Task | null> {
+    this.requireOrganizationId(organizationId, 'updateByOrganizationId')
+    const existing = existingRow ?? (await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
+      .limit(1))[0]
+    if (!existing) return null
+
     const now = new Date().toISOString()
 
     const setPayload: Record<string, unknown> = {
@@ -197,32 +296,409 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
     if (updates.related_risk_id !== undefined) setPayload.relatedRiskId = updates.related_risk_id
     if (updates.priority !== undefined) setPayload.priority = updates.priority
 
-    // Handle completed_at based on status
+    // completed_at is derived exclusively from status on the server.
     if (updates.status !== undefined) {
       setPayload.status = updates.status
-      if (updates.status === 'done' && !updates.completed_at) {
-        setPayload.completedAt = now
-      } else if (updates.status !== 'done') {
+      if (updates.status === 'done') {
+        setPayload.completedAt = existing.completedAt ?? now
+      } else {
         setPayload.completedAt = null
       }
     }
 
-    if (updates.completed_at !== undefined) setPayload.completedAt = updates.completed_at
-
-    await this.db
+    await db
       .update(tasks)
       .set(setPayload)
-      .where(eq(tasks.id, id))
+      .where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
 
     // Re-fetch the updated row
-    const rows = await this.db
+    const rows = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.id, id))
+      .where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
 
     if (rows.length === 0) return null
 
-    return this.mapTaskRowToEntity(rows[0])
+    return (await this.projectTaskCore(rows[0], db)).task
+  }
+
+  async createWithTenantInvariant(
+    data: TaskCreateInput,
+    validate: TaskTenantInvariantValidator,
+    audit: TaskLifecycleAuditContext
+  ): Promise<Task> {
+    return this.withTenantTransaction(async tx => {
+      await this.assertActiveMembership(tx, audit.userId, data.organization_id)
+      await validate(tx)
+      const task = await this.createUsingDb(tx, data)
+      await this.insertTaskAudit(tx, data.organization_id, task.id, audit, 'task.created', {
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        progress: task.progress,
+      })
+      return task
+    })
+  }
+
+  async updateWithTenantInvariant(
+    id: string,
+    organizationId: string,
+    updates: TaskUpdateInput,
+    validate: TaskTenantInvariantValidator,
+    audit: TaskLifecycleAuditContext
+  ): Promise<Task | null> {
+    return this.withTenantTransaction(async tx => {
+      await this.assertActiveMembership(tx, audit.userId, organizationId)
+      const [existing] = await tx
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
+        .limit(1)
+      if (!existing) return null
+      await validate(tx)
+      const changedFields = this.getChangedTaskFields(existing, updates)
+      const task = await this.updateUsingDb(tx, id, organizationId, updates, existing)
+      if (!task) return null
+
+      await this.insertTaskHistory(tx, organizationId, id, audit.userId, changedFields)
+      await this.insertTaskAudit(
+        tx,
+        organizationId,
+        id,
+        audit,
+        'task.updated',
+        updates
+      )
+      return task
+    })
+  }
+
+  async importTaskRow(input: TaskImportMutationInput): Promise<TaskImportMutationResult> {
+    this.requireOrganizationId(input.organizationId, 'importTaskRow')
+
+    return this.withTenantTransaction(async tx => {
+      const matchingTasks = await tx
+        .select()
+        .from(tasks)
+        .where(and(
+          eq(tasks.organizationId, input.organizationId),
+          eq(tasks.title, input.title)
+        ))
+
+      if (matchingTasks.length > 1) {
+        throw new TaskImportRowError(
+          'ambiguous_task',
+          'Multiple tasks match this title in the organization'
+        )
+      }
+
+      const categoryId = await this.resolveImportCategoryId(
+        tx,
+        input.organizationId,
+        input.categoryName
+      )
+      const assigneeId = await this.resolveImportAssigneeId(
+        tx,
+        input.organizationId,
+        input.assigneeEmail
+      )
+      const tagIds = await this.resolveImportTagIds(
+        tx,
+        input.organizationId,
+        input.tagNames
+      )
+
+      await assertTaskImportReferencesBelongToOrganization(tx, input.organizationId, {
+        categoryId,
+        assigneeId,
+        tagIds,
+      })
+
+      const existing = matchingTasks[0]
+      if (existing) {
+        const updates: TaskUpdateInput = {}
+        if (input.description !== undefined) updates.description = input.description
+        if (categoryId !== undefined) updates.category_id = categoryId
+        if (assigneeId !== undefined) updates.assignee_id = assigneeId
+        if (input.status !== undefined) updates.status = input.status
+        if (input.priority !== undefined) updates.priority = input.priority
+        if (input.dueDate !== undefined) updates.due_date = input.dueDate
+        if (input.estimatedHours !== undefined) updates.estimated_hours = input.estimatedHours
+
+        const task = await this.updateUsingDb(
+          tx,
+          existing.id,
+          input.organizationId,
+          updates
+        )
+        if (!task) {
+          throw new TaskImportRowError(
+            'ambiguous_task',
+            'The task could not be updated safely'
+          )
+        }
+        if (tagIds !== undefined) {
+          await this.replaceImportTaskTags(tx, existing.id, tagIds)
+        }
+        return { action: 'updated', task }
+      }
+
+      const task = await this.createUsingDb(tx, {
+        organization_id: input.organizationId,
+        title: input.title,
+        description: input.description ?? null,
+        category_id: categoryId ?? null,
+        assignee_id: assigneeId ?? null,
+        reporter_id: input.reporterId,
+        department_id: null,
+        status: input.status ?? 'todo',
+        priority: input.priority ?? 'medium',
+        due_date: input.dueDate ?? null,
+        estimated_hours: input.estimatedHours ?? null,
+        actual_hours: null,
+        progress: 0,
+        parent_task_id: null,
+        related_document_id: null,
+        related_risk_id: null,
+      })
+      if (tagIds !== undefined) {
+        await this.replaceImportTaskTags(tx, task.id, tagIds)
+      }
+      return { action: 'created', task }
+    })
+  }
+
+  private async resolveImportCategoryId(
+    db: DrizzleDb,
+    organizationId: string,
+    categoryName: string | null | undefined
+  ): Promise<string | null | undefined> {
+    if (categoryName === undefined || categoryName === null) return categoryName
+    const normalizedName = categoryName.toLowerCase()
+    const categories = await db
+      .select({ id: taskCategories.id, name: taskCategories.name })
+      .from(taskCategories)
+      .where(eq(taskCategories.organizationId, organizationId))
+    const matches = categories.filter(category => (
+      category.name.trim().toLowerCase() === normalizedName
+    ))
+
+    if (matches.length === 0) {
+      throw new TaskImportRowError('unresolved_category', 'Category was not found in the organization')
+    }
+    if (matches.length > 1) {
+      throw new TaskImportRowError(
+        'ambiguous_category',
+        'Multiple categories match this name in the organization'
+      )
+    }
+    return matches[0]!.id
+  }
+
+  private async resolveImportAssigneeId(
+    db: DrizzleDb,
+    organizationId: string,
+    assigneeEmail: string | null | undefined
+  ): Promise<string | null | undefined> {
+    if (assigneeEmail === undefined || assigneeEmail === null) return assigneeEmail
+    const normalizedEmail = assigneeEmail.toLowerCase()
+    const members = await db
+      .select({ id: userProfiles.id, email: userProfiles.email })
+      .from(userMemberships)
+      .innerJoin(userProfiles, eq(userProfiles.id, userMemberships.userId))
+      .where(and(
+        eq(userMemberships.organizationId, organizationId),
+        eq(userMemberships.status, 'active')
+      ))
+    const matches = members.filter(member => (
+      member.email.trim().toLowerCase() === normalizedEmail
+    ))
+
+    if (matches.length === 0) {
+      throw new TaskImportRowError(
+        'unresolved_assignee',
+        'Assignee is not an active member of the organization'
+      )
+    }
+    if (matches.length > 1) {
+      throw new TaskImportRowError(
+        'ambiguous_assignee',
+        'Multiple active members match this assignee email'
+      )
+    }
+    return matches[0]!.id
+  }
+
+  private async resolveImportTagIds(
+    db: DrizzleDb,
+    organizationId: string,
+    tagNames: string[] | undefined
+  ): Promise<string[] | undefined> {
+    if (tagNames === undefined) return undefined
+
+    const normalizedTagNames = new Map<string, string>()
+    for (const tagName of tagNames) {
+      const trimmed = tagName.trim()
+      if (trimmed) normalizedTagNames.set(trimmed.toLowerCase(), trimmed)
+    }
+    if (normalizedTagNames.size > 50) {
+      throw new TaskImportRowError('invalid_input', 'A task can have at most 50 tags')
+    }
+    if (normalizedTagNames.size === 0) return []
+
+    const tags = await db
+      .select({ id: taskTags.id, name: taskTags.name })
+      .from(taskTags)
+      .where(eq(taskTags.organizationId, organizationId))
+    const tagIds: string[] = []
+    for (const normalizedName of normalizedTagNames.keys()) {
+      const matches = tags.filter(tag => tag.name.trim().toLowerCase() === normalizedName)
+      if (matches.length === 0) {
+        throw new TaskImportRowError('unresolved_tag', 'Tag was not found in the organization')
+      }
+      if (matches.length > 1) {
+        throw new TaskImportRowError(
+          'ambiguous_tag',
+          'Multiple tags match this name in the organization'
+        )
+      }
+      tagIds.push(matches[0]!.id)
+    }
+    return tagIds
+  }
+
+  private async replaceImportTaskTags(
+    db: DrizzleDb,
+    taskId: string,
+    tagIds: string[]
+  ): Promise<void> {
+    await db.delete(taskTagRelations).where(eq(taskTagRelations.taskId, taskId))
+    if (tagIds.length === 0) return
+    await db.insert(taskTagRelations).values(tagIds.map((tagId, displayOrder) => ({
+      taskId,
+      tagId,
+      displayOrder,
+    })))
+  }
+
+  private getChangedTaskFields(existing: TaskRow, updates: TaskUpdateInput) {
+    return taskHistoryFields.flatMap(({ input, row }) => {
+      if (!Object.prototype.hasOwnProperty.call(updates, input)) return []
+      const oldValue = existing[row] ?? null
+      const newValue = updates[input] ?? null
+      if (Object.is(oldValue, newValue)) return []
+      return [{ fieldName: input, oldValue, newValue }]
+    })
+  }
+
+  private async formatTaskHistoryValue(
+    db: DrizzleDb,
+    organizationId: string,
+    fieldName: keyof TaskUpdateInput,
+    value: unknown
+  ): Promise<string | null> {
+    if (value === null || value === undefined || value === '') return null
+    if (fieldName === 'assignee_id' || fieldName === 'reporter_id') {
+      if (typeof value !== 'string') return String(value)
+      const user = await this.findEligibleUser(value, organizationId, db)
+      return user?.profile.fullName || user?.profile.email || value
+    }
+    return String(value)
+  }
+
+  private async insertTaskHistory(
+    db: DrizzleDb,
+    organizationId: string,
+    taskId: string,
+    userId: string,
+    changedFields: Array<{
+      fieldName: keyof TaskUpdateInput
+      oldValue: unknown
+      newValue: unknown
+    }>
+  ): Promise<void> {
+    if (changedFields.length === 0) return
+    const createdAt = new Date().toISOString()
+    const values = await Promise.all(changedFields.map(async change => ({
+      id: crypto.randomUUID(),
+      taskId,
+      userId,
+      action: 'updated',
+      fieldName: change.fieldName,
+      oldValue: await this.formatTaskHistoryValue(
+        db,
+        organizationId,
+        change.fieldName,
+        change.oldValue
+      ),
+      newValue: await this.formatTaskHistoryValue(
+        db,
+        organizationId,
+        change.fieldName,
+        change.newValue
+      ),
+      createdAt,
+    })))
+    await db.insert(taskHistory).values(values)
+  }
+
+  private async insertTaskAudit(
+    db: DrizzleDb,
+    organizationId: string,
+    taskId: string,
+    audit: TaskLifecycleAuditContext,
+    action: 'task.created' | 'task.updated' | 'task.tags.updated' | 'task.deleted',
+    changes: unknown
+  ): Promise<void> {
+    await db.insert(auditLogs).values({
+      id: crypto.randomUUID(),
+      organizationId,
+      userId: audit.userId,
+      action,
+      resourceType: 'task',
+      resourceId: taskId,
+      changes: JSON.stringify(changes),
+      ipAddress: audit.ipAddress ?? null,
+      userAgent: audit.userAgent ?? null,
+      scope: 'tenant',
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  private async assertActiveMembership(
+    db: DrizzleDb,
+    userId: string,
+    organizationId: string
+  ): Promise<void> {
+    const [membership] = await db
+      .select({ id: userMemberships.id })
+      .from(userMemberships)
+      .where(and(
+        eq(userMemberships.userId, userId),
+        eq(userMemberships.organizationId, organizationId),
+        eq(userMemberships.status, 'active')
+      ))
+      .limit(1)
+    if (!membership) {
+      throw new TaskTenantInvariantError(404, 'Task not found')
+    }
+  }
+
+  private async withTenantTransaction<T>(operation: (tx: DrizzleDb) => Promise<T>): Promise<T> {
+    const client = (this.db as unknown as { $client: Client }).$client
+    const transaction = await client.transaction('write')
+    const tx = drizzle(transaction as unknown as Client, { schema }) as DrizzleDb
+    try {
+      const result = await operation(tx)
+      await transaction.commit()
+      return result
+    } catch (error) {
+      await transaction.rollback()
+      throw error
+    } finally {
+      transaction.close()
+    }
   }
 
   /**
@@ -234,6 +710,48 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
       .where(eq(tasks.id, id))
   }
 
+  async deleteTaskForTenant(
+    id: string,
+    organizationId: string,
+    audit: TaskLifecycleAuditContext
+  ): Promise<void> {
+    this.requireOrganizationId(organizationId, 'deleteTaskForTenant')
+    await this.withTenantTransaction(async tx => {
+      const [task] = await tx
+        .select({ id: tasks.id, title: tasks.title })
+        .from(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
+        .limit(1)
+      if (!task) {
+        throw new TaskTenantInvariantError(404, 'Task not found')
+      }
+
+      await this.assertActiveMembership(tx, audit.userId, organizationId)
+
+      const blockers = [
+        await tx.select({ id: tasks.id }).from(tasks)
+          .where(and(eq(tasks.parentTaskId, id), eq(tasks.organizationId, organizationId))).limit(1),
+        await tx.select({ id: taskAttachments.id }).from(taskAttachments)
+          .where(eq(taskAttachments.taskId, id)).limit(1),
+        await tx.select({ id: taskComments.id }).from(taskComments)
+          .where(eq(taskComments.taskId, id)).limit(1),
+        await tx.select({ id: taskHistory.id }).from(taskHistory)
+          .where(eq(taskHistory.taskId, id)).limit(1),
+        await tx.select({ id: taskReminders.id }).from(taskReminders)
+          .where(eq(taskReminders.taskId, id)).limit(1),
+      ]
+      if (blockers.some(rows => rows.length > 0)) {
+        throw new TaskTenantInvariantError(409, 'Task has related records')
+      }
+
+      await tx.delete(taskTagRelations).where(eq(taskTagRelations.taskId, id))
+      await this.insertTaskAudit(tx, organizationId, id, audit, 'task.deleted', {
+        title: task.title,
+      })
+      await tx.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId)))
+    })
+  }
+
   // =========================================
   // Task Category operations
   // =========================================
@@ -241,31 +759,20 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
   /**
    * Get task categories for an organization
    */
-  async getCategories(organizationId?: string, options?: QueryOptions): Promise<TaskCategory[]> {
-    if (organizationId) {
-      this.requireOrganizationId(organizationId, 'getCategories')
-    }
+  async getCategories(organizationId: string, options?: QueryOptions): Promise<TaskCategory[]> {
+    this.requireOrganizationId(organizationId, 'getCategories')
 
-    const conditions = []
-    if (organizationId) {
-      conditions.push(eq(taskCategories.organizationId, organizationId))
-    }
-
-    let query = this.db
+    const rows = await this.db
       .select()
       .from(taskCategories)
-
-    if (conditions.length > 0) {
-      query = query.where(conditions[0]) as typeof query
-    }
-
-    const rows = await query.orderBy(asc(taskCategories.displayOrder))
+      .where(eq(taskCategories.organizationId, organizationId))
+      .orderBy(asc(taskCategories.displayOrder))
 
     if (options?.limit) {
       return rows.slice(0, options.limit).map(row => this.mapCategoryRowToEntity(row))
     }
 
-    this.logDataAccess('getCategories', organizationId ?? 'all', { count: rows.length })
+    this.logDataAccess('getCategories', organizationId, { count: rows.length })
 
     return rows.map(row => this.mapCategoryRowToEntity(row))
   }
@@ -311,118 +818,55 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
    * Find a task by ID with all relations
    */
   async findWithRelations(taskId: string): Promise<TaskWithRelations | null> {
-    // 1. Fetch the task itself
-    const taskRows = await this.db
+    const [taskRow] = await this.db
       .select()
       .from(tasks)
       .where(eq(tasks.id, taskId))
+      .limit(1)
 
-    if (taskRows.length === 0) return null
+    return taskRow ? this.projectTaskWithRelations(taskRow, true) : null
+  }
 
-    const task = this.mapTaskRowToEntity(taskRows[0])
-
-    // 2. Fetch category
-    let category: TaskCategory | null = null
-    if (taskRows[0].categoryId) {
-      const catRows = await this.db
-        .select()
-        .from(taskCategories)
-        .where(eq(taskCategories.id, taskRows[0].categoryId))
-
-      if (catRows.length > 0) {
-        category = this.mapCategoryRowToEntity(catRows[0])
-      }
-    }
-
-    // 3. Fetch assignee
-    let assignee = null
-    if (taskRows[0].assigneeId) {
-      const assigneeRows = await this.db
-        .select()
-        .from(userProfiles)
-        .where(eq(userProfiles.id, taskRows[0].assigneeId))
-
-      if (assigneeRows.length > 0) {
-        assignee = this.mapUserProfileRowToEntity(assigneeRows[0])
-      }
-    }
-
-    // 4. Fetch reporter
-    let reporter = null
-    if (taskRows[0].reporterId) {
-      const reporterRows = await this.db
-        .select()
-        .from(userProfiles)
-        .where(eq(userProfiles.id, taskRows[0].reporterId))
-
-      if (reporterRows.length > 0) {
-        reporter = this.mapUserProfileRowToEntity(reporterRows[0])
-      }
-    }
-
-    // 5. Fetch comments with user
-    const comments = await this.getComments(taskId)
-
-    // 6. Fetch attachments
-    const attachments = await this.getAttachments(taskId)
-
-    // 7. Fetch tags
-    const tagRelRows = await this.db
-      .select({
-        tagId: taskTagRelations.tagId,
-        displayOrder: taskTagRelations.displayOrder,
-      })
-      .from(taskTagRelations)
-      .where(eq(taskTagRelations.taskId, taskId))
-      .orderBy(asc(taskTagRelations.displayOrder))
-
-    const tagList: TaskTag[] = []
-    for (const rel of tagRelRows) {
-      const tagRows = await this.db
-        .select()
-        .from(taskTags)
-        .where(eq(taskTags.id, rel.tagId))
-
-      if (tagRows.length > 0) {
-        tagList.push({
-          ...this.mapTagRowToEntity(tagRows[0]),
-          display_order: rel.displayOrder,
-        })
-      }
-    }
-
-    // 8. Fetch subtasks
-    const subtaskRows = await this.db
+  async findWithRelationsByOrganizationId(
+    taskId: string,
+    organizationId: string
+  ): Promise<TaskWithRelations | null> {
+    this.requireOrganizationId(organizationId, 'findWithRelationsByOrganizationId')
+    const [taskRow] = await this.db
       .select()
       .from(tasks)
-      .where(eq(tasks.parentTaskId, taskId))
-      .orderBy(asc(tasks.createdAt))
+      .where(and(eq(tasks.id, taskId), eq(tasks.organizationId, organizationId)))
+      .limit(1)
 
-    const subtasks = subtaskRows.map(row => this.mapTaskRowToEntity(row))
-
-    return {
-      ...task,
-      category,
-      assignee,
-      reporter,
-      comments,
-      attachments,
-      tags: tagList,
-      subtasks,
-    }
+    return taskRow ? this.projectTaskWithRelations(taskRow, true) : null
   }
 
   /**
    * Find tasks with relations, applying filters
    */
-  async findManyWithRelations(filters?: TaskFilters): Promise<TaskWithRelations[]> {
-    // Build conditions
-    const conditions = []
+  async findManyWithRelations(filters: TaskFilters): Promise<TaskWithRelations[]> {
+    this.requireOrganizationId(filters?.organizationId, 'findManyWithRelations')
+    const organizationId = filters.organizationId
 
-    if (filters?.organizationId) {
-      this.requireOrganizationId(filters.organizationId, 'findManyWithRelations')
-      conditions.push(eq(tasks.organizationId, filters.organizationId))
+    if (filters.categoryId) {
+      const [category] = await this.db
+        .select({ id: taskCategories.id })
+        .from(taskCategories)
+        .where(and(
+          eq(taskCategories.id, filters.categoryId),
+          eq(taskCategories.organizationId, organizationId)
+        ))
+        .limit(1)
+      if (!category) return []
     }
+
+    if (filters.assigneeId) {
+      const assignee = await this.findEligibleUser(filters.assigneeId, organizationId)
+      if (!assignee) return []
+    }
+
+    // Build conditions
+    const conditions = [eq(tasks.organizationId, organizationId)]
 
     if (filters?.status) {
       conditions.push(eq(tasks.status, filters.status))
@@ -457,107 +901,22 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
       }
     }
 
-    let query = this.db
+    const query = this.db
       .select()
       .from(tasks)
-
-    if (conditions.length > 0) {
-      query = query.where(
+      .where(
         conditions.length === 1 ? conditions[0]! : and(...conditions as never[])
-      ) as typeof query
-    }
+      )
 
     const taskRows = await query.orderBy(desc(tasks.createdAt))
 
-    this.logDataAccess('findManyWithRelations', filters?.organizationId ?? 'all', { count: taskRows.length })
+    this.logDataAccess('findManyWithRelations', organizationId, { count: taskRows.length })
 
     // Load relations for each task
     const results: TaskWithRelations[] = []
 
     for (const row of taskRows) {
-      const task = this.mapTaskRowToEntity(row)
-
-      // Category
-      let category: TaskCategory | null = null
-      if (row.categoryId) {
-        const catRows = await this.db
-          .select()
-          .from(taskCategories)
-          .where(eq(taskCategories.id, row.categoryId))
-
-        if (catRows.length > 0) {
-          category = this.mapCategoryRowToEntity(catRows[0])
-        }
-      }
-
-      // Assignee
-      let assignee = null
-      if (row.assigneeId) {
-        const assigneeRows = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.id, row.assigneeId))
-
-        if (assigneeRows.length > 0) {
-          assignee = this.mapUserProfileRowToEntity(assigneeRows[0])
-        }
-      }
-
-      // Reporter
-      let reporter = null
-      if (row.reporterId) {
-        const reporterRows = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.id, row.reporterId))
-
-        if (reporterRows.length > 0) {
-          reporter = this.mapUserProfileRowToEntity(reporterRows[0])
-        }
-      }
-
-      // Tags
-      const tagRelRows = await this.db
-        .select({
-          tagId: taskTagRelations.tagId,
-          displayOrder: taskTagRelations.displayOrder,
-        })
-        .from(taskTagRelations)
-        .where(eq(taskTagRelations.taskId, row.id))
-        .orderBy(asc(taskTagRelations.displayOrder))
-
-      const tagList: TaskTag[] = []
-      for (const rel of tagRelRows) {
-        const tagRows = await this.db
-          .select()
-          .from(taskTags)
-          .where(eq(taskTags.id, rel.tagId))
-
-        if (tagRows.length > 0) {
-          tagList.push({
-            ...this.mapTagRowToEntity(tagRows[0]),
-            display_order: rel.displayOrder,
-          })
-        }
-      }
-
-      // Comments (latest 5)
-      const commentRows = await this.db
-        .select()
-        .from(taskComments)
-        .where(eq(taskComments.taskId, row.id))
-        .orderBy(asc(taskComments.createdAt))
-
-      const comments: TaskComment[] = commentRows.slice(0, 5).map(cr => this.mapCommentRowToEntity(cr))
-
-      results.push({
-        ...task,
-        category,
-        assignee,
-        reporter,
-        tags: tagList,
-        comments,
-      })
+      results.push(await this.projectTaskWithRelations(row, false))
     }
 
     return results
@@ -571,6 +930,15 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
    * Get all comments for a task, ordered by created_at asc
    */
   async getComments(taskId: string): Promise<TaskComment[]> {
+    const organizationId = await this.findTaskOrganizationForProjection(taskId)
+    if (!organizationId) return []
+    return this.getCommentsForOrganization(taskId, organizationId)
+  }
+
+  private async getCommentsForOrganization(
+    taskId: string,
+    organizationId: string
+  ): Promise<TaskComment[]> {
     const rows = await this.db
       .select()
       .from(taskComments)
@@ -581,19 +949,14 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
 
     for (const row of rows) {
       const comment = this.mapCommentRowToEntity(row)
-
-      // Load user
       if (row.userId) {
-        const userRows = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.id, row.userId))
-
-        if (userRows.length > 0) {
-          comment.user = this.mapUserProfileRowToEntity(userRows[0])
+        const user = await this.findEligibleUser(row.userId, organizationId)
+        if (user) {
+          comment.user = this.mapEligibleUserToEntity(user, organizationId)
+        } else if (!(await this.hasTenantMembership(row.userId, organizationId))) {
+          continue
         }
       }
-
       results.push(comment)
     }
 
@@ -685,6 +1048,15 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
    * Get all attachments for a task
    */
   async getAttachments(taskId: string): Promise<TaskAttachment[]> {
+    const organizationId = await this.findTaskOrganizationForProjection(taskId)
+    if (!organizationId) return []
+    return this.getAttachmentsForOrganization(taskId, organizationId)
+  }
+
+  private async getAttachmentsForOrganization(
+    taskId: string,
+    organizationId: string
+  ): Promise<TaskAttachment[]> {
     const rows = await this.db
       .select()
       .from(taskAttachments)
@@ -696,15 +1068,12 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
     for (const row of rows) {
       const attachment = this.mapAttachmentRowToEntity(row)
 
-      // Load uploader
       if (row.uploadedBy) {
-        const userRows = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.id, row.uploadedBy))
-
-        if (userRows.length > 0) {
-          attachment.uploader = this.mapUserProfileRowToEntity(userRows[0])
+        const uploader = await this.findEligibleUser(row.uploadedBy, organizationId)
+        if (uploader) {
+          attachment.uploader = this.mapEligibleUserToEntity(uploader, organizationId)
+        } else if (!(await this.hasTenantMembership(row.uploadedBy, organizationId))) {
+          continue
         }
       }
 
@@ -868,6 +1237,61 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
     }
   }
 
+  async setTaskTagsForTenant(
+    taskId: string,
+    organizationId: string,
+    tagIds: string[],
+    audit: TaskLifecycleAuditContext
+  ): Promise<void> {
+    this.requireOrganizationId(organizationId, 'setTaskTagsForTenant')
+    const normalizedTagIds = Array.from(new Set(tagIds.map(tagId => tagId.trim()).filter(Boolean)))
+    if (normalizedTagIds.length > 50) {
+      throw new TaskTenantInvariantError(400, 'A task can have at most 50 tags')
+    }
+
+    await this.withTenantTransaction(async tx => {
+      await this.assertActiveMembership(tx, audit.userId, organizationId)
+      const [task] = await tx
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.id, taskId), eq(tasks.organizationId, organizationId)))
+        .limit(1)
+      if (!task) {
+        throw new TaskTenantInvariantError(404, 'Task not found')
+      }
+
+      if (normalizedTagIds.length > 0) {
+        const matchingTags = await tx
+          .select({ id: taskTags.id })
+          .from(taskTags)
+          .where(and(
+            inArray(taskTags.id, normalizedTagIds),
+            eq(taskTags.organizationId, organizationId)
+          ))
+        if (matchingTags.length !== normalizedTagIds.length) {
+          throw new TaskTenantInvariantError(404, 'Tag not found')
+        }
+      }
+
+      await tx.delete(taskTagRelations).where(eq(taskTagRelations.taskId, taskId))
+      if (normalizedTagIds.length > 0) {
+        await tx.insert(taskTagRelations).values(normalizedTagIds.map((tagId, displayOrder) => ({
+          taskId,
+          tagId,
+          displayOrder,
+        })))
+      }
+      await this.insertTaskAudit(
+        tx,
+        organizationId,
+        taskId,
+        audit,
+        'task.tags.updated',
+        { tagIds: normalizedTagIds }
+      )
+    })
+  }
+
   // =========================================
   // Subtask operations
   // =========================================
@@ -918,6 +1342,9 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
    * Get task history, ordered by created_at desc
    */
   async getHistory(taskId: string): Promise<TaskHistory[]> {
+    const organizationId = await this.findTaskOrganizationForProjection(taskId)
+    if (!organizationId) return []
+
     const rows = await this.db
       .select()
       .from(taskHistory)
@@ -928,19 +1355,14 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
 
     for (const row of rows) {
       const entry = this.mapHistoryRowToEntity(row)
-
-      // Load user
       if (row.userId) {
-        const userRows = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.id, row.userId))
-
-        if (userRows.length > 0) {
-          entry.user = this.mapUserProfileRowToEntity(userRows[0])
+        const user = await this.findEligibleUser(row.userId, organizationId)
+        if (user) {
+          entry.user = this.mapEligibleUserToEntity(user, organizationId)
+        } else if (!(await this.hasTenantMembership(row.userId, organizationId))) {
+          continue
         }
       }
-
       results.push(entry)
     }
 
@@ -1023,6 +1445,204 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
   // Private: row-to-entity mappers
   // =========================================
 
+  private async findTaskOrganizationForProjection(taskId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ organizationId: tasks.organizationId })
+      .from(tasks)
+      .where(eq(tasks.id, taskId))
+      .limit(1)
+
+    return row?.organizationId ?? null
+  }
+
+  private async findEligibleUser(
+    userId: string,
+    organizationId: string,
+    db: DrizzleDb = this.db
+  ): Promise<EligibleUser | null> {
+    const [user] = await db
+      .select({
+        profile: {
+          id: userProfiles.id,
+          organizationId: userProfiles.organizationId,
+          email: userProfiles.email,
+          fullName: userProfiles.fullName,
+          role: userProfiles.role,
+          isActive: userProfiles.isActive,
+        },
+        membershipRole: userMemberships.role,
+      })
+      .from(userMemberships)
+      .innerJoin(userProfiles, eq(userProfiles.id, userMemberships.userId))
+      .where(and(
+        eq(userMemberships.userId, userId),
+        eq(userMemberships.organizationId, organizationId),
+        eq(userMemberships.status, 'active')
+      ))
+      .limit(1)
+
+    return user ?? null
+  }
+
+  private async hasTenantMembership(
+    userId: string,
+    organizationId: string,
+    db: DrizzleDb = this.db
+  ): Promise<boolean> {
+    const [membership] = await db
+      .select({ id: userMemberships.id })
+      .from(userMemberships)
+      .where(and(
+        eq(userMemberships.userId, userId),
+        eq(userMemberships.organizationId, organizationId)
+      ))
+      .limit(1)
+    return Boolean(membership)
+  }
+
+  private async projectTaskCore(row: TaskRow, db: DrizzleDb = this.db) {
+    const organizationId = row.organizationId ?? ''
+    if (!organizationId) {
+      const task = this.mapTaskRowToEntity(row)
+      task.category_id = null
+      task.assignee_id = null
+      task.reporter_id = null
+      task.parent_task_id = null
+      task.related_document_id = null
+      task.related_risk_id = null
+      return { task, category: null, assignee: null, reporter: null }
+    }
+
+    const [categoryRows, assignee, reporter, parentRows, documentRows, riskRows] = await Promise.all([
+      row.categoryId
+        ? db.select().from(taskCategories).where(and(
+            eq(taskCategories.id, row.categoryId),
+            eq(taskCategories.organizationId, organizationId)
+          )).limit(1)
+        : Promise.resolve([]),
+      row.assigneeId ? this.findEligibleUser(row.assigneeId, organizationId, db) : Promise.resolve(null),
+      row.reporterId ? this.findEligibleUser(row.reporterId, organizationId, db) : Promise.resolve(null),
+      row.parentTaskId
+        ? db.select({ id: tasks.id }).from(tasks).where(and(
+            eq(tasks.id, row.parentTaskId),
+            eq(tasks.organizationId, organizationId)
+          )).limit(1)
+        : Promise.resolve([]),
+      row.relatedDocumentId
+        ? db.select({ id: documents.id }).from(documents).where(and(
+            eq(documents.id, row.relatedDocumentId),
+            eq(documents.organizationId, organizationId)
+          )).limit(1)
+        : Promise.resolve([]),
+      row.relatedRiskId
+        ? db.select({ id: risks.id }).from(risks).where(and(
+            eq(risks.id, row.relatedRiskId),
+            eq(risks.organizationId, organizationId)
+          )).limit(1)
+        : Promise.resolve([]),
+    ])
+
+    const task = this.mapTaskRowToEntity(row)
+    task.category_id = categoryRows[0]?.id ?? null
+    task.assignee_id = assignee?.profile.id ?? null
+    task.reporter_id = reporter?.profile.id ?? null
+    task.parent_task_id = parentRows[0]?.id ?? null
+    task.related_document_id = documentRows[0]?.id ?? null
+    task.related_risk_id = riskRows[0]?.id ?? null
+
+    return {
+      task,
+      category: categoryRows[0] ? this.mapCategoryRowToEntity(categoryRows[0]) : null,
+      assignee: assignee ? this.mapEligibleUserToEntity(assignee, organizationId) : null,
+      reporter: reporter ? this.mapEligibleUserToEntity(reporter, organizationId) : null,
+    }
+  }
+
+  private async getTaskTagsForOrganization(
+    taskId: string,
+    organizationId: string
+  ): Promise<TaskTag[]> {
+    const rows = await this.db
+      .select({
+        tag: taskTags,
+        displayOrder: taskTagRelations.displayOrder,
+      })
+      .from(taskTagRelations)
+      .innerJoin(taskTags, and(
+        eq(taskTags.id, taskTagRelations.tagId),
+        eq(taskTags.organizationId, organizationId)
+      ))
+      .where(eq(taskTagRelations.taskId, taskId))
+      .orderBy(asc(taskTagRelations.displayOrder))
+
+    return rows.map(row => ({
+      ...this.mapTagRowToEntity(row.tag),
+      display_order: row.displayOrder,
+    }))
+  }
+
+  private async projectTaskWithRelations(
+    row: TaskRow,
+    includeDetailRelations: boolean
+  ): Promise<TaskWithRelations> {
+    const organizationId = row.organizationId ?? ''
+    if (!organizationId) {
+      const { task, category, assignee, reporter } = await this.projectTaskCore(row)
+      return {
+        ...task,
+        category,
+        assignee,
+        reporter,
+        comments: [],
+        tags: [],
+        ...(includeDetailRelations ? { attachments: [], subtasks: [] } : {}),
+      }
+    }
+
+    const [{ task, category, assignee, reporter }, tags, comments] = await Promise.all([
+      this.projectTaskCore(row),
+      this.getTaskTagsForOrganization(row.id, organizationId),
+      this.getCommentsForOrganization(row.id, organizationId),
+    ])
+
+    if (!includeDetailRelations) {
+      return {
+        ...task,
+        category,
+        assignee,
+        reporter,
+        tags,
+        comments: comments.slice(0, 5),
+      }
+    }
+
+    const [attachments, subtaskRows] = await Promise.all([
+      this.getAttachmentsForOrganization(row.id, organizationId),
+      this.db
+        .select()
+        .from(tasks)
+        .where(and(
+          eq(tasks.parentTaskId, row.id),
+          eq(tasks.organizationId, organizationId)
+        ))
+        .orderBy(asc(tasks.createdAt)),
+    ])
+    const subtasks = await Promise.all(subtaskRows.map(async subtask => (
+      await this.projectTaskCore(subtask)
+    ).task))
+
+    return {
+      ...task,
+      category,
+      assignee,
+      reporter,
+      comments,
+      attachments,
+      tags,
+      subtasks,
+    }
+  }
+
   private mapTaskRowToEntity(row: {
     id: string
     organizationId: string | null
@@ -1065,6 +1685,27 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
       created_at: row.createdAt ?? new Date().toISOString(),
       updated_at: row.updatedAt ?? new Date().toISOString(),
       completed_at: row.completedAt,
+    }
+  }
+
+  private mapEligibleUserToEntity(user: EligibleUser, organizationId: string) {
+    return {
+      id: user.profile.id,
+      organization_id: organizationId,
+      email: user.profile.email,
+      full_name: user.profile.fullName,
+      full_name_en: null,
+      role: user.membershipRole as 'super_admin' | 'system_operator' | 'org_admin' | 'user' | 'auditor' | 'approver',
+      department: null,
+      position: null,
+      phone: null,
+      is_active: user.profile.isActive,
+      avatar_url: null,
+      language_preference: null,
+      primary_department_id: null,
+      created_at: null,
+      updated_at: null,
+      last_login_at: null,
     }
   }
 

@@ -7,7 +7,9 @@ function run(cmd, args, env = {}) {
 }
 
 function main() {
-  const base = process.env.QA_BASE_URL || 'http://localhost:3007'
+  const base = process.env.PLAYWRIGHT_TEST_BASE_URL
+    || process.env.QA_BASE_URL
+    || 'http://127.0.0.1:3007'
   console.log(`[qa-notifications-settings] BASE=${base}`)
   run('npx', [
     'playwright',
@@ -16,7 +18,7 @@ function main() {
     '--project=chromium',
     '--reporter=line',
   ], {
-    PLAYWRIGHT_SKIP_WEB_SERVER: '1',
+    PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1',
     PLAYWRIGHT_TEST_BASE_URL: base,
     E2E_MODE: '1',
     NEXT_PUBLIC_E2E_MODE: '1'

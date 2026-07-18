@@ -8,9 +8,14 @@
  * The repository is obtained through the DI container, allowing seamless
  * switching between different database backends via DI container.
  */
-import { getTaskRepository, getAuthProvider } from '@/lib/container'
+import { getTaskRepository } from '@/lib/container'
 import { StorageQuotaService } from '@/lib/services/storageQuota'
-import { getStorageProvider } from '@/lib/storage'
+import { getStorageProvider, type IStorageProvider } from '@/lib/storage'
+import {
+  createTaskAttachmentStoragePath,
+  isTaskAttachmentSizeAllowed,
+  validateTaskAttachment,
+} from '@/lib/storage/taskAttachmentPolicy'
 import type {
   ITaskRepository,
   Task,
@@ -24,7 +29,6 @@ import type {
   TaskTag,
   TaskWithRelations
 } from '@/lib/db/repositories/interfaces/ITaskRepository'
-import type { IAuthProvider } from '@/lib/auth/interfaces/IAuthProvider'
 
 // Re-export types from the repository interface for backward compatibility
 export type {
@@ -43,11 +47,15 @@ export type {
 
 export class TaskService {
   private repositoryPromise: Promise<ITaskRepository> | null = null
-  private authProviderPromise: Promise<IAuthProvider> | null = null
-  private storageQuota: StorageQuotaService
+  private storageQuota: Pick<StorageQuotaService, 'ensureUploadAllowed'>
+  private storageProvider?: IStorageProvider
 
-  constructor() {
-    this.storageQuota = new StorageQuotaService()
+  constructor(dependencies?: {
+    storageQuota?: Pick<StorageQuotaService, 'ensureUploadAllowed'>
+    storageProvider?: IStorageProvider
+  }) {
+    this.storageQuota = dependencies?.storageQuota ?? new StorageQuotaService()
+    this.storageProvider = dependencies?.storageProvider
   }
 
   private async getRepository(): Promise<ITaskRepository> {
@@ -55,19 +63,6 @@ export class TaskService {
       this.repositoryPromise = getTaskRepository()
     }
     return this.repositoryPromise
-  }
-
-  private async getAuth(): Promise<IAuthProvider> {
-    if (!this.authProviderPromise) {
-      this.authProviderPromise = getAuthProvider()
-    }
-    return this.authProviderPromise
-  }
-
-  private async getCurrentUserId(): Promise<string | null> {
-    const auth = await this.getAuth()
-    const user = await auth.getUser()
-    return user?.id ?? null
   }
 
   private async fetchTasksApi<T>(params: Record<string, string | undefined>): Promise<T> {
@@ -134,6 +129,10 @@ export class TaskService {
       })
     }
 
+    if (!organizationId?.trim()) {
+      throw new Error('Organization ID is required to load task categories')
+    }
+
     const repo = await this.getRepository()
     return repo.getCategories(organizationId)
   }
@@ -170,8 +169,15 @@ export class TaskService {
       })
     }
 
+    if (!filters?.organizationId?.trim()) {
+      throw new Error('Organization ID is required to load tasks')
+    }
+
     const repo = await this.getRepository()
-    return repo.findManyWithRelations(filters as Parameters<ITaskRepository['findManyWithRelations']>[0])
+    return repo.findManyWithRelations({
+      ...filters,
+      organizationId: filters.organizationId,
+    } as Parameters<ITaskRepository['findManyWithRelations']>[0])
   }
 
   async getTaskById(taskId: string) {
@@ -180,8 +186,19 @@ export class TaskService {
       return response.data
     }
 
+    throw new Error(
+      'TaskService.getTaskById is browser-only; use getTaskByIdForOrganization on the server'
+    )
+  }
+
+  async getTaskByIdForOrganization(taskId: string, organizationId: string) {
     const repo = await this.getRepository()
-    return repo.findWithRelations(taskId)
+    return repo.findWithRelationsByOrganizationId(taskId, organizationId)
+  }
+
+  async getTaskOrganizationId(taskId: string) {
+    const repo = await this.getRepository()
+    return repo.findOrganizationIdByTaskId(taskId)
   }
 
   async createTask(task: {
@@ -210,25 +227,7 @@ export class TaskService {
       return response.data
     }
 
-    const repo = await this.getRepository()
-    return repo.create({
-      organization_id: task.organization_id,
-      title: task.title,
-      description: task.description,
-      category_id: task.category_id,
-      assignee_id: task.assignee_id,
-      reporter_id: task.reporter_id,
-      department_id: task.department_id,
-      status: (task.status ?? 'todo') as 'todo' | 'in_progress' | 'review' | 'done' | 'cancelled',
-      priority: (task.priority ?? 'medium') as 'low' | 'medium' | 'high' | 'urgent',
-      due_date: task.due_date,
-      estimated_hours: task.estimated_hours,
-      actual_hours: task.actual_hours,
-      progress: task.progress ?? 0,
-      parent_task_id: task.parent_task_id,
-      related_document_id: task.related_document_id,
-      related_risk_id: task.related_risk_id
-    })
+    throw new Error('TaskService.createTask is browser-only; use TaskTenantMutationService on the server')
   }
 
   async updateTask(taskId: string, updates: {
@@ -257,17 +256,20 @@ export class TaskService {
       return response.data
     }
 
-    const repo = await this.getRepository()
-    const result = await repo.update(taskId, updates as Parameters<ITaskRepository['update']>[1])
-    if (!result) {
-      throw new Error('タスクの更新に失敗しました')
-    }
-    return result
+    throw new Error('TaskService.updateTask is browser-only; use TaskTenantMutationService on the server')
   }
 
   async deleteTask(taskId: string): Promise<void> {
-    const repo = await this.getRepository()
-    return repo.delete(taskId)
+    if (typeof window !== 'undefined') {
+      await this.fetchTaskApi<Record<string, never>>(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      })
+      return
+    }
+
+    throw new Error(
+      'TaskService.deleteTask is browser-only; use TaskTenantMutationService on the server'
+    )
   }
 
   // ============================================
@@ -341,7 +343,8 @@ export class TaskService {
   async uploadAttachment(
     taskId: string,
     file: File,
-    uploadedBy: string
+    uploadedBy: string,
+    organizationId?: string
   ) {
     if (typeof window !== 'undefined') {
       const formData = new FormData()
@@ -363,9 +366,20 @@ export class TaskService {
     }
 
     const repo = await this.getRepository()
+    if (!organizationId) {
+      throw new Error('organizationId is required for server-side task attachment upload')
+    }
+    if (!isTaskAttachmentSizeAllowed(file.size)) {
+      throw new Error('Task attachment is too large')
+    }
+
+    const validation = validateTaskAttachment(file.name, file.type)
+    if (!validation.ok) {
+      throw new Error('Unsupported task attachment')
+    }
 
     // Get task to retrieve organization_id
-    const task = await repo.findById(taskId)
+    const task = await repo.findByIdAndOrganizationId(taskId, organizationId)
     if (!task) {
       throw new Error('タスク情報の取得に失敗しました。再読み込みしてからやり直してください。')
     }
@@ -373,12 +387,16 @@ export class TaskService {
     // Check storage quota
     await this.storageQuota.ensureUploadAllowed(task.organization_id, file)
 
-    // Upload to storage（filePath はバケット内相対パス。バケット名は第1引数で渡すため
-    // ここで重ねるとディスク上のパスとDBの file_path が食い違う）
-    const filePath = `${taskId}/${Date.now()}_${file.name}`
+    const filePath = createTaskAttachmentStoragePath(
+      task.organization_id,
+      taskId,
+      validation.extension
+    )
 
-    const storage = getStorageProvider()
-    const { error: uploadError } = await storage.upload('task-attachments', filePath, file)
+    const storage = this.storageProvider ?? getStorageProvider()
+    const { error: uploadError } = await storage.upload('task-attachments', filePath, file, {
+      contentType: validation.mimeType,
+    })
 
     if (uploadError) {
       throw uploadError
@@ -387,10 +405,10 @@ export class TaskService {
     // Create attachment record
     return repo.createAttachment({
       task_id: taskId,
-      file_name: file.name,
+      file_name: validation.displayName,
       file_path: filePath,
       file_size: file.size,
-      mime_type: file.type,
+      mime_type: validation.mimeType,
       uploaded_by: uploadedBy
     })
   }
@@ -424,9 +442,8 @@ export class TaskService {
     }
   }
 
-  async getAttachmentUrl(filePath: string): Promise<string> {
-    const storage = getStorageProvider()
-    return storage.getPublicUrl('task-attachments', filePath)
+  async getAttachmentUrl(taskId: string, attachmentId: string): Promise<string> {
+    return `/api/tasks/${encodeURIComponent(taskId)}/attachments?attachmentId=${encodeURIComponent(attachmentId)}`
   }
 
   // ============================================
@@ -481,8 +498,9 @@ export class TaskService {
       return
     }
 
-    const repo = await this.getRepository()
-    return repo.setTaskTags(taskId, tagIds)
+    throw new Error(
+      'TaskService.setTaskTags is browser-only; use TaskTenantMutationService on the server'
+    )
   }
 
   // ============================================
@@ -508,21 +526,7 @@ export class TaskService {
       })
     }
 
-    const userId = await this.getCurrentUserId()
-    if (!userId) {
-      throw new Error('User not authenticated')
-    }
-
-    const repo = await this.getRepository()
-    return repo.createSubtask({
-      parentTaskId: params.parentTaskId,
-      organizationId: params.organizationId,
-      title: params.title,
-      assigneeId: params.assigneeId,
-      dueDate: params.dueDate,
-      priority: params.priority,
-      reporterId: userId
-    })
+    throw new Error('TaskService.createSubtask is browser-only; use TaskTenantMutationService on the server')
   }
 
   async updateSubtask(subtaskId: string, updates: Parameters<typeof this.updateTask>[1]) {

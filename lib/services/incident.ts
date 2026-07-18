@@ -1,8 +1,15 @@
 import { getDb } from '@/lib/db/drizzle/client'
-import { incidents, incidentLinks, approvalRequests, userProfiles } from '@/lib/db/drizzle/schema'
+import {
+  incidents,
+  incidentLinks,
+  approvalRequests,
+  organizationDepartments,
+  userProfiles,
+} from '@/lib/db/drizzle/schema'
 import { eq, and, desc, inArray } from 'drizzle-orm'
 import { ApprovalService, type ApprovalRequestStatus } from '@/lib/services/approval'
 import { NotificationService } from '@/lib/services/notification'
+import type { TenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 
 export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical'
 export type IncidentStatus = 'draft' | 'in_progress' | 'resolved' | 'closed'
@@ -34,8 +41,22 @@ export interface IncidentRecord {
   approval_request_id?: string | null
 }
 
+export interface IncidentReadRow {
+  id: string
+  organizationId: string
+  title: string
+  description: string | null
+  occurredAt: string
+  severity: string
+  status: string
+  departmentId: string | null
+  reporterId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 /** Map Drizzle incident row to service interface */
-function mapIncidentRow(row: typeof incidents.$inferSelect): IncidentRecord {
+function mapIncidentRow(row: IncidentReadRow): IncidentRecord {
   return {
     id: row.id,
     organization_id: row.organizationId,
@@ -48,6 +69,42 @@ function mapIncidentRow(row: typeof incidents.$inferSelect): IncidentRecord {
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   }
+}
+
+/**
+ * Projects incident rows only when their department relation is valid for the
+ * target organization. A non-null foreign or missing department is never an
+ * unassigned incident.
+ */
+export function projectIncidentsForDepartmentAccess(
+  rows: readonly IncidentReadRow[],
+  organizationId: string,
+  departmentAccess: TenantAuthorizationContext['departmentAccess'],
+  validDepartmentIds: ReadonlySet<string>
+): IncidentRecord[] {
+  const allowedDepartmentIds = departmentAccess.mode === 'scoped'
+    ? new Set(departmentAccess.departmentIds)
+    : null
+
+  return rows.flatMap(row => {
+    if (row.organizationId !== organizationId) return []
+    if (row.departmentId !== null && !validDepartmentIds.has(row.departmentId)) return []
+    if (
+      departmentAccess.mode === 'scoped'
+      && row.departmentId !== null
+      && !allowedDepartmentIds?.has(row.departmentId)
+    ) {
+      return []
+    }
+    if (
+      departmentAccess.mode === 'scoped'
+      && row.departmentId === null
+      && !departmentAccess.includeUnassigned
+    ) {
+      return []
+    }
+    return [mapIncidentRow(row)]
+  })
 }
 
 function mapIncidentLinkRow(row: typeof incidentLinks.$inferSelect): IncidentLink {
@@ -67,13 +124,19 @@ export class IncidentService {
     this.approvalService = new ApprovalService()
   }
 
-  private async enrichWithApprovalState(records: IncidentRecord[]): Promise<IncidentRecord[]> {
+  private async enrichWithApprovalState(
+    records: IncidentRecord[],
+    expectedOrganizationId?: string
+  ): Promise<IncidentRecord[]> {
     if (records.length === 0) return records
 
-    const organizationId = records[0]?.organization_id
+    const organizationId = expectedOrganizationId ?? records[0]?.organization_id
     if (!organizationId) return records
 
-    const incidentIds = records.map(record => record.id)
+    const scopedRecords = records.filter(record => record.organization_id === organizationId)
+    if (scopedRecords.length === 0) return []
+
+    const incidentIds = scopedRecords.map(record => record.id)
     const db = getDb()
 
     try {
@@ -113,7 +176,7 @@ export class IncidentService {
         })
       })
 
-      return records.map(record => {
+      return scopedRecords.map(record => {
         const approval = latestByIncidentId.get(record.id)
         if (!approval) {
           return {
@@ -134,8 +197,17 @@ export class IncidentService {
       })
     } catch (error) {
       console.error('Failed to load incident approval states', error)
-      return records
+      return scopedRecords
     }
+  }
+
+  private async getValidDepartmentIds(organizationId: string): Promise<Set<string>> {
+    const db = getDb()
+    const rows = await db
+      .select({ id: organizationDepartments.id })
+      .from(organizationDepartments)
+      .where(eq(organizationDepartments.organizationId, organizationId))
+    return new Set(rows.map(row => row.id))
   }
 
   private async resolveIncidentApproverId(input: {
@@ -236,6 +308,60 @@ export class IncidentService {
       .orderBy(desc(incidents.occurredAt))
 
     return this.enrichWithApprovalState(rows.map(mapIncidentRow))
+  }
+
+  async listForTenantAuthorization(
+    authorization: TenantAuthorizationContext
+  ): Promise<IncidentRecord[]> {
+    const db = getDb()
+    const rows = await db
+      .select()
+      .from(incidents)
+      .where(eq(incidents.organizationId, authorization.organizationId))
+      .orderBy(desc(incidents.occurredAt))
+    const validDepartmentIds = await this.getValidDepartmentIds(authorization.organizationId)
+    const projected = projectIncidentsForDepartmentAccess(
+      rows,
+      authorization.organizationId,
+      authorization.departmentAccess,
+      validDepartmentIds
+    )
+    return this.enrichWithApprovalState(projected, authorization.organizationId)
+  }
+
+  async getIncidentOrganizationId(id: string): Promise<string | null> {
+    const db = getDb()
+    const [row] = await db
+      .select({ organizationId: incidents.organizationId })
+      .from(incidents)
+      .where(eq(incidents.id, id))
+      .limit(1)
+    return row?.organizationId ?? null
+  }
+
+  async getByIdForTenantAuthorization(
+    id: string,
+    authorization: TenantAuthorizationContext
+  ): Promise<IncidentRecord | null> {
+    const db = getDb()
+    const rows = await db
+      .select()
+      .from(incidents)
+      .where(and(
+        eq(incidents.id, id),
+        eq(incidents.organizationId, authorization.organizationId)
+      ))
+      .limit(1)
+    const validDepartmentIds = await this.getValidDepartmentIds(authorization.organizationId)
+    const [incident] = projectIncidentsForDepartmentAccess(
+      rows,
+      authorization.organizationId,
+      authorization.departmentAccess,
+      validDepartmentIds
+    )
+    if (!incident) return null
+    const [withApproval] = await this.enrichWithApprovalState([incident], authorization.organizationId)
+    return withApproval ?? null
   }
 
   async getById(id: string) {

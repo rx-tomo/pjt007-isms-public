@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
 import { RATE_LIMIT_MAX, rateLimit, shouldBypassRateLimit } from '@/lib/middleware/rate-limit';
+import { isTrustedE2EServerEnvironment } from '@/lib/testing/e2eEnvironment';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const E2E_ADMIN_SETTINGS_PATH = /^\/(ja|en|zh)\/settings\/(assets|controls|structure|users)(\/|$)/;
@@ -26,6 +27,7 @@ function hasBetterAuthSession(request: NextRequest): boolean {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApiPath = pathname.startsWith('/api/');
+  const isE2EServer = isTrustedE2EServerEnvironment();
 
   if (isApiPath) {
     const isAuthApiPath = pathname.startsWith('/api/auth/');
@@ -70,7 +72,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (process.env.E2E_MODE === '1' && E2E_ADMIN_SETTINGS_PATH.test(pathname)) {
+  if (isE2EServer && E2E_ADMIN_SETTINGS_PATH.test(pathname)) {
     const role = request.cookies.get('dev-login.role')?.value;
     const locale = pathname.startsWith('/en') ? 'en' : 'ja';
     if (role && !ADMIN_SETTINGS_ROLES.has(role)) {
@@ -79,7 +81,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // E2E テスト用のバイパス: 環境変数 E2E_MODE=1 の場合はミドルウェア処理をスキップ
-  if (process.env.E2E_MODE === '1') {
+  if (isE2EServer) {
     return NextResponse.next({ request })
   }
 

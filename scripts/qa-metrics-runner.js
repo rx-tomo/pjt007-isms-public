@@ -2,7 +2,7 @@
 /*
   QA Metrics Runner (#58)
   - 安定な qa:* のみ実行（許可リスト or 環境変数で上書き）
-  - 既存サーバー再利用（PLAYWRIGHT_SKIP_WEB_SERVER=1）
+  - 既存サーバー再利用（PLAYWRIGHT_EXTERNAL_WEB_SERVER=1）
   - 失敗も集計し、docs/02-project/12_uc-checklist.md に時刻付きで追記
   - 併走対策として簡易ロックを導入（docs/.qa-metrics.lock）
 */
@@ -49,7 +49,7 @@ function main() {
 
   const base = process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.QA_BASE_URL || 'http://127.0.0.1:3007'
   const commonEnv = {
-    PLAYWRIGHT_SKIP_WEB_SERVER: '1',
+    PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1',
     PLAYWRIGHT_TEST_BASE_URL: base,
     E2E_MODE: '1',
     NEXT_PUBLIC_E2E_MODE: '1'

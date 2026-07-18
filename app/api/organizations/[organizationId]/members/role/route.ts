@@ -58,6 +58,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
   const params = await props.params;
   const organizationId = params.organizationId
   const guardResult = await requireServiceRole(request, {
+    mode: 'tenant',
     allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
     organizationId,
     actionName: 'organization.members.role_update',

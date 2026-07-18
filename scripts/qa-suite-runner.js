@@ -23,9 +23,13 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { randomUUID } = require('crypto');
 const { spawnSync, spawn } = require('child_process');
 
 const QA_SERVER_PORT = Number(process.env.QA_SERVER_PORT || 3007);
+if (!Number.isInteger(QA_SERVER_PORT) || QA_SERVER_PORT < 1024 || QA_SERVER_PORT > 65535) {
+  throw new Error('QA_SERVER_PORT must be an integer from 1024 to 65535');
+}
 
 // devモードのオンデマンドコンパイルを先に済ませる対象（GAP-017）
 const WARMUP_ROUTES = [
@@ -156,7 +160,21 @@ function restartServer(port) {
   const logDir = path.join(process.cwd(), 'test-results');
   fs.mkdirSync(logDir, { recursive: true });
   const logFd = fs.openSync(path.join(logDir, 'qa-dev-server.log'), 'a');
-  const child = spawn('npm', ['run', 'dev'], { detached: true, stdio: ['ignore', logFd, logFd] });
+  const child = spawn(
+    'npm',
+    ['run', 'dev', '--', '--hostname', '127.0.0.1', '--port', String(port)],
+    {
+      detached: true,
+      stdio: ['ignore', logFd, logFd],
+      env: {
+        ...process.env,
+        BETTER_AUTH_URL: `http://127.0.0.1:${port}`,
+        NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${port}`,
+        E2E_MODE: '1',
+        NEXT_PUBLIC_E2E_MODE: '1',
+      },
+    }
+  );
   child.unref();
 
   if (!waitForServer(port, 120_000)) {
@@ -193,6 +211,11 @@ function main() {
     process.exit(2);
   }
 
+  if (shouldRestartServer) {
+    process.env.PLAYWRIGHT_RUN_NONCE = randomUUID();
+    process.env.PLAYWRIGHT_TEST_BASE_URL = `http://127.0.0.1:${QA_SERVER_PORT}`;
+  }
+
   if (shouldRestartServer && !restartServer(QA_SERVER_PORT)) {
     process.exit(2);
   }
@@ -213,7 +236,7 @@ function main() {
     const scriptOutputDir = path.join(playwrightRoot, script.replace(/[^a-zA-Z0-9_-]/g, '-'));
     const ok = run('npm', ['run', script], {
       ...process.env,
-      PLAYWRIGHT_OUTPUT_DIR: scriptOutputDir,
+      PLAYWRIGHT_OUTPUT_DIR: path.relative(process.cwd(), scriptOutputDir),
     });
     results.push({
       script,

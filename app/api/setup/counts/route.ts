@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
     organizationId,
     actionName: 'setup.counts',
     logContext: { organizationId }

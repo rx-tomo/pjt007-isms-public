@@ -6,6 +6,8 @@ import { userProfiles, userMemberships, auditLogs } from '@/lib/db/drizzle/schem
 import { isoControls, riskControlLinks, riskTreatments, risks, soaVersions } from '@/lib/db/drizzle/schema/risks'
 import { IsoControlService } from '@/lib/services/isoControl'
 import { ApprovalService } from '@/lib/services/approval'
+import { requireServiceRole } from '@/lib/server/auth/secureClient'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 
 async function assertOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
   const [[profile], [membership]] = await Promise.all([
@@ -274,6 +276,92 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Controls API GET failed', error)
     return applyCookies(NextResponse.json({ error: 'Failed to load controls' }, { status: 500 }))
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  const organizationId = searchParams.get('organizationId')
+  if (!id || !organizationId) {
+    return NextResponse.json({ error: 'Missing control id or organization id' }, { status: 400 })
+  }
+
+  const { guard, error } = await requireServiceRole(request, {
+    mode: 'tenant',
+    organizationId,
+    allowedRoles: ['org_admin', 'system_operator'],
+    actionName: 'iso_control.delete',
+  })
+  if (error || !guard) return error ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const db = getDb()
+  try {
+    await db.transaction(async tx => {
+      const authorization = await resolveTenantAuthorizationContext(
+        tx as unknown as ReturnType<typeof getDb>,
+        guard.userId,
+        organizationId
+      )
+      if (
+        !authorization.ok
+        || !['org_admin', 'system_operator'].includes(authorization.context.role)
+      ) {
+        throw new Error('CONTROL_FORBIDDEN')
+      }
+
+      const [control] = await tx
+        .select({ id: isoControls.id, title: isoControls.title })
+        .from(isoControls)
+        .where(and(eq(isoControls.id, id), eq(isoControls.organizationId, organizationId)))
+        .limit(1)
+      if (!control) throw new Error('CONTROL_NOT_FOUND')
+
+      const linked = await tx
+        .select({ id: riskControlLinks.id })
+        .from(riskControlLinks)
+        .where(eq(riskControlLinks.isoControlId, id))
+        .limit(1)
+      if (linked.length > 0) throw new Error('CONTROL_IN_USE')
+
+      const result = await tx
+        .delete(isoControls)
+        .where(and(
+          eq(isoControls.id, id),
+          eq(isoControls.organizationId, organizationId)
+        ))
+      if (result.rowsAffected !== 1) throw new Error('CONTROL_DELETE_CONFLICT')
+
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId,
+        userId: guard.userId,
+        action: 'iso_control.deleted',
+        resourceType: 'iso_control',
+        resourceId: id,
+        changes: JSON.stringify({ title: control.title }),
+        userAgent: request.headers.get('user-agent'),
+        scope: 'tenant',
+        createdAt: new Date().toISOString(),
+      })
+    })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes('CONTROL_FORBIDDEN')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (message.includes('CONTROL_NOT_FOUND')) {
+      return NextResponse.json({ error: 'Control not found' }, { status: 404 })
+    }
+    if (message.includes('CONTROL_IN_USE') || message.includes('linked to a risk treatment')) {
+      return NextResponse.json({ error: 'Control is in use' }, { status: 409 })
+    }
+    if (message.includes('CONTROL_DELETE_CONFLICT')) {
+      return NextResponse.json({ error: 'Conflict' }, { status: 409 })
+    }
+    console.error('Controls API DELETE failed', error)
+    return NextResponse.json({ error: 'Failed to delete control' }, { status: 500 })
   }
 }
 

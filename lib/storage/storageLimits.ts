@@ -1,0 +1,2 @@
+export const STORAGE_MAX_FILE_SIZE = 25 * 1024 * 1024
+export const STORAGE_MAX_ORG_USAGE = 5 * 1024 * 1024 * 1024

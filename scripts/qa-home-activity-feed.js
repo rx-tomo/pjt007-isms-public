@@ -108,7 +108,7 @@ async function main() {
       description: 'Validate the Recent Activity feed, unread badge, notification read workflow, and detail navigation.',
       extraEnv: {
         PLAYWRIGHT_TEST_BASE_URL: `http://${HOST}:${PORT}`,
-        PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+        PLAYWRIGHT_EXTERNAL_WEB_SERVER: '1'
       }
     }
   ]
