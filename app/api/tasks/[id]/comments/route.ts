@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { and, eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { getAccessibleTaskForUser } from '@/lib/server/auth/taskAccess'
 import { getDb } from '@/lib/db/drizzle/client'
 import { taskComments, userProfiles, userMemberships } from '@/lib/db/drizzle/schema'
@@ -23,6 +27,18 @@ async function getTaskComment(taskId: string, commentId: string) {
     .limit(1)
 
   return comment ?? null
+}
+
+// コメントの改変・削除は作成者と、テナント全体を管理するrole（org_admin /
+// system_operator）だけに許す。`tasks.update` の付与だけで他者の発言を書き換え
+// られると、監査ログに実行者しか残らないため元の作成者を復元できない。
+function canMutateComment(
+  authorization: { capabilities: { modules: { tasks: { delete: boolean } } } },
+  comment: { userId: string | null },
+  actorUserId: string
+): boolean {
+  if (comment.userId === actorUserId) return true
+  return authorization.capabilities.modules.tasks.delete
 }
 
 async function getMentionedUsers(organizationId: string, comment: string, actorUserId: string) {
@@ -114,6 +130,19 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.read'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
 
   const service = new TaskService()
   const comments = await service.getTaskComments(params.id)
@@ -138,6 +167,19 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
   const task = await getAccessibleTaskForUser(getDb(), params.id, user.id)
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.update'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   const service = new TaskService()
@@ -189,10 +231,26 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.update'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
 
   const existing = await getTaskComment(params.id, commentId)
   if (!existing) {
     return applyCookies(NextResponse.json({ error: 'Comment not found' }, { status: 404 }))
+  }
+  if (!canMutateComment(authorization, existing, user.id)) {
+    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
 
   const service = new TaskService()
@@ -216,6 +274,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
     resourceId: params.id,
     changes: {
       comment_id: commentId,
+      comment_author_id: existing.userId,
       old_preview: existing.comment.slice(0, 120),
       new_preview: comment.slice(0, 120),
       mention_notification_ids: mentionNotificationIds,
@@ -244,10 +303,26 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.update'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
 
   const existing = await getTaskComment(params.id, commentId)
   if (!existing) {
     return applyCookies(NextResponse.json({ error: 'Comment not found' }, { status: 404 }))
+  }
+  if (!canMutateComment(authorization, existing, user.id)) {
+    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
 
   const service = new TaskService()
@@ -262,6 +337,8 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
     resourceId: params.id,
     changes: {
       comment_id: commentId,
+      // 実行者は actor 側に残るため、ここには元の作成者を残して両者を分離する
+      comment_author_id: existing.userId,
       deleted_preview: existing.comment.slice(0, 120),
     } as Json,
     userAgent: request.headers.get('user-agent'),

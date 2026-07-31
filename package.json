@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "lint:messages": "node scripts/validate-translations.js",
+    "db:backfill:notification-receipts": "node scripts/backfill-notification-receipts.mjs",
     "qa:public-copy": "node scripts/qa-public-copy-boundary.js",
     "qa:public-metadata": "node scripts/qa-public-metadata.js",
     "qa:i18n": "node scripts/qa-i18n-check.js",

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import {
   isResidualAcceptanceSubmissionError,
   ResidualAcceptanceSubmissionService,
@@ -55,13 +58,18 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
   }
 
   const db = getDb()
-  const authorization = await resolveTenantAuthorizationContext(
+  const authorization = await authorizeTenantAction(
     db,
     caller.userId,
-    caller.organizationId
+    caller.organizationId,
+    'risks.update'
   )
   if (!authorization.ok) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const status = tenantActionDenialStatus(authorization)
+    return NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    )
   }
 
   try {

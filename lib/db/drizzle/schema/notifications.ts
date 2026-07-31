@@ -82,6 +82,39 @@ export type Notification = typeof notifications.$inferSelect
 export type NotificationInsert = typeof notifications.$inferInsert
 
 // =========================================
+// Notification Receipts Table
+// =========================================
+export const notificationReceipts = sqliteTable(
+  'notification_receipts',
+  {
+    id: text('id').primaryKey(),
+    notificationId: text('notification_id')
+      .notNull()
+      .references(() => notifications.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => userProfiles.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('unread'),
+    readAt: text('read_at'),
+    archivedAt: text('archived_at'),
+    createdAt: text('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    updatedAt: text('updated_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+  },
+  (table) => [
+    uniqueIndex('idx_notification_receipts_notification_user_unique').on(
+      table.notificationId,
+      table.userId
+    ),
+    index('idx_notification_receipts_notification').on(table.notificationId),
+    index('idx_notification_receipts_user_status').on(table.userId, table.status),
+    index('idx_notification_receipts_user_updated_at').on(table.userId, table.updatedAt),
+  ]
+)
+
+export type NotificationReceipt = typeof notificationReceipts.$inferSelect
+export type NotificationReceiptInsert = typeof notificationReceipts.$inferInsert
+
+// =========================================
 // Notification Preferences Table
 // =========================================
 export const notificationPreferences = sqliteTable(
@@ -214,6 +247,18 @@ export const notificationsRelations = relations(notifications, ({ one, many }) =
   }),
   emailLogs: many(emailLogs),
   channelLogs: many(organizationNotificationChannelLogs),
+  receipts: many(notificationReceipts),
+}))
+
+export const notificationReceiptsRelations = relations(notificationReceipts, ({ one }) => ({
+  notification: one(notifications, {
+    fields: [notificationReceipts.notificationId],
+    references: [notifications.id],
+  }),
+  user: one(userProfiles, {
+    fields: [notificationReceipts.userId],
+    references: [userProfiles.id],
+  }),
 }))
 
 export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({

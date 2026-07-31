@@ -264,12 +264,25 @@ async function main() {
     ],
   );
 
+  // 未読はrecipientごとのreceiptが正本。receiptが無い場合はunread扱いという
+  // service側の投影(`coalesce(receipt.status,'unread')`)に合わせる。
+  // notifications.status は共有カラムであり、既読操作の書込み先ではない。
+  const unreadCountSql = `
+    select count(*) as count
+    from notifications
+    left join notification_receipts
+      on notification_receipts.notification_id = notifications.id
+      and notification_receipts.user_id = notifications.user_id
+    where notifications.organization_id = ?
+      and notifications.user_id = ?
+      and coalesce(notification_receipts.status, 'unread') = 'unread'
+  `;
   const orgAdminUnread = await client.execute({
-    sql: `select count(*) as count from notifications where organization_id = ? and user_id = ? and status = 'unread'`,
+    sql: unreadCountSql,
     args: [ORG_ID, orgAdmin.id],
   });
   const approverUnread = await client.execute({
-    sql: `select count(*) as count from notifications where organization_id = ? and user_id = ? and status = 'unread'`,
+    sql: unreadCountSql,
     args: [ORG_ID, approver.id],
   });
 
