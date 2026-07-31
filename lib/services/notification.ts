@@ -1,6 +1,10 @@
 import { getDb } from '@/lib/db/drizzle/client'
-import { notifications, notificationPreferences } from '@/lib/db/drizzle/schema'
-import { eq, or, isNull, and, desc, sql } from 'drizzle-orm'
+import {
+  notifications,
+  notificationPreferences,
+  notificationReceipts,
+} from '@/lib/db/drizzle/schema'
+import { eq, or, isNull, and, desc, sql, getTableColumns } from 'drizzle-orm'
 
 export type NotificationType = 'task_reminder' | 'document_approval' | 'audit_schedule' | 'risk_alert' | 'system' | 'info'
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent'
@@ -55,6 +59,26 @@ export interface CreateNotificationParams {
   metadata?: any
 }
 
+export interface NotificationRecipientContext {
+  organizationId: string
+  userId: string
+}
+
+export type NotificationMutationResult =
+  | { ok: true }
+  | { ok: false; reason: 'not_found' }
+
+export type NotificationMarkAllResult = { ok: true; updated: number }
+
+type NotificationDb = ReturnType<typeof getDb>
+
+export function targetsCurrentNotificationUser(
+  currentUserId: string,
+  requestedUserId: string | undefined
+): boolean {
+  return requestedUserId === undefined || requestedUserId === currentUserId
+}
+
 class NotificationApiError extends Error {
   constructor(
     message: string,
@@ -70,7 +94,14 @@ function isNotificationAuthError(error: unknown) {
 }
 
 /** Map Drizzle row (camelCase) to service interface (snake_case) */
-function mapNotificationRow(row: typeof notifications.$inferSelect): Notification {
+function mapNotificationRow(
+  row: typeof notifications.$inferSelect,
+  recipientState?: {
+    status: NotificationStatus
+    readAt: string | null
+    archivedAt: string | null
+  }
+): Notification {
   return {
     id: row.id,
     organization_id: row.organizationId,
@@ -79,12 +110,14 @@ function mapNotificationRow(row: typeof notifications.$inferSelect): Notificatio
     message: row.message,
     type: row.type as NotificationType,
     priority: row.priority as NotificationPriority,
-    status: row.status as NotificationStatus,
+    status: recipientState?.status ?? row.status as NotificationStatus,
     link: row.link ?? undefined,
     metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
     created_at: row.createdAt,
-    read_at: row.readAt ?? undefined,
-    archived_at: row.archivedAt ?? undefined,
+    read_at: recipientState ? recipientState.readAt ?? undefined : row.readAt ?? undefined,
+    archived_at: recipientState
+      ? recipientState.archivedAt ?? undefined
+      : row.archivedAt ?? undefined,
   }
 }
 
@@ -132,6 +165,173 @@ async function fetchNotificationsApi<T>(
   }
 
   return response.json()
+}
+
+export class NotificationRecipientService {
+  constructor(private readonly db: NotificationDb = getDb()) {}
+
+  async list(
+    recipient: NotificationRecipientContext,
+    status?: NotificationStatus
+  ): Promise<Notification[]> {
+    const receiptStatus = sql<NotificationStatus>`coalesce(${notificationReceipts.status}, 'unread')`
+    const conditions = [
+      eq(notifications.organizationId, recipient.organizationId),
+      or(eq(notifications.userId, recipient.userId), isNull(notifications.userId)),
+    ]
+    if (status) conditions.push(eq(receiptStatus, status))
+
+    const rows = await this.db
+      .select({
+        ...getTableColumns(notifications),
+        recipientStatus: receiptStatus,
+        recipientReadAt: notificationReceipts.readAt,
+        recipientArchivedAt: notificationReceipts.archivedAt,
+      })
+      .from(notifications)
+      .leftJoin(
+        notificationReceipts,
+        and(
+          eq(notificationReceipts.notificationId, notifications.id),
+          eq(notificationReceipts.userId, recipient.userId)
+        )
+      )
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt))
+
+    return rows.map(row => mapNotificationRow(row, {
+      status: row.recipientStatus,
+      readAt: row.recipientReadAt,
+      archivedAt: row.recipientArchivedAt,
+    }))
+  }
+
+  async unreadCount(recipient: NotificationRecipientContext): Promise<number> {
+    const receiptStatus = sql<NotificationStatus>`coalesce(${notificationReceipts.status}, 'unread')`
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .leftJoin(
+        notificationReceipts,
+        and(
+          eq(notificationReceipts.notificationId, notifications.id),
+          eq(notificationReceipts.userId, recipient.userId)
+        )
+      )
+      .where(and(
+        eq(notifications.organizationId, recipient.organizationId),
+        or(eq(notifications.userId, recipient.userId), isNull(notifications.userId)),
+        eq(receiptStatus, 'unread')
+      ))
+    return result[0]?.count ?? 0
+  }
+
+  async markAsRead(
+    recipient: NotificationRecipientContext,
+    notificationId: string
+  ): Promise<NotificationMutationResult> {
+    return this.setStatus(recipient, notificationId, 'read')
+  }
+
+  async archive(
+    recipient: NotificationRecipientContext,
+    notificationId: string
+  ): Promise<NotificationMutationResult> {
+    return this.setStatus(recipient, notificationId, 'archived')
+  }
+
+  async markAllAsRead(
+    recipient: NotificationRecipientContext
+  ): Promise<NotificationMarkAllResult> {
+    const now = new Date().toISOString()
+    const receiptStatus = sql<NotificationStatus>`coalesce(${notificationReceipts.status}, 'unread')`
+
+    return this.db.transaction(async tx => {
+      const visibleUnread = await tx
+        .select({ notificationId: notifications.id })
+        .from(notifications)
+        .leftJoin(
+          notificationReceipts,
+          and(
+            eq(notificationReceipts.notificationId, notifications.id),
+            eq(notificationReceipts.userId, recipient.userId)
+          )
+        )
+        .where(and(
+          eq(notifications.organizationId, recipient.organizationId),
+          or(eq(notifications.userId, recipient.userId), isNull(notifications.userId)),
+          eq(receiptStatus, 'unread')
+        ))
+
+      for (const row of visibleUnread) {
+        await tx
+          .insert(notificationReceipts)
+          .values({
+            id: crypto.randomUUID(),
+            notificationId: row.notificationId,
+            userId: recipient.userId,
+            status: 'read',
+            readAt: now,
+            archivedAt: null,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: [notificationReceipts.notificationId, notificationReceipts.userId],
+            set: {
+              status: 'read',
+              readAt: now,
+              archivedAt: null,
+              updatedAt: now,
+            },
+          })
+      }
+
+      return { ok: true, updated: visibleUnread.length }
+    })
+  }
+
+  private async setStatus(
+    recipient: NotificationRecipientContext,
+    notificationId: string,
+    status: Extract<NotificationStatus, 'read' | 'archived'>
+  ): Promise<NotificationMutationResult> {
+    const now = new Date().toISOString()
+    return this.db.transaction(async tx => {
+      const [visible] = await tx
+        .select({ id: notifications.id })
+        .from(notifications)
+        .where(and(
+          eq(notifications.id, notificationId),
+          eq(notifications.organizationId, recipient.organizationId),
+          or(eq(notifications.userId, recipient.userId), isNull(notifications.userId))
+        ))
+        .limit(1)
+
+      if (!visible) return { ok: false, reason: 'not_found' }
+
+      await tx
+        .insert(notificationReceipts)
+        .values({
+          id: crypto.randomUUID(),
+          notificationId,
+          userId: recipient.userId,
+          status,
+          readAt: status === 'read' ? now : null,
+          archivedAt: status === 'archived' ? now : null,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [notificationReceipts.notificationId, notificationReceipts.userId],
+          set: status === 'read'
+            ? { status, readAt: now, archivedAt: null, updatedAt: now }
+            : { status, archivedAt: now, updatedAt: now },
+        })
+
+      return { ok: true }
+    })
+  }
 }
 
 export class NotificationService {
@@ -198,28 +398,7 @@ export class NotificationService {
       }
     }
 
-    const db = getDb()
-
-    try {
-      const conditions = [
-        or(eq(notifications.userId, userId), isNull(notifications.userId))
-      ]
-
-      if (status) {
-        conditions.push(eq(notifications.status, status))
-      }
-
-      const rows = await db
-        .select()
-        .from(notifications)
-        .where(and(...conditions))
-        .orderBy(desc(notifications.createdAt))
-
-      return rows.map(mapNotificationRow)
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-      return []
-    }
+    throw new Error('Notification recipient context is required on the server')
   }
 
   /**
@@ -236,24 +415,7 @@ export class NotificationService {
       }
     }
 
-    const db = getDb()
-
-    try {
-      const result = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(notifications)
-        .where(
-          and(
-            or(eq(notifications.userId, userId), isNull(notifications.userId)),
-            eq(notifications.status, 'unread')
-          )
-        )
-
-      return result[0]?.count ?? 0
-    } catch (error) {
-      console.error('Error counting unread notifications:', error)
-      return 0
-    }
+    throw new Error('Notification recipient context is required on the server')
   }
 
   /**
@@ -268,22 +430,7 @@ export class NotificationService {
       return result.success
     }
 
-    const db = getDb()
-
-    try {
-      await db
-        .update(notifications)
-        .set({
-          status: 'read',
-          readAt: new Date().toISOString(),
-        })
-        .where(eq(notifications.id, notificationId))
-
-      return true
-    } catch (error) {
-      console.error('Error marking notification as read:', error)
-      return false
-    }
+    throw new Error('Notification recipient context is required on the server')
   }
 
   /**
@@ -298,27 +445,7 @@ export class NotificationService {
       return result.success
     }
 
-    const db = getDb()
-
-    try {
-      await db
-        .update(notifications)
-        .set({
-          status: 'read',
-          readAt: new Date().toISOString(),
-        })
-        .where(
-          and(
-            or(eq(notifications.userId, userId), isNull(notifications.userId)),
-            eq(notifications.status, 'unread')
-          )
-        )
-
-      return true
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error)
-      return false
-    }
+    throw new Error('Notification recipient context is required on the server')
   }
 
   /**
@@ -333,22 +460,40 @@ export class NotificationService {
       return result.success
     }
 
-    const db = getDb()
+    throw new Error('Notification recipient context is required on the server')
+  }
 
-    try {
-      await db
-        .update(notifications)
-        .set({
-          status: 'archived',
-          archivedAt: new Date().toISOString(),
-        })
-        .where(eq(notifications.id, notificationId))
+  static getNotificationsForRecipient(
+    recipient: NotificationRecipientContext,
+    status?: NotificationStatus
+  ): Promise<Notification[]> {
+    return new NotificationRecipientService().list(recipient, status)
+  }
 
-      return true
-    } catch (error) {
-      console.error('Error archiving notification:', error)
-      return false
-    }
+  static getUnreadCountForRecipient(
+    recipient: NotificationRecipientContext
+  ): Promise<number> {
+    return new NotificationRecipientService().unreadCount(recipient)
+  }
+
+  static markAsReadForRecipient(
+    recipient: NotificationRecipientContext,
+    notificationId: string
+  ): Promise<NotificationMutationResult> {
+    return new NotificationRecipientService().markAsRead(recipient, notificationId)
+  }
+
+  static markAllAsReadForRecipient(
+    recipient: NotificationRecipientContext
+  ): Promise<NotificationMarkAllResult> {
+    return new NotificationRecipientService().markAllAsRead(recipient)
+  }
+
+  static archiveForRecipient(
+    recipient: NotificationRecipientContext,
+    notificationId: string
+  ): Promise<NotificationMutationResult> {
+    return new NotificationRecipientService().archive(recipient, notificationId)
   }
 
   /**

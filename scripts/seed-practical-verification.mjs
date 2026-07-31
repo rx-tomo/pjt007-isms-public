@@ -2161,6 +2161,9 @@ function deleteStatementsForReset(extraOrgIds = [], extraUserIds = []) {
     makeDelete(`delete from organization_notification_channel_logs where notification_id in (select id from notifications where organization_id in (${orgMarks}) or user_id in (${userMarks}))`, [...orgIds, ...userIds]),
     makeDelete(`delete from organization_notification_channels where organization_id in (${orgMarks})`, orgIds),
     makeDelete(`delete from email_logs where notification_id in (select id from notifications where organization_id in (${orgMarks}) or user_id in (${userMarks})) or user_id in (${userMarks})`, [...orgIds, ...userIds, ...userIds]),
+    // receipt は子テーブル。この削除リストは FK cascade に依存せず明示列挙する方針
+    // なので、親の notifications より先に落として孤児行を残さない。
+    makeDelete(`delete from notification_receipts where notification_id in (select id from notifications where organization_id in (${orgMarks}) or user_id in (${userMarks})) or user_id in (${userMarks})`, [...orgIds, ...userIds, ...userIds]),
     makeDelete(`delete from notifications where organization_id in (${orgMarks}) or user_id in (${userMarks})`, [...orgIds, ...userIds]),
     makeDelete(`delete from notification_preferences where user_id in (${userMarks})`, userIds),
     makeDelete(`delete from audit_logs where organization_id in (${orgMarks}) or user_id in (${userMarks})`, [...orgIds, ...userIds]),

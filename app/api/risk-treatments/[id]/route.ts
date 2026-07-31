@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { getDb } from '@/lib/db/drizzle/client'
 import {
   assertNoDirectResidualAcceptanceMutation,
@@ -54,13 +57,18 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
   }
 
   const db = getDb()
-  const authorization = await resolveTenantAuthorizationContext(
+  const authorization = await authorizeTenantAction(
     db,
     caller.userId,
-    caller.organizationId
+    caller.organizationId,
+    'risks.update'
   )
   if (!authorization.ok) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const status = tenantActionDenialStatus(authorization)
+    return NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    )
   }
   const submissionService = new ResidualAcceptanceSubmissionService(db)
 

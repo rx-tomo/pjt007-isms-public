@@ -477,12 +477,14 @@ export {
 export {
   // Tables
   notifications,
+  notificationReceipts,
   notificationPreferences,
   emailLogs,
   organizationNotificationChannels,
   organizationNotificationChannelLogs,
   // Relations
   notificationsRelations,
+  notificationReceiptsRelations,
   notificationPreferencesRelations,
   emailLogsRelations,
   organizationNotificationChannelsRelations,
@@ -490,6 +492,8 @@ export {
   // Types
   type Notification,
   type NotificationInsert,
+  type NotificationReceipt,
+  type NotificationReceiptInsert,
   type NotificationPreference,
   type NotificationPreferenceInsert,
   type EmailLog,
