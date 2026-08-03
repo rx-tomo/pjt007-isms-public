@@ -3,9 +3,60 @@ const path = require('path');
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
+const SECURITY_HEADERS = [
+  {
+    key: 'Content-Security-Policy',
+    // Keep the allow-list limited to the third parties used by the public UI.
+    // `unsafe-inline` remains necessary while the layout contains inline theme,
+    // GTM, and GA bootstrap scripts; it can be removed after those use nonces.
+    value: [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://www.googletagmanager.com https://*.stripe.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://api.stripe.com https://*.stripe.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
+      "frame-src https://js.stripe.com https://hooks.stripe.com https://www.googletagmanager.com",
+      "worker-src 'self' blob:",
+    ].join('; '),
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=31536000; includeSubDomains',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), geolocation=(), microphone=(), usb=()',
+  },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: SECURITY_HEADERS,
+      },
+    ];
+  },
   experimental: {
     // Keep middleware/proxy body clones above the 25 MiB attachment limit.
     // The task attachment route independently enforces a hard streaming limit.
