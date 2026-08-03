@@ -105,6 +105,7 @@
     "qa:matrix": "node scripts/qa-matrix-runner.js",
     "qa:lighthouse": "node scripts/qa-lighthouse.js",
     "qa:security": "node scripts/qa-security.js",
+    "qa:security-headers": "node scripts/qa-security-headers.js",
     "qa:submission-copy": "node scripts/qa-submission-bundle-copy.js",
     "qa:zh-post-login-check": "node scripts/qa-zh-post-login-check.js",
     "qa:role-ux-surface": "npx playwright test tests/e2e/role-ux-surface-audit.spec.ts --project=chromium --reporter=line --workers=1",
@@ -126,9 +127,9 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
     "jszip": "^3.10.1",
-    "next": "^16.2.10",
+    "next": "16.2.12",
     "next-intl": "^4.13.2",
-    "postcss": "^8.5.16",
+    "postcss": "8.5.25",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "stripe": "^18.2.1",
@@ -150,7 +151,7 @@
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.10",
+    "eslint-config-next": "16.2.12",
     "eslint-plugin-storybook": "^10.0.7",
     "glob": "^11.1.0",
     "jsdom": "^26.1.0",
@@ -161,5 +162,10 @@
     "typescript": "^5",
     "vite": "^8.1.4",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "js-yaml": "4.3.0",
+    "postcss": "$postcss",
+    "sharp": "0.35.0"
   }
 }
