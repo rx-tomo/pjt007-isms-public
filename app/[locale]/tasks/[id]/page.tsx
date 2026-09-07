@@ -17,8 +17,6 @@ import type {
   TaskTag,
   TaskWithRelations
 } from '@/lib/services/task'
-import type { UserRole } from '@/lib/services/user'
-import { canEditTask } from '@/lib/constants/taskPermissions'
 import { useAuth } from '@/lib/hooks/useAuth'
 
 export default function TaskDetailPage(
@@ -38,7 +36,9 @@ export default function TaskDetailPage(
   const { user: authUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [task, setTask] = useState<TaskWithRelations | null>(null)
-  const [userRole, setUserRole] = useState<UserRole | null>(null)
+  const [canUpdate, setCanUpdate] = useState(false)
+  const [canDelete, setCanDelete] = useState(false)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'attachments' | 'history'>('overview')
   const [newComment, setNewComment] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
@@ -68,20 +68,23 @@ export default function TaskDetailPage(
   const loadTaskDetails = useCallback(async () => {
     setLoading(true)
     try {
-      // Load task details
+      const profile = await userService.getUserProfile()
+      const capabilities = profile?.effective_capabilities?.modules.tasks
+      if (capabilities?.read !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
+      setCanUpdate(capabilities.update)
+      setCanDelete(capabilities.delete)
+
+      // Load task details only after the profile capability gate passes.
       const taskData = await taskService.getTaskById(id)
       if (!taskData) {
         throw new Error('Task not found')
       }
       setTask(taskData)
 
-      // Check user role
-      if (authUser) {
-        const profile = await userService.getUserProfile()
-        if (profile) {
-          setUserRole(profile.role as UserRole)
-        }
-      }
     } catch (err) {
       console.error('Error loading task details:', err)
     } finally {
@@ -166,7 +169,7 @@ export default function TaskDetailPage(
       await loadTaskDetails()
     } catch (err) {
       console.error('Error updating comment:', err)
-      alert('コメントの更新に失敗しました')
+      alert(t('errors.updateComment'))
     } finally {
       setSavingCommentId(null)
     }
@@ -174,7 +177,7 @@ export default function TaskDetailPage(
 
   const handleDeleteComment = async (commentId: string) => {
     if (!task) return
-    if (!confirm('このコメントを削除してもよろしいですか？')) return
+    if (!confirm(t('confirmDeleteComment'))) return
 
     setDeletingCommentId(commentId)
     try {
@@ -183,7 +186,7 @@ export default function TaskDetailPage(
       await loadTaskDetails()
     } catch (err) {
       console.error('Error deleting comment:', err)
-      alert('コメントの削除に失敗しました')
+      alert(t('errors.deleteComment'))
     } finally {
       setDeletingCommentId(null)
     }
@@ -407,8 +410,6 @@ export default function TaskDetailPage(
     [availableTags, selectedTagIds]
   )
 
-  const canEdit = canEditTask(userRole)
-
   if (loading) {
     return (
       <DashboardLayout locale={locale}>
@@ -426,6 +427,18 @@ export default function TaskDetailPage(
           </div>
         </div>
       </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{t('errors.permissionDenied')}</h1>
+          </div>
+        </div>
       </DashboardLayout>
     )
   }
@@ -474,7 +487,7 @@ export default function TaskDetailPage(
                 )}
               </div>
             </div>
-            {canEdit && (
+            {canUpdate && (
               <div className="flex gap-2">
                 <Link
                   href={`/${locale}/tasks/${task.id}/edit`}
@@ -526,7 +539,7 @@ export default function TaskDetailPage(
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="text-lg font-medium">{t('detail.subtasks')}</h3>
                     </div>
-                    {canEdit && (
+                    {canUpdate && (
                       <form onSubmit={handleAddSubtask} className="mb-4 flex w-full gap-2">
                         <input
                           type="text"
@@ -565,7 +578,7 @@ export default function TaskDetailPage(
                                   type="checkbox"
                                   checked={subtask.status === 'done'}
                                   onChange={() => handleToggleSubtask(subtask)}
-                                  disabled={isUpdating || isDeleting}
+                                  disabled={!canUpdate || isUpdating || isDeleting}
                                   className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                                 />
                                 {isEditing ? (
@@ -591,45 +604,45 @@ export default function TaskDetailPage(
                                   {t(`list.status.${subtask.status}`)}
                                 </span>
                               </div>
-                              {canEdit && (
+                              {(canUpdate || canDelete) && (
                                 <div className="flex items-center gap-2">
                                   {isEditing ? (
                                     <>
-                                      <button
+                                      {canUpdate && <button
                                         type="button"
                                         onClick={() => handleSaveSubtaskTitle(subtask.id)}
                                         disabled={isUpdating}
                                         className="rounded-md border border-blue-600 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         {t('form.save')}
-                                      </button>
-                                      <button
+                                      </button>}
+                                      {canUpdate && <button
                                         type="button"
                                         onClick={() => handleCancelEditSubtask(subtask.id)}
                                         disabled={isUpdating}
                                         className="rounded-md border border-border px-3 py-1 text-xs font-medium text-text-secondary hover:bg-surface-elevated disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         {t('form.cancel')}
-                                      </button>
+                                      </button>}
                                     </>
                                   ) : (
                                     <>
-                                      <button
-                                        type="button"
+                                    {canUpdate && <button
+                                      type="button"
                                         onClick={() => handleStartEditSubtask(subtask)}
                                         disabled={isUpdating || isDeleting}
                                         className="rounded-md border border-border px-3 py-1 text-xs font-medium text-text-secondary hover:bg-surface-elevated disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         {t('actions.edit')}
-                                      </button>
-                                      <button
+                                    </button>}
+                                    {canDelete && <button
                                         type="button"
                                         onClick={() => handleDeleteSubtask(subtask.id)}
                                         disabled={isDeleting || isUpdating}
                                         className="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         {isDeleting ? t('subtasks.deleting') : t('actions.delete')}
-                                      </button>
+                                    </button>}
                                     </>
                                   )}
                                 </div>
@@ -703,17 +716,17 @@ export default function TaskDetailPage(
                             ) : (
                               <div className="mt-1">
                                 <p className="text-sm text-text-secondary">{comment.comment}</p>
-                                {canEdit && (
+                                {canUpdate && (
                                   <div className="mt-2 flex gap-3">
-                                    <button
+                                    {canUpdate && <button
                                       type="button"
                                       data-testid="task-comment-edit-button"
                                       onClick={() => handleStartEditComment(comment)}
                                       className="text-xs text-blue-600 hover:text-blue-800"
                                     >
                                       編集
-                                    </button>
-                                    <button
+                                    </button>}
+                                    {canUpdate && <button
                                       type="button"
                                       data-testid="task-comment-delete-button"
                                       onClick={() => handleDeleteComment(comment.id)}
@@ -721,7 +734,7 @@ export default function TaskDetailPage(
                                       disabled={deletingCommentId === comment.id}
                                     >
                                       {deletingCommentId === comment.id ? '削除中...' : '削除'}
-                                    </button>
+                                    </button>}
                                   </div>
                                 )}
                               </div>
@@ -734,7 +747,7 @@ export default function TaskDetailPage(
                     <p className="text-text-muted">{t('detail.noComments')}</p>
                   )}
 
-                  <form onSubmit={handleAddComment} className="mt-4">
+                  {canUpdate && <form onSubmit={handleAddComment} className="mt-4">
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
@@ -752,7 +765,7 @@ export default function TaskDetailPage(
                         {submittingComment ? '送信中...' : '送信'}
                       </button>
                     </div>
-                  </form>
+                  </form>}
                 </div>
               )}
 
@@ -786,7 +799,7 @@ export default function TaskDetailPage(
                           >
                             ダウンロード
                           </a>
-                          {canEdit && (
+                          {canUpdate && (
                             <button
                               onClick={() => handleDeleteAttachment(attachment.id)}
                               className="text-red-600 hover:text-red-800 text-sm"
@@ -801,7 +814,7 @@ export default function TaskDetailPage(
                     <p className="text-text-muted">{t('detail.noAttachments')}</p>
                   )}
 
-                  <div className="mt-4">
+                  {canUpdate && <div className="mt-4">
                     <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-text-secondary bg-surface hover:bg-surface-elevated">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -814,7 +827,7 @@ export default function TaskDetailPage(
                         className="hidden"
                       />
                     </label>
-                  </div>
+                  </div>}
                 </div>
               )}
 
@@ -912,7 +925,7 @@ export default function TaskDetailPage(
             <div className="bg-surface shadow-sm rounded-lg p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-medium">{t('form.tags')}</h3>
-                {canEdit && !editingTags && (
+                {canUpdate && !editingTags && (
                   <button
                     type="button"
                     onClick={openTagEditor}

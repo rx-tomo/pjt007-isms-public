@@ -186,7 +186,7 @@ export default function SetupPage(
         const userService = new UserService()
         const user = await userService.getCurrentUser()
         if (cancelled) return
-        if (!user || !['system_operator', 'org_admin'].includes(user.role)) {
+        if (!user?.effective_role || !['system_operator', 'org_admin'].includes(user.effective_role)) {
           setIsAuthorized(false)
           return
         }
@@ -329,7 +329,10 @@ export default function SetupPage(
       formData.append('file', file)
       formData.append('organizationId', organizationId)
 
-      const response = await fetch(`/api/${type}/import`, {
+      const importUrl = type === 'risks'
+        ? `/api/risks/import?organizationId=${encodeURIComponent(organizationId)}`
+        : '/api/tasks/import'
+      const response = await fetch(importUrl, {
         method: 'POST',
         body: formData
       })
@@ -403,7 +406,7 @@ export default function SetupPage(
       <DashboardLayout locale={locale}>
         <div className="p-6">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700">Forbidden: system_operator or org_admin role required</p>
+            <p className="text-red-700">{t('forbidden')}</p>
           </div>
         </div>
       </DashboardLayout>

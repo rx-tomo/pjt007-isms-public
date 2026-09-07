@@ -76,11 +76,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-sm hover:text-accent transition-colors">
-                  {t('landing.footer.company.contact')}
-                </Link>
-              </li>
-              <li>
                 <a
                   href={PUBLIC_REPOSITORY_ISSUES_URL}
                   target="_blank"

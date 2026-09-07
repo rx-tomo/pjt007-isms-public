@@ -100,10 +100,10 @@ const RiskMatrixMini: React.FC<{ impact: number; likelihood: number }> = ({
     const cellLikelihood = 5 - row
     const score = cellImpact * cellLikelihood
 
-    if (score <= 4) return 'var(--color-success-100)'
-    if (score <= 9) return 'var(--color-warning-100)'
-    if (score <= 15) return 'var(--color-error-100)'
-    return 'var(--color-error-200)'
+    if (score <= 4) return 'var(--color-success-50)'
+    if (score <= 9) return 'var(--color-warning-50)'
+    if (score <= 15) return 'var(--color-error-50)'
+    return 'var(--color-error-500)'
   }
 
   return (
@@ -315,7 +315,7 @@ export const AIEvaluationPanel: React.FC<AIEvaluationPanelProps> = ({
 
         {error && (
           <div className="text-center py-4">
-            <p style={{ color: 'var(--color-error-600)' }} className="mb-4">
+            <p style={{ color: 'var(--color-error-700)' }} className="mb-4">
               {error}
             </p>
             <Button onClick={handleEvaluate} variant="outline">

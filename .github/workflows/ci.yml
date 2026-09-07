@@ -1,10 +1,10 @@
-name: Public CI
+name: CI Mainline
 
 on:
   push:
-    branches: [main]
+    branches: [ main, master, develop, feat/**, fix/** ]
   pull_request:
-    branches: [main]
+    branches: [ main, master, develop ]
 
 permissions:
   contents: read
@@ -12,7 +12,9 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    env:
+      PLAYWRIGHT_RUN_NONCE: ci-production-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,10 +23,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          npm ci
+          npx playwright install --with-deps
 
       - name: Lint
         run: npm run lint
@@ -32,15 +38,107 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Validate translations
-        run: npm run lint:messages
+      - name: Security audit
+        env:
+          QA_SECURITY_FAIL_ON: none
+        run: npm run qa:security
 
-      - name: Public copy boundary
-        run: npm run qa:public-copy
+      - name: Unit test compile
+        run: npm run test:unit:build
+
+      - name: Prepare practical verification seed
+        run: |
+          temporary_root="$(node -e "console.log(require('node:fs').realpathSync(require('node:os').tmpdir()))")"
+          isolation_root="$(mktemp -d "$temporary_root/pjt007-practical-seed.XXXXXX")"
+          export SQLITE_DB_PATH="$isolation_root/seed.db"
+          export LOCAL_STORAGE_ROOT="$isolation_root/storage"
+          export SEED_OUTPUT_DIR="$isolation_root/test-results"
+          mkdir -p "$LOCAL_STORAGE_ROOT" "$SEED_OUTPUT_DIR"
+          {
+            echo "ISOLATION_ROOT=$isolation_root"
+            echo "SQLITE_DB_PATH=$SQLITE_DB_PATH"
+            echo "LOCAL_STORAGE_ROOT=$LOCAL_STORAGE_ROOT"
+            echo "SEED_OUTPUT_DIR=$SEED_OUTPUT_DIR"
+          } >> "$GITHUB_ENV"
+          node scripts/provision-local-database.mjs --root "$isolation_root" --name seed.db
+          npm run db:seed
+          npm run seed:practical-verification -- --reset --scenario all
+          npm run qa:practical-seed
+
+      - name: Verify Playwright-managed default origin
+        env:
+          PLAYWRIGHT_RUN_NONCE: ci-managed-default-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+          PLAYWRIGHT_OUTPUT_DIR: test-results/playwright-managed-default
+        run: |
+          npx playwright test tests/e2e/playwright-origin.spec.ts --project=chromium --workers=1 --reporter=line
+
+      - name: Verify Playwright-managed alternate origin
+        env:
+          PLAYWRIGHT_RUN_NONCE: ci-managed-alternate-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+          PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3211
+          PLAYWRIGHT_OUTPUT_DIR: test-results/playwright-managed-alternate
+        run: |
+          npx playwright test tests/e2e/playwright-origin.spec.ts --project=chromium --workers=1 --reporter=line
 
       - name: Build
-        env:
-          BETTER_AUTH_SECRET: ci-build-secret-minimum-32-characters
-          BETTER_AUTH_URL: http://127.0.0.1:3007
-          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3007
         run: npm run build
+
+      - name: Start app server (background)
+        run: |
+          nohup bash -c 'BETTER_AUTH_SECRET=ci-e2e-secret-minimum-32-characters BETTER_AUTH_URL=http://127.0.0.1:3007 E2E_MODE=1 E2E_CI_SERVER=1 NEXT_PUBLIC_E2E_MODE=1 npm run start -- --hostname 127.0.0.1 >/tmp/dev.log 2>&1' &
+          server_pid=$!
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3007/api/e2e/identity 2>/dev/null | node -e "let body='';process.stdin.on('data',c=>body+=c);process.stdin.on('end',()=>{const value=JSON.parse(body);process.exit(value.app==='riscala-isms'&&value.nonce===process.env.PLAYWRIGHT_RUN_NONCE?0:1)})"; then
+              echo 'Verified production E2E server identity'
+              exit 0
+            fi
+            if ! kill -0 "$server_pid" >/dev/null 2>&1; then
+              echo 'App server exited before readiness'
+              cat /tmp/dev.log
+              exit 1
+            fi
+            sleep 1
+          done
+          echo 'App server did not become ready'
+          cat /tmp/dev.log
+          exit 1
+
+      - name: QA smoke
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3007
+          PLAYWRIGHT_EXTERNAL_WEB_SERVER: 1
+          QA_BASE_URL: http://127.0.0.1:3007
+          ALLOW_QA_LIST: qa:notifications:settings,qa:rbac:matrix,qa:submission-copy
+        run: npm run qa:all
+
+      - name: Lighthouse performance measurement
+        continue-on-error: true
+        env:
+          QA_BASE_URL: http://127.0.0.1:3007
+        run: npm run qa:lighthouse
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: test-results/lighthouse/
+          if-no-files-found: ignore
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts-${{ github.run_id }}
+          path: |
+            /tmp/dev.log
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+
+      - name: Cleanup practical verification isolation
+        if: always()
+        run: |
+          if [ -n "${ISOLATION_ROOT:-}" ]; then
+            rm -rf "$ISOLATION_ROOT"
+          fi

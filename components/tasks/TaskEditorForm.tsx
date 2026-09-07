@@ -17,7 +17,6 @@ import {
   type DocumentWithFolder,
 } from "@/lib/services/document";
 import { RiskService, type RiskWithRelations } from "@/lib/services/risk";
-import { canCreateTask, canEditTask } from "@/lib/constants/taskPermissions";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { buildTaskEditorPayload } from "@/lib/utils/taskEditorPayload";
 
@@ -87,7 +86,7 @@ export function TaskEditorForm({
   const [error, setError] = useState<string | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [canSubmit, setCanSubmit] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
   const setFormFromTask = useCallback((task: TaskWithRelations) => {
@@ -117,13 +116,15 @@ export function TaskEditorForm({
       }
 
       const profile = await userService.getUserProfile();
-      if (!profile?.organization_id) {
+      if (!profile?.effective_organization_id) {
         throw new Error("organization_missing");
       }
 
-      setCurrentRole(profile.role);
       const hasEditPermission =
-        mode === "create" ? canCreateTask(profile.role) : canEditTask(profile.role);
+        mode === "create"
+          ? profile.effective_capabilities?.modules.tasks.create === true
+          : profile.effective_capabilities?.modules.tasks.update === true;
+      setCanSubmit(hasEditPermission);
       if (!hasEditPermission) {
         setPermissionDenied(true);
         setError(t("errors.permissionDenied"));
@@ -141,7 +142,7 @@ export function TaskEditorForm({
         }
       }
       const targetOrganizationId =
-        existingTask?.organization_id ?? profile.organization_id;
+        existingTask?.organization_id ?? profile.effective_organization_id;
       setOrganizationId(targetOrganizationId);
 
       let fetchedCategories = await taskService.getTaskCategories(
@@ -156,9 +157,13 @@ export function TaskEditorForm({
       setCategories(fetchedCategories);
 
       const [orgUsers, orgDocuments, orgRisks] = await Promise.all([
-        userService.getOrganizationUsers(targetOrganizationId),
-        documentService.getDocuments(targetOrganizationId),
-        riskService.getRisks(targetOrganizationId),
+        userService.getOrganizationUsers(targetOrganizationId).catch(() => [profile]),
+        profile.effective_capabilities?.modules.documents.read === true
+          ? documentService.getDocuments(targetOrganizationId)
+          : Promise.resolve([]),
+        profile.effective_capabilities?.modules.risks.read === true
+          ? riskService.getRisks(targetOrganizationId)
+          : Promise.resolve([]),
       ]);
 
       setUsers(orgUsers);
@@ -209,9 +214,7 @@ export function TaskEditorForm({
       return;
     }
 
-    const hasEditPermission =
-      mode === "create" ? canCreateTask(currentRole) : canEditTask(currentRole);
-    if (!hasEditPermission) {
+    if (!canSubmit) {
       setError(t("errors.permissionDenied"));
       return;
     }

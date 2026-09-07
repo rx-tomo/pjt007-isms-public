@@ -14,6 +14,7 @@ import Stripe from 'stripe'
 import { isStripeMockMode } from '@/lib/stripe/config'
 import { loadStripe } from '@stripe/stripe-js'
 import { getAuthProvider } from '@/lib/container'
+import { SubscriptionProjectionService } from '@/lib/services/subscriptionProjection'
 
 export interface PricingPlan {
   id: string
@@ -93,6 +94,14 @@ export interface UsageTracking {
   created_at: string
 }
 
+export class SubscriptionReadConflictError extends Error {
+  readonly name = 'SubscriptionReadConflictError'
+
+  constructor(readonly conflicts: unknown[]) {
+    super('Subscription state is inconsistent')
+  }
+}
+
 // Client-side Stripe instance
 let stripePromise: Promise<any> | null = null
 
@@ -157,7 +166,7 @@ function toSubscription(
 export class StripeService {
   private stripe: Stripe | null = null
 
-  constructor() {
+  constructor(private readonly injectedSubscriptionDb?: ReturnType<typeof getDb>) {
     // Server-side only
     if (typeof window === 'undefined' && process.env.STRIPE_SECRET_KEY) {
       this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -268,6 +277,11 @@ export class StripeService {
       if (!response.ok) {
         if (response.status === 404) return null
         const payload = await response.json().catch(() => ({}))
+        if (response.status === 409) {
+          throw new SubscriptionReadConflictError(
+            Array.isArray(payload?.conflicts) ? payload.conflicts : []
+          )
+        }
         throw new Error(payload?.error ?? `API error ${response.status}`)
       }
 
@@ -275,14 +289,17 @@ export class StripeService {
       return payload.data ?? null
     }
 
-    const db = getDb()
+    const db = this.injectedSubscriptionDb ?? getDb()
+    const canonical = await new SubscriptionProjectionService(db)
+      .getCurrentForOrganization(organizationId)
 
-    const rows = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.organizationId, organizationId))
-      .orderBy(desc(subscriptions.createdAt))
-      .limit(1)
+    const rows = canonical
+      ? await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.id, canonical.subscriptionId))
+          .limit(1)
+      : []
 
     if (rows.length > 0) {
       const sub = rows[0]

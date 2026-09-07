@@ -1,4 +1,9 @@
 {
+  "publicSeo": {
+    "resources": {"metaTitle":"ISMS operations resources | Riscala AI for ISMS","metaDescription":"Public resources for reviewing ISMS preparation and operation discussion topics.","heroLink":"Explore resources","title":"ISMS operations resources","description":"Public guidance and a lightweight check for organizing ISMS preparation and day-to-day operations.","toolTitle":"ISMS readiness check","toolDescription":"Review preparation items on this page, one item at a time.","openTool":"Open the check","interviewTitle":"Operations interview guide","interviewDescription":"Explore useful topics for reviewing your operating practices.","openInterview":"Read the guide","navigationLabel":"Resource navigation","homeLink":"Back to home","loginLink":"Log in"},
+    "readiness": {"metaTitle":"ISMS readiness check | Riscala AI for ISMS","metaDescription":"A public ISMS preparation check that does not save your selections.","title":"ISMS readiness check","description":"A short check to review key items and identify what you may want to organize next.","checkTitle":"Check items","progress":"{complete} of {total} items checked. {remaining} remaining.","items":{"scope":"The scope and relevant people are organized","owner":"Owners and the review approach are defined","evidence":"Required records are being reviewed","review":"A regular review opportunity is being considered"},"memoryOnly":"Selections stay only while this page is open. Nothing is submitted or saved.","navigationLabel":"Readiness check navigation","resourcesLink":"Resources","homeLink":"Back to home","loginLink":"Log in"},
+    "interview": {"metaTitle":"ISMS operations interview guide | Riscala AI for ISMS","metaDescription":"A public guide to discussion topics for reviewing ISMS operations.","title":"ISMS operations interview guide","description":"Topics that can help frame a conversation about how operations are working.","topicsTitle":"Topics to consider","topics":{"scope":"Whether the scope or relevant people have changed","evidence":"Whether records and actions can be reviewed","review":"How reviews can lead to the next actions"},"informationOnly":"This page is informational only. It provides no form and does not submit or save responses.","githubInquiry":{"title":"Ask on GitHub","publicNotice":"Your inquiry will be posted as a public GitHub Issue.","loginNotice":"Posting requires you to log in to GitHub.","dataNotice":"Do not include personal data, credentials, or confidential information.","notAnonymousNotice":"This is not an anonymous interview intake.","linkLabel":"Open GitHub Issues"},"navigationLabel":"Interview guide navigation","resourcesLink":"Resources","homeLink":"Back to home","loginLink":"Log in"}
+  },
   "support": "Professional support at every step",
   "ai": {
     "evaluation": {
@@ -168,6 +173,10 @@
     "subscription": "Subscription",
     "home": "Home",
     "skipToContent": "Skip to main content",
+    "a11y": {
+      "toggleSidebar": "Toggle sidebar",
+      "breadcrumb": "Breadcrumb"
+    },
     "publicLinks": {
       "source": "View source on GitHub",
       "feedback": "Send feedback"
@@ -317,6 +326,15 @@
       "password": "Password",
       "devLogin": "Demo login"
     },
+    "hero": {
+      "taglineLine1": "Built with AI-driven development,",
+      "taglineLine2": "the platform to build and operate your ISMS.",
+      "features": {
+        "documents": "Document management & version control",
+        "riskAssessment": "Risk assessment & treatment management",
+        "auditPreparation": "Audit preparation & progress tracking"
+      }
+    },
     "login": {
       "title": "Login",
       "description": "Login to Riscala AI for ISMS to manage your ISO27001 certification progress.",
@@ -436,11 +454,11 @@
     }
   },
   "devLogin": {
-    "title": "Developer Tenant Login",
-    "description": "Choose a tenant, then sign in as one of its users to inspect the seeded business data.",
+    "title": "Demo login",
+    "description": "Choose a prepared demo view without entering personal information or a password.",
     "devOnlyFeature": "Development only",
     "note": "Tip:",
-    "noteContent": " Inspect or reset generated users/organizations from Dev Login and local.db tables.",
+    "noteContent": " Demo login reads existing fictional fixtures and creates only an authentication session.",
     "publicNotice": {
       "title": "This is a Build in Public demo",
       "body": "Riscala AI for ISMS is published to show the current state of an ISMS support application and the process of building practical business software through AI-driven development. You can try it with fictional seeded data, and entered data is reset regularly. Use GitHub for source review, feedback, and collaboration inquiries."
@@ -579,7 +597,7 @@
         "empty": "No phase changes recorded yet.",
         "source": {
           "wizard": "Setup wizard",
-          "settings": "Organisation settings",
+          "settings": "Organization settings",
           "system": "System"
         }
       },
@@ -775,6 +793,8 @@
   "pricing": {
     "title": "Pricing Plans",
     "subtitle": "Choose the perfect plan for your needs",
+    "customQuote": "Custom quote",
+    "contactUs": "Contact us",
     "status": {
       "active": "Active",
       "trialing": "Trial",
@@ -784,7 +804,12 @@
       "incomplete_expired": "Expired",
       "unpaid": "Unpaid"
     },
-    "testModeNotice": "Running in Stripe test mode. Checkout completes on a mock screen and no actual charge will occur."
+    "testModeNotice": "Running in Stripe test mode. Checkout completes on a mock screen and no actual charge will occur.",
+    "errors": {
+      "stripeLoadFailed": "Failed to load Stripe.js. Please check the publishable key configuration.",
+      "checkoutFailed": "Failed to start checkout. Please try again.",
+      "portalFailed": "Failed to access the customer portal."
+    }
   },
   "documents": {
     "title": "Document Management",
@@ -856,6 +881,7 @@
         "approverLabel": "Approver",
         "selectPlaceholder": "Select a user",
         "loadingCandidates": "Checking eligible approvers",
+        "twoStepNote": "Approval runs in two steps: the approver you select, then an organization admin.",
         "hint": "The approver must belong to the same organization and be able to access this document.",
         "submit": "Send request",
         "saving": "Sending…",
@@ -872,7 +898,8 @@
       },
       "errors": {
         "missingApprover": "Select an approver before sending the request",
-        "candidatesLoadFailed": "Eligible approvers for this document could not be loaded"
+        "candidatesLoadFailed": "Eligible approvers for this document could not be loaded",
+        "finalStepNoApprover": "This approval request cannot be created because no organization admin is available. Add an organization admin first."
       },
       "progress": {
         "title": "Approval Progress",
@@ -1084,7 +1111,7 @@
         "companiesDeployed": "Source-available",
         "customerSatisfaction": "Demo resets every 24 hours"
       },
-      "badge": "ISO/IEC 27001:2022 Compliant",
+      "badge": "Supports ISO/IEC 27001:2022 compliance",
       "demo": {
         "constructionProgress": "Construction Progress",
         "approvedDocuments": "Approved Documents",
@@ -1156,31 +1183,11 @@
         }
       }
     },
-    "howItWorks": {
-      "title": "Start ISMS in 3 Steps",
-      "steps": {
-        "setup": {
-          "number": "1",
-          "title": "Register Your Organization",
-          "description": "Auto-select optimal templates based on company size and industry"
-        },
-        "build": {
-          "number": "2",
-          "title": "Create Documents & Assess Risks",
-          "description": "Follow guides to create necessary documents and conduct risk assessments"
-        },
-        "maintain": {
-          "number": "3",
-          "title": "Continuous Improvement",
-          "description": "Support certification maintenance while running PDCA cycles"
-        }
-      }
-    },
     "pricing": {
       "title": "Simple, Transparent Pricing",
       "subtitle": "Choose the perfect plan for your organization",
       "popular": "Most Popular",
-      "allPlansInclude": "All plans include SSL certificates, 99.9% uptime SLA, and 24/7 monitoring",
+      "allPlansInclude": "All plans include SSL certificates and 24/7 monitoring",
       "cancelAnytime": "Cancel anytime",
       "securePayment": "Secure payment",
       "moneyBack": "Money-back guarantee",
@@ -1254,21 +1261,6 @@
         "company": "Sample Software Inc."
       }
     },
-    "valueProps": {
-      "title": "Why Choose Riscala AI for ISMS",
-      "item1": {
-        "title": "No Expertise Required",
-        "description": "Organize required preparation and operations step by step while your team builds ISO27001 knowledge"
-      },
-      "item2": {
-        "title": "Cost Reduction",
-        "description": "Reduce overreliance on outside support by keeping information and evidence visible in-house"
-      },
-      "item3": {
-        "title": "Gap Visibility",
-        "description": "Connect documents, risks, audits, and corrective actions so the next missing items are easier to find"
-      }
-    },
     "process": {
       "title": "Get Started in 3 Steps",
       "subtitle": "A process that fits first-time preparation and ongoing operation",
@@ -1276,7 +1268,7 @@
       "step1": {
         "title": "Create Account",
         "time": "5 minutes",
-        "description": "Enter your organization details and start your 14-day free trial"
+        "description": "Enter your organization details and start your 14-day free trial. Optimal templates are auto-selected based on your company size and industry"
       },
       "step2": {
         "title": "Build ISMS",
@@ -1422,7 +1414,8 @@
       "exporting": "Exporting"
     },
     "messages": {
-      "exportFailed": "Failed to export risks. Please try again later."
+      "exportFailed": "Failed to export risks. Please try again later.",
+      "confirmDelete": "Are you sure you want to delete this risk?"
     },
     "status": {
       "identified": "Identified",
@@ -1510,6 +1503,7 @@
       "updateFailed": "Failed to update risk",
       "assetUpdateFailed": "Failed to save linked assets",
       "taskUpdateFailed": "Failed to save linked tasks",
+      "deleteFailed": "Failed to delete risk",
       "notFound": "Risk not found"
     },
     "gapAnalysis": {
@@ -1662,7 +1656,26 @@
         "saving": "Saving"
       }
     },
-    "importCsv": "Import CSV"
+    "importCsv": "Import CSV",
+    "help": {
+      "title": "How to use risk assessment",
+      "items": {
+        "riskScore": { "label": "Risk score", "text": ": Automatically calculated as impact × likelihood (1-25)" },
+        "colorCoding": { "label": "Color coding", "text": ": High risk (red), medium risk (yellow), and low risk (green) are shown visually" },
+        "statusManagement": { "label": "Status management", "text": ": Managed through the flow: Identified → Analyzing → Treating → Monitoring → Closed" },
+        "riskMatrix": { "label": "Risk matrix", "text": ": The table below gives an overview of the distribution of all risks" }
+      },
+      "sample": {
+        "heading": "Here are some sample risks for reference:",
+        "detailTemplate": "Impact: {impact}, Likelihood: {likelihood}, Risk score: {score} ({level})",
+        "items": {
+          "unauthorizedAccess": { "title": "Unauthorized access risk", "description": ": Information leakage from external unauthorized access" },
+          "backupFailure": { "title": "Inadequate data backup", "description": ": Difficulty recovering data in the event of a disaster" },
+          "employeeMismanagement": { "title": "Inadequate employee information management", "description": ": Information leakage due to human error" }
+        },
+        "cta": "Register a new risk"
+      }
+    }
   },
   "home": {
     "title": "Home",
@@ -1963,13 +1976,13 @@
       "phaseMissingCta": "Open settings",
       "loading": {
         "title": "Preparing your onboarding progress",
-        "description": "Fetching the latest organisation data to update each setup step."
+        "description": "Fetching the latest organization data to update each setup step."
       },
       "unavailable": {
         "title": "We couldn't load onboarding progress",
-        "description": "Check your organisation permissions or refresh the dashboard to try again.",
+        "description": "Check your organization permissions or refresh the dashboard to try again.",
         "retry": "Refresh",
-        "settings": "Open organisation settings"
+        "settings": "Open organization settings"
       },
       "rateLabel": "complete",
       "summary": "{completed}/{total} steps complete",
@@ -1999,7 +2012,7 @@
       },
       "steps": {
         "profile": {
-          "title": "Complete organisation profile",
+          "title": "Complete organization profile",
           "description": "Fill in industry, headcount range and certification status so reports reflect your context.",
           "pending": "Profile details still need to be completed.",
           "complete": "Profile is up to date.",
@@ -2024,7 +2037,7 @@
           "description": "Create departments so responsibilities are clearly assigned to each team.",
           "pending": "Departments registered {count}/{target}",
           "complete": "Departments registered {count}",
-          "action": "Open organisation settings"
+          "action": "Open organization settings"
         },
         "scope": {
           "title": "Confirm ISMS scope",
@@ -2059,7 +2072,7 @@
           "description": "Review scope statements and department assignments for the current cycle.",
           "pending": "Scope items reviewed {count}/{target}",
           "complete": "Scope items reviewed {count}",
-          "action": "Open organisation settings"
+          "action": "Open organization settings"
         },
         "phase_risk_cycle": {
           "title": "Reassess key risks",
@@ -2500,10 +2513,10 @@
       },
       "user": {
         "title": "My Dashboard",
-        "subtitle": "View your tasks, assigned documents, and training modules at a glance.",
+        "subtitle": "View your tasks, organization-approved documents, and assigned training at a glance.",
         "summary": {
           "tasks": "My Tasks",
-          "documents": "Assigned Docs",
+          "documents": "Approved Docs",
           "training": "Pending Training"
         },
         "sections": {
@@ -2553,8 +2566,8 @@
             }
           },
           "documents": {
-            "title": "Required Documents",
-            "subtitle": "Approved documents to review.",
+            "title": "Approved Documents",
+            "subtitle": "Documents approved and available within your organization.",
             "cta": "View approved documents",
             "status": {
               "pendingAck": "Pending",
@@ -2665,6 +2678,7 @@
         "documentUpdated": "{actor} updated the document \"{resource}\".",
         "documentApproved": "{actor} approved the document \"{resource}\".",
         "documentApprovalRequested": "{actor} requested approval for \"{resource}\".",
+        "documentApprovalStepCompleted": "{actor} completed the first approval step (manager review) for \"{resource}\".",
         "riskCreated": "{actor} logged the risk \"{resource}\".",
         "riskUpdated": "{actor} updated the risk \"{resource}\".",
         "riskDeleted": "{actor} removed the risk \"{resource}\".",
@@ -3315,6 +3329,7 @@
         "actions": "Actions"
       },
       "roles": {
+        "super_admin": "Super Admin",
         "system_operator": "System Operator",
         "org_admin": "Org Admin",
         "auditor": "Auditor",
@@ -3592,9 +3607,12 @@
         "trialing": "Trial",
         "past_due": "Past Due",
         "canceled": "Canceled",
-        "incomplete": "Incomplete"
+        "incomplete": "Incomplete",
+        "unpaid": "Unpaid",
+        "incomplete_expired": "Expired"
       },
       "perMonth": "month",
+      "customQuote": "Custom quote",
       "cancelScheduled": "Your subscription will be canceled on {date}",
       "noSubscription": "No active subscription",
       "usage": {
@@ -3956,6 +3974,7 @@
     "setup": {
       "title": "Initial Setup",
       "description": "Import initial data using CSV files",
+      "forbidden": "This action requires system operator or organization administrator permissions",
       "auditUnits": "Audit Units",
       "uploadCsv": "Select CSV File",
       "downloadTemplate": "Download Template",
@@ -4223,6 +4242,7 @@
     },
     "confirmDelete": "Are you sure you want to delete this task?",
     "confirmDeleteAttachment": "Are you sure you want to delete this attachment?",
+    "confirmDeleteComment": "Are you sure you want to delete this comment?",
     "errors": {
       "loadFailed": "Failed to load tasks",
       "createFailed": "Failed to create task",
@@ -4236,6 +4256,8 @@
       "createSubtask": "Failed to create subtask",
       "updateSubtask": "Failed to update subtask",
       "deleteSubtask": "Failed to delete subtask",
+      "updateComment": "Failed to update comment",
+      "deleteComment": "Failed to delete comment",
       "permissionDenied": "You do not have permission to perform this action"
     },
     "importCsv": "Import CSV"
@@ -4373,7 +4395,19 @@
       "periodHeaderAll": "All periods",
       "progressBarAriaLabel": "Progress bar showing audit plan status distribution",
       "followUpSummary": "Follow-up status",
-      "nonconformitySummary": "Nonconformity status breakdown"
+      "nonconformitySummary": "Nonconformity status breakdown",
+      "progressHeading": "Audit Progress",
+      "progressHint": "Review pending items in order: planning, execution, findings, corrective action, and follow-up.",
+      "viewInProgress": "View in progress",
+      "majorMinorSummary": "Major: {major}, Minor: {minor}",
+      "progressSegments": {
+        "planning": "Planning",
+        "inProgress": "Execution",
+        "nonconformities": "Findings",
+        "corrective": "Corrective",
+        "followUp": "Follow-up"
+      },
+      "viewDetails": "View details"
     },
     "plans": {
       "title": "Audit Plans",
@@ -4704,7 +4738,9 @@
     "form": {
       "basicInfo": "Basic Information",
       "title": "Audit Title",
+      "titlePlaceholder": "e.g. FY2025 Internal Audit (1st)",
       "description": "Description",
+      "descriptionPlaceholder": "Describe the audit purpose and scope",
       "auditType": "Audit Type",
       "standard": "Standard",
       "schedule": "Schedule",
@@ -4713,6 +4749,7 @@
       "auditTeam": "Audit Team",
       "leadAuditor": "Lead Auditor",
       "auditors": "Auditors",
+      "auditorSignaturePlaceholder": "e.g. Taro Yamada, Auditor",
       "cancel": "Cancel",
       "create": "Create",
       "creating": "Creating",
@@ -4754,7 +4791,7 @@
           "addAction": "Add to team",
           "roleOptions": {
             "system_operator": "System operator",
-            "org_admin": "Organisation admin",
+            "org_admin": "Organization admin",
             "auditor": "Auditor",
             "approver": "Approver",
             "user": "Member"
@@ -4776,7 +4813,7 @@
     },
     "accessDenied": {
       "title": "You don’t have access to the audit workspace",
-      "description": "Only auditors, organisation administrators, system operators, or users granted the audit management permission can view these pages. Ask your administrator if you believe you should have access.",
+      "description": "Only auditors, organization administrators, system operators, or users granted the audit management permission can view these pages. Ask your administrator if you believe you should have access.",
       "permissionFetchFailed": "We couldn’t confirm your audit permissions. Refresh the page or contact an administrator if the problem persists."
     },
     "followUp": {
@@ -4808,6 +4845,12 @@
         "updateFailed": "Failed to update follow-up record.",
         "titleRequired": "Please enter a title."
       }
+    },
+    "types": {
+      "internal": "Internal Audit",
+      "external": "External Audit",
+      "certification": "Certification Audit",
+      "surveillance": "Surveillance Audit"
     }
   },
   "superAdmin": {
@@ -5226,7 +5269,9 @@
     "summary": { "pending": "Pending {count}", "dueSoon": "Due soon {count}", "escalated": "Admin notified {count}" },
     "filters": { "due": "Showing approvals due soon", "escalation": "Showing approvals also notified to an admin", "clear": "Clear filter" },
     "columns": { "subject": "Decision subject", "people": "Requester and approver", "due": "Due", "impact": "Impact after approval", "actions": "Decision" },
-    "statuses": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected", "expired": "Expired" },
+    "statuses": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected", "expired": "Expired", "cancelled": "Cancelled" },
+    "steps": { "first": "First approval", "final": "Final approval" },
+    "errors": { "nextStepNoApprover": "The next approval step cannot start because no organization admin is available. Add an organization admin first." },
     "resourceTypes": { "document": "Document", "incident": "Incident", "audit_plan": "Audit plan", "audit_report": "Audit report", "nonconformity_closure": "Corrective action closure", "followup_record": "Follow-up", "iso_control_soa": "SoA control", "soa_version": "SoA version", "risk_residual_acceptance": "Residual risk acceptance" },
     "impacts": { "document": "Moves the document to approved status and the next workflow stage.", "incident": "Marks the incident report approved and records the decision.", "audit_plan": "Finalizes the audit plan so execution can begin.", "audit_report": "Finalizes the report for corrective action and management review.", "nonconformity_closure": "Closes the corrective action and records audit evidence.", "followup_record": "Completes follow-up verification and records effectiveness evidence.", "iso_control_soa": "Approves the control applicability decision for the SoA.", "soa_version": "Approves the SoA version and preserves the review record.", "risk_residual_acceptance": "Records the organization's acceptance of the residual risk." },
     "decision": { "approveTitle": "Approve this item?", "rejectTitle": "Reject this item?", "rejectReasonLabel": "Rejection reason", "rejectReasonPlaceholder": "Required changes and reason", "confirmApprove": "Confirm approval", "confirmReject": "Confirm rejection" },

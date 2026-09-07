@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
+import { getDb } from '@/lib/db/drizzle/client'
 import { parseLimitedFormData } from '@/lib/server/http/limitedFormData'
 import { parseCsvToObjects } from '@/lib/utils/importers/csv'
 import { TaskTenantMutationService } from '@/lib/server/tasks/taskTenantMutationService'
@@ -78,9 +83,24 @@ export async function POST(request: NextRequest) {
     return respond(NextResponse.json({ error: 'organizationId is required' }, { status: 400 }))
   }
 
+  const [createAuthorization, updateAuthorization] = await Promise.all([
+    authorizeTenantAction(getDb(), user.id, organizationId, 'tasks.create'),
+    authorizeTenantAction(getDb(), user.id, organizationId, 'tasks.update'),
+  ])
+  if (!createAuthorization.ok || !updateAuthorization.ok) {
+    const status = !createAuthorization.ok
+      ? tenantActionDenialStatus(createAuthorization)
+      : !updateAuthorization.ok
+        ? tenantActionDenialStatus(updateAuthorization)
+        : 404
+    return respond(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
+
   const { guard, error } = await requireServiceRole(request, {
     mode: 'tenant',
-    allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'tasks.import'
   })

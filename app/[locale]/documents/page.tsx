@@ -45,6 +45,9 @@ interface FolderTreeNode {
   parentId: string | null
 }
 
+/** 2段目（組織管理者）の承認者候補が0名のときにAPIが409で返す固定メッセージ。 */
+const FINAL_STEP_NO_APPROVER_ERROR = 'Final approval step has no eligible approver'
+
 export default function DocumentsPage(
   props: {
     params: Promise<{ locale: string }>
@@ -60,6 +63,7 @@ export default function DocumentsPage(
   const approvalT = useTranslations('approvals')
   const storageText = useTranslations('documents.storage')
   const commonT = useTranslations('common')
+  const permissionT = useTranslations('tasks.errors')
   const router = useRouter()
   const searchParams = useSearchParams()
   const [documents, setDocuments] = useState<DocumentWithFolder[]>([])
@@ -106,6 +110,7 @@ export default function DocumentsPage(
   const [versionHistoryError, setVersionHistoryError] = useState<string | null>(null)
   const [downloadingVersionId, setDownloadingVersionId] = useState<string | null>(null)
   const [deletingVersionId, setDeletingVersionId] = useState<string | null>(null)
+  const [permissionDenied, setPermissionDenied] = useState(false)
 
 
 
@@ -131,6 +136,11 @@ export default function DocumentsPage(
 
       setCurrentUser(profile)
       setOrganization(org)
+      if (profile.effective_capabilities?.modules.documents.read !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
 
       // フォルダーと文書、ストレージ使用量を並行して取得
       const [
@@ -433,6 +443,10 @@ export default function DocumentsPage(
   const storageLimit = STORAGE_MAX_ORG_USAGE
   const storagePercent = storageUsage != null ? Math.min(100, Math.round((storageUsage / storageLimit) * 100)) : null
   const nearCapacity = storagePercent != null && storagePercent >= 80
+  const documentCapabilities = currentUser?.effective_capabilities?.modules.documents
+  const canCreateDocuments = documentCapabilities?.create === true
+  const canUpdateDocuments = documentCapabilities?.update === true
+  const canDeleteDocuments = documentCapabilities?.delete === true
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return
@@ -552,7 +566,13 @@ export default function DocumentsPage(
       await loadData()
     } catch (error: any) {
       console.error('Approval request error:', error)
-      alert(error.message || t('errors.approvalRequestFailed'))
+      const message = typeof error?.message === 'string' ? error.message : ''
+      if (message.includes(FINAL_STEP_NO_APPROVER_ERROR)) {
+        // 2段目（組織管理者）の候補が0名。運用側の是正が必要なので専用文言を出す。
+        alert(t('approval.errors.finalStepNoApprover'))
+      } else {
+        alert(message || t('errors.approvalRequestFailed'))
+      }
     } finally {
       setApprovalProcessing(false)
     }
@@ -754,6 +774,18 @@ export default function DocumentsPage(
     )
   }
 
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{permissionT('permissionDenied')}</h1>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <>
       <DashboardLayout locale={locale}>
@@ -761,19 +793,19 @@ export default function DocumentsPage(
         {/* サイドバー（フォルダーツリー） */}
         <div className="w-64 bg-surface-elevated border-r border-border p-4">
           <div className="mb-4">
-            <button
+            {canCreateDocuments && <button
               onClick={() => setShowFolderModal(true)}
-              className="w-full px-3 py-2 text-sm font-medium text-text-secondary bg-surface border border-border rounded-md hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm font-medium text-text-secondary bg-surface border border-border rounded-md hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               {t('actions.createFolder')}
-            </button>
+            </button>}
           </div>
-          <FolderTree
+            <FolderTree
             folders={folders}
             selectedFolderId={currentFolderId ?? 'root'}
             onFolderSelect={handleFolderSelect}
-            onFolderCreate={handleInlineFolderCreate}
-            onFolderDelete={handleDeleteFolder}
+              onFolderCreate={canCreateDocuments ? handleInlineFolderCreate : undefined}
+              onFolderDelete={canDeleteDocuments ? handleDeleteFolder : undefined}
           />
         </div>
 
@@ -817,7 +849,7 @@ export default function DocumentsPage(
               {storagePercent !== null && (
                 <div className="mt-3 h-2 rounded-full bg-surface-elevated">
                   <div
-                    className={`h-2 rounded-full ${nearCapacity ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                    className={`h-2 rounded-full ${nearCapacity ? 'bg-amber-500' : 'bg-blue-500'}`}
                     style={{ width: `${Math.min(100, Math.max(storagePercent, 2))}%` }}
                   />
                 </div>
@@ -830,18 +862,18 @@ export default function DocumentsPage(
 
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
-              <button
+              {canCreateDocuments && <button
                 onClick={() => setShowUploadModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 {t('actions.upload')}
-              </button>
-              <Link
+              </button>}
+              {canCreateDocuments && <Link
                 href={`/${locale}/documents/templates`}
-                className="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-secondary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-secondary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 {t('actions.fromTemplate')}
-              </Link>
+              </Link>}
             </div>
             <div className="flex flex-col gap-3 text-sm text-text-secondary sm:flex-row sm:items-center sm:gap-4">
               <div className="flex items-center gap-2">
@@ -852,7 +884,7 @@ export default function DocumentsPage(
                   id="document-status-filter"
                   value={statusFilter ?? ''}
                   onChange={event => handleStatusFilterChange(event.target.value as DocumentStatus | '')}
-                  className="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">{t('filters.status.all')}</option>
                   <option value="draft">{t('status.draft')}</option>
@@ -869,7 +901,7 @@ export default function DocumentsPage(
                   id="document-department-filter"
                   value={departmentFilter}
                   onChange={event => handleDepartmentFilterChange(event.target.value)}
-                  className="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-text-muted"
+                  className="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-text-muted"
                   disabled={Boolean(departmentScope.enforcedFilterValue)}
                 >
                   <option value="">{t('filters.department.all')}</option>
@@ -898,15 +930,15 @@ export default function DocumentsPage(
           )}
 
           {hasActiveFilters && (
-            <div className="mb-4 flex flex-col gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-xs text-indigo-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 flex flex-col gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 {statusFilter && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 font-semibold text-indigo-700">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 font-semibold text-blue-700">
                     {t('filters.active.status', { status: activeStatusLabel })}
                     <button
                       type="button"
                       onClick={clearStatusFilter}
-                      className="rounded-full px-2 py-0.5 text-xs text-indigo-500 transition hover:bg-indigo-100"
+                      className="rounded-full px-2 py-0.5 text-xs text-blue-500 transition hover:bg-blue-100"
                       aria-label={t('filters.clear')}
                     >
                       ×
@@ -914,13 +946,13 @@ export default function DocumentsPage(
                   </span>
                 )}
                 {appliedDepartmentFilter && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 font-semibold text-indigo-700">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 font-semibold text-blue-700">
                     {t('filters.active.department', { department: activeDepartmentLabel })}
                     {!departmentScope.enforcedFilterValue && (
                       <button
                         type="button"
                         onClick={clearDepartmentFilter}
-                        className="rounded-full px-2 py-0.5 text-xs text-indigo-500 transition hover:bg-indigo-100"
+                        className="rounded-full px-2 py-0.5 text-xs text-blue-500 transition hover:bg-blue-100"
                         aria-label={t('filters.clear')}
                       >
                         ×
@@ -932,7 +964,7 @@ export default function DocumentsPage(
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-surface px-3 py-1 font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-surface px-3 py-1 font-semibold text-blue-700 transition hover:bg-blue-100"
               >
                 {t('filters.clearAll')}
               </button>
@@ -942,7 +974,9 @@ export default function DocumentsPage(
           <DocumentList
             documents={filteredDocuments}
             currentUserId={currentUser?.id}
-            currentUserEffectiveRole={currentUser?.effective_role}
+            canUpdate={canUpdateDocuments}
+            canDelete={canDeleteDocuments}
+            canDecideApproval={currentUser?.effective_capabilities?.approvalDecision === true}
             onRequestApproval={handleRequestApproval}
             onApprove={handleApproveDocument}
             onReject={handleRejectDocument}
@@ -980,7 +1014,7 @@ export default function DocumentsPage(
                         id="file"
                         required
                         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                        className="mt-1 block w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        className="mt-1 block w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       />
                     </div>
 
@@ -994,7 +1028,7 @@ export default function DocumentsPage(
                         required
                         value={uploadFormData.title}
                         onChange={(e) => setUploadFormData({ ...uploadFormData, title: e.target.value })}
-                        className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       />
                     </div>
 
@@ -1007,7 +1041,7 @@ export default function DocumentsPage(
                         rows={3}
                         value={uploadFormData.description}
                         onChange={(e) => setUploadFormData({ ...uploadFormData, description: e.target.value })}
-                        className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       />
                     </div>
 
@@ -1019,7 +1053,7 @@ export default function DocumentsPage(
                         id="category"
                         value={uploadFormData.category}
                         onChange={(e) => setUploadFormData({ ...uploadFormData, category: e.target.value })}
-                        className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       >
                         <option value="general">{t('categories.general')}</option>
                         <option value="policy">{t('categories.policy')}</option>
@@ -1034,7 +1068,7 @@ export default function DocumentsPage(
                 <div className="bg-surface-elevated px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     {t('upload.submit')}
                   </button>
@@ -1045,7 +1079,7 @@ export default function DocumentsPage(
                       setSelectedFile(null)
                       setUploadFormData({ title: '', description: '', category: 'general' })
                     }}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     {t('upload.cancel')}
                   </button>
@@ -1079,7 +1113,7 @@ export default function DocumentsPage(
                     id="folder-name"
                     value={newFolderName}
                     onChange={(e) => setNewFolderName(e.target.value)}
-                    className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                   />
                 </div>
               </div>
@@ -1088,7 +1122,7 @@ export default function DocumentsPage(
                 <button
                   type="button"
                   onClick={handleCreateFolder}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   {t('folder.create')}
                 </button>
@@ -1098,7 +1132,7 @@ export default function DocumentsPage(
                     setShowFolderModal(false)
                     setNewFolderName('')
                   }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   {t('folder.cancel')}
                 </button>
@@ -1130,7 +1164,7 @@ export default function DocumentsPage(
                     type="button"
                     onClick={closeVersionHistory}
                     aria-label={t('versionHistory.close')}
-                    className="rounded-full p-1 text-text-muted hover:text-text-secondary focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="rounded-full p-1 text-text-muted hover:text-text-secondary focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <span aria-hidden="true">×</span>
                   </button>
@@ -1144,7 +1178,7 @@ export default function DocumentsPage(
 
                 {versionHistoryLoading ? (
                   <div className="flex justify-center py-10">
-                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
                   </div>
                 ) : versionHistory.length > 0 ? (
                   <ul className="mt-4 divide-y divide-border" data-testid="document-version-list">
@@ -1178,7 +1212,7 @@ export default function DocumentsPage(
                                 <button
                                   type="button"
                                   onClick={() => handleDownloadVersion(version)}
-                                  className="inline-flex items-center rounded-md border border-transparent px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                                  className="inline-flex items-center rounded-md border border-transparent px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
                                   disabled={downloadingVersionId === version.id}
                                 >
                                   {downloadingVersionId === version.id
@@ -1188,7 +1222,7 @@ export default function DocumentsPage(
                               ) : (
                                 <span className="text-xs text-text-muted">{t('versionHistory.noFile')}</span>
                               )}
-                              {versionHistoryTarget.status === 'draft'
+                              {canDeleteDocuments && versionHistoryTarget.status === 'draft'
                                 && version.version_number < (versionHistoryTarget.version_number ?? 0) && (
                                 <button
                                   type="button"
@@ -1215,7 +1249,7 @@ export default function DocumentsPage(
                 <button
                   type="button"
                   onClick={closeVersionHistory}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   {t('versionHistory.close')}
                 </button>
@@ -1238,7 +1272,8 @@ export default function DocumentsPage(
                 <h3 className="text-lg leading-6 font-medium text-text-primary mb-4">
                   {t('approval.modal.title', { title: approvalTarget.title })}
                 </h3>
-                <p className="text-sm text-text-secondary mb-4">{t('approval.modal.description')}</p>
+                <p className="text-sm text-text-secondary mb-2">{t('approval.modal.description')}</p>
+                <p className="text-sm text-text-secondary mb-4">{t('approval.modal.twoStepNote')}</p>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="approval-approver" className="block text-sm font-medium text-text-secondary">
@@ -1249,7 +1284,7 @@ export default function DocumentsPage(
                       value={approvalApprover}
                       onChange={(event) => setApprovalApprover(event.target.value)}
                       disabled={approvalCandidatesLoading}
-                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
                       <option value="">
                         {approvalCandidatesLoading
@@ -1271,7 +1306,7 @@ export default function DocumentsPage(
                   type="button"
                   onClick={submitApprovalRequest}
                   disabled={approvalProcessing || approvalCandidatesLoading || !approvalApprover}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-60"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-60"
                 >
                   {approvalProcessing ? t('approval.modal.saving') : t('approval.modal.submit')}
                 </button>
@@ -1281,7 +1316,7 @@ export default function DocumentsPage(
                     setShowApprovalModal(false)
                     setApprovalTarget(null)
                   }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
                 >
                   {t('approval.modal.cancel')}
                 </button>
@@ -1311,7 +1346,7 @@ export default function DocumentsPage(
                   rows={3}
                   value={approveComment}
                   onChange={(event) => setApproveComment(event.target.value)}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                  className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                   placeholder={t('approval.approveModal.commentPlaceholder')}
                 />
                 <p className="mt-2 text-xs text-text-muted">{t('approval.approveModal.optional')}</p>
@@ -1332,7 +1367,7 @@ export default function DocumentsPage(
                     setApproveTarget(null)
                     setApproveComment('')
                   }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-secondary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
                 >
                   {t('approval.approveModal.cancel')}
                 </button>

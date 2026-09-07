@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { getUser } from '@/lib/server/auth/getUser'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userMemberships, userProfiles, userRoleValues } from '@/lib/db/drizzle/schema/users'
+import { userProfiles } from '@/lib/db/drizzle/schema/users'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  resolveEffectiveCapabilities,
+  type EffectiveCapabilities,
+} from '@/lib/server/auth/actionPolicy'
 
 export async function GET() {
   try {
@@ -42,27 +47,20 @@ export async function GET() {
 
     let effectiveRole: string | null = null
     let effectiveOrganizationId: string | null = null
+    let effectiveCapabilities: EffectiveCapabilities | null = null
     if (row.isActive === true && row.organizationId) {
-      const [membership] = await db
-        .select({
-          organizationId: userMemberships.organizationId,
-          role: userMemberships.role,
-          status: userMemberships.status,
-        })
-        .from(userMemberships)
-        .where(and(
-          eq(userMemberships.userId, row.id),
-          eq(userMemberships.organizationId, row.organizationId),
-        ))
-        .limit(1)
-
-      if (
-        membership?.organizationId === row.organizationId &&
-        membership.status === 'active' &&
-        (userRoleValues as readonly string[]).includes(membership.role)
-      ) {
-        effectiveRole = membership.role
-        effectiveOrganizationId = membership.organizationId
+      const authorization = await resolveTenantAuthorizationContext(
+        db,
+        row.id,
+        row.organizationId
+      )
+      if (authorization.ok) {
+        effectiveRole = authorization.context.role
+        effectiveOrganizationId = authorization.context.organizationId
+        effectiveCapabilities = await resolveEffectiveCapabilities(
+          db,
+          authorization.context
+        )
       }
     }
 
@@ -86,6 +84,7 @@ export async function GET() {
         last_login_at: row.lastLoginAt,
         effective_role: effectiveRole,
         effective_organization_id: effectiveOrganizationId,
+        effective_capabilities: effectiveCapabilities,
       }
     })
   } catch (error) {

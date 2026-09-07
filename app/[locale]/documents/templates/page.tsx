@@ -41,6 +41,7 @@ export default function TemplatesPage(
   const t = useTranslations('documents.templates')
   const tDocuments = useTranslations('documents.errors')
   const tCommon = useTranslations('common')
+  const permissionT = useTranslations('tasks.errors')
   const router = useRouter()
 
   const documentService = useMemo(() => new DocumentService(), [])
@@ -60,6 +61,8 @@ export default function TemplatesPage(
     title: '',
     folderId: ''
   })
+  const [canCreateDocuments, setCanCreateDocuments] = useState(false)
+  const [permissionDenied, setPermissionDenied] = useState(false)
 
   const loadResources = useCallback(async () => {
     setIsLoading(true)
@@ -72,7 +75,15 @@ export default function TemplatesPage(
         setIsLoading(false)
         return
       }
+      if (profile.effective_capabilities?.modules.documents.read !== true) {
+        setPermissionDenied(true)
+        return
+      }
 
+      setPermissionDenied(false)
+      setCanCreateDocuments(
+        profile.effective_capabilities.modules.documents.create === true
+      )
       setOrganizationId(profile.organization_id)
 
       const [templateRows, folderRows] = await Promise.all([
@@ -113,6 +124,7 @@ export default function TemplatesPage(
   }, [categoryFilter, templates])
 
   const handleOpenModal = (template: DocumentTemplate) => {
+    if (!canCreateDocuments) return
     setFormError(null)
     setFormState({
       title: template.name,
@@ -182,12 +194,22 @@ export default function TemplatesPage(
         onClick={() => setCategoryFilter(category)}
         className={`px-4 py-2 rounded-md transition-colors ${
           isActive
-            ? 'bg-indigo-600 text-white'
+            ? 'bg-blue-600 text-white'
             : 'bg-surface-elevated text-text-secondary hover:bg-surface-hover'
         }`}
       >
         {label}
       </button>
+    )
+  }
+
+  if (permissionDenied) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+          <h1 className="text-lg font-semibold">{permissionT('permissionDenied')}</h1>
+        </div>
+      </div>
     )
   }
 
@@ -236,7 +258,7 @@ export default function TemplatesPage(
           {filteredTemplates.map(template => (
             <article
               key={template.id}
-              className="flex h-full flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+              className="flex h-full flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md"
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
@@ -244,7 +266,7 @@ export default function TemplatesPage(
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                       template.category === 'policy'
-                        ? 'bg-indigo-100 text-indigo-700'
+                        ? 'bg-blue-100 text-blue-700'
                         : template.category === 'procedure'
                         ? 'bg-emerald-100 text-emerald-700'
                         : template.category === 'form'
@@ -265,13 +287,15 @@ export default function TemplatesPage(
                     ? t('isoReference', { value: template.iso_reference })
                     : t('isoReferenceUnknown')}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleOpenModal(template)}
-                  className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700"
-                >
-                  {t('useTemplate')}
-                </button>
+                {canCreateDocuments && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenModal(template)}
+                    className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
+                  >
+                    {t('useTemplate')}
+                  </button>
+                )}
               </div>
             </article>
           ))}
@@ -281,13 +305,13 @@ export default function TemplatesPage(
       <div className="mt-10">
         <Link
           href={`/${locale}/documents`}
-          className="inline-flex items-center text-sm font-medium text-indigo-600 transition hover:text-indigo-700"
+          className="inline-flex items-center text-sm font-medium text-blue-600 transition hover:text-blue-700"
         >
           ← {t('backToDocuments')}
         </Link>
       </div>
 
-      {selectedTemplate && (
+      {canCreateDocuments && selectedTemplate && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-gray-900/50 px-4 py-6 sm:items-center sm:p-0">
           <div className="relative w-full max-w-lg overflow-hidden rounded-lg bg-surface shadow-xl">
             <form onSubmit={handleSubmit} className="space-y-6 p-6">
@@ -318,7 +342,7 @@ export default function TemplatesPage(
                   }
                   maxLength={120}
                   required
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -333,7 +357,7 @@ export default function TemplatesPage(
                   onChange={event =>
                     setFormState(prev => ({ ...prev, folderId: event.target.value }))
                   }
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">{t('modal.folderPlaceholder')}</option>
                   {folders.map(folder => (
@@ -355,7 +379,7 @@ export default function TemplatesPage(
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                  className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
                 >
                   {isSubmitting ? t('modal.submitting') : t('modal.submit')}
                 </button>

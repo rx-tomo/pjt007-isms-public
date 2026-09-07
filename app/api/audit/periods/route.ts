@@ -103,6 +103,7 @@ export async function GET(request: Request) {
       open: number
       in_progress: number
       resolved: number
+      pending_verification: number
       closed: number
       verified: number
       active: number
@@ -121,11 +122,12 @@ export async function GET(request: Request) {
       for (const nc of ncRows) {
         const planId = nc.auditChecklistId ? checklistMap.get(nc.auditChecklistId) : null
         if (!planId) continue
-        const existing = ncByPlan.get(planId) ?? { open: 0, in_progress: 0, resolved: 0, closed: 0, verified: 0, active: 0 }
+        const existing = ncByPlan.get(planId) ?? { open: 0, in_progress: 0, resolved: 0, pending_verification: 0, closed: 0, verified: 0, active: 0 }
         switch (nc.status) {
           case 'open': existing.open++; existing.active++; break
           case 'in_progress': existing.in_progress++; existing.active++; break
           case 'resolved': existing.resolved++; existing.active++; break
+          case 'pending_verification': existing.pending_verification++; existing.active++; break
           case 'closed': existing.closed++; break
           case 'verified': existing.verified++; break
         }
@@ -145,14 +147,16 @@ export async function GET(request: Request) {
       let openNc = 0
       let inProgressNc = 0
       let resolvedNc = 0
+      let pendingVerificationNc = 0
       let closedNc = 0
       let verifiedNc = 0
 
       for (const plan of periodPlans) {
-        const nc = ncByPlan.get(plan.id) ?? { open: 0, in_progress: 0, resolved: 0, closed: 0, verified: 0, active: 0 }
+        const nc = ncByPlan.get(plan.id) ?? { open: 0, in_progress: 0, resolved: 0, pending_verification: 0, closed: 0, verified: 0, active: 0 }
         openNc += nc.open
         inProgressNc += nc.in_progress
         resolvedNc += nc.resolved
+        pendingVerificationNc += nc.pending_verification
         closedNc += nc.closed
         verifiedNc += nc.verified
 
@@ -177,6 +181,7 @@ export async function GET(request: Request) {
           open: openNc,
           in_progress: inProgressNc,
           resolved: resolvedNc,
+          pending_verification: pendingVerificationNc,
           closed: closedNc,
           verified: verifiedNc
         }

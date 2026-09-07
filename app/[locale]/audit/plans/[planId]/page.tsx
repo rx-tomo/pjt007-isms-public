@@ -587,7 +587,7 @@ export default function AuditPlanDetailPage(
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs text-text-muted">
-              <Link href={`/${locale}/audit`} className="text-indigo-600 hover:text-indigo-700">
+              <Link href={`/${locale}/audit`} className="text-blue-600 hover:text-blue-700">
                 {t('title')}
               </Link>{' '}
               / {t('plans.title')}
@@ -623,7 +623,7 @@ export default function AuditPlanDetailPage(
             </button>
             <button
               onClick={() => router.push(`/${locale}/audit/plans/${plan.id}/report`)}
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 transition hover:border-indigo-300 hover:text-indigo-700"
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-4 py-2 text-sm font-medium text-blue-600 transition hover:border-blue-300 hover:text-blue-700"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h10M7 12h10M7 17h6" />
@@ -642,7 +642,7 @@ export default function AuditPlanDetailPage(
             <div className="space-y-6 rounded-3xl border border-border bg-surface p-6 shadow-sm">
               <header className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
                     {t('detail.sections.overview.badge')}
                   </p>
                   <h2 className="text-lg font-semibold text-text-primary">{t('detail.sections.overview.title')}</h2>
@@ -676,7 +676,7 @@ export default function AuditPlanDetailPage(
                     setFormState(prev => (prev ? { ...prev, description: event.target.value } : prev))
                   }
                   rows={4}
-                  className="mt-2 w-full rounded-2xl border border-border px-3 py-2 text-sm shadow-inner focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                  className="mt-2 w-full rounded-2xl border border-border px-3 py-2 text-sm shadow-inner focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -691,7 +691,7 @@ export default function AuditPlanDetailPage(
                     onChange={event =>
                       setFormState(prev => (prev ? { ...prev, auditedUnitId: event.target.value } : prev))
                     }
-                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
                     <option value="">選択してください</option>
                     {auditUnits.map(unit => (
@@ -717,8 +717,8 @@ export default function AuditPlanDetailPage(
                     onChange={event =>
                       setFormState(prev => (prev ? { ...prev, auditorSignature: event.target.value } : prev))
                     }
-                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                    placeholder="例: 監査担当 山田 太郎"
+                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    placeholder={t('form.auditorSignaturePlaceholder')}
                   />
                   {plan.auditor_signed_at && (
                     <p className="text-xs text-text-muted">
@@ -739,7 +739,7 @@ export default function AuditPlanDetailPage(
                     onChange={event =>
                       setFormState(prev => (prev ? { ...prev, status: event.target.value as AuditStatus } : prev))
                     }
-                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
                     {STATUS_OPTIONS.map(status => (
                       <option key={status} value={status}>
@@ -761,7 +761,7 @@ export default function AuditPlanDetailPage(
                     onChange={event =>
                       setFormState(prev => (prev ? { ...prev, actualStartDate: event.target.value } : prev))
                     }
-                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
 
@@ -777,7 +777,7 @@ export default function AuditPlanDetailPage(
                     onChange={event =>
                       setFormState(prev => (prev ? { ...prev, actualEndDate: event.target.value } : prev))
                     }
-                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               </div>
@@ -788,7 +788,7 @@ export default function AuditPlanDetailPage(
                   onClick={handlePlanUpdate}
                   disabled={saving}
                   data-testid="audit-plan-save-button"
-                  className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                  className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                 >
                   {saving ? t('form.saving') : t('form.save')}
                 </button>
@@ -1012,13 +1012,13 @@ export default function AuditPlanDetailPage(
             <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
               <header className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
                     {t('detail.sections.team.badge')}
                   </p>
                   <h2 className="text-lg font-semibold text-text-primary">{t('detail.sections.team.title')}</h2>
                   <p className="text-sm text-text-muted">{t('detail.sections.team.description')}</p>
                 </div>
-                <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
                   {teamMembers?.length ?? 0} {t('detail.sections.team.countSuffix')}
                 </span>
               </header>
@@ -1052,7 +1052,7 @@ export default function AuditPlanDetailPage(
                           value={member.role}
                           onChange={event => handleTeamRoleChange(member.id, event.target.value as TeamRole)}
                           disabled={teamSaving === member.id}
-                          className="mt-1 w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="mt-1 w-full rounded-2xl border border-border px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {TEAM_ROLES.map(role => (
                             <option key={role} value={role}>
@@ -1070,17 +1070,17 @@ export default function AuditPlanDetailPage(
                 )}
               </div>
 
-              <form onSubmit={handleAddMember} className="mt-6 space-y-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4">
-                <p className="text-sm font-medium text-indigo-700">{t('detail.sections.team.addTitle')}</p>
+              <form onSubmit={handleAddMember} className="mt-6 space-y-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
+                <p className="text-sm font-medium text-blue-700">{t('detail.sections.team.addTitle')}</p>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-indigo-700" htmlFor="team-user">
+                  <label className="text-xs font-medium text-blue-700" htmlFor="team-user">
                     {t('detail.sections.team.addUserLabel')}
                   </label>
                   <select
                     id="team-user"
                     value={teamForm.userId}
                     onChange={event => setTeamForm(prev => ({ ...prev, userId: event.target.value }))}
-                    className="w-full rounded-2xl border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-blue-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
                     <option value="">{t('detail.sections.team.selectPlaceholder')}</option>
                     {selectableUsers.map(user => (
@@ -1091,14 +1091,14 @@ export default function AuditPlanDetailPage(
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-indigo-700" htmlFor="team-role">
+                  <label className="text-xs font-medium text-blue-700" htmlFor="team-role">
                     {t('detail.sections.team.addRoleLabel')}
                   </label>
                   <select
                     id="team-role"
                     value={teamForm.role}
                     onChange={event => setTeamForm(prev => ({ ...prev, role: event.target.value as TeamRole }))}
-                    className="w-full rounded-2xl border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-2xl border border-blue-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
                     {TEAM_ROLES.map(role => (
                       <option key={role} value={role}>
@@ -1110,7 +1110,7 @@ export default function AuditPlanDetailPage(
                 <button
                   type="submit"
                   disabled={!teamForm.userId || teamSaving === teamForm.userId}
-                  className="w-full rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                  className="w-full rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                 >
                   {t('detail.sections.team.addAction')}
                 </button>

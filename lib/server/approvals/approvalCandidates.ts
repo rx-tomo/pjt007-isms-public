@@ -8,6 +8,7 @@ import {
 } from '@/lib/db/drizzle/schema'
 import {
   getApprovalCandidateRoles,
+  getDocumentApprovalCandidateRolesForStep,
   isApprovalCandidateRole,
   type ApprovalCandidate,
   type ApprovalCandidatePurpose,
@@ -16,6 +17,7 @@ import {
   resolveTenantAuthorizationContext,
   type TenantAuthorizationDenial,
 } from '@/lib/server/auth/authorizationContext'
+import { DOCUMENT_APPROVAL_FIRST_STEP } from '@/lib/approvals/documentApprovalSteps'
 import { hasFullDepartmentAccess } from '@/lib/utils/departmentScope'
 import {
   resolveDocumentApprovalResourceScope,
@@ -29,6 +31,8 @@ export type ApprovalCandidateLookupResult =
 interface ApprovalCandidateLookupOptions {
   resourceId?: string | null
   departmentId?: string | null
+  /** 文書承認のみ有効。段別の候補ロールを解決する（設計 §5.1 / §5.6）。既定は1段目。 */
+  step?: number | null
 }
 
 function canAccessDepartment(
@@ -101,7 +105,11 @@ export async function listApprovalCandidatesForActor(
     }
   }
 
-  const eligibleRoles = getApprovalCandidateRoles(purpose)
+  const eligibleRoles = purpose === 'document'
+    ? getDocumentApprovalCandidateRolesForStep(
+      options.step ?? DOCUMENT_APPROVAL_FIRST_STEP
+    )
+    : getApprovalCandidateRoles(purpose)
   const rows = await db
     .select({
       id: userProfiles.id,

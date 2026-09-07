@@ -2,7 +2,7 @@
 title: PR/FAQ Workshop
 category: business
 created: 2026-06-09
-last_updated: 2026-06-28
+last_updated: 2026-08-04
 status: active_practical_verification_backlog
 ---
 
@@ -10,7 +10,7 @@ status: active_practical_verification_backlog
 
 このディレクトリは、Riscala AI for ISMSのPR/FAQ正本候補を管理する。
 
-現時点の草稿は、既存コード、`spec-dsl`、実務検証QA、release-readiness docsから逆算した初稿に、オーナー指摘を反映した「未来起点のPR/FAQ正本候補」である。
+現時点の草稿は、既存コードとオーナー指摘をもとに、公開snapshotの価値と現在地を説明するPR/FAQ正本候補である。
 
 2026-06-28時点で、PR/FAQ workshop内のActive Unknownはゼロ。ただしBacklogはゼロではない。6/26〜6/28のロール別UX更新により、ホーム、承認、監査、課金、審査準備パッケージは利用者の判断順へ寄った。一方で、承認行の業務対象解決、ホーム下部カードの圧縮、自然なUI文言の仕上げは実務検証Backlogとして残る。公開snapshotの実行、public repo反映、preview/production環境確認、商用前hardeningは、Backlogではなく公開同期運用、deployment/release gate、または将来実装ゲートで扱う。
 
@@ -23,28 +23,14 @@ status: active_practical_verification_backlog
    - プレスリリース草稿
    - 顧客向けFAQ
    - 公開資料やサービス紹介へ転用できる候補文
-3. `pr-faq-internal.md`
-   - 内部向けFAQ
-   - 未決定事項
-   - 競合・代替手段に対する勝ち筋
-   - 開発上の中間ゴールや判断メモ
-4. `ai-driven-development.md`
+3. `ai-driven-development.md`
    - AI駆動開発として公開するもの/しないもの
    - 開発ログ、検証結果、失敗例、秘密情報の公開境界
    - 公開READMEや記事へ転用できる短文
-5. `contribution-and-collaboration.md`
+4. `contribution-and-collaboration.md`
    - コントリビューター、協業、商用相談の入口方針
    - `CONTRIBUTING.md` や公開repo READMEへ転用できる受け入れ基準
    - security contact、commercial inquiry、Issue/Discussion運用の未決定点
-6. `backlog.md`
-   - PR/FAQで発生した課題の完了台帳
-   - 2026-06-19時点ではOpen/Partialなし
-7. `role-actor-usability-review-2026-06-09.md`
-   - 審査準備パッケージのロール/アクター/次アクション観点レビュー
-   - UI/PDF/ZIP表現の修正証跡と再テスト計画
-8. `unknowns.md`
-   - 事業判断、責任境界、競合成熟度などの横断Unknownの完了台帳
-   - 2026-06-19時点ではActive Unknownなし
 
 ## 現在成熟度
 
@@ -57,9 +43,7 @@ status: active_practical_verification_backlog
 このため、PR/FAQは次の2層で読む。
 
 - `pr-faq-public.md`: 公開用リポジトリや発信で使える、現在の公開snapshot向け説明。
-- `pr-faq-internal.md`: 最終SaaS像、実務検証、公開snapshot運用、未決定事項を分けて扱う内部判断文書。
-
-内部ラベルの `initial` / `surveillance` は、外向きには「初回登録準備」「継続運用」と表現する。`SoA` は外向きには原則使わず、「適用管理策の判断」などの平易な言い方へ寄せる。
+外向きの文書では、初回登録準備、継続運用、適用管理策の判断など、利用者が理解しやすい表現を使う。
 
 一方で、認証取得保証、審査合格保証、審査機関への受理保証は約束しない。保証はできないが、審査に通用するレベルの情報整理、証跡管理、出力支援を強く訴求する。
 
@@ -83,7 +67,7 @@ Dev Loginも、ロール先行ではなく「テナント選択 -> テナント�
 npm run qa:public-copy
 ```
 
-このQAは `messages/`、`app/`、`components/`、`pr-faq-public.md` を対象に、`実務検証`、`spec-dsl`、`確認用パッケージ`、`Submission Bundle` などの内部語・旧語を検出する。内部docsや `pr-faq-internal.md` は別途レビュー対象とし、顧客向け一次UIや公開候補文には出さない。
+このQAは `messages/`、`app/`、`components/`、`pr-faq-public.md` を対象に、内部語・旧語が公開候補文へ混ざっていないかを検出する。
 
 ## 次アクション
 

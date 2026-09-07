@@ -30,7 +30,8 @@ export type TenantAuthorizationResult =
   | { ok: false; reason: TenantAuthorizationDenial }
 
 function isUserRole(role: string): role is UserRole {
-  return (userRoleValues as readonly string[]).includes(role)
+  return role !== 'super_admin'
+    && (userRoleValues as readonly string[]).includes(role)
 }
 
 export async function resolveTenantAuthorizationContext(

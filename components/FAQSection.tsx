@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { PUBLIC_REPOSITORY_ISSUES_URL } from '@/lib/publicLinks';
 
 export default function FAQSection() {
   const t = useTranslations();
@@ -74,10 +75,12 @@ export default function FAQSection() {
               {t('landing.faq.stillHaveQuestions')}
             </p>
             <a
-              href="/contact"
+              href={PUBLIC_REPOSITORY_ISSUES_URL}
+              target="_blank"
+              rel="noreferrer"
               className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
             >
-              {t('landing.faq.contactSupport')}
+              {t('landing.footer.company.feedback')}
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

@@ -62,6 +62,8 @@ Before real customer charging, complete and record at least the following:
 - Use saved Stripe customer IDs from checkout/webhook sync for commercial portal access; email fallback is guarded by Stripe customer metadata and should be treated as recovery-only.
 - Confirm payment history, subscription status, cancellation-at-period-end, usage display, and audit/service-role events after webhook sync.
 - Prepare rollback / disablement steps, including how to turn off real checkout while preserving existing tenant access.
+- Implement handling for the `invoice.payment_failed` webhook event, and surface payment-failure state to the user (subscription status display, recovery guidance, and notification). Mandatory before real customer charging begins (PO decision PO-07, 2026-08-19). The missing `unpaid` / `incomplete_expired` translation keys under `settings.subscription.status` were fixed ahead of this gate.
+- Recommended for a later stage (not yet a PO-approved gate): handle `customer.subscription.trial_will_end` to notify users before trial expiry. Not required by PO-07.
 
 ## Public README / PR Wording
 

@@ -97,8 +97,8 @@ export default function SubscriptionPage(
       let orgId: string | null = null
       // ユーザー権限チェック（まずは通常の手順）
       const user = await userService.getCurrentUser()
-      if (user && ['org_admin', 'system_operator'].includes(user.role)) {
-        orgId = user.organization_id
+      if (user?.effective_role && ['org_admin', 'system_operator'].includes(user.effective_role)) {
+        orgId = user.effective_organization_id
       } else if (isE2E) {
         // E2Eモードで未認証の場合のみ、モック購読で画面を表示
         orgId = 'e2e-org'
@@ -199,7 +199,7 @@ export default function SubscriptionPage(
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -266,7 +266,9 @@ export default function SubscriptionPage(
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-text-muted">{t('fields.price')}</dt>
                   <dd className="mt-1 text-sm text-text-primary">
-                    ¥{subscription.pricing_plan.price_monthly.toLocaleString()}/{t('perMonth')}
+                    {subscription.pricing_plan.price_monthly < 0
+                      ? t('customQuote')
+                      : `¥${subscription.pricing_plan.price_monthly.toLocaleString()}/${t('perMonth')}`}
                   </dd>
                 </div>
                 {subscription.trial_end && new Date(subscription.trial_end) > new Date() && (
@@ -292,7 +294,7 @@ export default function SubscriptionPage(
                 <p className="text-text-muted">{t('noSubscription')}</p>
                 <button
                   onClick={handleUpgradePlan}
-                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   {t('actions.selectPlan')}
                 </button>
@@ -321,7 +323,7 @@ export default function SubscriptionPage(
                   </div>
                   <div className="mt-1 w-full bg-surface-elevated rounded-full h-2">
                     <div
-                      className="bg-indigo-600 h-2 rounded-full"
+                      className="bg-blue-600 h-2 rounded-full"
                       style={{
                         width: subscription.pricing_plan?.max_users === -1 || !subscription.pricing_plan?.max_users
                           ? '0%'
@@ -341,7 +343,7 @@ export default function SubscriptionPage(
                   </div>
                   <div className="mt-1 w-full bg-surface-elevated rounded-full h-2">
                     <div
-                      className="bg-indigo-600 h-2 rounded-full"
+                      className="bg-blue-600 h-2 rounded-full"
                       style={{
                         width: subscription.pricing_plan?.max_documents === -1 || !subscription.pricing_plan?.max_documents
                           ? '0%'
@@ -361,7 +363,7 @@ export default function SubscriptionPage(
                   </div>
                   <div className="mt-1 w-full bg-surface-elevated rounded-full h-2">
                     <div
-                      className="bg-indigo-600 h-2 rounded-full"
+                      className="bg-blue-600 h-2 rounded-full"
                       style={{ width: '10%' }}
                     ></div>
                   </div>
@@ -429,13 +431,13 @@ export default function SubscriptionPage(
                 data-testid="manage-billing"
                 onClick={handleManageSubscription}
                 disabled={isProcessing}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {isProcessing ? t('actions.processing') : t('actions.manageBilling')}
               </button>
               <button
                 onClick={handleUpgradePlan}
-                className="inline-flex justify-center py-2 px-4 border border-border shadow-sm text-sm font-medium rounded-md text-text-primary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex justify-center py-2 px-4 border border-border shadow-sm text-sm font-medium rounded-md text-text-primary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 {t('actions.changePlan')}
               </button>
@@ -443,7 +445,7 @@ export default function SubscriptionPage(
           ) : (
             <button
               onClick={handleUpgradePlan}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               {t('actions.selectPlan')}
             </button>

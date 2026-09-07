@@ -27,10 +27,9 @@ const validPathPatterns = [
   /^\/\$\{locale\}\/audit(\/.*)?$/,
   /^\/\$\{locale\}\/settings\/(profile|organization|users|subscription)$/,
   /^\/\$\{locale\}\/pricing$/,
-  /^\/\$\{locale\}\/contact$/,
   /^\/api\//,   // API routes don't need locale prefix
   /^\/docs(\/.*)?$/,  // Documentation links don't need locale prefix
-  /^\/(about|contact|privacy|terms|help|status|cookies)$/,  // Public static pages don't need locale prefix
+  /^\/(about|privacy|terms|help|status|cookies)$/,  // Public static pages don't need locale prefix
   /^\/(ja|en|zh)\//,  // Hardcoded locale paths (legacy or intentional)
   /^\/\$\{locale\}\/dev-login$/,
   /^\/\$\{locale\}$/,

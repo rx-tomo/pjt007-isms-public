@@ -31,7 +31,10 @@ export const approvalResourceTypeValues = [
 ] as const
 export type ApprovalResourceType = (typeof approvalResourceTypeValues)[number]
 
-export const approvalRequestStatusValues = ['pending', 'approved', 'rejected', 'expired'] as const
+// 'cancelled': 後段の pending が取消(revert)により無効化された状態。
+// 物理削除すると approval_events が ON DELETE CASCADE で消え承認証跡が復元不能になるため、
+// 論理無効化として保持する（security-review 指摘 H-3 / 設計 §3.4）。
+export const approvalRequestStatusValues = ['pending', 'approved', 'rejected', 'expired', 'cancelled'] as const
 export type ApprovalRequestStatus = (typeof approvalRequestStatusValues)[number]
 
 export const approvalEventTypeValues = [
@@ -42,6 +45,7 @@ export const approvalEventTypeValues = [
   'reminded',
   'escalated',
   'reverted',
+  'cancelled',
 ] as const
 export type ApprovalEventType = (typeof approvalEventTypeValues)[number]
 

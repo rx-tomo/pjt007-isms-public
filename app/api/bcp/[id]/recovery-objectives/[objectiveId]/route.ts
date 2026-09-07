@@ -1,4 +1,4 @@
-import { BcpService } from '@/lib/services/bcp'
+import { BcpService, parseRecoveryObjectiveUpdateBody } from '@/lib/services/bcp'
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
 import { handleRouteError } from '@/lib/errors/handleRouteError'
@@ -16,14 +16,15 @@ export async function PUT(
   try {
     const { id, objectiveId } = params
 
-    // Verify parent plan belongs to caller's org
-    const plan = await bcpService.getPlanById(id)
-    if (plan.organization_id !== caller.organizationId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const input = parseRecoveryObjectiveUpdateBody(await request.json().catch(() => null))
+    if (!input) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
-
-    const body = await request.json()
-    const objective = await bcpService.updateRecoveryObjective(objectiveId, body)
+    const objective = await bcpService.updateRecoveryObjective({
+      organizationId: caller.organizationId,
+      planId: id,
+      childId: objectiveId,
+    }, input)
     return NextResponse.json({ data: objective })
   } catch (error) {
     return handleRouteError(error)
@@ -41,13 +42,11 @@ export async function DELETE(
   try {
     const { id, objectiveId } = params
 
-    // Verify parent plan belongs to caller's org
-    const plan = await bcpService.getPlanById(id)
-    if (plan.organization_id !== caller.organizationId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
-    await bcpService.deleteRecoveryObjective(objectiveId)
+    await bcpService.deleteRecoveryObjective({
+      organizationId: caller.organizationId,
+      planId: id,
+      childId: objectiveId,
+    })
     return NextResponse.json({ success: true })
   } catch (error) {
     return handleRouteError(error)

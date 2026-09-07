@@ -2,52 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { and, eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userProfiles, userMemberships } from '@/lib/db/drizzle/schema'
 import { informationAssets } from '@/lib/db/drizzle/schema/risks'
-import { InformationAssetService } from '@/lib/services/informationAsset'
+import {
+  InformationAssetService,
+  isInformationAssetMutationError,
+} from '@/lib/services/informationAsset'
+import { authorizeTenantAction } from '@/lib/server/auth/actionPolicy'
+import { resolveActiveTenantMember } from '@/lib/server/auth/targetMember'
 import type { Database } from '@/types/database.types'
-
-const assetManagerRoles = new Set(['system_operator', 'org_admin'])
 
 type AssetInsertPayload = Omit<
   Database['public']['Tables']['information_assets']['Insert'],
   'id' | 'created_at' | 'updated_at'
 >
 type AssetUpdatePayload = Database['public']['Tables']['information_assets']['Update']
-
-async function getOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
-  const [[profile], [membership]] = await Promise.all([
-    db
-      .select({
-        organizationId: userProfiles.organizationId,
-        role: userProfiles.role,
-      })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({
-        id: userMemberships.id,
-        role: userMemberships.role,
-      })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.status, 'active')
-      ))
-      .limit(1),
-  ])
-
-  const profileAccess = profile?.organizationId === organizationId
-  const membershipAccess = Boolean(membership)
-  const role = membership?.role ?? (profileAccess ? profile?.role : null)
-
-  return {
-    hasAccess: profileAccess || membershipAccess,
-    canManage: Boolean(role && assetManagerRoles.has(role)),
-  }
-}
 
 function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 })
@@ -95,7 +63,9 @@ function parseAssetUpdates(value: unknown): AssetUpdatePayload | null {
   if (typeof value.asset_type === 'string') updates.asset_type = value.asset_type
   if (typeof value.classification === 'string') updates.classification = value.classification
   if (typeof value.criticality === 'string') updates.criticality = value.criticality
-  if (typeof value.owner_id === 'string') updates.owner_id = value.owner_id || null
+  if (typeof value.owner_id === 'string' || value.owner_id === null) {
+    updates.owner_id = value.owner_id || null
+  }
   if (typeof value.location === 'string') updates.location = value.location || null
   if (typeof value.status === 'string') updates.status = value.status
   if (typeof value.description === 'string') updates.description = value.description || null
@@ -129,8 +99,13 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
-  const access = await getOrganizationAccess(db, user.id, organizationId)
-  if (!access.hasAccess) {
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'assets.read'
+  )
+  if (!authorization.ok) {
     return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
 
@@ -169,15 +144,32 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb()
-    const access = await getOrganizationAccess(db, user.id, payload.organization_id)
-    if (!access.hasAccess || !access.canManage) {
+    const authorization = await authorizeTenantAction(
+      db,
+      user.id,
+      payload.organization_id,
+      'assets.create'
+    )
+    if (!authorization.ok) {
       return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    }
+    if (
+      payload.owner_id
+      && !await resolveActiveTenantMember(db, payload.organization_id, payload.owner_id)
+    ) {
+      return applyCookies(NextResponse.json({ error: 'Member not found' }, { status: 404 }))
     }
 
     const service = new InformationAssetService()
-    const data = await service.createAsset(payload)
+    const data = await service.createAssetForActor({
+      organizationId: payload.organization_id,
+      actorUserId: user.id,
+    }, payload)
     return applyCookies(NextResponse.json(data, { status: 201 }))
   } catch (error) {
+    if (isInformationAssetMutationError(error)) {
+      return applyCookies(NextResponse.json({ error: error.message }, { status: error.status }))
+    }
     console.error('Information assets API POST failed', error)
     return applyCookies(NextResponse.json({ error: 'Failed to create information asset' }, { status: 500 }))
   }
@@ -204,15 +196,32 @@ export async function PATCH(request: NextRequest) {
       return applyCookies(NextResponse.json({ error: 'Information asset not found' }, { status: 404 }))
     }
 
-    const access = await getOrganizationAccess(db, user.id, organizationId)
-    if (!access.hasAccess || !access.canManage) {
-      return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const authorization = await authorizeTenantAction(
+      db,
+      user.id,
+      organizationId,
+      'assets.update'
+    )
+    if (!authorization.ok) {
+      return applyCookies(NextResponse.json({ error: 'Information asset not found' }, { status: 404 }))
+    }
+    if (
+      updates.owner_id
+      && !await resolveActiveTenantMember(db, organizationId, updates.owner_id)
+    ) {
+      return applyCookies(NextResponse.json({ error: 'Member not found' }, { status: 404 }))
     }
 
     const service = new InformationAssetService()
-    const data = await service.updateAsset(id, updates)
+    const data = await service.updateAssetForActor({
+      organizationId,
+      actorUserId: user.id,
+    }, id, updates)
     return applyCookies(NextResponse.json(data))
   } catch (error) {
+    if (isInformationAssetMutationError(error)) {
+      return applyCookies(NextResponse.json({ error: error.message }, { status: error.status }))
+    }
     console.error('Information assets API PATCH failed', error)
     return applyCookies(NextResponse.json({ error: 'Failed to update information asset' }, { status: 500 }))
   }
@@ -243,15 +252,26 @@ export async function DELETE(request: NextRequest) {
       return applyCookies(NextResponse.json({ error: 'Information asset not found' }, { status: 404 }))
     }
 
-    const access = await getOrganizationAccess(db, user.id, organizationId)
-    if (!access.hasAccess || !access.canManage) {
-      return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const authorization = await authorizeTenantAction(
+      db,
+      user.id,
+      organizationId,
+      'assets.delete'
+    )
+    if (!authorization.ok) {
+      return applyCookies(NextResponse.json({ error: 'Information asset not found' }, { status: 404 }))
     }
 
     const service = new InformationAssetService()
-    await service.deleteAsset(id)
+    await service.deleteAssetForActor({
+      organizationId,
+      actorUserId: user.id,
+    }, id)
     return applyCookies(NextResponse.json({ ok: true }))
   } catch (error) {
+    if (isInformationAssetMutationError(error)) {
+      return applyCookies(NextResponse.json({ error: error.message }, { status: error.status }))
+    }
     console.error('Information assets API DELETE failed', error)
     return applyCookies(NextResponse.json({ error: 'Failed to delete information asset' }, { status: 500 }))
   }

@@ -1,10 +1,8 @@
 import { generateMetadata as generatePageMetadata } from './metadata';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import ValuePropsSection from '@/components/ValuePropsSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import ProcessSection from '@/components/ProcessSection';
-import HowItWorksSection from '@/components/HowItWorksSection';
 import FAQSection from '@/components/FAQSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
@@ -17,10 +15,8 @@ export default function HomePage() {
       <Header />
       <main>
         <HeroSection />
-        <ValuePropsSection />
         <FeaturesSection />
         <ProcessSection />
-        <HowItWorksSection />
         <FAQSection />
         <CTASection />
       </main>

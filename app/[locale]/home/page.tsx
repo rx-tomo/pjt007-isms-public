@@ -11,24 +11,26 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import OnboardingChecklist from '@/components/home/OnboardingChecklist'
 import PhaseSelectionDialog from '@/components/home/PhaseSelectionDialog'
-import { UserService } from '@/lib/services/user'
-import { OrganizationService } from '@/lib/services/organization'
-import { StripeService } from '@/lib/services/stripe'
-import { NotificationService, type Notification } from '@/lib/services/notification'
-import { ActivityService, type ActivityLogEntry } from '@/lib/services/activity'
-import {
-  DocumentService,
-  APPROVER_DUE_SOON_THRESHOLD_HOURS,
-  APPROVER_ESCALATION_THRESHOLD_HOURS,
-  APPROVER_HISTORY_WINDOW_DAYS,
-  type ApproverDashboardMetrics
-} from '@/lib/services/document'
-import {
-  OnboardingService,
-  type IsmsPhase,
-  type OnboardingProgress,
-  type OnboardingPhaseSummary
-} from '@/lib/services/onboarding'
+import { getHomeDashboard, updateHomePhase } from '@/lib/client/home/dashboardClient'
+import type {
+  ActivityLogEntry,
+  ApproverDashboardMetrics,
+  EducationFollowUpSummary,
+  HomeDashboardStats,
+  HomeOrganization,
+  HomeRoleDashboard,
+  HomeSubscription,
+  HomeUser,
+  IsmsPhase,
+  ManagementReviewSummary,
+  MyTrainingSummary,
+  Notification,
+  OnboardingPhaseSummary,
+  OnboardingProgress,
+} from '@/lib/client/home/dashboardContract'
+const APPROVER_DUE_SOON_THRESHOLD_HOURS = 48
+const APPROVER_ESCALATION_THRESHOLD_HOURS = 24
+const APPROVER_HISTORY_WINDOW_DAYS = 30
 import {
   getHomeQuickLinks,
   getStatCardHref,
@@ -37,63 +39,7 @@ import {
   type StatCardId,
   type QuickLink as RoleQuickLink
 } from '@/lib/home/roleHomeConfig'
-
-interface DashboardStats {
-  userCount: number
-  documentCount: number
-  pendingReviewDocumentCount: number
-  activeTaskCount: number
-  overdueTaskCount: number
-  activeRiskCount: number
-  inProgressAuditCount: number
-  taskStatusBreakdown: Record<string, number>
-  riskStatusBreakdown: Record<string, number>
-  documentStatusBreakdown: Record<string, number>
-}
-
-interface EducationFollowUpItem {
-  id: string
-  title: string
-  status: string
-  end_date: string | null
-  total_records: number
-  passed_records: number
-  pending_records: number
-  active_user_count: number
-  is_overdue: boolean
-  needs_follow_up: boolean
-}
-
-interface EducationFollowUpSummary {
-  total_plans: number
-  active_user_count: number
-  needs_follow_up_count: number
-  overdue_count: number
-  pending_record_count: number
-  items: EducationFollowUpItem[]
-}
-
-interface MyTrainingItem {
-  id: string
-  title: string
-  status: string
-  end_date: string | null
-  result: string
-  progress: number
-  record_id: string | null
-}
-
-interface MyTrainingSummary {
-  total: number
-  incomplete_count: number
-  items: MyTrainingItem[]
-}
-
-interface ManagementReviewSummary {
-  scheduled_count: number
-  in_progress_count: number
-  pending_count: number
-}
+type DashboardStats = HomeDashboardStats
 
 type StatusGroupId = 'tasks' | 'documents' | 'risks'
 
@@ -105,6 +51,7 @@ type ActivityEntryKey =
   | 'documentUpdated'
   | 'documentApproved'
   | 'documentApprovalRequested'
+  | 'documentApprovalStepCompleted'
   | 'riskCreated'
   | 'riskUpdated'
   | 'riskDeleted'
@@ -146,8 +93,8 @@ const STATUS_BREAKDOWN_ORDER: Record<StatusGroupId, string[]> = {
 const STATUS_CHART_APPEARANCE: Record<StatusGroupId, Record<string, { strokeClass: string; dotClass: string }>> = {
   tasks: {
     todo: { strokeClass: 'text-slate-300', dotClass: 'bg-slate-300' },
-    in_progress: { strokeClass: 'text-indigo-300', dotClass: 'bg-indigo-300' },
-    review: { strokeClass: 'text-indigo-500', dotClass: 'bg-indigo-500' },
+    in_progress: { strokeClass: 'text-blue-300', dotClass: 'bg-blue-300' },
+    review: { strokeClass: 'text-blue-500', dotClass: 'bg-blue-500' },
     done: { strokeClass: 'text-emerald-400', dotClass: 'bg-emerald-400' },
     cancelled: { strokeClass: 'text-text-muted', dotClass: 'bg-slate-400' }
   },
@@ -167,12 +114,6 @@ const STATUS_CHART_APPEARANCE: Record<StatusGroupId, Record<string, { strokeClas
 }
 
 const DEFAULT_STATUS_APPEARANCE = { strokeClass: 'text-gray-300', dotClass: 'bg-gray-300' }
-
-const ORGANIZATION_STATS_ROLES = new Set<RoleKey>([
-  'super_admin',
-  'system_operator',
-  'org_admin',
-])
 
 export default function HomePage(
   props: {
@@ -194,9 +135,9 @@ export default function HomePage(
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
-  const [user, setUser] = useState<any>(null)
-  const [organization, setOrganization] = useState<any>(null)
-  const [subscription, setSubscription] = useState<any>(null)
+  const [user, setUser] = useState<HomeUser | null>(null)
+  const [organization, setOrganization] = useState<HomeOrganization | null>(null)
+  const [subscription, setSubscription] = useState<HomeSubscription | null>(null)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [notificationPreview, setNotificationPreview] = useState<Notification[]>([])
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
@@ -212,9 +153,7 @@ export default function HomePage(
   const [educationFollowUp, setEducationFollowUp] = useState<EducationFollowUpSummary | null>(null)
   const [managementReviewSummary, setManagementReviewSummary] = useState<ManagementReviewSummary | null>(null)
   const [myTraining, setMyTraining] = useState<MyTrainingSummary | null>(null)
-  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
-  const stripeConfigured = publishableKey.trim() !== '' && !publishableKey.includes('...')
-
+  const [roleDashboard, setRoleDashboard] = useState<HomeRoleDashboard | null>(null)
   const onboardingSuccess = useMemo(() => searchParams?.get('onboarding') === 'success', [searchParams])
   const qaHomeMode = useMemo(() => {
     if (process.env.NODE_ENV === 'production') {
@@ -224,300 +163,107 @@ export default function HomePage(
   }, [searchParams])
   const simulateStatsOffline = qaHomeMode === 'stats-offline'
   const isQaSimulation = qaHomeMode !== null
-  const activityService = useMemo(() => new ActivityService(), [])
 
   useEffect(() => {
-    const userService = new UserService()
-    const organizationService = new OrganizationService()
-    const stripeService = new StripeService()
-    const onboardingService = new OnboardingService()
-    const documentService = new DocumentService()
-
-    const fallbackUserId = 'qa-simulated-user'
-    const fallbackOrgId = 'qa-simulated-org'
-
     let cancelled = false
-
-    async function loadSecondaryDashboardData(resolvedUser: any, resolvedOrganization: any) {
-      let activityErrored = false
-
-      if (!cancelled) {
-        setActivityStatus('loading')
-        if (resolvedUser.role === 'approver') {
-          setApproverMetricsStatus('loading')
-        }
-      }
-
-      try {
-        const activityPromise =
-          simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
-            ? Promise.resolve<ActivityLogEntry[]>([])
-            : activityService
-                .getRecentActivity({ organizationId: resolvedOrganization.id, limit: 30 })
-                .catch(err => {
-                  console.warn('[Dashboard] activity load failed', err)
-                  activityErrored = true
-                  return [] as ActivityLogEntry[]
-                })
-
-        const [
-          unreadCountValue,
-          notificationItems,
-          activityLogs,
-          educationFollowUpSummary,
-          managementReviews,
-          myTrainingSummary,
-          nextApproverMetrics
-        ] = await Promise.all([
-          NotificationService.getUnreadCount(resolvedUser.id).catch(err => {
-            console.warn('[Dashboard] unread count load failed', err)
-            return 0
-          }),
-          NotificationService.getNotifications(resolvedUser.id).catch(err => {
-            console.warn('[Dashboard] notifications load failed', err)
-            return []
-          }),
-          activityPromise,
-          ORGANIZATION_STATS_ROLES.has(resolvedUser.role) && resolvedOrganization.id !== fallbackOrgId
-            ? fetch('/api/education/follow-up', {
-                credentials: 'include',
-                cache: 'no-store'
-              })
-                .then(async response => {
-                  if (!response.ok) throw new Error(`education follow-up ${response.status}`)
-                  const payload = await response.json()
-                  return payload.data as EducationFollowUpSummary
-                })
-                .catch(err => {
-                  console.warn('[Dashboard] education follow-up load failed', err)
-                  return null
-                })
-            : Promise.resolve(null),
-          ORGANIZATION_STATS_ROLES.has(resolvedUser.role) && resolvedOrganization.id !== fallbackOrgId
-            ? fetch('/api/management-reviews', {
-                credentials: 'include',
-                cache: 'no-store'
-              })
-                .then(async response => {
-                  if (!response.ok) throw new Error(`management reviews ${response.status}`)
-                  const payload = await response.json()
-                  return (payload.data ?? []) as Array<{ status?: string }>
-                })
-                .catch(err => {
-                  console.warn('[Dashboard] management reviews load failed', err)
-                  return [] as Array<{ status?: string }>
-                })
-            : Promise.resolve([] as Array<{ status?: string }>),
-          resolvedUser.role === 'user' && resolvedOrganization.id !== fallbackOrgId
-            ? fetch('/api/education/my-training', {
-                credentials: 'include',
-                cache: 'no-store'
-              })
-                .then(async response => {
-                  if (!response.ok) throw new Error(`my training ${response.status}`)
-                  const payload = await response.json()
-                  return payload.data as MyTrainingSummary
-                })
-                .catch(err => {
-                  console.warn('[Dashboard] my training load failed', err)
-                  return null
-                })
-            : Promise.resolve(null),
-          resolvedUser.role === 'approver'
-            ? (simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
-                ? Promise.resolve(buildApproverFallbackMetrics())
-                : documentService.getApproverDashboardMetrics(resolvedOrganization.id).catch(metricsError => {
-                    console.warn('[Dashboard] approver metrics load failed', metricsError)
-                    return null
-                  }))
-            : Promise.resolve(null)
-        ])
-
-        if (cancelled) return
-
-        const notificationsList = notificationItems ?? []
-        const resolvedActivityItems =
-          simulateStatsOffline || resolvedOrganization.id === fallbackOrgId
-            ? buildActivityFallbackItems(locale, t)
-            : buildActivityFeedItems({
-                logs: activityLogs ?? [],
-                notifications: notificationsList,
-                locale,
-                t
-              })
-        const scheduledManagementReviews = managementReviews.filter(review => review.status === 'scheduled').length
-        const inProgressManagementReviews = managementReviews.filter(review => review.status === 'in_progress').length
-
-        setUnreadNotificationCount(unreadCountValue ?? 0)
-        setNotificationPreview(notificationsList.slice(0, 3))
-        setActivityItems(resolvedActivityItems)
-        setActivityStatus(activityErrored ? 'error' : 'ready')
-        setEducationFollowUp(educationFollowUpSummary ?? null)
-        setManagementReviewSummary({
-          scheduled_count: scheduledManagementReviews,
-          in_progress_count: inProgressManagementReviews,
-          pending_count: scheduledManagementReviews + inProgressManagementReviews
-        })
-        setMyTraining(myTrainingSummary ?? null)
-
-        if (resolvedUser.role === 'approver') {
-          setApproverMetrics(nextApproverMetrics)
-          setApproverMetricsStatus(nextApproverMetrics ? 'ready' : 'error')
-        }
-      } catch (secondaryError) {
-        console.warn('[Dashboard] secondary data load failed', secondaryError)
-        if (!cancelled) {
-          setActivityStatus('error')
-          if (resolvedUser.role === 'approver') {
-            setApproverMetricsStatus('error')
-          }
-        }
-      }
-    }
 
     async function load() {
       const pendingWarnings: string[] = []
       try {
-        let currentUser = await userService.getCurrentUser().catch(err => {
-          console.warn('[Dashboard] failed to load current user', err)
-          return null
-        })
-
-        if (!currentUser && isQaSimulation) {
-          pendingWarnings.push(t('warnings.sessionFallback'))
-          currentUser = {
-            id: fallbackUserId,
-            full_name: t('warnings.fallbackUserName'),
-            email: 'qa-user@example.com',
-            role: 'org_admin'
-          } as any
-        }
-
-        if (!currentUser) {
-          setWarnings([])
-          router.push(`/${locale}/auth/login`)
-          return
-        }
-
-        let currentOrganization = await organizationService.getCurrentOrganization().catch(err => {
-          console.warn('[Dashboard] failed to load organization', err)
-          return null
-        })
-
-        if (!currentOrganization && isQaSimulation) {
-          pendingWarnings.push(t('warnings.organizationFallback'))
-          currentOrganization = {
-            id: fallbackOrgId,
-            name: t('warnings.fallbackOrganizationName')
-          } as any
-        }
-
-        if (!currentOrganization) {
-          if (!cancelled) {
-            setError(t('errors.organizationNotFound'))
-            setWarnings([])
+        const dashboard = await getHomeDashboard()
+        if (!dashboard) {
+          if (isQaSimulation) {
+            const fallbackOrgId = 'qa-simulated-org'
+            pendingWarnings.push(t('warnings.sessionFallback'), t('warnings.organizationFallback'))
+            setUser({
+              id: 'qa-simulated-user',
+              full_name: t('warnings.fallbackUserName'),
+              email: 'qa-user@example.com',
+              role: 'org_admin',
+              effective_role: 'org_admin',
+              effective_organization_id: fallbackOrgId,
+            })
+            setOrganization({ id: fallbackOrgId, name: t('warnings.fallbackOrganizationName') })
+            setStats(simulateStatsOffline ? null : {
+              userCount: 0,
+              documentCount: 0,
+              pendingReviewDocumentCount: 0,
+              activeTaskCount: 0,
+              overdueTaskCount: 0,
+              activeRiskCount: 0,
+              inProgressAuditCount: 0,
+              taskStatusBreakdown: {},
+              riskStatusBreakdown: {},
+              documentStatusBreakdown: {},
+            })
+            setActivityItems(buildActivityFallbackItems(locale, t))
+            setActivityStatus('ready')
+            setWarnings(Array.from(new Set([...pendingWarnings, t('warnings.simulationActive')])))
+          } else {
+            router.push(`/${locale}/auth/login`)
           }
           return
         }
 
-        if (isQaSimulation) {
-          pendingWarnings.push(t('warnings.simulationActive'))
-        }
+        if (isQaSimulation) pendingWarnings.push(t('warnings.simulationActive'))
+        if (simulateStatsOffline) pendingWarnings.push(t('warnings.statsUnavailable'))
 
-        const resolvedUser = currentUser
-        const resolvedOrganization = currentOrganization
-
-        const statsPromise = (async () => {
-          if (simulateStatsOffline || resolvedOrganization.id === fallbackOrgId) {
-            pendingWarnings.push(t('warnings.statsUnavailable'))
-            return null
-          }
-          if (!ORGANIZATION_STATS_ROLES.has(resolvedUser.role)) {
-            return null
-          }
-          try {
-            return await organizationService.getOrganizationStats(resolvedOrganization.id)
-          } catch (statsError) {
-            console.warn('[Dashboard] organization stats load failed', statsError)
-            pendingWarnings.push(t('warnings.statsUnavailable'))
-            return null
-          }
-        })()
-
-        const [
-          currentStats,
-          currentSubscription,
-          onboarding
-        ] = await Promise.all([
-          statsPromise,
-          stripeService.getCurrentSubscription(resolvedOrganization.id).catch(err => {
-            console.warn('[Dashboard] subscription load failed', err)
-            return null
-          }),
-          onboardingService.getProgress(resolvedOrganization.id).catch(err => {
-            console.warn('[Dashboard] onboarding progress load failed', err)
-            return null
-          })
-        ])
-
-        let resolvedSubscription = currentSubscription
-
-        if (!resolvedSubscription && stripeConfigured) {
-          try {
-            resolvedSubscription = await stripeService.syncSubscriptionFromStripe(resolvedOrganization.id)
-          } catch (syncError) {
-            console.warn('[Dashboard] subscription sync skipped', syncError)
-          }
-        }
-
-        if (!cancelled) {
-          setError(null)
-          setUser(resolvedUser)
-          setOrganization(resolvedOrganization)
-          setStats({
-            userCount: currentStats?.userCount ?? 0,
-            documentCount: currentStats?.documentCount ?? 0,
-            pendingReviewDocumentCount: currentStats?.pendingReviewDocumentCount ?? 0,
-            activeTaskCount: currentStats?.activeTaskCount ?? 0,
-            overdueTaskCount: currentStats?.overdueTaskCount ?? 0,
-            activeRiskCount: currentStats?.activeRiskCount ?? 0,
-            inProgressAuditCount: currentStats?.inProgressAuditCount ?? 0,
-            taskStatusBreakdown: currentStats?.taskStatusBreakdown ?? {},
-            riskStatusBreakdown: currentStats?.riskStatusBreakdown ?? {},
-            documentStatusBreakdown: currentStats?.documentStatusBreakdown ?? {}
-          })
-          setSubscription(resolvedSubscription)
-          setOnboardingProgress(onboarding ?? null)
-          setWarnings(Array.from(new Set(pendingWarnings)))
-          const shouldOpenPhaseWizard =
-            resolvedUser.role === 'system_operator' && !resolvedOrganization.isms_phase
-          setPhaseWizardOpen(shouldOpenPhaseWizard)
-          setPhaseSelection(prev => prev || (resolvedOrganization.isms_phase as IsmsPhase | '') || '')
-          setPhaseSubmitError(null)
+        if (cancelled) return
+        setError(null)
+        setUser(dashboard.user)
+        setOrganization(dashboard.organization)
+        const adminRoleDashboard = dashboard.roleDashboard?.role === 'org_admin' || dashboard.roleDashboard?.role === 'system_operator'
+          ? dashboard.roleDashboard
+          : null
+        setStats(simulateStatsOffline ? null : {
+          ...dashboard.stats,
+          userCount: adminRoleDashboard?.metrics.activeUserCount ?? dashboard.stats.userCount,
+          overdueTaskCount: adminRoleDashboard?.metrics.overdueTaskCount ?? dashboard.stats.overdueTaskCount,
+          activeRiskCount: adminRoleDashboard?.metrics.openRiskCount ?? dashboard.stats.activeRiskCount,
+        })
+        setSubscription(dashboard.subscription)
+        setOnboardingProgress(dashboard.onboarding)
+        setRoleDashboard(dashboard.roleDashboard)
+        setUnreadNotificationCount(dashboard.unreadNotificationCount)
+        setNotificationPreview(dashboard.notifications.slice(0, 3))
+        setActivityItems(simulateStatsOffline ? buildActivityFallbackItems(locale, t) : buildActivityFeedItems({
+          logs: dashboard.activity,
+          notifications: dashboard.notifications,
+          locale,
+          t,
+        }))
+        setActivityStatus('ready')
+        setEducationFollowUp(dashboard.educationFollowUp)
+        setManagementReviewSummary(dashboard.managementReviewSummary)
+        setMyTraining(dashboard.myTraining)
+        setWarnings(Array.from(new Set(pendingWarnings)))
+        setPhaseWizardOpen(dashboard.user.effective_role === 'system_operator' && !dashboard.organization.isms_phase)
+        setPhaseSelection(prev => prev || (dashboard.organization.isms_phase as IsmsPhase | '') || '')
+        setPhaseSubmitError(null)
+        if (dashboard.roleDashboard?.role === 'approver') {
+          setApproverMetrics(dashboard.roleDashboard.metrics)
+          setApproverMetricsStatus('ready')
+        } else {
           setApproverMetrics(null)
-          setApproverMetricsStatus(resolvedUser.role === 'approver' ? 'loading' : 'idle')
-          void loadSecondaryDashboardData(resolvedUser, resolvedOrganization)
+          setApproverMetricsStatus('idle')
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('[Dashboard] data load failed', err)
         if (!cancelled) {
-          setError(err.message || t('errors.loadFailed'))
+          setError(err instanceof Error ? err.message : t('errors.loadFailed'))
           setWarnings([])
           setActivityStatus('error')
         }
       } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
+        if (!cancelled) setIsLoading(false)
       }
     }
 
-    load()
-
+    void load()
     return () => {
       cancelled = true
     }
-  }, [activityService, isQaSimulation, locale, router, simulateStatsOffline, stripeConfigured, t])
+  }, [isQaSimulation, locale, router, simulateStatsOffline, t])
 
   const handlePhaseWizardSubmit = async () => {
     if (!organization) return
@@ -530,14 +276,9 @@ export default function HomePage(
     setPhaseSubmitError(null)
 
     try {
-      const organizationService = new OrganizationService()
-      const updatedOrganization = await organizationService.updateIsmsPhase(
-        organization.id,
-        phaseSelection as IsmsPhase,
-        'wizard'
-      )
+      const updatedOrganization = await updateHomePhase(organization.id, phaseSelection as IsmsPhase)
       const phaseSetAt = updatedOrganization?.isms_phase_set_at ?? new Date().toISOString()
-      setOrganization((prev: typeof organization) =>
+      setOrganization(prev =>
         prev
           ? {
               ...prev,
@@ -547,12 +288,6 @@ export default function HomePage(
             }
           : prev
       )
-      const onboardingService = new OnboardingService()
-      const refreshed = await onboardingService.getProgress(organization.id).catch(progressError => {
-        console.warn('[Dashboard] onboarding progress refresh after phase update failed', progressError)
-        return null
-      })
-      setOnboardingProgress(refreshed)
       setPhaseWizardOpen(false)
     } catch (err) {
       console.error('[Dashboard] phase wizard update failed', err)
@@ -595,7 +330,7 @@ export default function HomePage(
   const displayName = user.full_name || user.name || user.email
   const subscriptionStatus: string = subscription?.status ?? 'trialing'
   const pricingPlan = subscription?.pricing_plan?.name || t('subscription.trialPlan')
-  const role: RoleKey = (user.role || 'user') as RoleKey
+  const role: RoleKey = user.effective_role as RoleKey
 
   const quickLinks = getHomeQuickLinks(role, locale, t)
   const insights = getInsights({ stats, subscriptionStatus, subscription, locale, t })
@@ -604,7 +339,7 @@ export default function HomePage(
   const statCards = getPhaseAwareStatCards(effectivePhase, stats, role, locale, t, approverMetrics)
 
   return (
-    <DashboardLayout
+      <DashboardLayout
       locale={locale}
       headerSummary={{
         name: displayName,
@@ -679,7 +414,7 @@ export default function HomePage(
           locale={locale}
           progress={onboardingProgress}
           isLoading={isLoading}
-          onRequestPhaseSetup={user.role === 'system_operator' ? () => setPhaseWizardOpen(true) : undefined}
+          onRequestPhaseSetup={user.effective_role === 'system_operator' ? () => setPhaseWizardOpen(true) : undefined}
         />
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -721,6 +456,7 @@ export default function HomePage(
           educationFollowUp={educationFollowUp}
           managementReviewSummary={managementReviewSummary}
           myTraining={myTraining}
+          roleDashboard={roleDashboard}
         />
       </div>
       <PhaseSelectionDialog
@@ -743,7 +479,7 @@ interface StatCardProps {
   label: string
   value: number
   helper: string
-  tone: 'indigo' | 'cyan' | 'rose' | 'emerald' | 'amber'
+  tone: 'blue' | 'cyan' | 'rose' | 'emerald' | 'amber'
   href: string
   ariaLabel: string
   ctaLabel: string
@@ -752,7 +488,7 @@ interface StatCardProps {
 
 function StatGrid({ cards }: { cards: StatCardProps[] }) {
   const wrapperClasses =
-    'group block w-full appearance-none text-left rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+    'group block w-full appearance-none text-left rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -821,7 +557,7 @@ function StatGrid({ cards }: { cards: StatCardProps[] }) {
 }
 
 const PHASE_BADGE_STYLES: Record<IsmsPhase, string> = {
-  initial: 'bg-indigo-100 text-indigo-700',
+  initial: 'bg-blue-100 text-blue-700',
   surveillance: 'bg-amber-100 text-amber-700'
 }
 
@@ -840,7 +576,7 @@ function getPhaseAwareStatCards(
       label: t('stats.activeUsers'),
       value: stats?.userCount ?? 0,
       helper: t('stats.usersHint'),
-      tone: 'indigo',
+      tone: 'blue',
       href: getStatCardHref('users', role, locale),
       ariaLabel: t('stats.drilldown.users'),
       ctaLabel: statCardCtaLabel,
@@ -1302,7 +1038,7 @@ function HomeActionRow({
       description: t('actionRow.notifications.description'),
       href: `${base}/notifications`,
       badge: t('notificationPreview.unreadLabel', { count: unreadCount }),
-      badgeTone: unreadCount > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-surface-elevated text-text-secondary'
+      badgeTone: unreadCount > 0 ? 'bg-blue-100 text-blue-700' : 'bg-surface-elevated text-text-secondary'
     },
     {
       id: 'settings',
@@ -1320,7 +1056,7 @@ function HomeActionRow({
         <Link
           key={action.id}
           href={action.href}
-          className="home-theme-card group flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+          className="home-theme-card group flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
         >
           <div className="space-y-3">
             <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-medium ${action.badgeTone}`}>
@@ -1329,7 +1065,7 @@ function HomeActionRow({
             <h2 className="text-base font-semibold text-text-primary">{action.title}</h2>
             <p className="text-sm text-text-secondary">{action.description}</p>
           </div>
-          <div className="mt-6 inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+          <div className="mt-6 inline-flex items-center gap-1 text-xs font-medium text-blue-600">
             {t('actionRow.cta')}
             <svg
               className="h-3 w-3 transition group-hover:translate-x-0.5"
@@ -1348,8 +1084,8 @@ function HomeActionRow({
 
 function toneToGlow(tone: StatCardProps['tone']) {
   switch (tone) {
-    case 'indigo':
-      return 'bg-indigo-200/60'
+    case 'blue':
+      return 'bg-blue-200/60'
     case 'cyan':
       return 'bg-cyan-200/60'
     case 'rose':
@@ -1423,15 +1159,15 @@ function HomeHero({
       })
 
   return (
-    <section className="home-theme-card overflow-hidden border-y border-indigo-100 bg-surface">
+    <section className="home-theme-card overflow-hidden border-y border-blue-100 bg-surface">
       <div className="relative px-6 py-8 sm:px-8">
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3 text-xs text-indigo-600">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-blue-600">
               <span className="rounded-full bg-surface px-3 py-1 font-medium shadow-sm">
                 {roleLabel}
               </span>
-              <span className="rounded-full bg-indigo-600/10 px-3 py-1 font-medium text-indigo-700">
+              <span className="rounded-full bg-blue-600/10 px-3 py-1 font-medium text-blue-700">
                 {phaseLabel} · {t(`subscription.status.${subscriptionStatus}` as any)}
               </span>
             </div>
@@ -1444,7 +1180,7 @@ function HomeHero({
           </div>
           <div
             data-testid="home-priority-actions"
-            className="min-w-0 rounded-2xl border border-indigo-100 bg-surface/90 p-4 text-sm shadow-sm backdrop-blur lg:w-[440px]"
+            className="min-w-0 rounded-2xl border border-blue-100 bg-surface/90 p-4 text-sm shadow-sm backdrop-blur lg:w-[440px]"
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold text-text-primary">
@@ -1460,14 +1196,14 @@ function HomeHero({
                   data-testid={`home-priority-action-${action.id}`}
                   className="group flex min-h-14 items-center gap-3 py-2.5 first:pt-0 last:pb-0"
                 >
-                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${index === 0 ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}`}>
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${index === 0 ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>
                     {index + 1}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium text-text-primary">{action.label}</span>
                     <span className="block truncate text-xs text-text-muted sm:whitespace-normal">{action.helper}</span>
                   </span>
-                  <span aria-hidden className="text-indigo-500 transition group-hover:translate-x-0.5">{'>'}</span>
+                  <span aria-hidden className="text-blue-500 transition group-hover:translate-x-0.5">{'>'}</span>
                 </Link>
               ))}
             </div>
@@ -1491,7 +1227,7 @@ function SubscriptionCard({
   t: ReturnType<typeof useTranslations<'home'>>
   status: string
   planLabel: string
-  subscription: any
+  subscription: HomeSubscription | null
   locale: string
 }) {
   const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
@@ -1532,7 +1268,7 @@ function SubscriptionCard({
           <span>{t('subscription.manageHint')}</span>
           <Link
             href={manageLink}
-            className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500"
+            className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500"
           >
             {t('subscription.manageCta')}
           </Link>
@@ -1563,7 +1299,7 @@ function statusChipTone(status: string) {
     case 'active':
       return 'bg-emerald-100 text-emerald-800'
     case 'trialing':
-      return 'bg-indigo-100 text-indigo-800'
+      return 'bg-blue-100 text-blue-800'
     case 'past_due':
     case 'unpaid':
       return 'bg-amber-100 text-amber-800'
@@ -1572,7 +1308,7 @@ function statusChipTone(status: string) {
   }
 }
 
-function OrganizationCard({ organization, t }: { organization: any; t: ReturnType<typeof useTranslations<'home'>> }) {
+function OrganizationCard({ organization, t }: { organization: HomeOrganization; t: ReturnType<typeof useTranslations<'home'>> }) {
   return (
     <section className="home-theme-card space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <header>
@@ -1613,7 +1349,7 @@ function InsightsCard({ insights, t }: { insights: string[]; t: ReturnType<typeo
           <ul className="space-y-3 text-sm text-text-secondary">
             {insights.map(item => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-indigo-500" aria-hidden />
+                <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" aria-hidden />
                 <span>{item}</span>
               </li>
             ))}
@@ -1640,7 +1376,7 @@ function QuickLinksSection({ quickLinks, t }: { quickLinks: RoleQuickLink[]; t: 
           <a
             key={link.href}
             href={link.href}
-            className="home-theme-card group flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+            className="home-theme-card group flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
           >
             <div className="space-y-2">
               <div className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-[11px] font-medium ${link.badgeTone}`}>
@@ -1649,7 +1385,7 @@ function QuickLinksSection({ quickLinks, t }: { quickLinks: RoleQuickLink[]; t: 
               <h3 className="text-sm font-semibold text-text-primary">{link.title}</h3>
               <p className="text-xs text-text-muted">{link.description}</p>
             </div>
-            <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+            <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-blue-600">
               {t('quickLinks.cta')}
               <svg className="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m0 0l-6-6m6 6l-6 6" />
@@ -1703,7 +1439,7 @@ function RecentActivityFeed({
                 onClick={() => setFilter(option.id)}
                 className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
                   filter === option.id
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-surface-elevated text-text-secondary hover:bg-surface-hover'
                 }`}
               >
@@ -1713,13 +1449,13 @@ function RecentActivityFeed({
           </div>
           <Link
             href={`/${locale}/notifications`}
-            className="inline-flex items-center gap-2 rounded-full border border-indigo-200 px-3 py-1 text-[11px] font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+            className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-3 py-1 text-[11px] font-medium text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
           >
             {t('notificationPreview.viewAll')}
             <span
               data-testid="recent-activity-unread"
               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                unreadCount > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-surface-elevated text-text-secondary'
+                unreadCount > 0 ? 'bg-blue-100 text-blue-700' : 'bg-surface-elevated text-text-secondary'
               }`}
             >
               {t('notificationPreview.unreadLabel', { count: unreadCount })}
@@ -1750,7 +1486,7 @@ function RecentActivityFeed({
         <ul className="space-y-3">
           {filteredItems.map(item => {
             const content = (
-              <div className="flex items-start gap-3 rounded-xl border border-border bg-surface/80 p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-md">
+              <div className="flex items-start gap-3 rounded-xl border border-border bg-surface/80 p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md">
                 <span className="text-xl" aria-hidden>
                   {item.icon}
                 </span>
@@ -1808,7 +1544,7 @@ function NotificationPreview({
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-medium ${
-              unreadCount > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-surface-elevated text-text-secondary'
+              unreadCount > 0 ? 'bg-blue-100 text-blue-700' : 'bg-surface-elevated text-text-secondary'
             }`}
           >
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
@@ -1816,7 +1552,7 @@ function NotificationPreview({
           </span>
           <Link
             href={`${base}/notifications`}
-            className="inline-flex items-center gap-1 rounded-full border border-indigo-200 px-3 py-1 text-[11px] font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+            className="inline-flex items-center gap-1 rounded-full border border-blue-200 px-3 py-1 text-[11px] font-medium text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
           >
             {t('notificationPreview.viewAll')}
           </Link>
@@ -1838,7 +1574,7 @@ function NotificationPreview({
           {notifications.map(notification => (
             <li
               key={notification.id}
-              className="flex items-start gap-3 rounded-xl border border-border bg-surface/80 p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+              className="flex items-start gap-3 rounded-xl border border-border bg-surface/80 p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
             >
               <span className="text-xl" aria-hidden>
                 {notificationTypeToIcon(notification.type)}
@@ -1904,6 +1640,13 @@ const ACTIVITY_VIEW_CONFIG: Record<string, ActivityViewConfig> = {
     badgeKey: 'document',
     entryKey: 'documentApproved',
     icon: '✅',
+    titleSource: 'resource',
+    getHref: ({ base, log }) => (log.resource_id ? `${base}/documents/${log.resource_id}` : undefined)
+  },
+  'document.approval_step_completed': {
+    badgeKey: 'document',
+    entryKey: 'documentApprovalStepCompleted',
+    icon: '☑️',
     titleSource: 'resource',
     getHref: ({ base, log }) => (log.resource_id ? `${base}/documents/${log.resource_id}` : undefined)
   },
@@ -2103,7 +1846,7 @@ function activityBadgeTone(badge: ActivityBadgeKey) {
       return 'bg-surface-elevated text-text-secondary'
     case 'notification':
     default:
-      return 'bg-indigo-100 text-indigo-700'
+      return 'bg-blue-100 text-blue-700'
   }
 }
 
@@ -2125,7 +1868,8 @@ function RoleDashboard({
   approverMetricsStatus,
   educationFollowUp,
   managementReviewSummary,
-  myTraining
+  myTraining,
+  roleDashboard
 }: {
   role: RoleKey
   locale: string
@@ -2136,6 +1880,7 @@ function RoleDashboard({
   educationFollowUp: EducationFollowUpSummary | null
   managementReviewSummary: ManagementReviewSummary | null
   myTraining: MyTrainingSummary | null
+  roleDashboard: HomeRoleDashboard | null
 }) {
   switch (role) {
     case 'approver':
@@ -2143,14 +1888,26 @@ function RoleDashboard({
         <ApproverDashboard
           locale={locale}
           t={t}
-          metrics={approverMetrics}
-          status={approverMetricsStatus}
+          metrics={roleDashboard?.role === 'approver' ? roleDashboard.metrics : approverMetrics}
+          status={roleDashboard?.role === 'approver' ? 'ready' : approverMetricsStatus}
         />
       )
     case 'user':
-      return <UserDashboard locale={locale} t={t} myTraining={myTraining} />
+      return (
+        <UserDashboard
+          locale={locale}
+          t={t}
+          dashboard={roleDashboard?.role === 'user' ? roleDashboard : null}
+        />
+      )
     case 'auditor':
-      return <AuditorDashboard locale={locale} t={t} />
+      return (
+        <AuditorDashboard
+          locale={locale}
+          t={t}
+          dashboard={roleDashboard?.role === 'auditor' ? roleDashboard : null}
+        />
+      )
     case 'org_admin':
     case 'system_operator':
       return (
@@ -2160,6 +1917,12 @@ function RoleDashboard({
           stats={stats}
           educationFollowUp={educationFollowUp}
           managementReviewSummary={managementReviewSummary}
+          dashboard={
+            roleDashboard?.role === 'org_admin'
+              || roleDashboard?.role === 'system_operator'
+              ? roleDashboard
+              : null
+          }
         />
       )
     default:
@@ -2194,8 +1957,8 @@ function ApproverDashboard({
     {
       id: 'pending',
       badge: t('roleDashboards.approver.cards.pending.badge'),
-      badgeTone: 'bg-indigo-100 text-indigo-700',
-      borderTone: 'border-indigo-100 hover:border-indigo-200',
+      badgeTone: 'bg-blue-100 text-blue-700',
+      borderTone: 'border-blue-100 hover:border-blue-200',
       label: t('roleDashboards.approver.cards.pending.label'),
       helper: metrics
         ? t('roleDashboards.approver.cards.pending.helper', { count: metrics.pendingCount })
@@ -2294,7 +2057,7 @@ function ApproverDashboard({
               <p className="text-sm font-semibold text-text-primary">{card.label}</p>
               <p className="text-xs text-text-secondary">{card.helper}</p>
             </div>
-            <div className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+            <div className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-blue-600">
               {card.cta}
               <svg
                 className="h-3 w-3 transition group-hover:translate-x-0.5"
@@ -2312,243 +2075,49 @@ function ApproverDashboard({
   )
 }
 
-type UserTaskStatus = 'todo' | 'inProgress' | 'review'
-type UserDocumentStatus = 'pendingAck' | 'updated' | 'acknowledged'
-type UserImprovementStatus = 'draft' | 'scheduled' | 'shipped'
-
-interface UserTaskItem {
-  id: string
-  title: string
-  category: string
-  due: string
-  status: UserTaskStatus
-}
-
-interface UserDocumentItem {
-  id: string
-  title: string
-  version: string
-  status: UserDocumentStatus
-  due: string
-}
-
-interface UserTrainingModule {
-  id: string
-  title: string
-  due: string
-  progress: number
-  href: string
-}
-
-interface UserImprovementItem {
-  id: string
-  title: string
-  owner: string
-  eta: string
-  status: UserImprovementStatus
-}
-
-const USER_TASK_STATUS_STYLES: Record<UserTaskStatus, string> = {
-  todo: 'bg-surface-elevated text-text-secondary',
-  inProgress: 'bg-amber-100 text-amber-700',
-  review: 'bg-indigo-100 text-indigo-700'
-}
-
-const USER_DOCUMENT_STATUS_STYLES: Record<UserDocumentStatus, string> = {
-  pendingAck: 'bg-rose-100 text-rose-700',
-  updated: 'bg-indigo-100 text-indigo-700',
-  acknowledged: 'bg-emerald-100 text-emerald-700'
-}
-
-const USER_IMPROVEMENT_STATUS_STYLES: Record<UserImprovementStatus, string> = {
-  draft: 'bg-surface-elevated text-text-secondary',
-  scheduled: 'bg-amber-100 text-amber-700',
-  shipped: 'bg-emerald-100 text-emerald-700'
-}
-
 function UserDashboard({
   locale,
   t,
-  myTraining
+  dashboard
 }: {
   locale: string
   t: ReturnType<typeof useTranslations<'home'>>
-  myTraining: MyTrainingSummary | null
+  dashboard: Extract<HomeRoleDashboard, { role: 'user' }> | null
 }) {
   const tasksHref = `/${locale}/tasks?view=personal`
   const documentsHref = `/${locale}/documents?status=approved`
   const trainingHref = `/${locale}/education`
-  const improvementsHref = `/${locale}/tasks?tag=improvement`
-
-  const personalTasks: UserTaskItem[] = [
-    {
-      id: 'policyReview',
-      title: t('roleDashboards.user.sections.tasks.items.policyReview.title'),
-      category: t('roleDashboards.user.sections.tasks.items.policyReview.category'),
-      due: t('roleDashboards.user.sections.tasks.items.policyReview.due'),
-      status: 'inProgress'
-    },
-    {
-      id: 'incidentDrill',
-      title: t('roleDashboards.user.sections.tasks.items.incidentDrill.title'),
-      category: t('roleDashboards.user.sections.tasks.items.incidentDrill.category'),
-      due: t('roleDashboards.user.sections.tasks.items.incidentDrill.due'),
-      status: 'todo'
-    },
-    {
-      id: 'awarenessSurvey',
-      title: t('roleDashboards.user.sections.tasks.items.awarenessSurvey.title'),
-      category: t('roleDashboards.user.sections.tasks.items.awarenessSurvey.category'),
-      due: t('roleDashboards.user.sections.tasks.items.awarenessSurvey.due'),
-      status: 'review'
-    }
-  ]
-
-  const documentAssignments: UserDocumentItem[] = [
-    {
-      id: 'remoteWork',
-      title: t('roleDashboards.user.sections.documents.items.remoteWork.title'),
-      version: t('roleDashboards.user.sections.documents.items.remoteWork.version'),
-      status: 'pendingAck',
-      due: t('roleDashboards.user.sections.documents.items.remoteWork.due')
-    },
-    {
-      id: 'vendorChecklist',
-      title: t('roleDashboards.user.sections.documents.items.vendorChecklist.title'),
-      version: t('roleDashboards.user.sections.documents.items.vendorChecklist.version'),
-      status: 'updated',
-      due: t('roleDashboards.user.sections.documents.items.vendorChecklist.due')
-    },
-    {
-      id: 'codeOfConduct',
-      title: t('roleDashboards.user.sections.documents.items.codeOfConduct.title'),
-      version: t('roleDashboards.user.sections.documents.items.codeOfConduct.version'),
-      status: 'acknowledged',
-      due: t('roleDashboards.user.sections.documents.items.codeOfConduct.due')
-    }
-  ]
-
-  const fallbackTrainingModules: UserTrainingModule[] = [
-    {
-      id: 'phishing',
-      title: t('roleDashboards.user.sections.training.items.phishing.title'),
-      due: t('roleDashboards.user.sections.training.items.phishing.due'),
-      progress: 65,
-      href: trainingHref
-    },
-    {
-      id: 'incident',
-      title: t('roleDashboards.user.sections.training.items.incident.title'),
-      due: t('roleDashboards.user.sections.training.items.incident.due'),
-      progress: 40,
-      href: trainingHref
-    },
-    {
-      id: 'kaizen',
-      title: t('roleDashboards.user.sections.training.items.kaizen.title'),
-      due: t('roleDashboards.user.sections.training.items.kaizen.due'),
-      progress: 90,
-      href: trainingHref
-    }
-  ]
-  const trainingModules: UserTrainingModule[] = myTraining?.items?.length
-    ? myTraining.items.map(item => ({
-        id: item.id,
-        title: item.title,
-        due: item.end_date
-          ? t('roleDashboards.user.sections.training.dueDate', { date: item.end_date })
-          : t('roleDashboards.user.sections.training.noDueDate'),
-        progress: item.progress,
-        href: `/${locale}/education/${item.id}`,
-      }))
-    : fallbackTrainingModules
-
-  const improvementEntries: UserImprovementItem[] = [
-    {
-      id: 'documentationCleanup',
-      title: t('roleDashboards.user.sections.improvements.items.documentationCleanup.title'),
-      owner: t('roleDashboards.user.sections.improvements.items.documentationCleanup.owner'),
-      eta: t('roleDashboards.user.sections.improvements.items.documentationCleanup.eta'),
-      status: 'scheduled'
-    },
-    {
-      id: 'alertReduction',
-      title: t('roleDashboards.user.sections.improvements.items.alertReduction.title'),
-      owner: t('roleDashboards.user.sections.improvements.items.alertReduction.owner'),
-      eta: t('roleDashboards.user.sections.improvements.items.alertReduction.eta'),
-      status: 'draft'
-    },
-    {
-      id: 'awarenessPost',
-      title: t('roleDashboards.user.sections.improvements.items.awarenessPost.title'),
-      owner: t('roleDashboards.user.sections.improvements.items.awarenessPost.owner'),
-      eta: t('roleDashboards.user.sections.improvements.items.awarenessPost.eta'),
-      status: 'shipped'
-    }
-  ]
-
+  const tasks = dashboard?.tasks ?? []
+  const assignedDocuments = dashboard?.documents ?? []
+  const training = dashboard?.training ?? []
   const summaryCards = [
     {
       id: 'taskCount',
       label: t('roleDashboards.user.summary.tasks'),
-      value: personalTasks.length,
+      value: tasks.length,
       tone: 'bg-emerald-50 text-emerald-700 border-emerald-100',
       href: tasksHref
     },
     {
       id: 'documentCount',
       label: t('roleDashboards.user.summary.documents'),
-      value: documentAssignments.length,
-      tone: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+      value: assignedDocuments.length,
+      tone: 'bg-blue-50 text-blue-700 border-blue-100',
       href: documentsHref
     },
     {
       id: 'trainingCount',
       label: t('roleDashboards.user.summary.training'),
-      value: trainingModules.filter(m => m.progress < 100).length,
+      value: training.filter(item => item.progress < 100).length,
       tone: 'bg-amber-50 text-amber-700 border-amber-100',
       href: trainingHref
     }
   ]
-  const incompleteTrainingCount =
-    myTraining?.incomplete_count ?? trainingModules.filter(module => module.progress < 100).length
-  const nextTraining = trainingModules.find(module => module.progress < 100) ?? trainingModules[0]
-  const priorityItems = [
-    {
-      key: 'training',
-      href: nextTraining?.href ?? trainingHref,
-      title: t('roleDashboards.user.sections.priorityActions.items.training.title'),
-      description: t('roleDashboards.user.sections.priorityActions.items.training.description', {
-        count: incompleteTrainingCount
-      }),
-      tone: 'border-amber-100 bg-amber-50 text-amber-700',
-    },
-    {
-      key: 'tasks',
-      href: tasksHref,
-      title: t('roleDashboards.user.sections.priorityActions.items.tasks.title'),
-      description: t('roleDashboards.user.sections.priorityActions.items.tasks.description', {
-        count: personalTasks.length
-      }),
-      tone: 'border-emerald-100 bg-emerald-50 text-emerald-700',
-    },
-    {
-      key: 'documents',
-      href: documentsHref,
-      title: t('roleDashboards.user.sections.priorityActions.items.documents.title'),
-      description: t('roleDashboards.user.sections.priorityActions.items.documents.description', {
-        count: documentAssignments.filter(doc => doc.status !== 'acknowledged').length
-      }),
-      tone: 'border-indigo-100 bg-indigo-50 text-indigo-700',
-    },
-  ].filter(item => item.key !== 'training' || incompleteTrainingCount > 0)
 
   return (
     <section data-testid="user-dashboard" className="space-y-6">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-text-primary">
-          {t('roleDashboards.user.title')}
-        </h2>
+        <h2 className="text-lg font-semibold text-text-primary">{t('roleDashboards.user.title')}</h2>
         <p className="text-sm text-text-secondary">{t('roleDashboards.user.subtitle')}</p>
       </header>
 
@@ -2566,35 +2135,6 @@ function UserDashboard({
         ))}
       </div>
 
-      <section
-        data-testid="user-dashboard-priority-actions"
-        className="home-theme-card rounded-2xl border border-border bg-surface p-5 shadow-sm"
-      >
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-text-primary">
-              {t('roleDashboards.user.sections.priorityActions.title')}
-            </h3>
-            <p className="text-sm text-text-secondary">
-              {t('roleDashboards.user.sections.priorityActions.subtitle')}
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {priorityItems.map(item => (
-            <Link
-              key={item.key}
-              href={item.href}
-              data-testid={`user-dashboard-priority-action-${item.key}`}
-              className={`rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${item.tone}`}
-            >
-              <p className="text-sm font-semibold">{item.title}</p>
-              <p className="mt-1 text-xs opacity-80">{item.description}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       <div className="grid gap-6 lg:grid-cols-3">
         <UserDashboardSectionCard
           testId="user-dashboard-tasks"
@@ -2604,22 +2144,13 @@ function UserDashboard({
           linkLabel={t('roleDashboards.user.sections.tasks.cta')}
         >
           <ul className="space-y-3">
-            {personalTasks.map(task => (
-              <li
-                key={task.id}
-                data-testid="user-dashboard-task-item"
-                className="flex items-start justify-between gap-3 rounded-xl border border-border bg-surface-elevated/80 p-4"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-text-primary">{task.title}</p>
-                  <p className="text-xs text-text-muted">{task.category}</p>
-                  <p className="text-xs text-text-muted">{task.due}</p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-[11px] font-medium ${USER_TASK_STATUS_STYLES[task.status]}`}
-                >
-                  {t(`roleDashboards.user.sections.tasks.status.${task.status}` as any)}
-                </span>
+            {tasks.map(task => (
+              <li key={task.id} data-testid="user-dashboard-task-item" className="rounded-xl border border-border bg-surface-elevated/80 p-4">
+                <p className="text-sm font-medium text-text-primary">{task.title}</p>
+                <p className="mt-1 text-xs text-text-muted">{task.dueAt ?? '-'}</p>
+                <p className="mt-1 text-xs text-text-secondary">
+                  {t(`statusBreakdown.labels.tasks.${task.status}` as any)}
+                </p>
               </li>
             ))}
           </ul>
@@ -2633,22 +2164,13 @@ function UserDashboard({
           linkLabel={t('roleDashboards.user.sections.documents.cta')}
         >
           <ul className="space-y-3">
-            {documentAssignments.map(doc => (
-              <li
-                key={doc.id}
-                data-testid="user-dashboard-document-item"
-                className="flex items-start justify-between gap-3 rounded-xl border border-border bg-surface p-4"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-text-primary">{doc.title}</p>
-                  <p className="text-xs text-text-muted">{doc.version}</p>
-                  <p className="text-xs text-text-muted">{doc.due}</p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-[11px] font-medium ${USER_DOCUMENT_STATUS_STYLES[doc.status]}`}
-                >
-                  {t(`roleDashboards.user.sections.documents.status.${doc.status}` as any)}
-                </span>
+            {assignedDocuments.map(document => (
+              <li key={document.id} data-testid="user-dashboard-document-item" className="rounded-xl border border-border bg-surface p-4">
+                <p className="text-sm font-medium text-text-primary">{document.title}</p>
+                <p className="mt-1 text-xs text-text-muted">v{document.version}</p>
+                <p className="mt-1 text-xs text-emerald-700">
+                  {t(`statusBreakdown.labels.documents.${document.status}` as any)}
+                </p>
               </li>
             ))}
           </ul>
@@ -2662,63 +2184,18 @@ function UserDashboard({
           linkLabel={t('roleDashboards.user.sections.training.cta')}
         >
           <div className="space-y-3">
-            {trainingModules.map(module => (
-              <Link
-                key={module.id}
-                href={module.href}
-                data-testid="user-dashboard-training-item"
-                className="block rounded-xl border border-border bg-surface p-4 transition hover:border-amber-200 hover:shadow-sm"
-              >
+            {training.map(item => (
+              <Link key={item.id} href={`/${locale}/education/${item.id}`} data-testid="user-dashboard-training-item" className="block rounded-xl border border-border bg-surface p-4">
                 <div className="flex items-center justify-between text-sm font-medium text-text-primary">
-                  <span>{module.title}</span>
-                  <span>{module.progress}%</span>
+                  <span>{item.title}</span>
+                  <span>{item.progress}%</span>
                 </div>
-                <p className="mt-1 text-xs text-text-muted">{module.due}</p>
-                <div className="mt-3 h-2 rounded-full bg-surface-elevated">
-                  <div
-                    className="h-2 rounded-full bg-indigo-500"
-                    style={{ width: `${module.progress}%` }}
-                  />
-                </div>
+                <p className="mt-1 text-xs text-text-muted">{item.endAt ?? '-'}</p>
               </Link>
             ))}
           </div>
         </UserDashboardSectionCard>
       </div>
-
-      <UserDashboardSectionCard
-        testId="user-dashboard-improvements"
-        title={t('roleDashboards.user.sections.improvements.title')}
-        subtitle={t('roleDashboards.user.sections.improvements.subtitle')}
-        href={improvementsHref}
-        linkLabel={t('roleDashboards.user.sections.improvements.cta')}
-      >
-        <p className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 p-4 text-xs text-indigo-800">
-          {t('roleDashboards.user.sections.improvements.highlight')}
-        </p>
-        <ul className="space-y-3">
-          {improvementEntries.map(entry => (
-            <li
-              key={entry.id}
-              data-testid="user-dashboard-improvement-item"
-              className="rounded-xl border border-border bg-surface p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-text-primary">{entry.title}</p>
-                  <p className="text-xs text-text-muted">{entry.owner}</p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-[11px] font-medium ${USER_IMPROVEMENT_STATUS_STYLES[entry.status]}`}
-                >
-                  {t(`roleDashboards.user.sections.improvements.status.${entry.status}` as any)}
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-text-muted">{entry.eta}</p>
-            </li>
-          ))}
-        </ul>
-      </UserDashboardSectionCard>
     </section>
   )
 }
@@ -2751,7 +2228,7 @@ function UserDashboardSectionCard({
       <Link
         href={href}
         data-testid={`${testId}-link`}
-        className="inline-flex items-center gap-2 text-xs font-medium text-indigo-600"
+        className="inline-flex items-center gap-2 text-xs font-medium text-blue-600"
       >
         {linkLabel}
         <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2767,13 +2244,18 @@ function AdminDashboard({
   t,
   stats,
   educationFollowUp,
-  managementReviewSummary
+  managementReviewSummary,
+  dashboard
 }: {
   locale: string
   t: ReturnType<typeof useTranslations<'home'>>
   stats: DashboardStats | null
   educationFollowUp: EducationFollowUpSummary | null
   managementReviewSummary: ManagementReviewSummary | null
+  dashboard: Extract<
+    HomeRoleDashboard,
+    { role: 'org_admin' | 'system_operator' }
+  > | null
 }) {
   const auditHubPath = `/${locale}/audit`
   const educationPath = `/${locale}/education`
@@ -2782,25 +2264,25 @@ function AdminDashboard({
   const kpiCards = [
     {
       key: 'pendingApprovals',
-      value: stats?.pendingReviewDocumentCount ?? 0,
+      value: dashboard?.metrics.pendingApprovalCount ?? 0,
       label: t('roleDashboards.admin.sections.kpi.pendingApprovals'),
       href: `/${locale}/approvals`
     },
     {
       key: 'activeUsers',
-      value: stats?.userCount ?? 0,
+      value: dashboard?.metrics.activeUserCount ?? 0,
       label: t('roleDashboards.admin.sections.kpi.activeUsers'),
       href: `/${locale}/settings/users`
     },
     {
       key: 'openRisks',
-      value: stats?.activeRiskCount ?? 0,
+      value: dashboard?.metrics.openRiskCount ?? 0,
       label: t('roleDashboards.admin.sections.kpi.openRisks'),
       href: `/${locale}/risks`
     },
     {
       key: 'overdueTasks',
-      value: stats?.overdueTaskCount ?? 0,
+      value: dashboard?.metrics.overdueTaskCount ?? 0,
       label: t('roleDashboards.admin.sections.kpi.overdueTasks'),
       href: `/${locale}/tasks?due=overdue`
     }
@@ -2809,29 +2291,29 @@ function AdminDashboard({
   const actionItems = [
     {
       key: 'overdueTasks',
-      count: stats?.overdueTaskCount ?? 0,
+      count: dashboard?.metrics.overdueTaskCount ?? 0,
       href: `/${locale}/tasks?due=overdue`,
       tone: 'border-rose-100 bg-rose-50 text-rose-700',
       title: t('roleDashboards.admin.sections.priorityActions.items.overdueTasks.title'),
       description: t('roleDashboards.admin.sections.priorityActions.items.overdueTasks.description', {
-        count: stats?.overdueTaskCount ?? 0
+        count: dashboard?.metrics.overdueTaskCount ?? 0
       })
     },
     {
       key: 'pendingApprovals',
-      count: stats?.pendingReviewDocumentCount ?? 0,
+      count: dashboard?.metrics.pendingApprovalCount ?? 0,
       href: `/${locale}/approvals`,
       tone: 'border-amber-100 bg-amber-50 text-amber-700',
       title: t('roleDashboards.admin.sections.priorityActions.items.pendingApprovals.title'),
       description: t('roleDashboards.admin.sections.priorityActions.items.pendingApprovals.description', {
-        count: stats?.pendingReviewDocumentCount ?? 0
+        count: dashboard?.metrics.pendingApprovalCount ?? 0
       })
     },
     {
       key: 'educationFollowUp',
       count: educationFollowUp?.needs_follow_up_count ?? 0,
       href: educationFollowUpPath,
-      tone: 'border-indigo-100 bg-indigo-50 text-indigo-700',
+      tone: 'border-blue-100 bg-blue-50 text-blue-700',
       title: t('roleDashboards.admin.sections.priorityActions.items.educationFollowUp.title'),
       description: t('roleDashboards.admin.sections.priorityActions.items.educationFollowUp.description', {
         count: educationFollowUp?.needs_follow_up_count ?? 0
@@ -2839,12 +2321,12 @@ function AdminDashboard({
     },
     {
       key: 'openRisks',
-      count: stats?.activeRiskCount ?? 0,
+      count: dashboard?.metrics.openRiskCount ?? 0,
       href: `/${locale}/risks`,
       tone: 'border-sky-100 bg-sky-50 text-sky-700',
       title: t('roleDashboards.admin.sections.priorityActions.items.openRisks.title'),
       description: t('roleDashboards.admin.sections.priorityActions.items.openRisks.description', {
-        count: stats?.activeRiskCount ?? 0
+        count: dashboard?.metrics.openRiskCount ?? 0
       })
     }
   ].filter(item => item.count > 0)
@@ -2977,26 +2459,12 @@ function AdminDashboard({
     }
   ]
 
-  const recentActivities = [
-    {
-      key: 'userJoined',
-      title: t('roleDashboards.admin.sections.recentActivity.items.userJoined.title'),
-      detail: t('roleDashboards.admin.sections.recentActivity.items.userJoined.detail'),
-      time: t('roleDashboards.admin.sections.recentActivity.items.userJoined.time')
-    },
-    {
-      key: 'docApproved',
-      title: t('roleDashboards.admin.sections.recentActivity.items.docApproved.title'),
-      detail: t('roleDashboards.admin.sections.recentActivity.items.docApproved.detail'),
-      time: t('roleDashboards.admin.sections.recentActivity.items.docApproved.time')
-    },
-    {
-      key: 'riskEscalated',
-      title: t('roleDashboards.admin.sections.recentActivity.items.riskEscalated.title'),
-      detail: t('roleDashboards.admin.sections.recentActivity.items.riskEscalated.detail'),
-      time: t('roleDashboards.admin.sections.recentActivity.items.riskEscalated.time')
-    }
-  ]
+  const recentActivities = (dashboard?.activities ?? []).map(item => ({
+    key: item.id,
+    title: `${item.resourceType}: ${item.action}`,
+    detail: [item.resourceLabel, item.actorName].filter(Boolean).join(' / '),
+    time: item.createdAt ? formatRelativeTime(item.createdAt, locale) : '-',
+  }))
 
   return (
     <section className="space-y-6">
@@ -3020,7 +2488,7 @@ function AdminDashboard({
               key={card.key}
               href={card.href}
               data-testid={`admin-dashboard-kpi-${card.key}`}
-              className="block rounded-2xl border border-border bg-surface-elevated/80 p-4 shadow-sm transition hover:border-indigo-200 hover:bg-surface hover:shadow-md"
+              className="block rounded-2xl border border-border bg-surface-elevated/80 p-4 shadow-sm transition hover:border-blue-200 hover:bg-surface hover:shadow-md"
             >
               <p
                 data-testid={`admin-dashboard-kpi-${card.key}-value`}
@@ -3063,11 +2531,11 @@ function AdminDashboard({
                     key={item.key}
                     href={item.href}
                     data-testid={`admin-dashboard-workbench-${group.key}-${item.key}`}
-                    className="block rounded-xl border border-border bg-surface p-4 transition hover:border-indigo-200 hover:shadow-sm"
+                    className="block rounded-xl border border-border bg-surface p-4 transition hover:border-blue-200 hover:shadow-sm"
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0">
-                        <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                        <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
                           {item.status}
                         </span>
                         <p className="mt-2 text-sm font-semibold text-text-primary">{item.title}</p>
@@ -3159,11 +2627,11 @@ function AdminDashboard({
               key={item.key}
               href={item.href}
               data-testid={`admin-dashboard-cadence-${item.key}`}
-              className="block rounded-2xl border border-border bg-surface-elevated/80 p-4 transition hover:border-indigo-200 hover:bg-surface hover:shadow-sm"
+              className="block rounded-2xl border border-border bg-surface-elevated/80 p-4 transition hover:border-blue-200 hover:bg-surface hover:shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                     {item.cadence}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-text-primary">{item.title}</p>
@@ -3192,7 +2660,7 @@ function AdminDashboard({
           </div>
           <Link
             href={auditHubPath}
-            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-500"
           >
             {t('roleDashboards.admin.sections.recentActivity.cta')}
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3318,98 +2786,61 @@ function AdminDashboard({
 
 function AuditorDashboard({
   locale,
-  t
+  t,
+  dashboard
 }: {
   locale: string
   t: ReturnType<typeof useTranslations<'home'>>
+  dashboard: Extract<HomeRoleDashboard, { role: 'auditor' }> | null
 }) {
   const basePath = `/${locale}/audit`
 
-  const assignedAudits: AuditorAuditItem[] = [
-    {
-      id: 'quarterly',
-      name: t('roleDashboards.auditor.sections.assignedAudits.items.quarterly.name'),
-      period: t('roleDashboards.auditor.sections.assignedAudits.items.quarterly.period'),
-      status: 'fieldwork',
-      nextStep: t('roleDashboards.auditor.sections.assignedAudits.items.quarterly.nextStep')
-    },
-    {
-      id: 'supplier',
-      name: t('roleDashboards.auditor.sections.assignedAudits.items.supplier.name'),
-      period: t('roleDashboards.auditor.sections.assignedAudits.items.supplier.period'),
-      status: 'planning',
-      nextStep: t('roleDashboards.auditor.sections.assignedAudits.items.supplier.nextStep')
-    }
-  ]
+  const assignedAudits: AuditorAuditItem[] = (dashboard?.audits ?? []).map(item => ({
+    id: item.id,
+    name: item.title,
+    period: [item.plannedStartAt, item.plannedEndAt].filter(Boolean).join(' - ') || '-',
+    status: item.status === 'in_progress'
+      ? 'fieldwork'
+      : item.status === 'completed'
+        ? 'reporting'
+        : 'planning',
+    nextStep: `${item.checklistCompleted}/${item.checklistTotal}`,
+  }))
 
-  const checklistProgress: AuditorChecklistItem[] = [
-    {
-      id: 'isoClauses',
-      label: t('roleDashboards.auditor.sections.checklistProgress.items.isoClauses.label'),
-      statusLabel: t('roleDashboards.auditor.sections.checklistProgress.items.isoClauses.status'),
-      progress: 75
-    },
-    {
-      id: 'annexSampling',
-      label: t('roleDashboards.auditor.sections.checklistProgress.items.annexSampling.label'),
-      statusLabel: t('roleDashboards.auditor.sections.checklistProgress.items.annexSampling.status'),
-      progress: 60
-    },
-    {
-      id: 'followUp',
-      label: t('roleDashboards.auditor.sections.checklistProgress.items.followUp.label'),
-      statusLabel: t('roleDashboards.auditor.sections.checklistProgress.items.followUp.status'),
-      progress: 45
-    }
-  ]
+  const checklistProgress: AuditorChecklistItem[] = (dashboard?.audits ?? []).map(item => ({
+    id: item.id,
+    label: item.title,
+    statusLabel: `${item.checklistCompleted}/${item.checklistTotal}`,
+    progress: item.checklistTotal > 0
+      ? Math.round((item.checklistCompleted / item.checklistTotal) * 100)
+      : 0,
+  }))
 
   const findings: AuditorFindingSummary[] = [
     {
       id: 'critical',
       label: t('roleDashboards.auditor.sections.findings.items.critical.label'),
       description: t('roleDashboards.auditor.sections.findings.items.critical.description'),
-      count: 1,
+      count: dashboard?.findings.majorOpenCount ?? 0,
       tone: 'urgent'
     },
     {
       id: 'minor',
       label: t('roleDashboards.auditor.sections.findings.items.minor.label'),
       description: t('roleDashboards.auditor.sections.findings.items.minor.description'),
-      count: 4,
+      count: dashboard?.findings.minorOpenCount ?? 0,
       tone: 'warning'
     },
     {
       id: 'recommendation',
       label: t('roleDashboards.auditor.sections.findings.items.recommendation.label'),
       description: t('roleDashboards.auditor.sections.findings.items.recommendation.description'),
-      count: 7,
+      count: 0,
       tone: 'info'
     }
   ]
 
-  const reportActions: AuditorReportAction[] = [
-    {
-      id: 'draftReport',
-      title: t('roleDashboards.auditor.sections.reports.items.draftReport.title'),
-      description: t('roleDashboards.auditor.sections.reports.items.draftReport.description'),
-      due: t('roleDashboards.auditor.sections.reports.items.draftReport.due'),
-      href: `${basePath}/reports`
-    },
-    {
-      id: 'closingMeeting',
-      title: t('roleDashboards.auditor.sections.reports.items.closingMeeting.title'),
-      description: t('roleDashboards.auditor.sections.reports.items.closingMeeting.description'),
-      due: t('roleDashboards.auditor.sections.reports.items.closingMeeting.due'),
-      href: basePath
-    },
-    {
-      id: 'followUpPlan',
-      title: t('roleDashboards.auditor.sections.reports.items.followUpPlan.title'),
-      description: t('roleDashboards.auditor.sections.reports.items.followUpPlan.description'),
-      due: t('roleDashboards.auditor.sections.reports.items.followUpPlan.due'),
-      href: `${basePath}/nonconformities`
-    }
-  ]
+  const reportActions: AuditorReportAction[] = []
 
   return (
     <section className="space-y-6">
@@ -3421,7 +2852,7 @@ function AuditorDashboard({
         <Link
           href={basePath}
           data-testid="auditor-dashboard-workspace-link"
-          className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-surface px-4 py-2 text-sm font-medium text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-800"
+          className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-surface px-4 py-2 text-sm font-medium text-blue-700 shadow-sm transition hover:border-blue-300 hover:text-blue-800"
         >
           {t('roleDashboards.auditor.viewWorkspace')}
           <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3444,7 +2875,7 @@ function AuditorDashboard({
             <Link
               href={basePath}
               data-testid="auditor-dashboard-assigned-audits-link"
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+              className="text-xs font-medium text-blue-600 hover:text-blue-500"
             >
               {t('roleDashboards.auditor.sections.assignedAudits.manageLink')}
             </Link>
@@ -3469,7 +2900,7 @@ function AuditorDashboard({
               </thead>
               <tbody className="divide-y divide-border bg-surface">
                 {assignedAudits.map(item => (
-                  <tr key={item.id} className="hover:bg-indigo-50/40">
+                  <tr key={item.id} className="hover:bg-blue-50/40">
                     <td className="px-4 py-3 font-medium text-text-primary">{item.name}</td>
                     <td className="px-4 py-3 text-sm text-text-secondary">{item.period}</td>
                     <td className="px-4 py-3">
@@ -3515,7 +2946,7 @@ function AuditorDashboard({
           <Link
             href={`${basePath}/nonconformities`}
             data-testid="auditor-dashboard-findings-link"
-            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-500"
           >
             {t('roleDashboards.auditor.sections.findings.manageLink')}
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3539,7 +2970,7 @@ function AuditorDashboard({
             <Link
               href={`${basePath}/requirements`}
               data-testid="auditor-dashboard-checklist-link"
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+              className="text-xs font-medium text-blue-600 hover:text-blue-500"
             >
               {t('roleDashboards.auditor.sections.checklistProgress.manageLink')}
             </Link>
@@ -3553,7 +2984,7 @@ function AuditorDashboard({
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-elevated">
                   <div
-                    className="h-2 rounded-full bg-indigo-500"
+                    className="h-2 rounded-full bg-blue-500"
                     style={{ width: `${item.progress}%` }}
                     aria-hidden
                   />
@@ -3585,7 +3016,7 @@ function AuditorDashboard({
                     <Link
                       href={item.href}
                       data-testid={`auditor-dashboard-report-action-${item.id}`}
-                      className="font-medium text-indigo-600 hover:text-indigo-500"
+                      className="font-medium text-blue-600 hover:text-blue-500"
                     >
                       {t('roleDashboards.auditor.sections.reports.openLink')}
                     </Link>
@@ -3597,7 +3028,7 @@ function AuditorDashboard({
           <Link
             href={`${basePath}/reports`}
             data-testid="auditor-dashboard-reports-link"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-500"
           >
             {t('roleDashboards.auditor.sections.reports.cta')}
           </Link>
@@ -3645,7 +3076,7 @@ function auditorStatusTone(status: AuditorStatus) {
     case 'planning':
       return 'bg-surface-elevated text-text-secondary'
     case 'fieldwork':
-      return 'bg-indigo-100 text-indigo-700'
+      return 'bg-blue-100 text-blue-700'
     case 'reporting':
       return 'bg-amber-100 text-amber-700'
     case 'followUp':
@@ -3676,7 +3107,7 @@ function getInsights({
 }: {
   stats: DashboardStats | null
   subscriptionStatus: string
-  subscription: any
+  subscription: HomeSubscription | null
   locale: string
   t: ReturnType<typeof useTranslations<'home'>>
 }): string[] {

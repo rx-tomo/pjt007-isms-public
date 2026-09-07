@@ -1,5 +1,11 @@
 import { getDb } from '@/lib/db/drizzle/client'
-import { auditLogs, userProfiles, documents, risks } from '@/lib/db/drizzle/schema'
+import {
+  auditLogs,
+  userMemberships,
+  userProfiles,
+  documents,
+  risks,
+} from '@/lib/db/drizzle/schema'
 import { eq, and, desc, inArray } from 'drizzle-orm'
 
 const ACTIVITY_SCOPE_TENANT = 'tenant'
@@ -33,6 +39,8 @@ export interface ActivityQueryOptions {
 }
 
 export class ActivityService {
+  constructor(private readonly db: ReturnType<typeof getDb> = getDb()) {}
+
   private async fetchRecentActivityApi(options: ActivityQueryOptions): Promise<ActivityLogEntry[]> {
     if (typeof window === 'undefined') {
       throw new Error('fetchRecentActivityApi must only be called from the browser')
@@ -65,7 +73,7 @@ export class ActivityService {
 
     const { organizationId, actions } = options
     const limit = Math.min(Math.max(options.limit ?? 20, 1), 50)
-    const db = getDb()
+    const db = this.db
 
     const conditions = [
       eq(auditLogs.organizationId, organizationId),
@@ -90,9 +98,16 @@ export class ActivityService {
         actorId: userProfiles.id,
         actorFullName: userProfiles.fullName,
         actorEmail: userProfiles.email,
+        actorProfileActive: userProfiles.isActive,
+        actorMembershipId: userMemberships.id,
       })
       .from(auditLogs)
       .leftJoin(userProfiles, eq(auditLogs.userId, userProfiles.id))
+      .leftJoin(userMemberships, and(
+        eq(userMemberships.userId, userProfiles.id),
+        eq(userMemberships.organizationId, auditLogs.organizationId),
+        eq(userMemberships.status, 'active')
+      ))
       .where(and(...conditions))
       .orderBy(desc(auditLogs.createdAt))
       .limit(limit * 2)
@@ -107,12 +122,12 @@ export class ActivityService {
       changes: row.changes ? JSON.parse(row.changes) : null,
       scope: row.scope,
       created_at: row.createdAt,
-      actor: row.actorId
+      actor: row.actorId && row.actorProfileActive === true && row.actorMembershipId
         ? { id: row.actorId, full_name: row.actorFullName ?? null, email: row.actorEmail ?? null }
         : null,
     }))
 
-    const labelMap = await this.resolveResourceLabels(entries)
+    const labelMap = await this.resolveResourceLabels(entries, organizationId)
 
     return entries.map(row => ({
       ...row,
@@ -121,9 +136,12 @@ export class ActivityService {
     }))
   }
 
-  private async resolveResourceLabels(rows: Array<Pick<ActivityLogEntry, 'resource_type' | 'resource_id'>>) {
+  private async resolveResourceLabels(
+    rows: Array<Pick<ActivityLogEntry, 'resource_type' | 'resource_id'>>,
+    organizationId: string
+  ) {
     const labelMap = new Map<string, string>()
-    const db = getDb()
+    const db = this.db
 
     const documentIds = new Set<string>()
     const riskIds = new Set<string>()
@@ -142,7 +160,10 @@ export class ActivityService {
         const docRows = await db
           .select({ id: documents.id, title: documents.title })
           .from(documents)
-          .where(inArray(documents.id, Array.from(documentIds)))
+          .where(and(
+            eq(documents.organizationId, organizationId),
+            inArray(documents.id, Array.from(documentIds))
+          ))
 
         docRows.forEach(doc => {
           labelMap.set(this.buildResourceKey('document', doc.id), doc.title)
@@ -157,7 +178,10 @@ export class ActivityService {
         const riskRows = await db
           .select({ id: risks.id, title: risks.title })
           .from(risks)
-          .where(inArray(risks.id, Array.from(riskIds)))
+          .where(and(
+            eq(risks.organizationId, organizationId),
+            inArray(risks.id, Array.from(riskIds))
+          ))
 
         riskRows.forEach(risk => {
           labelMap.set(this.buildResourceKey('risk', risk.id), risk.title)
@@ -180,6 +204,10 @@ export class ActivityService {
       if (label) {
         return label
       }
+    }
+
+    if (row.resource_type === 'document' || row.resource_type === 'risk') {
+      return null
     }
 
     const possibleTitle = (row.changes as Record<string, unknown> | null)?.title
