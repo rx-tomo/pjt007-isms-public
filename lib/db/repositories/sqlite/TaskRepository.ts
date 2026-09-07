@@ -65,6 +65,7 @@ import {
   TaskImportRowError,
   TaskTenantInvariantError,
 } from '@/lib/services/taskTenantInvariant'
+import { isTaskAttachmentStoragePath } from '@/lib/storage/taskAttachmentPolicy'
 
 type TaskRow = typeof tasks.$inferSelect
 type UserProfileRow = typeof userProfiles.$inferSelect
@@ -1109,19 +1110,38 @@ export class SQLiteTaskRepository extends BaseSQLiteRepository implements ITaskR
   /**
    * Delete an attachment (returns its file_path for storage cleanup)
    */
-  async deleteAttachment(attachmentId: string): Promise<{ filePath: string | null }> {
-    // First fetch the attachment to get file_path
+  async deleteAttachment(
+    attachmentId: string,
+    taskId?: string,
+    organizationId?: string
+  ): Promise<{ filePath: string | null }> {
+    if (!taskId || !organizationId) {
+      return { filePath: null }
+    }
+
     const rows = await this.db
       .select({ filePath: taskAttachments.filePath })
       .from(taskAttachments)
-      .where(eq(taskAttachments.id, attachmentId))
+      .innerJoin(tasks, and(
+        eq(tasks.id, taskAttachments.taskId),
+        eq(tasks.organizationId, organizationId)
+      ))
+      .where(and(
+        eq(taskAttachments.id, attachmentId),
+        eq(taskAttachments.taskId, taskId)
+      ))
 
     const filePath = rows.length > 0 ? rows[0].filePath : null
+    if (!filePath || !isTaskAttachmentStoragePath(filePath, organizationId, taskId)) {
+      return { filePath: null }
+    }
 
-    // Delete from database
     await this.db
       .delete(taskAttachments)
-      .where(eq(taskAttachments.id, attachmentId))
+      .where(and(
+        eq(taskAttachments.id, attachmentId),
+        eq(taskAttachments.taskId, taskId)
+      ))
 
     return { filePath }
   }

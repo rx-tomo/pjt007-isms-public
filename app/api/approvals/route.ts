@@ -55,6 +55,9 @@ export async function GET(request: NextRequest) {
 
   const service = new ApprovalService()
   const status = parseStatus(searchParams.get('status'))
+  // approver は自分に assigned された依頼だけを見る。
+  // org_admin / system_operator はテナント全体のキューを見るため、
+  // 二段階承認の 2段目（自分が assigned）も同じ一覧に含まれる（設計 §4.3 / §6.1）。
   const requests = await service.listRequests(organizationId, {
     status,
     approverId: authorization.context.role === 'approver' ? user.id : undefined,

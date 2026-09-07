@@ -369,17 +369,17 @@ export default function ProjectStructureManager({
         <button
           type="button"
           onClick={handleCreateRole}
-          className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+          className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
         >
           {t('actions.create')}
         </button>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5">
+      <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-indigo-700">{t('summary.title')}</h4>
-            <p className="mt-1 text-xs text-indigo-600">{t('summary.description')}</p>
+            <h4 className="text-sm font-semibold text-blue-700">{t('summary.title')}</h4>
+            <p className="mt-1 text-xs text-blue-600">{t('summary.description')}</p>
           </div>
           <span
             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
@@ -389,13 +389,13 @@ export default function ProjectStructureManager({
             {summaryStatusLabel}
           </span>
         </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-indigo-600">
+        <div className="mt-3 flex items-center justify-between text-[11px] text-blue-600">
           <span>{summaryStatusDescription}</span>
           <span className="font-semibold">{roleSummary.completionRatio}%</span>
         </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-indigo-100">
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-blue-100">
           <div
-            className="h-full rounded-full bg-indigo-500"
+            className="h-full rounded-full bg-blue-500"
             style={{ width: `${roleSummary.completionRatio}%` }}
             aria-hidden="true"
           />
@@ -403,11 +403,11 @@ export default function ProjectStructureManager({
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {summaryItems.map(item => (
             <div key={item.key} className="rounded-xl bg-surface/80 p-4 shadow-sm">
-              <p className="text-xs font-medium text-indigo-600">{item.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-indigo-900">{item.value}</p>
-              <p className="mt-1 text-xs text-indigo-600">{item.helper}</p>
+              <p className="text-xs font-medium text-blue-600">{item.label}</p>
+              <p className="mt-1 text-2xl font-semibold text-blue-900">{item.value}</p>
+              <p className="mt-1 text-xs text-blue-600">{item.helper}</p>
               {item.subHelper && (
-                <p className="text-[11px] text-indigo-500">{item.subHelper}</p>
+                <p className="text-[11px] text-blue-500">{item.subHelper}</p>
               )}
             </div>
           ))}
@@ -426,7 +426,7 @@ export default function ProjectStructureManager({
             <button
               type="button"
               onClick={handleOpenWizard}
-              className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+              className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
             >
               {t('wizard.cta.openWizard')}
             </button>
@@ -496,7 +496,7 @@ export default function ProjectStructureManager({
                 <button
                   type="button"
                   onClick={() => openAssignmentManager(role)}
-                  className="self-start rounded-md border border-transparent bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100"
+                  className="self-start rounded-md border border-transparent bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-100"
                 >
                   {t('actions.assign')}
                 </button>
@@ -507,7 +507,7 @@ export default function ProjectStructureManager({
       )}
 
       {showRoleForm && (
-        <div className="mt-6 rounded-xl border border-indigo-100 bg-indigo-50/40 p-6">
+        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/40 p-6">
           <form onSubmit={handleSubmitRole} className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-base font-semibold text-text-primary">
@@ -516,7 +516,7 @@ export default function ProjectStructureManager({
               <button
                 type="button"
                 onClick={resetRoleForm}
-                className="text-sm text-indigo-600 hover:text-indigo-800"
+                className="text-sm text-blue-600 hover:text-blue-800"
               >
                 {t('actions.cancel')}
               </button>
@@ -529,7 +529,7 @@ export default function ProjectStructureManager({
                   type="text"
                   value={roleForm.key}
                   onChange={e => handleRoleFormChange('key', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="isms_manager"
                   required
                 />
@@ -541,7 +541,7 @@ export default function ProjectStructureManager({
                   type="text"
                   value={roleForm.name}
                   onChange={e => handleRoleFormChange('name', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder={t('roleForm.placeholders.name')}
                   required
                 />
@@ -552,7 +552,7 @@ export default function ProjectStructureManager({
                   type="text"
                   value={roleForm.nameEn}
                   onChange={e => handleRoleFormChange('nameEn', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Riscala AI for ISMS"
                 />
               </div>
@@ -562,7 +562,7 @@ export default function ProjectStructureManager({
                   type="number"
                   value={roleForm.displayOrder}
                   onChange={e => handleRoleFormChange('displayOrder', Number(e.target.value))}
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -573,7 +573,7 @@ export default function ProjectStructureManager({
                 value={roleForm.description}
                 onChange={e => handleRoleFormChange('description', e.target.value)}
                 rows={3}
-                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
 
@@ -583,7 +583,7 @@ export default function ProjectStructureManager({
                 value={roleForm.responsibilities}
                 onChange={e => handleRoleFormChange('responsibilities', e.target.value)}
                 rows={3}
-                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder={t('roleForm.placeholders.responsibilities')}
               />
               <p className="mt-1 text-xs text-text-muted">{t('roleForm.help.responsibilities')}</p>
@@ -594,7 +594,7 @@ export default function ProjectStructureManager({
                 type="checkbox"
                 checked={roleForm.isRequired}
                 onChange={e => handleRoleFormChange('isRequired', e.target.checked)}
-                className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
               />
               {t('roleForm.fields.isRequired')}
             </label>
@@ -610,7 +610,7 @@ export default function ProjectStructureManager({
               <button
                 type="submit"
                 disabled={isSavingRole}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
               >
                 {isSavingRole ? t('actions.saving') : t('actions.save')}
               </button>
@@ -648,7 +648,7 @@ export default function ProjectStructureManager({
                           type="checkbox"
                           checked={assignmentSelection.users.has(user.id)}
                           onChange={() => toggleAssignment('users', user.id)}
-                          className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                         />
                         <span>
                           <span className="font-medium">{user.full_name || user.email}</span>
@@ -671,7 +671,7 @@ export default function ProjectStructureManager({
                           type="checkbox"
                           checked={assignmentSelection.invitations.has(invitation.id)}
                           onChange={() => toggleAssignment('invitations', invitation.id)}
-                          className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                         />
                         <span>
                           <span className="font-medium">{invitation.email}</span>
@@ -696,7 +696,7 @@ export default function ProjectStructureManager({
                 type="button"
                 onClick={handleSaveAssignments}
                 disabled={isSavingAssignments}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
               >
                 {isSavingAssignments ? t('assignment.saving') : t('assignment.save')}
               </button>

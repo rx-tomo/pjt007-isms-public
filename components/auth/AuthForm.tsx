@@ -193,7 +193,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               {t('login.noAccount')}{' '}
               <Link
                 href={`/${locale}/auth/signup`}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-blue-600 hover:text-blue-500"
               >
                 {t('login.signupLink')}
               </Link>
@@ -203,7 +203,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               {t('signup.hasAccount')}{' '}
               <Link
                 href={`/${locale}/auth/login`}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-blue-600 hover:text-blue-500"
               >
                 {t('signup.loginLink')}
               </Link>
@@ -257,9 +257,9 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
         )}
 
         {mode === 'login' && isAwaitingMfa && (
-          <div className="rounded-md border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900">
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
             <p className="font-semibold">{t('mfa.header')}</p>
-            <p className="mt-1 text-xs text-indigo-800">{t('mfa.description')}</p>
+            <p className="mt-1 text-xs text-blue-800">{t('mfa.description')}</p>
             <label htmlFor="mfaCode" className="mt-3 block text-xs font-medium uppercase tracking-wide">
               {t('mfa.codeLabel')}
             </label>
@@ -269,7 +269,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              className="mt-1 w-full rounded-md border border-indigo-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="mt-1 w-full rounded-md border border-blue-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={mfaCode}
               onChange={event => setMfaCode(event.target.value)}
             />
@@ -288,7 +288,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
                   name="fullName"
                   type="text"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder={t('signup.fullName')}
                   value={formData.fullName}
                   onChange={handleInputChange}
@@ -304,7 +304,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
                   name="organizationName"
                   type="text"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder={t('signup.organizationName')}
                   value={formData.organizationName}
                   onChange={handleInputChange}
@@ -325,7 +325,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               required
               className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary ${
                 mode === 'login' ? 'rounded-t-md' : ''
-              } focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+              } focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
               placeholder={t('common.email')}
               value={formData.email}
               onChange={handleInputChange}
@@ -345,7 +345,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               required
               className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary ${
                 mode === 'login' ? 'rounded-b-md' : ''
-              } focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+              } focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
               placeholder={t('common.password')}
               value={formData.password}
               onChange={handleInputChange}
@@ -364,7 +364,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder:text-text-muted text-text-primary rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder={t('signup.confirmPassword')}
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
@@ -379,7 +379,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
             <div className="text-sm">
               <Link
                 href={`/${locale}/auth/forgot-password`}
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-blue-600 hover:text-blue-500"
               >
                 {t('login.forgotPassword')}
               </Link>
@@ -393,7 +393,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               id="agreeToTerms"
               name="agreeToTerms"
               type="checkbox"
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-border rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-border rounded"
               checked={formData.agreeToTerms}
               onChange={handleInputChange}
             />
@@ -401,7 +401,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               {t('signup.agreeToTerms')}{' '}
               <Link
                 href={`/${locale}/terms`}
-                className="text-indigo-600 hover:text-indigo-500"
+                className="text-blue-600 hover:text-blue-500"
                 target="_blank"
               >
                 {t('signup.termsLink')}
@@ -427,7 +427,7 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
               isLoading ||
               (mode === 'login' && isAwaitingMfa && mfaCode.trim().length === 0)
             }
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <svg
@@ -458,10 +458,10 @@ export default function AuthForm({ mode, locale, publicDemoMode = false }: AuthF
           </button>
         </div>
 
-        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-center">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-center">
           <Link
             href={`/${locale}/dev-login`}
-            className="text-sm font-semibold text-indigo-700 hover:text-indigo-600"
+            className="text-sm font-semibold text-blue-700 hover:text-blue-600"
           >
             {t('common.devLogin')}
           </Link>

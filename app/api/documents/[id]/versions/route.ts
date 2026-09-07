@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
 import { isDocumentTenantInvariantError } from '@/lib/services/documentTenantInvariant'
 import { getStorageProvider } from '@/lib/storage'
@@ -20,9 +23,18 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
   if (!organizationId) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
-  const authorization = await resolveTenantAuthorizationContext(getDb(), user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    organizationId,
+    'documents.read'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   const document = await service.getDocument(authorization.context, id)
   if (!document) {
@@ -73,12 +85,20 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
   if (!organizationId) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
-  const authorization = await resolveTenantAuthorizationContext(
+  const authorization = await authorizeTenantAction(
     getDb(),
     user.id,
-    organizationId
+    organizationId,
+    'documents.delete'
   )
-  if (!authorization.ok || !await service.getDocument(authorization.context, id)) {
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
+  if (!await service.getDocument(authorization.context, id)) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
 

@@ -18,7 +18,13 @@ export type ApprovalResourceType =
   | 'soa_version'
   | 'risk_residual_acceptance'
 
-export type ApprovalRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired'
+export type ApprovalRequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'expired'
+  // 後段 pending が revert により無効化された状態（設計 §3.4 / H-3）
+  | 'cancelled'
 
 export interface ApprovalRequest {
   id: string
@@ -57,7 +63,15 @@ export interface ApprovalQueueItem extends ApprovalRequest {
 export interface ApprovalEvent {
   id: string
   approval_request_id: string
-  event_type: 'requested' | 'approved' | 'rejected' | 'expired' | 'reminded' | 'escalated' | 'reverted'
+  event_type:
+    | 'requested'
+    | 'approved'
+    | 'rejected'
+    | 'expired'
+    | 'reminded'
+    | 'escalated'
+    | 'reverted'
+    | 'cancelled'
   actor_id: string | null
   payload: Record<string, unknown>
   created_at: string

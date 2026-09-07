@@ -140,7 +140,7 @@ function MockCheckoutContent() {
         <button
           onClick={completePayment}
           disabled={busy}
-          className="w-full py-2 px-4 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="w-full py-2 px-4 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {busy ? t.processing : t.pay}
         </button>

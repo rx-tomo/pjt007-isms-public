@@ -10,7 +10,10 @@ import {
   type DocumentExportModel
 } from '@/lib/utils/exporters/documentExport'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
 import { logExportEvent } from '@/lib/server/logging/exportEvents'
 import {
@@ -109,15 +112,19 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   const service = new DocumentTenantMutationService()
   const organizationId = await service.getOrganizationId(docId)
   const authorization = organizationId
-    ? await resolveTenantAuthorizationContext(db, user.id, organizationId)
+    ? await authorizeTenantAction(db, user.id, organizationId, 'documents.read')
     : null
-  const allowedRoles = new Set(['org_admin', 'approver', 'system_operator'])
   if (
     !organizationId
     || !authorization?.ok
-    || !allowedRoles.has(authorization.context.role)
   ) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+    const status = authorization && !authorization.ok
+      ? tenantActionDenialStatus(authorization)
+      : 404
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   const document = await service.getDocument(authorization.context, docId)
   if (!document) {

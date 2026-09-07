@@ -35,7 +35,7 @@ export default function PhaseSelectionDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 py-6">
       <div data-testid="phase-selection-dialog" className="w-full max-w-xl rounded-3xl bg-surface p-6 shadow-2xl">
         <div className="space-y-2 text-center">
-          <span className="inline-flex items-center justify-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
+          <span className="inline-flex items-center justify-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
             {t('badge')}
           </span>
           <h2 className="text-2xl font-semibold text-text-primary">{t('title')}</h2>
@@ -48,10 +48,10 @@ export default function PhaseSelectionDialog({
               key={option.value}
               type="button"
               onClick={() => onSelect(option.value)}
-              className={`flex h-full flex-col rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              className={`flex h-full flex-col rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 selectedPhase === option.value
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-border bg-surface hover:border-indigo-200'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-border bg-surface hover:border-blue-200'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export default function PhaseSelectionDialog({
             type="button"
             onClick={onSubmit}
             disabled={!selectedPhase || loading}
-            className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {loading ? t('submitting') : t('submit')}
           </button>

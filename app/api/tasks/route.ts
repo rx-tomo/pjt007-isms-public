@@ -3,7 +3,10 @@ import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
 import { TaskService } from '@/lib/services/task'
 import type { TaskPriority, TaskStatus } from '@/lib/db/repositories/interfaces/ITaskRepository'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { TaskTenantMutationService } from '@/lib/server/tasks/taskTenantMutationService'
 import { isTaskTenantInvariantError } from '@/lib/services/taskTenantInvariant'
 
@@ -47,9 +50,18 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
-  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'tasks.read'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   const service = new TaskService()
@@ -101,9 +113,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const db = getDb()
-    const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+    const authorization = await authorizeTenantAction(
+      db,
+      user.id,
+      organizationId,
+      'tasks.create'
+    )
     if (!authorization.ok) {
-      return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      const status = tenantActionDenialStatus(authorization)
+      return applyCookies(NextResponse.json(
+        { error: status === 403 ? 'Forbidden' : 'Not found' },
+        { status }
+      ))
     }
 
     const service = new TaskTenantMutationService()

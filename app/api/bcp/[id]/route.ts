@@ -1,4 +1,4 @@
-import { BcpService } from '@/lib/services/bcp'
+import { BcpService, parsePlanUpdateBody } from '@/lib/services/bcp'
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
 import { handleRouteError } from '@/lib/errors/handleRouteError'
@@ -32,14 +32,11 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
   try {
     const { id } = params
 
-    // Verify ownership before update
-    const existing = await bcpService.getPlanById(id)
-    if (existing.organization_id !== caller.organizationId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const input = parsePlanUpdateBody(await request.json().catch(() => null))
+    if (!input) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
-
-    const body = await request.json()
-    const plan = await bcpService.updatePlan(id, body)
+    const plan = await bcpService.updatePlan(caller.organizationId, id, input)
     return NextResponse.json({ data: plan })
   } catch (error) {
     return handleRouteError(error)
@@ -54,13 +51,7 @@ export async function DELETE(request: NextRequest, props: { params: Promise<{ id
   try {
     const { id } = params
 
-    // Verify ownership before delete
-    const existing = await bcpService.getPlanById(id)
-    if (existing.organization_id !== caller.organizationId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
-    await bcpService.deletePlan(id)
+    await bcpService.deletePlan(caller.organizationId, id)
     return NextResponse.json({ success: true })
   } catch (error) {
     return handleRouteError(error)

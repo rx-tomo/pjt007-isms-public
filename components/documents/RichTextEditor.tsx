@@ -77,7 +77,7 @@ export default function RichTextEditor({
                 onClick={() => setMode(item.value)}
                 className={`px-3 py-1 text-xs font-medium transition-colors ${roundedClass} ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-text-secondary hover:bg-surface-elevated'
                 } ${disabled ? 'opacity-60' : ''}`}
               >
@@ -93,7 +93,7 @@ export default function RichTextEditor({
         className={`rounded-lg border bg-surface shadow-sm focus-within:ring-2 ${
           error
             ? 'border-red-300 focus-within:border-red-400 focus-within:ring-red-100'
-            : 'border-border focus-within:border-indigo-300 focus-within:ring-indigo-50'
+            : 'border-border focus-within:border-blue-300 focus-within:ring-blue-50'
         } ${disabled ? 'opacity-60' : ''}`}
       >
         <MDEditor

@@ -260,7 +260,7 @@ export default function SuperAdminInvitationsPage(props: PageProps) {
               <th className="px-4 py-3">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                   checked={invitations.length > 0 && selected.size === invitations.length}
                   onChange={(event) => handleToggleAll(event.target.checked)}
                 />
@@ -296,7 +296,7 @@ export default function SuperAdminInvitationsPage(props: PageProps) {
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                         checked={selected.has(invitation.id)}
                         onChange={() => handleSelectionToggle(invitation.id)}
                       />
@@ -342,7 +342,7 @@ export default function SuperAdminInvitationsPage(props: PageProps) {
                         type="button"
                         onClick={() => handleAccept(invitation.id)}
                         disabled={status !== 'pending' || actionTarget === invitation.id}
-                        className="inline-flex items-center rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {actionTarget === invitation.id ? t('actions.accepting') : t('actions.accept')}
                       </button>

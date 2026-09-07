@@ -1,4 +1,9 @@
 {
+  "publicSeo": {
+    "resources": {"metaTitle":"ISMS 运营资源 | Riscala AI for ISMS","metaDescription":"用于查看 ISMS 准备情况和运营访谈要点的公开资源。","heroLink":"查看公开资源","title":"ISMS 运营资源","description":"帮助整理 ISMS 准备和日常运营的公开指南与简易检查。","toolTitle":"ISMS 准备检查","toolDescription":"可在此页面逐项查看准备情况。","openTool":"打开检查","interviewTitle":"运营访谈指南","interviewDescription":"介绍复盘运营实践时可关注的主题。","openInterview":"阅读指南","navigationLabel":"资源导航","homeLink":"返回首页","loginLink":"登录"},
+    "readiness": {"metaTitle":"ISMS 准备检查 | Riscala AI for ISMS","metaDescription":"不保存选择结果的公开 ISMS 准备检查。","title":"ISMS 准备检查","description":"通过简短检查梳理关键事项，并找出下一步可整理的内容。","checkTitle":"检查项目","progress":"共 {total} 项，已检查 {complete} 项，还剩 {remaining} 项。","items":{"scope":"已整理范围和相关人员","owner":"已确定负责人和复核方式","evidence":"正在查看需要的记录","review":"正在考虑定期复核的机会"},"memoryOnly":"选择结果仅在本页面打开期间保留，不会提交或保存。","navigationLabel":"准备检查导航","resourcesLink":"资源列表","homeLink":"返回首页","loginLink":"登录"},
+    "interview": {"metaTitle":"ISMS 运营访谈指南 | Riscala AI for ISMS","metaDescription":"介绍复盘 ISMS 运营时可讨论要点的公开指南。","title":"ISMS 运营访谈指南","description":"在讨论运营情况前，可先确认的一些有用视角。","topicsTitle":"可确认的视角","topics":{"scope":"范围或相关人员是否发生变化","evidence":"记录和处理情况是否可以复核","review":"如何让复核带来下一步行动"},"informationOnly":"本页面仅提供信息，不提供表单，也不会提交或保存回答。","githubInquiry":{"title":"通过 GitHub 联系","publicNotice":"您的咨询将作为公开的 GitHub Issue 发布。","loginNotice":"发布需要登录 GitHub。","dataNotice":"请勿包含个人信息、凭据或机密信息。","notAnonymousNotice":"这不是匿名访谈收集渠道。","linkLabel":"打开 GitHub Issues"},"navigationLabel":"访谈指南导航","resourcesLink":"资源列表","homeLink":"返回首页","loginLink":"登录"}
+  },
   "support": "专业支持全程陪伴每一步",
   "ai": {
     "evaluation": {
@@ -168,6 +173,10 @@
     "subscription": "订阅",
     "home": "首页",
     "skipToContent": "跳转至主要内容",
+    "a11y": {
+      "toggleSidebar": "切换侧边栏",
+      "breadcrumb": "面包屑导航"
+    },
     "publicLinks": {
       "source": "在 GitHub 查看源代码",
       "feedback": "提交反馈"
@@ -316,6 +325,15 @@
       "email": "邮箱地址",
       "password": "密码",
       "devLogin": "演示登录"
+    },
+    "hero": {
+      "taglineLine1": "以AI驱动开发打造，",
+      "taglineLine2": "助力ISMS建设与运营的支持平台。",
+      "features": {
+        "documents": "文档管理与版本控制",
+        "riskAssessment": "风险评估与应对管理",
+        "auditPreparation": "审核准备与进度管理"
+      }
     },
     "login": {
       "title": "登录",
@@ -630,17 +648,17 @@
             "items": {
               "remoteWork": {
                 "title": "远程办公安全标准",
-                "version": "处理中",
+                "version": "第3.2版・本周更新",
                 "due": "请于11月11日前确认"
               },
               "vendorChecklist": {
                 "title": "供应商入驻检查表",
-                "version": "处理中",
+                "version": "第2.5版・已反映评审意见",
                 "due": "请于11月15日前评审"
               },
               "codeOfConduct": {
                 "title": "行为准则 (FY25)",
-                "version": "处理中",
+                "version": "第5.0版・已签署",
                 "due": "10月30日 已受理"
               }
             }
@@ -775,6 +793,8 @@
   "pricing": {
     "title": "价格套餐",
     "subtitle": "请选择最适合您组织的套餐",
+    "customQuote": "单独报价",
+    "contactUs": "联系我们",
     "status": {
       "trialing": "试用中",
       "active": "生效",
@@ -784,7 +804,12 @@
       "past_due": "付款逾期",
       "unpaid": "未付款"
     },
-    "testModeNotice": "正在以 Stripe 测试模式运行。结账将在模拟页面完成，不会产生实际扣款。"
+    "testModeNotice": "正在以 Stripe 测试模式运行。结账将在模拟页面完成，不会产生实际扣款。",
+    "errors": {
+      "stripeLoadFailed": "加载 Stripe.js 失败。请检查公开密钥的配置。",
+      "checkoutFailed": "启动结账失败。请重试。",
+      "portalFailed": "访问客户门户失败。"
+    }
   },
   "documents": {
     "title": "文件管理",
@@ -798,7 +823,7 @@
       "submit": "上传",
       "cancel": "取消"
     },
-    "search_placeholder": "搜索中",
+    "search_placeholder": "搜索文档...",
     "filter": {
       "all": "全部",
       "policy": "方针",
@@ -981,6 +1006,7 @@
         "approverLabel": "审批人",
         "selectPlaceholder": "选择用户",
         "loadingCandidates": "正在确认可审批人员",
+        "twoStepNote": "审批分两个阶段进行（所选审批人 → 组织管理员）。",
         "hint": "审批人须属于同一组织，并能够访问此文件。",
         "submit": "发送审批申请",
         "saving": "保存中",
@@ -997,7 +1023,8 @@
       },
       "errors": {
         "missingApprover": "请选择审批人",
-        "candidatesLoadFailed": "无法获取可查看此文档的审批人候选"
+        "candidatesLoadFailed": "无法获取可查看此文档的审批人候选",
+        "finalStepNoApprover": "由于没有组织管理员，无法创建审批申请。请先添加组织管理员。"
       },
       "progress": {
         "title": "审批进度",
@@ -1156,31 +1183,11 @@
         }
       }
     },
-    "howItWorks": {
-      "title": "3步开启ISMS构建",
-      "steps": {
-        "setup": {
-          "number": "1",
-          "title": "登记组织信息",
-          "description": "根据企业规模与行业自动匹配最合适的模板"
-        },
-        "build": {
-          "number": "2",
-          "title": "编制文件、评估风险",
-          "description": "按照引导编制所需文件并实施风险评估"
-        },
-        "maintain": {
-          "number": "3",
-          "title": "持续改进",
-          "description": "通过PDCA循环，支持认证的持续维持"
-        }
-      }
-    },
     "pricing": {
       "title": "简单透明的价格体系",
       "subtitle": "请根据企业规模选择最合适的套餐",
       "popular": "热门套餐",
-      "allPlansInclude": "所有套餐均包含：SSL证书、99.9%可用性SLA、24/7监控",
+      "allPlansInclude": "所有套餐均包含：SSL证书、24/7监控",
       "cancelAnytime": "可随时取消",
       "securePayment": "安全支付",
       "moneyBack": "退款保障",
@@ -1254,21 +1261,6 @@
         "company": "示例软件股份有限公司"
       }
     },
-    "valueProps": {
-      "title": "为什么选择Riscala AI for ISMS",
-      "item1": {
-        "title": "无需专业知识",
-        "description": "团队可以在补充ISO27001知识的同时，分步骤整理所需准备和运行状况"
-      },
-      "item2": {
-        "title": "降低成本",
-        "description": "减少对外部支持的过度依赖，让信息和证据在公司内部可见"
-      },
-      "item3": {
-        "title": "缺口可视化",
-        "description": "连接文件、风险、审核和纠正措施，更容易发现下一步需要确认的缺口"
-      }
-    },
     "process": {
       "title": "3步轻松开始",
       "subtitle": "适用于首次认证准备和认证后的持续运行",
@@ -1276,7 +1268,7 @@
       "step1": {
         "title": "创建账户",
         "time": "5分钟",
-        "description": "输入组织信息，开启14天免费试用"
+        "description": "输入组织信息，开启14天免费试用。系统会根据企业规模与行业自动匹配最合适的模板"
       },
       "step2": {
         "title": "构建ISMS",
@@ -1355,7 +1347,7 @@
   "risks": {
     "title": "风险评估",
     "description": "识别、评估和管理组织的风险",
-    "search": "搜索中",
+    "search": "搜索风险...",
     "filterByCategory": "按类别筛选",
     "filterByStatus": "按状态筛选",
     "filterByDepartment": "按部门筛选",
@@ -1389,7 +1381,7 @@
     "list": {
       "title": "风险列表",
       "newRisk": "登记新风险",
-      "search": "搜索中",
+      "search": "搜索风险...",
       "filterByCategory": "按类别筛选",
       "filterByStatus": "按状态筛选",
       "backToList": "返回列表",
@@ -1422,7 +1414,8 @@
       "exporting": "导出中"
     },
     "messages": {
-      "exportFailed": "导出失败。请稍后重试。"
+      "exportFailed": "导出失败。请稍后重试。",
+      "confirmDelete": "确定要删除此风险吗？"
     },
     "status": {
       "identified": "已识别",
@@ -1510,6 +1503,7 @@
       "updateFailed": "更新风险失败",
       "assetUpdateFailed": "保存相关资产失败",
       "taskUpdateFailed": "保存相关任务失败",
+      "deleteFailed": "删除风险失败",
       "notFound": "未找到风险"
     },
     "gapAnalysis": {
@@ -1610,7 +1604,7 @@
       "controls": {
         "title": "相关控制措施",
         "description": "选择ISO控制措施，明确其与处置措施的一致性。",
-        "searchPlaceholder": "搜索中",
+        "searchPlaceholder": "搜索控制措施...",
         "allCategories": "所有类别",
         "loading": "加载中",
         "noResults": "未找到控制措施",
@@ -1654,7 +1648,7 @@
       },
       "tasks": {
         "description": "选择与风险处置相关的业务任务。1个任务只能关联1个风险。",
-        "searchPlaceholder": "搜索中",
+        "searchPlaceholder": "搜索任务...",
         "empty": "没有可显示的任务。",
         "locked": "已关联其他风险，无法选择。",
         "helper": "勾选并保存后，任务的关联风险将被更新。",
@@ -1662,14 +1656,33 @@
         "saving": "保存中"
       }
     },
-    "importCsv": "导入CSV"
+    "importCsv": "导入CSV",
+    "help": {
+      "title": "风险评估使用说明",
+      "items": {
+        "riskScore": { "label": "风险评分", "text": "：由影响度 × 发生可能性自动计算得出（1～25）" },
+        "colorCoding": { "label": "颜色标识", "text": "：高风险（红色）、中风险（黄色）、低风险（绿色），可直观确认" },
+        "statusManagement": { "label": "状态管理", "text": "：按照“已识别”→“分析中”→“处理中”→“监控中”→“已完成”的流程进行管理" },
+        "riskMatrix": { "label": "风险矩阵", "text": "：下方表格可总览所有风险的分布情况" }
+      },
+      "sample": {
+        "heading": "请参考以下示例风险：",
+        "detailTemplate": "影响度: {impact}, 发生可能性: {likelihood}, 风险评分: {score}（{level}）",
+        "items": {
+          "unauthorizedAccess": { "title": "未经授权访问风险", "description": "：因外部未经授权访问导致信息泄露" },
+          "backupFailure": { "title": "数据备份不足", "description": "：灾难发生时数据恢复困难" },
+          "employeeMismanagement": { "title": "员工信息管理不到位", "description": "：因人为失误导致信息泄露" }
+        },
+        "cta": "注册新风险"
+      }
+    }
   },
   "tasks": {
     "title": "任务管理",
     "list": {
       "newTask": "新建任务",
       "editTask": "编辑任务",
-      "search": "搜索中",
+      "search": "搜索任务...",
       "view": {
         "kanban": "看板",
         "list": "列表",
@@ -1807,6 +1820,7 @@
     },
     "confirmDelete": "确定要删除该任务吗？",
     "confirmDeleteAttachment": "确定要删除该附件吗？",
+    "confirmDeleteComment": "确定要删除此评论吗？",
     "errors": {
       "loadFailed": "任务加载失败",
       "createFailed": "任务创建失败",
@@ -1820,6 +1834,8 @@
       "createSubtask": "子任务创建失败",
       "updateSubtask": "子任务更新失败",
       "deleteSubtask": "子任务删除失败",
+      "updateComment": "评论更新失败",
+      "deleteComment": "评论删除失败",
       "permissionDenied": "您没有执行此操作的权限"
     },
     "importCsv": "CSV导入"
@@ -1957,7 +1973,19 @@
       "periodHeaderAll": "全部期间",
       "progressBarAriaLabel": "显示审核状态占比的进度条",
       "followUpSummary": "跟踪验证状态",
-      "nonconformitySummary": "不符合项状态分布"
+      "nonconformitySummary": "不符合项状态分布",
+      "progressHeading": "审核进度",
+      "progressHint": "按计划、实施、指摘、纠正、跟进的顺序确认未处理事项。",
+      "viewInProgress": "查看进行中",
+      "majorMinorSummary": "重大: {major}, 轻微: {minor}",
+      "progressSegments": {
+        "planning": "计划",
+        "inProgress": "实施",
+        "nonconformities": "指摘",
+        "corrective": "纠正",
+        "followUp": "跟进"
+      },
+      "viewDetails": "查看详情"
     },
     "plans": {
       "title": "审核计划",
@@ -2205,7 +2233,7 @@
         "inProgress": "编写中"
       },
       "filters": {
-        "search": "搜索中",
+        "search": "按审核标题搜索...",
         "status": "按状态筛选",
         "period": "按期间筛选",
         "type": "按审核类型筛选"
@@ -2288,7 +2316,9 @@
     "form": {
       "basicInfo": "基本信息",
       "title": "审核名称",
+      "titlePlaceholder": "例: 2025年度 内部审核（第1次）",
       "description": "说明",
+      "descriptionPlaceholder": "请填写审核的目的和范围",
       "auditType": "审核类型",
       "standard": "适用标准",
       "schedule": "日程",
@@ -2297,6 +2327,7 @@
       "auditTeam": "审核团队",
       "leadAuditor": "审核组长",
       "auditors": "审核员",
+      "auditorSignaturePlaceholder": "例: 审核负责人 山田太郎",
       "cancel": "取消",
       "create": "创建",
       "creating": "创建中",
@@ -2392,6 +2423,12 @@
         "updateFailed": "跟踪验证更新失败。",
         "titleRequired": "请输入标题。"
       }
+    },
+    "types": {
+      "internal": "内部审核",
+      "external": "外部审核",
+      "certification": "认证审核",
+      "surveillance": "监督审核"
     }
   },
   "home": {
@@ -2548,6 +2585,7 @@
         "documentUpdated": "{actor}更新了文件「{resource}」",
         "documentApproved": "{actor}批准了文件「{resource}」",
         "documentApprovalRequested": "{actor}提交了文件「{resource}」的审批申请",
+        "documentApprovalStepCompleted": "{actor}完成了文件「{resource}」的初审（主管确认）",
         "riskCreated": "{actor}登记了风险「{resource}」",
         "riskUpdated": "{actor}更新了风险「{resource}」",
         "riskDeleted": "{actor}删除了风险「{resource}」",
@@ -2603,7 +2641,7 @@
       },
       "filters": {
         "search": "搜索",
-        "searchPlaceholder": "搜索中",
+        "searchPlaceholder": "按关键词搜索...",
         "category": "类别",
         "allCategories": "所有类别"
       },
@@ -2624,7 +2662,7 @@
           "title": "控制措施标题",
           "category": "类别",
           "controlCode": "控制措施编号",
-          "controlCodePlaceholder": "处理中",
+          "controlCodePlaceholder": "例：A.5.1",
           "description": "详细说明",
           "tags": "标签",
           "tagsPlaceholder": "例如：访问管理, 远程办公",
@@ -3869,7 +3907,7 @@
       },
       "list": {
         "title": "用户列表",
-        "search": "搜索中",
+        "search": "搜索用户...",
         "filter": {
           "all": "全部",
           "active": "生效中",
@@ -4045,6 +4083,7 @@
         "actions": "操作"
       },
       "roles": {
+        "super_admin": "超级管理员",
         "system_operator": "系统运营员",
         "org_admin": "组织管理员",
         "auditor": "审核员",
@@ -4322,9 +4361,12 @@
         "trialing": "试用中",
         "past_due": "逾期未付",
         "canceled": "已取消",
-        "incomplete": "未完成"
+        "incomplete": "未完成",
+        "unpaid": "未付款",
+        "incomplete_expired": "已过期"
       },
       "perMonth": "月",
+      "customQuote": "单独报价",
       "cancelScheduled": "订阅将于{date}取消",
       "noSubscription": "没有生效中的订阅",
       "usage": {
@@ -4686,6 +4728,7 @@
     "setup": {
       "title": "初始设置",
       "description": "通过CSV文件批量登记初始数据",
+      "forbidden": "此操作需要系统运营者或组织管理员权限",
       "auditUnits": "审核对象单元",
       "uploadCsv": "选择CSV文件",
       "downloadTemplate": "下载模板",
@@ -5226,7 +5269,9 @@
     "summary": { "pending": "待审批 {count}", "dueSoon": "临近期限 {count}", "escalated": "已通知管理员 {count}" },
     "filters": { "due": "仅显示临近期限的审批", "escalation": "仅显示也已通知管理员的审批", "clear": "清除筛选" },
     "columns": { "subject": "审批对象", "people": "申请人与审批人", "due": "期限", "impact": "批准后的影响", "actions": "决定" },
-    "statuses": { "pending": "待审批", "approved": "已批准", "rejected": "已拒绝", "expired": "已过期" },
+    "statuses": { "pending": "待审批", "approved": "已批准", "rejected": "已拒绝", "expired": "已过期", "cancelled": "已取消" },
+    "steps": { "first": "初审", "final": "终审" },
+    "errors": { "nextStepNoApprover": "由于没有组织管理员，无法进入下一审批阶段。请先添加组织管理员。" },
     "resourceTypes": { "document": "文档", "incident": "事件", "audit_plan": "审核计划", "audit_report": "审核报告", "nonconformity_closure": "纠正措施关闭", "followup_record": "跟进记录", "iso_control_soa": "SoA控制措施", "soa_version": "SoA版本", "risk_residual_acceptance": "剩余风险接受" },
     "impacts": { "document": "文档将变为已批准并进入下一流程。", "incident": "事件报告将变为已批准并记录决定。", "audit_plan": "审核计划将确定并可进入实施阶段。", "audit_report": "审核报告将确定并移交纠正措施和管理评审。", "nonconformity_closure": "纠正措施将关闭并记录为审核证据。", "followup_record": "跟进确认将完成并记录有效性证据。", "iso_control_soa": "控制措施适用性决定将批准并反映到SoA。", "soa_version": "SoA版本将批准并保留评审记录。", "risk_residual_acceptance": "将记录组织对剩余风险的接受。" },
     "decision": { "approveTitle": "批准此项目吗？", "rejectTitle": "拒绝此项目吗？", "rejectReasonLabel": "拒绝原因", "rejectReasonPlaceholder": "需要修改的内容和原因（必填）", "confirmApprove": "确认批准", "confirmReject": "确认拒绝" },

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { OrganizationService } from '@/lib/services/organization'
 import { UserService } from '@/lib/services/user'
-import type { UserProfile } from '@/lib/services/user'
+import type { CurrentUserProfile } from '@/lib/services/user'
 import { useToast } from '@/components/ui/ToastProvider'
 
 type BundleItemStatus = 'ready' | 'missing' | 'needs_review'
@@ -148,7 +148,7 @@ export default function SubmissionBundlePage(
   const organizationService = useMemo(() => new OrganizationService(), [])
   const userService = useMemo(() => new UserService(), [])
 
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [currentUser, setCurrentUser] = useState<CurrentUserProfile | null>(null)
   const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [bundle, setBundle] = useState<SubmissionBundle | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -208,7 +208,7 @@ export default function SubmissionBundlePage(
       setCurrentUser(user)
       setOrganizationId(organization.id)
 
-      if (!allowedRoles.has(user.role)) {
+      if (!user.effective_role || !allowedRoles.has(user.effective_role)) {
         setHasAccess(false)
         try {
           router.push(`/${locale}/home`)
@@ -357,7 +357,9 @@ export default function SubmissionBundlePage(
   const nextActionHref = nextGapItem
     ? buildLocalizedRoute((nextGapItem.gapActions ?? [])[0]?.route ?? nextActionHrefByItem[nextGapItem.key])
     : null
-  const currentRoleLabel = currentUser?.role ? ROLE_LABELS[currentUser.role] ?? currentUser.role : '-'
+  const currentRoleLabel = currentUser?.effective_role
+    ? ROLE_LABELS[currentUser.effective_role] ?? currentUser.effective_role
+    : '-'
 
   if (isLoading) {
     return (

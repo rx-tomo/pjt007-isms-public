@@ -48,6 +48,7 @@ export default function EditRiskPage(
   const assetLabelT = useTranslations('settings.assets.labels')
   const editText = useTranslations('risks.edit')
   const tasksListT = useTranslations('tasks.list')
+  const permissionT = useTranslations('tasks.errors')
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,6 +65,9 @@ export default function EditRiskPage(
   const [taskSearch, setTaskSearch] = useState('')
   const [taskSaving, setTaskSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'details' | 'assets' | 'tasks'>('details')
+  const [permissionDenied, setPermissionDenied] = useState(false)
+  const [canUpdateTasks, setCanUpdateTasks] = useState(false)
+  const [canReadAssets, setCanReadAssets] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState<RiskFormState>({
@@ -121,12 +125,27 @@ export default function EditRiskPage(
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
+      const profile = await userService.getUserProfile()
+      if (profile?.effective_capabilities?.modules.risks.update !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
+      const hasAssetRead = profile.effective_capabilities?.modules.assets.read === true
+      const canManageMembers = profile.effective_capabilities?.memberAdministration === true
+      setCanReadAssets(hasAssetRead)
+      setCanUpdateTasks(
+        profile.effective_capabilities?.modules.tasks.update === true
+      )
+
       const riskData = await riskService.getRiskById(id)
       if (!riskData) {
         throw new Error('Risk not found')
       }
       setRisk(riskData)
-      setSelectedAssetIds((riskData.assets ?? []).map(asset => asset.asset_id))
+      setSelectedAssetIds(
+        hasAssetRead ? (riskData.assets ?? []).map(asset => asset.asset_id) : []
+      )
 
       setFormData({
         title: riskData.title,
@@ -145,16 +164,15 @@ export default function EditRiskPage(
       }
       setOrganizationId(orgId)
 
-      const profile = await userService.getUserProfile()
-      const canLoadOrganizationMembers = ['system_operator', 'org_admin'].includes(
-        profile?.effective_role ?? ''
-      )
       const [categoriesData, orgUsers, assetList, orgTasks] = await Promise.all([
         riskService.getRiskCategories(orgId),
-        canLoadOrganizationMembers
+        canManageMembers
           ? userService.getOrganizationUsers(orgId)
-          : Promise.resolve(riskData.owner ? [riskData.owner] : []),
-        assetService.getAssetsForRisk(orgId),
+            .catch(() => riskData.owner ? [riskData.owner] : [profile])
+          : Promise.resolve(riskData.owner ? [riskData.owner] : [profile]),
+        hasAssetRead
+          ? assetService.getAssetsForRisk(orgId)
+          : Promise.resolve([]),
         taskService.getTasks({ organizationId: orgId })
       ])
 
@@ -292,6 +310,18 @@ export default function EditRiskPage(
     )
   }
 
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{permissionT('permissionDenied')}</h1>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   if (!risk) {
     return (
       <DashboardLayout locale={locale}>
@@ -330,7 +360,7 @@ export default function EditRiskPage(
                 onClick={() => setActiveTab(tab.id)}
                 className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${
                   activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
+                    ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-text-muted hover:text-text-secondary'
                 }`}
               >
@@ -348,6 +378,7 @@ export default function EditRiskPage(
             </label>
             <input
               type="text"
+              data-testid="risk-title-input"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -498,42 +529,51 @@ export default function EditRiskPage(
         {activeTab === 'assets' && (
           <section className="bg-surface shadow-sm rounded-lg p-6 space-y-6 mt-6">
             <p className="text-sm text-text-secondary">{editText('assets.description')}</p>
-            <AssetSelector
-              assets={assets}
-              selectedAssetIds={selectedAssetIds}
-              onChange={setSelectedAssetIds}
-                labels={{
-                  title: assetText('title'),
-                  searchPlaceholder: assetText('search'),
-                  empty: assetText('empty'),
-                  selectedCount: (count: number) => assetText('selectedCount', { count }),
-                  classification: assetText('classification'),
-                  criticality: assetText('criticality'),
-                  owner: assetText('owner'),
-                  department: assetText('department')
-                }}
-              formatAssetType={(value) => assetLabelT(`types.${value}`)}
-              formatClassification={(value) => assetLabelT(`classification.${value}`)}
-              formatCriticality={(value) => assetLabelT(`criticality.${value}`)}
-            />
-            {assets.length === 0 && (
+            {canReadAssets ? (
+              <AssetSelector
+                assets={assets}
+                selectedAssetIds={selectedAssetIds}
+                onChange={setSelectedAssetIds}
+                  labels={{
+                    title: assetText('title'),
+                    searchPlaceholder: assetText('search'),
+                    empty: assetText('empty'),
+                    selectedCount: (count: number) => assetText('selectedCount', { count }),
+                    classification: assetText('classification'),
+                    criticality: assetText('criticality'),
+                    owner: assetText('owner'),
+                    department: assetText('department')
+                  }}
+                formatAssetType={(value) => assetLabelT(`types.${value}`)}
+                formatClassification={(value) => assetLabelT(`classification.${value}`)}
+                formatCriticality={(value) => assetLabelT(`criticality.${value}`)}
+              />
+            ) : (
+              <p
+                className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+                data-testid="risk-assets-read-denied"
+              >
+                {permissionT('permissionDenied')}
+              </p>
+            )}
+            {canReadAssets && assets.length === 0 && (
               <p className="text-xs text-text-muted">
                 {assetText('noAssets')}{' '}
-                <Link href={`/${locale}/settings/assets`} className="text-indigo-600 hover:underline">
+                <Link href={`/${locale}/settings/assets`} className="text-blue-600 hover:underline">
                   {assetText('manageLink')}
                 </Link>
               </p>
             )}
-            <div className="flex justify-end">
+            {canReadAssets && <div className="flex justify-end">
               <button
                 type="button"
                 onClick={handleSaveAssets}
                 disabled={assetSaving}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 {assetSaving ? editText('assets.saving') : editText('assets.save')}
               </button>
-            </div>
+            </div>}
           </section>
         )}
 
@@ -545,7 +585,7 @@ export default function EditRiskPage(
               value={taskSearch}
               onChange={(e) => setTaskSearch(e.target.value)}
               placeholder={editText('tasks.searchPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="rounded-md border border-border divide-y divide-border">
               {filteredTasks.map(task => {
@@ -556,10 +596,10 @@ export default function EditRiskPage(
                     <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                        className="mt-1 h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                         checked={isChecked}
                         onChange={() => toggleTaskSelection(task.id)}
-                        disabled={isLocked}
+                        disabled={isLocked || !canUpdateTasks}
                       />
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -598,8 +638,8 @@ export default function EditRiskPage(
               <button
                 type="button"
                 onClick={handleSaveTasks}
-                disabled={taskSaving || !organizationId}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                disabled={taskSaving || !organizationId || !canUpdateTasks}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 {taskSaving ? editText('tasks.saving') : editText('tasks.save')}
               </button>

@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 const DEFAULT_SITE_URL = 'https://riscala-ai.com';
-const SUPPORTED_LOCALES = ['ja', 'en'] as const;
+const SUPPORTED_LOCALES = ['ja', 'en', 'zh'] as const;
 
 function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
@@ -31,14 +31,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description,
     keywords: locale === 'ja'
       ? 'ISO27001, ISMS, 情報セキュリティ, 認証取得, クラウドサービス, リスク管理, 文書管理'
-      : 'ISO27001, ISMS, Information Security, Certification, Cloud Service, Risk Management, Document Management',
+      : locale === 'zh'
+        ? 'ISO27001, ISMS, 信息安全, 认证, 云服务, 风险管理, 文档管理'
+        : 'ISO27001, ISMS, Information Security, Certification, Cloud Service, Risk Management, Document Management',
     authors: [{ name: 'Riscala AI for ISMS Team' }],
     openGraph: {
       title,
       description,
       type: 'website',
       url: canonicalUrl,
-      locale: locale === 'ja' ? 'ja_JP' : 'en_US',
+      locale: locale === 'ja' ? 'ja_JP' : locale === 'zh' ? 'zh_CN' : 'en_US',
       siteName: 'Riscala AI for ISMS',
     },
     twitter: {

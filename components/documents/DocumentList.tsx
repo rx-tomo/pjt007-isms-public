@@ -3,13 +3,14 @@
 import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import type { DocumentWithFolder, DocumentApproval } from '@/lib/services/document'
-import type { UserProfile, UserRole } from '@/lib/services/user'
-import { isApprovalCandidateRole } from '@/lib/approvals/approvalCandidateContract'
+import type { UserProfile } from '@/lib/services/user'
 
 interface DocumentListProps {
   documents: DocumentWithFolder[]
   currentUserId?: string | null
-  currentUserEffectiveRole?: UserRole | null
+  canUpdate?: boolean
+  canDelete?: boolean
+  canDecideApproval?: boolean
   onRequestApproval: (document: DocumentWithFolder) => void
   onApprove: (document: DocumentWithFolder) => void
   onReject: (document: DocumentWithFolder) => void
@@ -23,7 +24,9 @@ interface DocumentListProps {
 export default function DocumentList({
   documents,
   currentUserId,
-  currentUserEffectiveRole,
+  canUpdate = false,
+  canDelete = false,
+  canDecideApproval = false,
   onRequestApproval,
   onApprove,
   onReject,
@@ -121,7 +124,7 @@ export default function DocumentList({
             const approvals = document.approvals || []
             const step1 = approvals.find(item => item.step === 1)
             const step2 = approvals.find(item => item.step === 2)
-            const canRequestApproval = document.status === 'draft'
+            const canRequestApproval = canUpdate && document.status === 'draft'
             const currentPendingApproval = approvals
               .filter(item => item.status === 'pending')
               .sort((a, b) => a.step - b.step)[0]
@@ -134,8 +137,7 @@ export default function DocumentList({
               !!currentUserId &&
               currentPendingApprover === currentUserId &&
               !!document.approvalProgress?.currentRequestId &&
-              !!currentUserEffectiveRole &&
-              isApprovalCandidateRole(currentUserEffectiveRole)
+              canDecideApproval
             const owner = document.created_by ? userDirectory.get(document.created_by) : undefined
             const ownerDepartment = owner?.department ?? null
 
@@ -145,7 +147,7 @@ export default function DocumentList({
                   <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                     <div className="truncate">
                       <div className="flex text-sm">
-                        <p className="font-medium text-indigo-600 truncate">
+                        <p className="font-medium text-blue-600 truncate">
                           {document.title}
                         </p>
                         <p className="ml-1 flex-shrink-0 font-normal text-text-muted">
@@ -216,20 +218,20 @@ export default function DocumentList({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onExport(document, 'word')}
-                            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                            className="text-xs font-medium text-blue-600 hover:text-blue-800"
                           >
                             {t('actions.exportWord')}
                           </button>
                           <button
                             onClick={() => onExport(document, 'pdf')}
-                            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                            className="text-xs font-medium text-blue-600 hover:text-blue-800"
                           >
                             {t('actions.exportPdf')}
                           </button>
                           {onViewVersions && (
                             <button
                               onClick={() => onViewVersions(document)}
-                              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800"
                               data-testid={`view-history-${document.id}`}
                             >
                               {t('actions.viewHistory')}
@@ -239,7 +241,7 @@ export default function DocumentList({
                         {canRequestApproval && (
                           <button
                             onClick={() => onRequestApproval(document)}
-                            className="text-sm text-indigo-600 hover:text-indigo-900 underline"
+                            className="text-sm text-blue-600 hover:text-blue-900 underline"
                           >
                             {t('actions.requestApproval')}
                           </button>
@@ -305,7 +307,7 @@ export default function DocumentList({
                         {document.file_path && (
                           <button
                             onClick={() => onDownload(document)}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="text-blue-600 hover:text-blue-900"
                             aria-label={t('actions.downloadFile')}
                             title={t('actions.downloadFile')}
                             data-testid={`document-download-${document.id}`}
@@ -325,13 +327,14 @@ export default function DocumentList({
                             </svg>
                           </button>
                         )}
-                        <button
-                          onClick={() => onDelete(document.id)}
-                          className="text-red-600 hover:text-red-900"
-                          aria-label={t('actions.deleteDocument')}
-                          title={t('actions.deleteDocument')}
-                          data-testid={`document-delete-${document.id}`}
-                        >
+                        {canDelete && (
+                          <button
+                            onClick={() => onDelete(document.id)}
+                            className="text-red-600 hover:text-red-900"
+                            aria-label={t('actions.deleteDocument')}
+                            title={t('actions.deleteDocument')}
+                            data-testid={`document-delete-${document.id}`}
+                          >
                           <svg
                             className="h-5 w-5"
                             fill="none"
@@ -345,7 +348,8 @@ export default function DocumentList({
                               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                             />
                           </svg>
-                        </button>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

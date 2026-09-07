@@ -1,68 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { and, eq, sql } from 'drizzle-orm'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
+import { authorizeTenantAction } from '@/lib/server/auth/actionPolicy'
+import {
+  assertActiveTenantMember,
+  isTargetMemberNotFoundError,
+} from '@/lib/server/auth/targetMember'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userProfiles, userMemberships } from '@/lib/db/drizzle/schema/users'
+import { userMemberships } from '@/lib/db/drizzle/schema/users'
 import { auditLogs } from '@/lib/db/drizzle/schema/audit-logs'
-import { eq, and, sql } from 'drizzle-orm'
 
-type RoleKey =
-  | 'super_admin'
-  | 'system_operator'
-  | 'org_admin'
-  | 'auditor'
-  | 'approver'
-  | 'user'
+type TenantRole = 'system_operator' | 'org_admin' | 'auditor' | 'approver' | 'user'
 
 type Params = {
   organizationId: string
 }
 
-const normalizeRole = (value?: string | null) => (value ?? '').toLowerCase() as RoleKey
+const GLOBAL_SUPER_ADMIN_ROLE = 'super_admin'
+const ALLOWED_TENANT_ROLES: TenantRole[] = [
+  'system_operator',
+  'org_admin',
+  'auditor',
+  'approver',
+  'user',
+]
 
-const errorResponse = (guardJson: (body: unknown, init?: ResponseInit) => NextResponse, message: string, status = 400) =>
-  guardJson({ error: message }, { status })
+const errorResponse = (
+  respond: (body: unknown, init?: ResponseInit) => NextResponse,
+  message: string,
+  status = 400
+) => respond({ error: message }, { status })
 
-async function countActiveByRole(
-  role: RoleKey,
-  organizationId?: string | null
-) {
-  const db = getDb()
-
-  if (role === 'super_admin') {
-    const rows = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(userProfiles)
-      .where(
-        and(
-          eq(userProfiles.role, role),
-          eq(userProfiles.isActive, true)
-        )
-      )
-    return rows[0]?.count ?? 0
+class RoleUpdateError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message)
   }
-
-  const rows = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(userMemberships)
-    .where(
-      and(
-        eq(userMemberships.role, role),
-        eq(userMemberships.status, 'active'),
-        eq(userMemberships.organizationId, organizationId ?? '')
-      )
-    )
-  return rows[0]?.count ?? 0
 }
 
 export async function PATCH(request: NextRequest, props: { params: Promise<Params> }) {
-  const params = await props.params;
-  const organizationId = params.organizationId
+  const { organizationId } = await props.params
   const guardResult = await requireServiceRole(request, {
     mode: 'tenant',
-    allowedRoles: ['super_admin', 'system_operator', 'org_admin'],
+    allowedRoles: ['system_operator', 'org_admin'],
     organizationId,
     actionName: 'organization.members.role_update',
-    logContext: { organizationId }
+    logContext: { organizationId },
   })
 
   if (!guardResult.guard) {
@@ -71,9 +56,17 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
 
   const guard = guardResult.guard
   const db = getDb()
+  const authorization = await authorizeTenantAction(
+    db,
+    guard.userId,
+    organizationId,
+    'members.manage'
+  )
+  if (!authorization.ok) {
+    return errorResponse(guard.json, 'Forbidden', 403)
+  }
 
-  let payload: { userId?: string; role?: RoleKey }
-
+  let payload: { userId?: string; role?: string }
   try {
     payload = await request.json()
   } catch {
@@ -81,130 +74,72 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
   }
 
   const targetUserId = payload.userId?.trim()
-  const targetRole = normalizeRole(payload.role)
-
+  const targetRole = payload.role?.trim().toLowerCase()
   if (!targetUserId) {
     return errorResponse(guard.json, 'userId is required')
   }
-
-  const ALLOWED_ROLES: RoleKey[] = ['super_admin', 'system_operator', 'org_admin', 'auditor', 'approver', 'user']
-  if (!ALLOWED_ROLES.includes(targetRole)) {
+  if (!targetRole || !ALLOWED_TENANT_ROLES.includes(targetRole as TenantRole)) {
     return errorResponse(guard.json, 'role is invalid')
   }
 
-  const actorRole = normalizeRole(guard.profile.role)
-
-  const profileRows = await db
-    .select({
-      id: userProfiles.id,
-      role: userProfiles.role,
-      isActive: userProfiles.isActive,
-      organizationId: userProfiles.organizationId,
-    })
-    .from(userProfiles)
-    .where(eq(userProfiles.id, targetUserId))
-    .limit(1)
-
-  const profile = profileRows[0]
-  if (!profile) {
-    return errorResponse(guard.json, 'User not found', 404)
-  }
-
-  const currentRole = normalizeRole(profile.role)
-
-  if (currentRole !== 'super_admin' && currentRole !== 'system_operator') {
-    const membershipRows = await db
-      .select({ id: userMemberships.id })
-      .from(userMemberships)
-      .where(
-        and(
-          eq(userMemberships.organizationId, organizationId),
-          eq(userMemberships.userId, targetUserId)
-        )
-      )
-      .limit(1)
-
-    if (profile.organizationId !== organizationId && membershipRows.length === 0) {
-      return errorResponse(guard.json, 'User does not belong to this organization', 403)
-    }
-  }
-
-  // Authorization rules
-  if (currentRole === 'super_admin' && actorRole !== 'super_admin') {
-    return errorResponse(guard.json, 'Only super_admin can modify super_admin accounts', 403)
-  }
-  if (targetRole === 'super_admin' && actorRole !== 'super_admin') {
-    return errorResponse(guard.json, 'Only super_admin can assign super_admin role', 403)
-  }
-  if (actorRole === 'org_admin') {
-    if (currentRole === 'system_operator' || targetRole === 'system_operator') {
-      return errorResponse(guard.json, 'org_admin cannot manage system_operator roles', 403)
-    }
-    if (currentRole === 'super_admin' || targetRole === 'super_admin') {
-      return errorResponse(guard.json, 'org_admin cannot manage super_admin roles', 403)
-    }
-  }
-  if (actorRole === 'system_operator') {
-    if (currentRole === 'super_admin' || targetRole === 'super_admin') {
-      return errorResponse(guard.json, 'system_operator cannot manage super_admin roles', 403)
-    }
-  }
-  if (actorRole === 'super_admin') {
-    const allowedTargets: RoleKey[] = ['super_admin', 'system_operator']
-    if (!allowedTargets.includes(targetRole) && !allowedTargets.includes(currentRole)) {
-      return errorResponse(guard.json, 'super_admin may manage only super_admin or system_operator roles for tenants', 403)
-    }
-  }
-
-  // Protect last active system_operator in the tenant
-  const willLeaveSystemOperator = currentRole === 'system_operator' && targetRole !== 'system_operator'
-  if (willLeaveSystemOperator) {
-    const activeOperators = await countActiveByRole('system_operator', organizationId)
-    if (activeOperators <= 1) {
-      return errorResponse(guard.json, 'At least one system_operator must remain in the tenant', 409)
-    }
-  }
-
-  // Protect global super_admin population
-  const willLeaveSuperAdmin = currentRole === 'super_admin' && targetRole !== 'super_admin'
-  if (willLeaveSuperAdmin) {
-    const activeSupers = await countActiveByRole('super_admin', null)
-    if (activeSupers <= 1) {
-      return errorResponse(guard.json, 'At least one super_admin must remain', 409)
-    }
-  }
-
-  // Update membership (if exists) and profile
   try {
-    await db.update(userMemberships)
-      .set({ role: targetRole })
-      .where(
-        and(
+    await db.transaction(async tx => {
+      const target = await assertActiveTenantMember(tx, organizationId, targetUserId)
+      const currentRole = target.role
+
+      if (currentRole === GLOBAL_SUPER_ADMIN_ROLE) {
+        throw new RoleUpdateError('Global administrator accounts must be managed globally', 403)
+      }
+      if (
+        authorization.context.role === 'org_admin'
+        && (currentRole === 'system_operator' || targetRole === 'system_operator')
+      ) {
+        throw new RoleUpdateError('org_admin cannot manage system_operator roles', 403)
+      }
+
+      if (currentRole === 'system_operator' && targetRole !== 'system_operator') {
+        const [row] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(userMemberships)
+          .where(and(
+            eq(userMemberships.organizationId, organizationId),
+            eq(userMemberships.role, 'system_operator'),
+            eq(userMemberships.status, 'active')
+          ))
+        if ((row?.count ?? 0) <= 1) {
+          throw new RoleUpdateError('At least one system_operator must remain in the tenant', 409)
+        }
+      }
+
+      const now = new Date().toISOString()
+      await tx
+        .update(userMemberships)
+        .set({ role: targetRole as TenantRole, updatedAt: now })
+        .where(and(
           eq(userMemberships.organizationId, organizationId),
           eq(userMemberships.userId, targetUserId)
-        )
-      )
+        ))
 
-    await db.update(userProfiles)
-      .set({ role: targetRole })
-      .where(eq(userProfiles.id, targetUserId))
-  } catch (updateError) {
-    console.error('[Members role update] failed', updateError)
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId,
+        userId: guard.userId,
+        action: 'user.role_updated',
+        resourceType: 'user_membership',
+        resourceId: targetUserId,
+        changes: JSON.stringify({ from: currentRole, to: targetRole }),
+        createdAt: now,
+      })
+    })
+  } catch (error) {
+    if (isTargetMemberNotFoundError(error)) {
+      return errorResponse(guard.json, 'User not found', 404)
+    }
+    if (error instanceof RoleUpdateError) {
+      return errorResponse(guard.json, error.message, error.status)
+    }
+    console.error('[Members role update] failed', error)
     return errorResponse(guard.json, 'Failed to update role', 500)
-  }
-
-  try {
-    await db.insert(auditLogs).values({
-      id: crypto.randomUUID(),
-      organizationId,
-      userId: guard.userId,
-      action: 'user.role_updated',
-      resourceType: 'user_profile',
-      resourceId: targetUserId,
-      changes: JSON.stringify({ from: currentRole, to: targetRole }),
-    })
-  } catch (auditError) {
-    console.warn('[Members role update] audit log skipped', auditError)
   }
 
   return guard.json({ status: 'ok', userId: targetUserId, role: targetRole })

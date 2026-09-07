@@ -1,0 +1,149 @@
+name: QA Matrix
+
+on:
+  push:
+    branches: [ main, master, develop, fix/**, feat/** ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_RUN_NONCE: qa-production-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+    steps:
+      - name: Checkout
+        # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Lint translations
+        run: npm run lint:messages
+
+      - name: Prepare practical verification seed
+        run: |
+          temporary_root="$(node -e "console.log(require('node:fs').realpathSync(require('node:os').tmpdir()))")"
+          isolation_root="$(mktemp -d "$temporary_root/pjt007-practical-seed.XXXXXX")"
+          export SQLITE_DB_PATH="$isolation_root/seed.db"
+          export LOCAL_STORAGE_ROOT="$isolation_root/storage"
+          export SEED_OUTPUT_DIR="$isolation_root/test-results"
+          mkdir -p "$LOCAL_STORAGE_ROOT" "$SEED_OUTPUT_DIR"
+          {
+            echo "ISOLATION_ROOT=$isolation_root"
+            echo "SQLITE_DB_PATH=$SQLITE_DB_PATH"
+            echo "LOCAL_STORAGE_ROOT=$LOCAL_STORAGE_ROOT"
+            echo "SEED_OUTPUT_DIR=$SEED_OUTPUT_DIR"
+          } >> "$GITHUB_ENV"
+          node scripts/provision-local-database.mjs --root "$isolation_root" --name seed.db
+          npm run db:seed
+          npm run seed:practical-verification -- --reset --scenario all
+          npm run qa:practical-seed
+
+      - name: Build
+        run: npm run build
+
+      - name: Start app server (background)
+        run: |
+          nohup bash -c 'BETTER_AUTH_SECRET=ci-e2e-secret-minimum-32-characters BETTER_AUTH_URL=http://127.0.0.1:3007 E2E_MODE=1 E2E_CI_SERVER=1 NEXT_PUBLIC_E2E_MODE=1 npm run start -- --hostname 127.0.0.1 >/tmp/dev.log 2>&1' &
+          server_pid=$!
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3007/api/e2e/identity 2>/dev/null | node -e "let body='';process.stdin.on('data',c=>body+=c);process.stdin.on('end',()=>{const value=JSON.parse(body);process.exit(value.app==='riscala-isms'&&value.nonce===process.env.PLAYWRIGHT_RUN_NONCE?0:1)})"; then
+              echo 'Verified production E2E server identity'
+              exit 0
+            fi
+            if ! kill -0 "$server_pid" >/dev/null 2>&1; then
+              echo 'Dev server exited before readiness'
+              cat /tmp/dev.log
+              exit 1
+            fi
+            sleep 1
+          done
+          echo 'Dev server did not become ready'
+          cat /tmp/dev.log
+          exit 1
+
+      - name: Run QA (qa:all)
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3007
+          PLAYWRIGHT_EXTERNAL_WEB_SERVER: 1
+          ALLOW_QA_LIST: qa:notifications:settings,qa:rbac:matrix,qa:submission-copy
+        run: |
+          npm run qa:all
+
+      - name: Upload QA doc artifact
+        if: always()
+        # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: uc-checklist
+          path: docs/02-project/12_uc-checklist.md
+
+      - name: Upload QA diagnostics
+        if: always()
+        # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qa-artifacts-${{ github.run_id }}
+          path: |
+            /tmp/dev.log
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+
+      - name: Cleanup practical verification isolation
+        if: always()
+        run: |
+          if [ -n "${ISOLATION_ROOT:-}" ]; then
+            rm -rf "$ISOLATION_ROOT"
+          fi
+
+  commit-qa-summary:
+    needs: qa
+    if: >-
+      needs.qa.result == 'success' &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Download QA summary
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: uc-checklist
+          path: qa-summary-artifact
+
+      - name: Commit QA summary back
+        run: |
+          cp qa-summary-artifact/12_uc-checklist.md docs/02-project/12_uc-checklist.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- docs/02-project/12_uc-checklist.md; then
+            git add docs/02-project/12_uc-checklist.md
+            git commit -m "ci(QA): update Automated QA Summary [skip ci]"
+            git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "HEAD:${{ github.ref_name }}"
+          else
+            echo "No changes to commit"
+          fi

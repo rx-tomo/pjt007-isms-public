@@ -11,10 +11,40 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { canDecideApproval, canRevertApproval, canViewApprovals } from '@/lib/utils/approvalUiPermissions'
+import { isFinalDocumentApprovalStep } from '@/lib/approvals/documentApprovalSteps'
 
 type TabKey = 'pending' | 'approved' | 'rejected' | 'all'
 type UrgencyFilter = 'due' | 'escalation' | ''
 type DecisionAction = 'approve' | 'reject'
+
+/** ステータスバッジの配色。cancelled は成否を含意しない中立色にする。 */
+const STATUS_BADGE_CLASSES: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
+  expired: 'bg-orange-100 text-orange-800',
+  cancelled: 'bg-slate-200 text-slate-700'
+}
+
+const DEFAULT_STATUS_BADGE_CLASS = 'bg-surface-elevated text-text-primary'
+
+/** 次段（組織管理者）の承認者候補が0名のときにAPIが409で返す固定メッセージ。 */
+const NEXT_STEP_NO_APPROVER_ERROR = 'Next approval step has no eligible approver'
+
+const statusBadgeClass = (status: string): string => {
+  return STATUS_BADGE_CLASSES[status] ?? DEFAULT_STATUS_BADGE_CLASS
+}
+
+/**
+ * 文書の二段階承認における段ラベルのキー。
+ * step_number 未設定（二段化以前の単段レコード）は段を表示しない。
+ */
+const resolveStepLabelKey = (request: ApprovalQueueItem): 'first' | 'final' | null => {
+  if (request.resource_type !== 'document' || request.step_number == null) {
+    return null
+  }
+  return isFinalDocumentApprovalStep(request.step_number) ? 'final' : 'first'
+}
 
 const normalizeTab = (value: string | null | undefined): TabKey => {
   return value === 'approved' || value === 'rejected' || value === 'all' || value === 'pending'
@@ -187,12 +217,20 @@ export default function ApprovalsPage(
         body: JSON.stringify({ action: 'approve', requestId }),
       })
       if (!response.ok) {
-        throw new Error('approval_action_failed')
+        const errorBody = await response.json().catch(() => ({})) as { error?: unknown }
+        const serverMessage = typeof errorBody?.error === 'string' ? errorBody.error : ''
+        throw new Error(serverMessage || 'approval_action_failed')
       }
       await loadRequests()
     } catch (err) {
       console.error('[ApprovalsPage] approve failed', err)
-      setError('承認処理に失敗しました。')
+      const message = err instanceof Error ? err.message : ''
+      if (message.includes(NEXT_STEP_NO_APPROVER_ERROR)) {
+        // 次段（組織管理者）の候補が0名。運用側の是正が必要なので専用文言を出す。
+        setError(t('errors.nextStepNoApprover'))
+      } else {
+        setError('承認処理に失敗しました。')
+      }
     } finally {
       setActionLoadingId(null)
     }
@@ -383,13 +421,22 @@ export default function ApprovalsPage(
                       const link = getResourceLink(request)
                       const typeLabel = t(`resourceTypes.${request.resource_type}`)
                       const statusLabel = t(`statuses.${request.status}`)
+                      const stepLabelKey = resolveStepLabelKey(request)
                       return (
                         <tr key={request.id} data-testid={`approval-row-${request.resource_type}-${request.resource_id}`}>
                           <td className="px-4 py-4 align-top">
                             <div className="space-y-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="rounded bg-surface-elevated px-2 py-0.5 text-xs font-semibold text-text-secondary">{typeLabel}</span>
-                                <span className={`rounded px-2 py-0.5 text-xs font-semibold ${request.status === 'approved' ? 'bg-green-100 text-green-800' : request.status === 'rejected' ? 'bg-red-100 text-red-800' : request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-surface-elevated text-text-primary'}`}>{statusLabel}</span>
+                                <span className={`rounded px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(request.status)}`}>{statusLabel}</span>
+                                {stepLabelKey && (
+                                  <span
+                                    data-testid={`approval-step-${request.id}`}
+                                    className="rounded border border-border px-2 py-0.5 text-xs font-semibold text-text-secondary"
+                                  >
+                                    {t(`steps.${stepLabelKey}`)}
+                                  </span>
+                                )}
                               </div>
                               <Link href={link} className="block font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2">
                                 {request.context.title}
@@ -454,11 +501,20 @@ export default function ApprovalsPage(
               <div className="divide-y divide-border md:hidden">
                 {filteredRequests.map((request) => {
                   const disabled = actionLoadingId === request.id
+                  const stepLabelKey = resolveStepLabelKey(request)
                   return (
                     <article key={request.id} data-testid={`approval-mobile-row-${request.resource_type}-${request.resource_id}`} className="space-y-4 p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded bg-surface-elevated px-2 py-0.5 text-xs font-semibold text-text-secondary">{t(`resourceTypes.${request.resource_type}`)}</span>
-                        <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">{t(`statuses.${request.status}`)}</span>
+                        <span className={`rounded px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(request.status)}`}>{t(`statuses.${request.status}`)}</span>
+                        {stepLabelKey && (
+                          <span
+                            data-testid={`approval-step-${request.id}`}
+                            className="rounded border border-border px-2 py-0.5 text-xs font-semibold text-text-secondary"
+                          >
+                            {t(`steps.${stepLabelKey}`)}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <Link href={getResourceLink(request)} className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2">{request.context.title}</Link>

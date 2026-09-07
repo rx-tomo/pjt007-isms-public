@@ -66,9 +66,71 @@ import { DEPARTMENT_UNASSIGNED_VALUE } from '@/lib/constants/departments'
 import { DocumentTenantInvariantError } from '@/lib/services/documentTenantInvariant'
 import { isDocumentStoragePath } from '@/lib/storage/documentFilePolicy'
 import { hasFullDepartmentAccess } from '@/lib/utils/departmentScope'
-import { resolveApprovalEligibility } from '@/lib/server/approvals/approvalEligibility'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  isEligibleDocumentApprovalStepRole,
+  resolveApprovalEligibility,
+  resolveDocumentApprovalStepApprover,
+} from '@/lib/server/approvals/approvalEligibility'
+import {
+  resolveTenantAuthorizationContext,
+  type TenantAuthorizationContext,
+} from '@/lib/server/auth/authorizationContext'
 import { resolveDocumentApprovalResourceScope } from '@/lib/server/approvals/approvalResourceScope'
+import {
+  DOCUMENT_APPROVAL_FINAL_STEP,
+  DOCUMENT_APPROVAL_FIRST_STEP,
+  DOCUMENT_APPROVAL_TOTAL_STEPS,
+  isFinalDocumentApprovalStep,
+  nextDocumentApprovalStep,
+  normalizeDocumentApprovalStep,
+} from '@/lib/approvals/documentApprovalSteps'
+
+/** 承認依頼の既定期限（7日） */
+const DOCUMENT_APPROVAL_DUE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+type DocumentApprovalRequestRow = typeof approvalRequests.$inferSelect
+
+interface DocumentApprovalStepIssuanceParams {
+  document: typeof documents.$inferSelect
+  organizationId: string
+  documentId: string
+  currentRequest: DocumentApprovalRequestRow
+  currentStep: number
+  nextStep: number
+  audit: DocumentLifecycleAuditContext
+  now: string
+}
+
+interface DocumentRevertPlan {
+  /** 巻き戻し前に文書が取っているべき状態（CAS 条件） */
+  expectedDocumentStatus: 'approved' | 'draft' | 'in_review'
+  /** 対象段より後段の pending リクエストを cancelled 化するか（設計 §3.4 / H-3） */
+  cancelLaterPendingSteps: boolean
+}
+
+/**
+ * 取消（revert）のパターン判定（設計 §3.4）。
+ * 二段化により `step1 = approved` かつ `document = in_review` の中間状態が正当に存在する。
+ * あわせて、二段化以前に step1 だけで発行完了したレガシー文書（§5.3）も取り消せる必要がある。
+ */
+function resolveDocumentRevertPlan(
+  previousStatus: string,
+  isFinalStep: boolean,
+  documentStatus: string | null
+): DocumentRevertPlan | null {
+  if (previousStatus === 'approved' && documentStatus === 'approved') {
+    // 最終段の取消。step1 のみで approved のレガシー文書（step2 不在）もここに入る。
+    // レガシーは後段が存在しないため cancel 対象も0件になる。
+    return { expectedDocumentStatus: 'approved', cancelLaterPendingSteps: !isFinalStep }
+  }
+  if (previousStatus === 'approved' && !isFinalStep && documentStatus === 'in_review') {
+    return { expectedDocumentStatus: 'in_review', cancelLaterPendingSteps: true }
+  }
+  if (previousStatus === 'rejected' && documentStatus === 'draft') {
+    return { expectedDocumentStatus: 'draft', cancelLaterPendingSteps: false }
+  }
+  return null
+}
 
 let documentWriteQueue: Promise<void> = Promise.resolve()
 
@@ -937,6 +999,27 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
       if (pending) {
         throw new DocumentTenantInvariantError(409, 'Document approval is already in progress')
       }
+      this.assertDocumentApprovalStepRole(
+        approverEligibility.role,
+        DOCUMENT_APPROVAL_FIRST_STEP
+      )
+      // 2段目候補のプリチェック（security-review 指摘 H-2）。
+      // 起案者と、この時点で確定する1段目承認者の双方を除いた org_admin が0名なら、
+      // 承認者に失敗を押し付けず申請時点で拒否する。
+      // 1段目承認時の候補解決（409）は、プリチェック通過後に候補が失効した場合
+      // （org_admin の降格・無効化・メンバーシップ停止）を塞ぐため残す。
+      const finalStepCandidate = await resolveDocumentApprovalStepApprover(
+        tx,
+        organizationId,
+        DOCUMENT_APPROVAL_FINAL_STEP,
+        [audit.userId, payload.approverId]
+      )
+      if (!finalStepCandidate) {
+        throw new DocumentTenantInvariantError(
+          409,
+          'Final approval step has no eligible approver in this organization'
+        )
+      }
 
       const now = new Date().toISOString()
       const dueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -954,7 +1037,7 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         dueAt,
         notifiedAt: null,
         escalationNotifiedAt: null,
-        stepNumber: 1,
+        stepNumber: DOCUMENT_APPROVAL_FIRST_STEP,
         revertedAt: null,
         revertReason: null,
         createdAt: now,
@@ -966,7 +1049,11 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         approvalRequest.id,
         'requested',
         audit.userId,
-        { approver_id: approvalRequest.approverId, due_at: dueAt },
+        {
+          approver_id: approvalRequest.approverId,
+          due_at: dueAt,
+          step_number: DOCUMENT_APPROVAL_FIRST_STEP,
+        },
         now
       )
       const [updatedRequestDocument] = await tx
@@ -993,7 +1080,11 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         documentId,
         audit,
         'document.approval_requested',
-        { approver_id: payload.approverId }
+        {
+          approver_id: payload.approverId,
+          step_number: DOCUMENT_APPROVAL_FIRST_STEP,
+          total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        }
       )
       await this.insertDocumentApprovalNotification(
         tx,
@@ -1002,7 +1093,8 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         document.title,
         documentId,
         audit.userId,
-        now
+        now,
+        DOCUMENT_APPROVAL_FIRST_STEP
       )
       return {
         document: this.mapDocumentRowToEntity({
@@ -1089,6 +1181,10 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
       if (current.requestedBy === audit.userId) {
         throw new DocumentTenantInvariantError(403, 'Requester cannot decide their own approval')
       }
+      // 段別ロールの再検証（security-review 指摘 H-1 / 設計 §5.6）。
+      // assigned 後にロールが変わった担当者（例: 2段目 assigned の org_admin が降格）を
+      // fail-closed で拒否する。assigned だけでは決裁可否を決めない。
+      this.assertDocumentApprovalStepRole(actorEligibility.role, current.stepNumber)
 
       const now = new Date().toISOString()
       const [updatedRequest] = await tx
@@ -1107,14 +1203,36 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
       if (!updatedRequest) {
         throw new DocumentTenantInvariantError(409, 'Document approval request changed')
       }
+      const currentStep = normalizeDocumentApprovalStep(current.stepNumber)
       await this.insertApprovalEvent(
         tx,
         current.id,
         'approved',
         audit.userId,
-        comment ? { comment } : {},
+        {
+          ...(comment ? { comment } : {}),
+          step_number: currentStep,
+          total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        },
         now
       )
+
+      // 二段階承認（設計 §3.2）: 最終段でなければ文書は発行せず、
+      // 同一トランザクション内で次段の pending リクエストを発行する（§2.4）。
+      const nextStep = nextDocumentApprovalStep(currentStep)
+      if (nextStep !== null) {
+        return this.issueNextDocumentApprovalStep(tx, {
+          document,
+          organizationId,
+          documentId,
+          currentRequest: current,
+          currentStep,
+          nextStep,
+          audit,
+          now,
+        })
+      }
+
       const [updatedDocumentRow] = await tx
         .update(documents)
         .set({
@@ -1139,7 +1257,11 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         documentId,
         audit,
         'document.approved',
-        { approved_by: audit.userId }
+        {
+          approved_by: audit.userId,
+          step_number: currentStep,
+          total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        }
       )
       const updatedDocument = {
         ...document,
@@ -1154,6 +1276,119 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         currentApproverId: null,
       }
     })
+  }
+
+  /**
+   * 二段階承認の途中段が承認されたときに、次段の pending リクエストを発行する（設計 §2.4 / §3.2）。
+   * 文書は発行されず `in_review` のまま維持される。
+   */
+  private async issueNextDocumentApprovalStep(
+    tx: DrizzleDb,
+    params: DocumentApprovalStepIssuanceParams
+  ): Promise<DocumentApprovalMutationResult> {
+    const { organizationId, documentId, currentRequest, nextStep, audit, now } = params
+    const nextApprover = await resolveDocumentApprovalStepApprover(
+      tx,
+      organizationId,
+      nextStep,
+      [currentRequest.requestedBy, audit.userId].filter(Boolean) as string[]
+    )
+    if (!nextApprover) {
+      throw new DocumentTenantInvariantError(
+        409,
+        'Next approval step has no eligible approver'
+      )
+    }
+
+    const nextRequestId = crypto.randomUUID()
+    await tx.insert(approvalRequests).values({
+      id: nextRequestId,
+      organizationId,
+      resourceType: 'document',
+      resourceId: documentId,
+      status: 'pending',
+      requestedBy: currentRequest.requestedBy,
+      requestedAt: now,
+      approverId: nextApprover.userId,
+      approvedAt: null,
+      rejectionReason: null,
+      dueAt: new Date(Date.now() + DOCUMENT_APPROVAL_DUE_WINDOW_MS).toISOString(),
+      notifiedAt: null,
+      escalationNotifiedAt: null,
+      stepNumber: nextStep,
+      revertedAt: null,
+      revertReason: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    await this.insertApprovalEvent(
+      tx,
+      nextRequestId,
+      'requested',
+      audit.userId,
+      {
+        approver_id: nextApprover.userId,
+        step_number: nextStep,
+        total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        previous_step_request_id: currentRequest.id,
+      },
+      now
+    )
+    return this.completeIntermediateDocumentApprovalStep(tx, params, nextApprover.userId, nextRequestId)
+  }
+
+  private async completeIntermediateDocumentApprovalStep(
+    tx: DrizzleDb,
+    params: DocumentApprovalStepIssuanceParams,
+    nextApproverId: string,
+    nextRequestId: string
+  ): Promise<DocumentApprovalMutationResult> {
+    const { document, organizationId, documentId, currentStep, nextStep, audit, now } = params
+    const [updatedDocumentRow] = await tx
+      .update(documents)
+      .set({ updatedBy: audit.userId, updatedAt: now })
+      .where(and(
+        eq(documents.id, documentId),
+        eq(documents.organizationId, organizationId),
+        eq(documents.status, 'in_review')
+      ))
+      .returning({ id: documents.id })
+    if (!updatedDocumentRow) {
+      throw new DocumentTenantInvariantError(409, 'Document approval state changed')
+    }
+    await this.insertDocumentAudit(
+      tx,
+      organizationId,
+      documentId,
+      audit,
+      'document.approval_step_completed',
+      {
+        approved_by: audit.userId,
+        step_number: currentStep,
+        total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        next_step_number: nextStep,
+        next_approver_id: nextApproverId,
+        next_request_id: nextRequestId,
+      }
+    )
+    await this.insertDocumentApprovalNotification(
+      tx,
+      organizationId,
+      nextApproverId,
+      document.title,
+      documentId,
+      audit.userId,
+      now,
+      nextStep
+    )
+    return {
+      document: this.mapDocumentRowToEntity({
+        ...document,
+        updatedBy: audit.userId,
+        updatedAt: now,
+      }),
+      currentApproverId: nextApproverId,
+    }
   }
 
   async rejectForAssignedApprover(
@@ -1227,6 +1462,10 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
       if (current.requestedBy === audit.userId) {
         throw new DocumentTenantInvariantError(403, 'Requester cannot decide their own approval')
       }
+      // 段別ロールの再検証（security-review 指摘 H-1 / 設計 §5.6）。
+      // assigned 後にロールが変わった担当者（例: 2段目 assigned の org_admin が降格）を
+      // fail-closed で拒否する。assigned だけでは決裁可否を決めない。
+      this.assertDocumentApprovalStepRole(actorEligibility.role, current.stepNumber)
 
       const now = new Date().toISOString()
       for (const approvalRequest of pending) {
@@ -1253,6 +1492,8 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
           audit.userId,
           {
             reason,
+            step_number: normalizeDocumentApprovalStep(approvalRequest.stepNumber),
+            total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
             cancelled_later_step: approvalRequest.id !== current.id,
           },
           now
@@ -1282,8 +1523,25 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         documentId,
         audit,
         'document.rejected',
-        { reason }
+        {
+          reason,
+          // 二段目却下でも step1 のレコードは書き換えない（設計 §3.3.1）。
+          // 文書が draft に戻ることで全 request が terminal になる。
+          step_number: normalizeDocumentApprovalStep(current.stepNumber),
+          total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        }
       )
+      // 2段目却下は1段目承認者にも通知する（設計 §5.2）。同一Txに閉じる。
+      if (isFinalDocumentApprovalStep(current.stepNumber)) {
+        await this.notifyFirstStepApproverOfFinalRejection(tx, {
+          organizationId,
+          documentId,
+          documentTitle: document.title,
+          reason,
+          actorId: audit.userId,
+          now,
+        })
+      }
       return {
         document: this.mapDocumentRowToEntity({
           ...document,
@@ -1336,7 +1594,11 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
           eq(approvalRequests.resourceId, documentId)
         ))
         .orderBy(desc(approvalRequests.requestedAt), desc(approvalRequests.createdAt))
-      const approvalRequest = documentRequests[0]
+      // 取消対象は「最新の terminal な依頼」。二段化後は step1=approved / step2=pending の
+      // 中間状態があり、最新レコード（step2 pending）は取消対象ではない（設計 §3.4）。
+      const approvalRequest = documentRequests.find(
+        row => row.status !== 'pending' && row.status !== 'cancelled'
+      )
       if (!approvalRequest) {
         throw new DocumentTenantInvariantError(404, 'Approval request not found')
       }
@@ -1351,14 +1613,31 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
       }
 
       const previousStatus = approvalRequest.status
-      const isApprovedPair = previousStatus === 'approved' && document.status === 'approved'
-      const isRejectedPair = previousStatus === 'rejected' && document.status === 'draft'
-      if (!isApprovedPair && !isRejectedPair) {
+      const targetStep = normalizeDocumentApprovalStep(approvalRequest.stepNumber)
+      const revertPlan = resolveDocumentRevertPlan(
+        previousStatus,
+        isFinalDocumentApprovalStep(approvalRequest.stepNumber),
+        document.status
+      )
+      if (!revertPlan) {
         throw new DocumentTenantInvariantError(409, 'Document approval state is inconsistent')
       }
-      const previousDocumentStatus = isApprovedPair ? 'approved' : 'draft'
+      const previousDocumentStatus = revertPlan.expectedDocumentStatus
 
       const now = new Date().toISOString()
+      // 文順序厳守（設計 §3.4 実装注意）: 後段 pending の cancelled 化を先に行う。
+      // 逆順にすると中間状態で pending が2件になり UNIQUE 制約違反になる。
+      const cancelledRequestIds = revertPlan.cancelLaterPendingSteps
+        ? await this.cancelLaterPendingDocumentApprovalSteps(tx, {
+          organizationId,
+          documentId,
+          targetStep,
+          targetRequestId: approvalRequest.id,
+          reason,
+          actorId: audit.userId,
+          now,
+        })
+        : []
       const [updatedRequest] = await tx
         .update(approvalRequests)
         .set({
@@ -1400,7 +1679,13 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
         throw new DocumentTenantInvariantError(409, 'Document approval state changed')
       }
 
-      const changes = { reason, previous_status: previousStatus }
+      const changes = {
+        reason,
+        previous_status: previousStatus,
+        step_number: targetStep,
+        total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        cancelled_request_ids: cancelledRequestIds,
+      }
       await this.insertApprovalEvent(
         tx,
         approvalRequest.id,
@@ -2430,6 +2715,79 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
     }
   }
 
+  /**
+   * 対象段より後段の pending リクエストを無効化する（設計 §3.4）。
+   *
+   * 物理削除しない: approval_events は ON DELETE CASCADE のため、DELETE すると
+   * 「誰がいつ何を承認依頼されたか」の証跡ごと消える（security-review 指摘 H-3）。
+   * 部分 unique index は `WHERE status = 'pending'` なので、`cancelled` 化で一意性は解ける。
+   *
+   * pending 一意性（§2.4）を守るため、対象段を pending へ戻す**前**に実行すること。
+   */
+  private async cancelLaterPendingDocumentApprovalSteps(
+    db: DrizzleDb,
+    params: {
+      organizationId: string
+      documentId: string
+      targetStep: number
+      targetRequestId: string
+      reason: string
+      actorId: string
+      now: string
+    }
+  ): Promise<string[]> {
+    const { organizationId, documentId, targetStep, targetRequestId, reason, actorId, now } = params
+    const cancelled = await db
+      .update(approvalRequests)
+      .set({ status: 'cancelled', updatedAt: now })
+      .where(and(
+        eq(approvalRequests.organizationId, organizationId),
+        eq(approvalRequests.resourceType, 'document'),
+        eq(approvalRequests.resourceId, documentId),
+        eq(approvalRequests.status, 'pending'),
+        // step_number は nullable。normalize 契約（NULL = 1段目）と一致させる（M-5）。
+        gt(
+          sql`COALESCE(${approvalRequests.stepNumber}, ${DOCUMENT_APPROVAL_FIRST_STEP})`,
+          targetStep
+        )
+      ))
+      .returning({ id: approvalRequests.id, stepNumber: approvalRequests.stepNumber })
+    for (const row of cancelled) {
+      await this.insertApprovalEvent(
+        db,
+        row.id,
+        'cancelled',
+        actorId,
+        {
+          reason,
+          step_number: normalizeDocumentApprovalStep(row.stepNumber),
+          total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+          cancelled_by_revert_of_request_id: targetRequestId,
+          cancelled_by_revert_of_step_number: targetStep,
+        },
+        now
+      )
+    }
+    return cancelled.map(row => row.id)
+  }
+
+  /**
+   * 当該段を決裁できるロールかを検査する（設計 §4.2 / §5.6、security-review H-1）。
+   * 1段目は上司候補ロール、2段目は org_admin のみ。
+   */
+  private assertDocumentApprovalStepRole(
+    role: TenantAuthorizationContext['role'],
+    stepNumber: number | null
+  ): void {
+    const step = normalizeDocumentApprovalStep(stepNumber)
+    if (!isEligibleDocumentApprovalStepRole(role, step)) {
+      throw new DocumentTenantInvariantError(
+        403,
+        'Approver is not eligible for this approval step'
+      )
+    }
+  }
+
   private async assertActiveDocumentRevertActor(
     db: DrizzleDb,
     userId: string,
@@ -2617,6 +2975,7 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
       | 'document.version_deleted'
       | 'document.revision_started'
       | 'document.approval_requested'
+      | 'document.approval_step_completed'
       | 'document.approved'
       | 'document.rejected'
       | 'document.approval_reverted',
@@ -2640,7 +2999,7 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
   private async insertApprovalEvent(
     db: DrizzleDb,
     approvalRequestId: string,
-    eventType: 'requested' | 'approved' | 'rejected' | 'reverted',
+    eventType: 'requested' | 'approved' | 'rejected' | 'reverted' | 'cancelled',
     actorId: string,
     payload: Record<string, unknown>,
     createdAt: string
@@ -2655,6 +3014,11 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
     })
   }
 
+  /**
+   * 承認依頼の通知。段によって求められる判断が違うため文言を分ける（設計 §6.1 通知行）。
+   * 既存実装が日本語ハードコードのため、今回は同方式のまま段別化のみ行う。
+   * **全面 i18n 化（翻訳キー化）は Phase C 送り。**
+   */
   private async insertDocumentApprovalNotification(
     db: DrizzleDb,
     organizationId: string,
@@ -2662,20 +3026,82 @@ export class SQLiteDocumentRepository extends BaseSQLiteRepository implements ID
     documentTitle: string,
     documentId: string,
     requesterId: string,
-    createdAt: string
+    createdAt: string,
+    stepNumber: number
   ): Promise<void> {
+    const isFinalStep = isFinalDocumentApprovalStep(stepNumber)
+    const title = isFinalStep ? '文書承認依頼（最終承認）' : '文書承認依頼（一次承認）'
+    const message = isFinalStep
+      ? `文書「${documentTitle}」の最終承認（正式発行）が必要です。`
+      : `文書「${documentTitle}」の一次承認（内容のダブルチェック）が必要です。`
     await db.insert(notifications).values({
       id: crypto.randomUUID(),
       organizationId,
       userId: approverId,
-      title: '文書承認依頼',
-      message: `文書「${documentTitle}」の承認が必要です。`,
+      title,
+      message,
       type: 'document_approval',
       priority: 'high',
       status: 'unread',
       link: `/documents/${documentId}`,
-      metadata: JSON.stringify({ document_id: documentId, requester_id: requesterId }),
+      metadata: JSON.stringify({
+        document_id: documentId,
+        requester_id: requesterId,
+        step_number: normalizeDocumentApprovalStep(stepNumber),
+        total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+      }),
       createdAt,
+    })
+  }
+
+  /**
+   * 最終段の却下を1段目承認者へ通知する（設計 §5.2）。
+   * 自分が承認したものが発行されなかった事実を知らないとダブルチェックの学習が働かない。
+   * 文言は Phase C で翻訳キー化する。
+   */
+  private async notifyFirstStepApproverOfFinalRejection(
+    db: DrizzleDb,
+    params: {
+      organizationId: string
+      documentId: string
+      documentTitle: string
+      reason: string
+      actorId: string
+      now: string
+    }
+  ): Promise<void> {
+    const { organizationId, documentId, documentTitle, reason, actorId, now } = params
+    const [firstStep] = await db
+      .select({ approverId: approvalRequests.approverId })
+      .from(approvalRequests)
+      .where(and(
+        eq(approvalRequests.organizationId, organizationId),
+        eq(approvalRequests.resourceType, 'document'),
+        eq(approvalRequests.resourceId, documentId),
+        eq(approvalRequests.status, 'approved'),
+        eq(approvalRequests.stepNumber, DOCUMENT_APPROVAL_FIRST_STEP)
+      ))
+      .orderBy(desc(approvalRequests.approvedAt))
+      .limit(1)
+    const firstStepApproverId = firstStep?.approverId
+    if (!firstStepApproverId || firstStepApproverId === actorId) return
+    await db.insert(notifications).values({
+      id: crypto.randomUUID(),
+      organizationId,
+      userId: firstStepApproverId,
+      title: '一次承認した文書が最終承認で却下されました',
+      message: `あなたが一次承認した文書「${documentTitle}」が最終承認で却下されました。理由: ${reason}`,
+      type: 'document_approval',
+      priority: 'high',
+      status: 'unread',
+      link: `/documents/${documentId}`,
+      metadata: JSON.stringify({
+        document_id: documentId,
+        rejected_by: actorId,
+        step_number: DOCUMENT_APPROVAL_FINAL_STEP,
+        total_steps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+      }),
+      createdAt: now,
     })
   }
 

@@ -115,7 +115,7 @@ export default function OrganizationSettingsPage(
       }
 
       // 管理者権限チェック
-      if (!(ADMIN_ROLES as readonly string[]).includes(user.role)) {
+      if (!user.effective_role || !(ADMIN_ROLES as readonly string[]).includes(user.effective_role)) {
         setError('この機能にアクセスする権限がありません。管理者にお問い合わせください。')
         setIsLoading(false)
         return
@@ -151,7 +151,7 @@ export default function OrganizationSettingsPage(
         isms_scope: scopeData,
         departments: departmentRows ?? []
       })
-      setCurrentUser(user)
+      setCurrentUser({ ...user, role: user.effective_role })
       setFormData({
         name: org.name || '',
         name_en: org.name_en || '',
@@ -406,7 +406,7 @@ export default function OrganizationSettingsPage(
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -476,7 +476,7 @@ export default function OrganizationSettingsPage(
             <p className="mt-4 text-xs text-text-muted">
               {t('authSettings.hint')} <a
                 href="/docs/06-operations/development-environment-guide.md#MFA"
-                className="text-indigo-600 hover:text-indigo-800"
+                className="text-blue-600 hover:text-blue-800"
               >
                 {t('authSettings.linkLabel')}
               </a>
@@ -509,7 +509,7 @@ export default function OrganizationSettingsPage(
                 <label
                   key={option}
                   className={`flex cursor-pointer flex-col rounded-2xl border p-4 transition ${
-                    phaseSelection === option ? 'border-indigo-500 bg-indigo-50' : 'border-border hover:border-indigo-200'
+                    phaseSelection === option ? 'border-blue-500 bg-blue-50' : 'border-border hover:border-blue-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -519,7 +519,7 @@ export default function OrganizationSettingsPage(
                       value={option}
                       checked={phaseSelection === option}
                       onChange={() => setPhaseSelection(option)}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
                       <p className="font-semibold text-text-primary">{t(`phase.options.${option}.label`)}</p>
@@ -535,7 +535,7 @@ export default function OrganizationSettingsPage(
                 type="button"
                 onClick={handlePhaseSubmit}
                 disabled={!phaseSelection || phaseSaving}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-surface-elevated"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-surface-elevated"
               >
                 {phaseSaving ? t('phase.saving') : t('phase.save')}
               </button>
@@ -570,7 +570,7 @@ export default function OrganizationSettingsPage(
                       name="name"
                       id="name"
                       required
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.name}
                       onChange={handleInputChange}
                     />
@@ -584,7 +584,7 @@ export default function OrganizationSettingsPage(
                       type="text"
                       name="name_en"
                       id="name_en"
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.name_en}
                       onChange={handleInputChange}
                     />
@@ -597,7 +597,7 @@ export default function OrganizationSettingsPage(
                     <select
                       id="employee_count_range"
                       name="employee_count_range"
-                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       value={formData.employee_count_range}
                       onChange={handleInputChange}
                     >
@@ -618,7 +618,7 @@ export default function OrganizationSettingsPage(
                       type="text"
                       name="industry"
                       id="industry"
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.industry}
                       onChange={handleInputChange}
                       placeholder={t('fields.industryPlaceholder')}
@@ -632,7 +632,7 @@ export default function OrganizationSettingsPage(
                     <select
                       id="iso_certification_status"
                       name="iso_certification_status"
-                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       value={formData.iso_certification_status}
                       onChange={handleInputChange}
                     >
@@ -699,14 +699,14 @@ export default function OrganizationSettingsPage(
             <button
               type="button"
               onClick={() => router.push(`/${locale}/home`)}
-              className="bg-surface py-2 px-4 border border-border rounded-md shadow-sm text-sm font-medium text-text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="bg-surface py-2 px-4 border border-border rounded-md shadow-sm text-sm font-medium text-text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               {t('actions.cancel')}
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {isSaving ? t('actions.saving') : t('actions.save')}
             </button>
@@ -762,7 +762,7 @@ export default function OrganizationSettingsPage(
                   type="button"
                   onClick={() => handleDataExport({ template: false })}
                   disabled={!organization || isExportingData}
-                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
                 >
                   {isExportingData ? t('dataTransfer.exporting') : t('dataTransfer.exportAction')}
                 </button>
@@ -770,7 +770,7 @@ export default function OrganizationSettingsPage(
                   type="button"
                   onClick={() => handleDataExport({ template: true })}
                   disabled={!organization || isExportingData}
-                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
                 >
                   {t('dataTransfer.templateAction')}
                 </button>
@@ -843,7 +843,7 @@ export default function OrganizationSettingsPage(
               type="button"
               onClick={handleBackupExport}
               disabled={!organization || isExportingBackup}
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
             >
               {isExportingBackup ? t('backup.exporting') : t('backup.action')}
             </button>

@@ -43,7 +43,7 @@ Docx 形式は ZIP コンテナなので先頭 2 バイトが `PK` になりま�
 SQL 例: `select * from audit_logs where resource_type = 'document' and resource_id = '...';`
 
 ## QA / 問題発見時の確認手順
-事前に、`docs/05-quality/testing-strategy.md` の既存サーバー利用手順どおり同じ `PLAYWRIGHT_RUN_NONCE` をサーバーとQAへ設定する。その上で `PLAYWRIGHT_EXTERNAL_WEB_SERVER=1 QA_LOCALE=en npm run qa:documents`（英語）と `QA_LOCALE=ja npm run qa:documents` もしくは `npm run qa:documents -- --locales ja,en`（日本語）を実行し、`test-results/qa-documents-<locale>-<timestamp>.log` を取得して UI の翻訳と HTTP ステータスが両ロケールで正常であることを確認しておく。
+事前に、同じ `PLAYWRIGHT_RUN_NONCE` をサーバーとQAへ設定する。その上で `PLAYWRIGHT_EXTERNAL_WEB_SERVER=1 QA_LOCALE=en npm run qa:documents`（英語）と `QA_LOCALE=ja npm run qa:documents` もしくは `npm run qa:documents -- --locales ja,en`（日本語）を実行し、`test-results/qa-documents-<locale>-<timestamp>.log` を取得して UI の翻訳と HTTP ステータスが両ロケールで正常であることを確認しておく。
 1. `/ja/documents` で文書を選び、PDF / Docx / Excel を順番に `format` クエリでリクエスト (`/api/documents/{id}/export?format=word` など)。
 2. Docx を ZIP 展開して `word/document.xml`、Excel (`.xls`) をテキストで開き、`Organization:`/`Document Version:`/`Exported At:` と日本語本文の代表マーカーが含まれていることを確認。Docx なら `PK` で始まること、`word/numbering.xml`、`word/header1.xml`、`word/footer1.xml` があること、Excel なら `<Row>` にヘッダー行と本文行があることも合わせてチェックする。
 3. PDFは、Chromiumを利用できる環境では `application/pdf`、`%PDF-` ヘッダー、十分なバイト数を確認する。可能であればローカルのPDFビューアまたは `pdftotext` / `pdfinfo` で日本語タイトルと本文が読めることを確認する。Acrobatで `HeiseiKakuGo-W5` / `Bbox` 警告が出ないことも確認する。Chromiumを利用できないデモ環境では503、`PDF_EXPORT_UNAVAILABLE`、Word利用案内を確認し、500や `.pdf` 名のJSONファイルにならないことを確認する。
@@ -52,4 +52,4 @@ SQL 例: `select * from audit_logs where resource_type = 'document' and resource
 
 ## 証跡保存
 - `test-results/document-export-*.json` には `npm run qa:documents` / `npm run qa:documents:approver` で取得した監査ログのクエリ結果、ダウンロードファイル名、403/denied ケースのステータスを JSON で保存します。
-- 現行の代表QAは `docs/05-quality/qa-guidelines.md` と `docs/10-improvement-plan/owner-verification-guide.md` を優先します。古い Supabase 前提のUC別QA手順は現行構成では使いません。
+- 現行の代表QAは `npm run qa:documents` と `npm run qa:documents:approver` を優先します。古い Supabase 前提のUC別QA手順は現行構成では使いません。

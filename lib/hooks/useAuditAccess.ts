@@ -1,15 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { UserService } from '@/lib/services/user'
-import type { UserProfile } from '@/lib/services/user'
+import type { CurrentUserProfile } from '@/lib/services/user'
 import type { PermissionSet } from '@/lib/services/permissions'
-
-const AUDIT_ALLOWED_ROLES = new Set<UserProfile['role']>([
-  'auditor',
-  'org_admin',
-  'system_operator'
-])
 
 type AuditAccessError = 'not_authenticated' | 'permission_fetch_failed' | 'access_denied' | null
 
@@ -17,7 +10,7 @@ interface AuditAccessState {
   isAuthorized: boolean
   isLoading: boolean
   error: AuditAccessError
-  profile: UserProfile | null
+  profile: CurrentUserProfile | null
   permissions: PermissionSet | null
 }
 
@@ -32,11 +25,18 @@ export function useAuditAccess(): AuditAccessState {
 
   useEffect(() => {
     let isMounted = true
-    const userService = new UserService()
 
     async function verifyAccess() {
       try {
-        const profile = await userService.getCurrentUser()
+        const response = await fetch('/api/auth/profile', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        const payload = response.ok
+          ? await response.json() as { profile?: CurrentUserProfile | null }
+          : {}
+        const profile = payload.profile ?? null
         if (!profile) {
           if (isMounted) {
             setState({
@@ -50,7 +50,7 @@ export function useAuditAccess(): AuditAccessState {
           return
         }
 
-        let isAuthorized = AUDIT_ALLOWED_ROLES.has(profile.role)
+        const isAuthorized = profile.effective_capabilities?.modules.audit.read === true
 
         if (!isAuthorized) {
           if (isMounted) {

@@ -12,13 +12,16 @@ ISO 27001 認証取得に取り組む中規模IT企業グループをモデル�
 npm run db:seed
 
 # DB をクリーンリセットしてからシード
-rm -f local.db local.db-shm local.db-wal
-npx drizzle-kit push
+# 事前にアプリ、開発サーバー、DBクライアントを停止し、現在地と破棄対象を確認する
+rm -f local.db local.db-shm local.db-wal local.db-journal
+node scripts/provision-local-database.mjs --root "$(pwd -P)" --name local.db
 npm run db:seed
 
 # Turso Cloud に投入する場合
 TURSO_DATABASE_URL=libsql://xxx.turso.io TURSO_AUTH_TOKEN=xxx npm run db:seed
 ```
+
+DB構築コマンドは、開始時に存在しないlocal SQLite DB専用です。remote/Turso、既存DBの更新・migrationには使用できません。上記のreset前に、現在地が対象リポジトリで、`local.db`を破棄してよいことも確認してください。
 
 ## 実務検証seed
 
@@ -234,8 +237,9 @@ DB・認可ロジック（`CROSS_ORG_ROLES` in `secureClient.ts`）は複数組�
 
 ```bash
 # DB をクリーンリセットしてシード投入
-rm -f local.db local.db-shm local.db-wal
-npx drizzle-kit push
+# 事前にアプリ、開発サーバー、DBクライアントを停止し、現在地と破棄対象を確認する
+rm -f local.db local.db-shm local.db-wal local.db-journal
+node scripts/provision-local-database.mjs --root "$(pwd -P)" --name local.db
 npm run db:seed
 npm run dev
 ```

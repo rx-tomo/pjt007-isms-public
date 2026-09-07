@@ -1,4 +1,9 @@
 {
+  "publicSeo": {
+    "resources": {"metaTitle":"ISMS運用リソース | Riscala AI for ISMS","metaDescription":"ISMSの準備確認と運用ヒアリングの案内をまとめた公開リソースです。","heroLink":"公開リソースを見る","title":"ISMS運用リソース","description":"ISMSの準備や日々の運用を整理するための、公開の確認ツールと案内です。","toolTitle":"ISMS準備チェック","toolDescription":"今の準備状況を、画面上で項目ごとに確認できます。","openTool":"チェックを開く","interviewTitle":"運用ヒアリングの案内","interviewDescription":"運用を振り返る際に確認したい論点を紹介します。","openInterview":"案内を読む","navigationLabel":"リソースの移動","homeLink":"トップへ戻る","loginLink":"ログイン"},
+    "readiness": {"metaTitle":"ISMS準備チェック | Riscala AI for ISMS","metaDescription":"ISMSの準備項目を画面上で確認できる、保存を行わない公開チェックです。","title":"ISMS準備チェック","description":"必要な項目を確認し、次に整理したい点を見つけるための簡易チェックです。","checkTitle":"確認項目","progress":"{total}項目中 {complete}項目を確認済み。残り {remaining}項目です。","items":{"scope":"対象範囲と関係者を整理している","owner":"担当と確認の進め方を決めている","evidence":"必要な記録を見直している","review":"定期的な見直しの機会を考えている"},"memoryOnly":"このチェックの状態はこの画面を開いている間だけ保持され、送信・保存は行いません。","navigationLabel":"準備チェックの移動","resourcesLink":"リソース一覧へ","homeLink":"トップへ戻る","loginLink":"ログイン"},
+    "interview": {"metaTitle":"ISMS運用ヒアリングの案内 | Riscala AI for ISMS","metaDescription":"ISMS運用を振り返るためのヒアリング論点を紹介する公開案内です。","title":"ISMS運用ヒアリングの案内","description":"運用の状況を話し合う前に、確認しておくと役立つ観点をまとめました。","topicsTitle":"確認の観点","topics":{"scope":"対象範囲や関係者に変化があったか","evidence":"記録や対応状況を見直せる状態か","review":"見直しから次の対応につなげる方法があるか"},"informationOnly":"このページは案内のみです。回答の送信、入力内容の保存、フォームの提供は行いません。","githubInquiry":{"title":"GitHubで問い合わせる","publicNotice":"お問い合わせは公開のGitHub Issueとして投稿されます。","loginNotice":"投稿にはGitHubへのログインが必要です。","dataNotice":"個人情報、認証情報、機密情報は記載しないでください。","notAnonymousNotice":"これは匿名のヒアリング受付ではありません。","linkLabel":"GitHub Issuesを開く"},"navigationLabel":"ヒアリング案内の移動","resourcesLink":"リソース一覧へ","homeLink":"トップへ戻る","loginLink":"ログイン"}
+  },
   "support": "専門サポートが全ステップで伴走",
   "ai": {
     "evaluation": {
@@ -38,7 +43,7 @@
       "loading": "読み込み中...",
       "error": "データの取得に失敗しました",
       "riskIdentification": "リスク識別",
-      "riskAssessment": "リスク評価",
+      "riskAssessment": "リスクアセスメント",
       "treatmentSuggestion": "対策提案",
       "tokens": "トークン",
       "requests": "リクエスト",
@@ -52,7 +57,7 @@
       "enableAIDescription": "AI支援は後続の補助機能として、入力内容と採否を人が確認しながら利用します",
       "features": "利用可能な機能",
       "identify": "リスク識別",
-      "evaluate": "リスク評価",
+      "evaluate": "リスクアセスメント",
       "suggestTreatments": "対策提案",
       "usageLimits": "使用量制限",
       "monthlyLimit": "月間トークン上限",
@@ -168,6 +173,10 @@
     "subscription": "サブスクリプション",
     "home": "ホーム",
     "skipToContent": "メインコンテンツへ移動",
+    "a11y": {
+      "toggleSidebar": "サイドバーの開閉",
+      "breadcrumb": "パンくずリスト"
+    },
     "publicLinks": {
       "source": "GitHubでソースを見る",
       "feedback": "フィードバックする"
@@ -275,7 +284,7 @@
       "risk_read": "リスクを見る",
       "risk_write": "リスクを作成/編集",
       "risk_delete": "リスクを削除",
-      "risk_approve": "リスク評価を承認",
+      "risk_approve": "リスクアセスメントを承認",
       "task_read": "タスクを見る",
       "task_write": "タスクを作成/編集",
       "task_delete": "タスクを削除",
@@ -316,6 +325,15 @@
       "email": "メールアドレス",
       "password": "パスワード",
       "devLogin": "デモ用ログイン"
+    },
+    "hero": {
+      "taglineLine1": "AI駆動開発でつくる、",
+      "taglineLine2": "ISMS構築・運用支援プラットフォーム。",
+      "features": {
+        "documents": "文書管理・バージョン管理",
+        "riskAssessment": "リスクアセスメント＆対策管理",
+        "auditPreparation": "監査準備＆進捗管理"
+      }
     },
     "login": {
       "title": "ログイン",
@@ -436,11 +454,11 @@
     }
   },
   "devLogin": {
-    "title": "開発用テナントログイン",
-    "description": "テナントを選び、その中のユーザーとしてログインして、seed済みの業務データを確認できます。",
+    "title": "デモログイン",
+    "description": "個人情報やパスワードを入力せず、用意されたデモ画面を選んで確認できます。",
     "devOnlyFeature": "開発環境専用",
     "note": "ヒント:",
-    "noteContent": " 作成されたテストユーザー／組織は Dev Login と local.db の user_profiles で確認・初期化できます。",
+    "noteContent": " デモログインは既存の架空fixtureを読み取り、セッションだけを開始します。",
     "publicNotice": {
       "title": "このデモはBuild in Publicの公開デモです",
       "body": "Riscala AI for ISMSは、ISMS支援アプリケーションの現在地と、AI駆動開発で業務アプリを作る過程を公開するために運用しています。架空データで試用でき、入力内容は定期的に初期状態へ戻ります。ソース確認、フィードバック、協業相談はGitHubからお願いします。"
@@ -630,17 +648,17 @@
             "items": {
               "remoteWork": {
                 "title": "リモートワークセキュリティ標準",
-                "version": "処理中",
+                "version": "Ver.3.2・今週更新",
                 "due": "11月11日までに確認"
               },
               "vendorChecklist": {
                 "title": "ベンダーオンボーディングチェックリスト",
-                "version": "処理中",
+                "version": "Ver.2.5・コメント反映済み",
                 "due": "11月15日までにレビュー"
               },
               "codeOfConduct": {
                 "title": "行動規範 (FY25)",
-                "version": "処理中",
+                "version": "Ver.5.0・署名済み",
                 "due": "10月30日 受付済み"
               }
             }
@@ -775,6 +793,8 @@
   "pricing": {
     "title": "料金プラン",
     "subtitle": "あなたの組織に最適なプランをお選びください",
+    "customQuote": "個別見積",
+    "contactUs": "お問い合わせ",
     "status": {
       "trialing": "トライアル中",
       "active": "有効",
@@ -784,7 +804,12 @@
       "past_due": "支払い遅延",
       "unpaid": "未払い"
     },
-    "testModeNotice": "Stripe テストモードで動作中です。決済はモック画面で完結し、実際の請求は発生しません。"
+    "testModeNotice": "Stripe テストモードで動作中です。決済はモック画面で完結し、実際の請求は発生しません。",
+    "errors": {
+      "stripeLoadFailed": "Stripe.js の読み込みに失敗しました。公開鍵の設定を確認してください。",
+      "checkoutFailed": "決済の開始に失敗しました。もう一度お試しください。",
+      "portalFailed": "カスタマーポータルへのアクセスに失敗しました。"
+    }
   },
   "documents": {
     "title": "文書管理",
@@ -798,7 +823,7 @@
       "submit": "アップロード",
       "cancel": "キャンセル"
     },
-    "search_placeholder": "検索中",
+    "search_placeholder": "文書を検索...",
     "filter": {
       "all": "すべて",
       "policy": "方針",
@@ -981,6 +1006,7 @@
         "approverLabel": "承認者",
         "selectPlaceholder": "ユーザーを選択",
         "loadingCandidates": "承認者候補を確認中",
+        "twoStepNote": "承認は2段階（選択した承認者 → 組織管理者）で行われます。",
         "hint": "承認者は同一組織に所属し、この文書を参照できる必要があります。",
         "submit": "承認依頼を送信",
         "saving": "保存中",
@@ -997,7 +1023,8 @@
       },
       "errors": {
         "missingApprover": "承認者を選択してください",
-        "candidatesLoadFailed": "この文書を確認できる承認者候補を取得できませんでした"
+        "candidatesLoadFailed": "この文書を確認できる承認者候補を取得できませんでした",
+        "finalStepNoApprover": "組織管理者が不在のため承認依頼を作成できません。組織管理者を追加してください"
       },
       "progress": {
         "title": "承認進捗",
@@ -1143,7 +1170,7 @@
           "description": "ISMS文書テンプレートと版数管理で、常に最新の状態を維持。Word/Excel形式でのエクスポートも可能。"
         },
         "riskAssessment": {
-          "title": "直感的なリスク評価",
+          "title": "直感的なリスクアセスメント",
           "description": "ドラッグ&ドロップでリスクを可視化。対策状況もひと目で把握できます。"
         },
         "taskManagement": {
@@ -1156,31 +1183,11 @@
         }
       }
     },
-    "howItWorks": {
-      "title": "3ステップで始めるISMS構築",
-      "steps": {
-        "setup": {
-          "number": "1",
-          "title": "組織情報を登録",
-          "description": "企業規模や業種に応じた最適なテンプレートを自動選択"
-        },
-        "build": {
-          "number": "2",
-          "title": "文書作成・リスク評価",
-          "description": "ガイドに従って必要文書を作成、リスクアセスメントを実施"
-        },
-        "maintain": {
-          "number": "3",
-          "title": "継続的な改善",
-          "description": "PDCAサイクルを回しながら、認証維持をサポート"
-        }
-      }
-    },
     "pricing": {
       "title": "シンプルで透明な料金体系",
       "subtitle": "企業規模に応じて最適なプランをお選びください",
       "popular": "人気プラン",
-      "allPlansInclude": "すべてのプランに含まれるもの：SSL証明書、99.9%稼働率SLA、24/7監視",
+      "allPlansInclude": "すべてのプランに含まれるもの：SSL証明書、24/7監視",
       "cancelAnytime": "いつでもキャンセル可能",
       "securePayment": "安全な決済",
       "moneyBack": "返金保証",
@@ -1202,7 +1209,7 @@
         "duration": "/月",
         "features": [
           "10ユーザーまで",
-          "文書管理・リスク評価",
+          "文書管理・リスクアセスメント",
           "タスク管理",
           "メールサポート",
           "月次レポート"
@@ -1254,21 +1261,6 @@
         "company": "サンプルソフト株式会社"
       }
     },
-    "valueProps": {
-      "title": "なぜRiscala AI for ISMSを選ぶのか",
-      "item1": {
-        "title": "専門知識不要",
-        "description": "ISO27001の専門知識をチームで補いながら、必要な準備と運用状況を段階的に整理"
-      },
-      "item2": {
-        "title": "コスト削減",
-        "description": "外部支援に依存しすぎず、社内で確認できる情報と証跡を増やせます"
-      },
-      "item3": {
-        "title": "抜け漏れ確認",
-        "description": "文書、リスク、監査、是正をつなげて、次に確認すべき不足項目を見つけやすくします"
-      }
-    },
     "process": {
       "title": "3ステップで始める",
       "subtitle": "初回登録準備から継続運用まで、状況に合わせて進めるプロセス",
@@ -1276,7 +1268,7 @@
       "step1": {
         "title": "アカウント作成",
         "time": "5分",
-        "description": "組織情報を入力して、14日間の無料トライアルを開始"
+        "description": "組織情報を入力して、14日間の無料トライアルを開始。企業規模や業種に応じた最適なテンプレートを自動選択します"
       },
       "step2": {
         "title": "ISMS構築",
@@ -1355,7 +1347,7 @@
   "risks": {
     "title": "リスクアセスメント",
     "description": "組織のリスクを特定・評価・管理します",
-    "search": "検索中",
+    "search": "リスクを検索...",
     "filterByCategory": "カテゴリで絞り込み",
     "filterByStatus": "ステータスで絞り込み",
     "filterByDepartment": "部門で絞り込み",
@@ -1389,7 +1381,7 @@
     "list": {
       "title": "リスク一覧",
       "newRisk": "新規リスク登録",
-      "search": "検索中",
+      "search": "リスクを検索...",
       "filterByCategory": "カテゴリで絞り込み",
       "filterByStatus": "ステータスで絞り込み",
       "backToList": "リスト一覧に戻る",
@@ -1422,7 +1414,8 @@
       "exporting": "エクスポート中"
     },
     "messages": {
-      "exportFailed": "エクスポートに失敗しました。時間をおいて再度お試しください。"
+      "exportFailed": "エクスポートに失敗しました。時間をおいて再度お試しください。",
+      "confirmDelete": "このリスクを削除してもよろしいですか？"
     },
     "status": {
       "identified": "特定済み",
@@ -1457,7 +1450,7 @@
     "detail": {
       "riskDetails": "リスク詳細",
       "lastUpdated": "最終更新",
-      "riskAssessment": "リスク評価",
+      "riskAssessment": "リスクアセスメント",
       "treatments": "対応策",
       "treatmentStatus": "対応状況",
       "treatmentCount": "対応策 {count} 件",
@@ -1510,6 +1503,7 @@
       "updateFailed": "リスクの更新に失敗しました",
       "assetUpdateFailed": "関連資産の保存に失敗しました",
       "taskUpdateFailed": "関連タスクの保存に失敗しました",
+      "deleteFailed": "リスクの削除に失敗しました",
       "notFound": "リスクが見つかりません"
     },
     "gapAnalysis": {
@@ -1610,7 +1604,7 @@
       "controls": {
         "title": "関連する管理策",
         "description": "ISO管理策を選択して対応策との整合性を明確にします。",
-        "searchPlaceholder": "検索中",
+        "searchPlaceholder": "管理策を検索...",
         "allCategories": "すべてのカテゴリ",
         "loading": "読み込み中",
         "noResults": "管理策が見つかりませんでした",
@@ -1654,7 +1648,7 @@
       },
       "tasks": {
         "description": "リスク対応に紐づく業務タスクを選択します。1タスクは1リスクにのみ紐付けられます。",
-        "searchPlaceholder": "検索中",
+        "searchPlaceholder": "タスクを検索...",
         "empty": "表示できるタスクがありません。",
         "locked": "別のリスクに紐付いているため選択できません。",
         "helper": "チェックを入れて保存するとタスクの関連リスクが更新されます。",
@@ -1662,14 +1656,33 @@
         "saving": "保存中"
       }
     },
-    "importCsv": "CSVインポート"
+    "importCsv": "CSVインポート",
+    "help": {
+      "title": "リスクアセスメントの使い方",
+      "items": {
+        "riskScore": { "label": "リスクスコア", "text": "：影響度 × 発生可能性で自動計算されます（1～25）" },
+        "colorCoding": { "label": "色分け", "text": "：高リスク（赤）、中リスク（黄）、低リスク（緑）で視覚的に確認できます" },
+        "statusManagement": { "label": "ステータス管理", "text": "：「特定済み」→「分析中」→「対応中」→「監視中」→「対応完了」の流れで管理" },
+        "riskMatrix": { "label": "リスクマトリックス", "text": "：下部の表で全リスクの分布を俯瞰できます" }
+      },
+      "sample": {
+        "heading": "サンプルリスクを参考にしてください：",
+        "detailTemplate": "影響度: {impact}, 発生可能性: {likelihood}, リスクスコア: {score}（{level}）",
+        "items": {
+          "unauthorizedAccess": { "title": "不正アクセスリスク", "description": "：外部からの不正アクセスによる情報漏洩" },
+          "backupFailure": { "title": "データバックアップ不備", "description": "：災害時のデータ復旧が困難" },
+          "employeeMismanagement": { "title": "従業員の情報管理不徹底", "description": "：人的ミスによる情報流出" }
+        },
+        "cta": "新規リスクを登録する"
+      }
+    }
   },
   "tasks": {
     "title": "タスク管理",
     "list": {
       "newTask": "新規タスク作成",
       "editTask": "タスクを編集",
-      "search": "検索中",
+      "search": "タスクを検索...",
       "view": {
         "kanban": "かんばん",
         "list": "リスト",
@@ -1807,6 +1820,7 @@
     },
     "confirmDelete": "このタスクを削除してもよろしいですか？",
     "confirmDeleteAttachment": "この添付ファイルを削除してもよろしいですか？",
+    "confirmDeleteComment": "このコメントを削除してもよろしいですか？",
     "errors": {
       "loadFailed": "タスクの読み込みに失敗しました",
       "createFailed": "タスクの作成に失敗しました",
@@ -1819,6 +1833,8 @@
       "createTag": "タグの作成に失敗しました",
       "createSubtask": "サブタスクの作成に失敗しました",
       "updateSubtask": "サブタスクの更新に失敗しました",
+      "updateComment": "コメントの更新に失敗しました",
+      "deleteComment": "コメントの削除に失敗しました",
       "deleteSubtask": "サブタスクの削除に失敗しました",
       "permissionDenied": "この操作を実行する権限がありません"
     },
@@ -1957,7 +1973,19 @@
       "periodHeaderAll": "全期間",
       "progressBarAriaLabel": "監査ステータスの割合を示す進捗バー",
       "followUpSummary": "フォローアップ状況",
-      "nonconformitySummary": "不適合ステータス内訳"
+      "nonconformitySummary": "不適合ステータス内訳",
+      "progressHeading": "監査の進捗",
+      "progressHint": "計画、実施、指摘、是正、フォローアップの順に未対応を確認します。",
+      "viewInProgress": "進行中を見る",
+      "majorMinorSummary": "重大: {major}, 軽微: {minor}",
+      "progressSegments": {
+        "planning": "計画",
+        "inProgress": "実施",
+        "nonconformities": "指摘",
+        "corrective": "是正",
+        "followUp": "フォロー"
+      },
+      "viewDetails": "詳細を見る"
     },
     "plans": {
       "title": "監査計画",
@@ -2205,7 +2233,7 @@
         "inProgress": "作成中"
       },
       "filters": {
-        "search": "検索中",
+        "search": "監査名で検索...",
         "status": "ステータスで絞り込み",
         "period": "期間で絞り込み",
         "type": "監査種別で絞り込み"
@@ -2288,7 +2316,9 @@
     "form": {
       "basicInfo": "基本情報",
       "title": "監査名",
+      "titlePlaceholder": "例: 2025年度 内部監査（第1回）",
       "description": "説明",
+      "descriptionPlaceholder": "監査の目的や範囲を記載",
       "auditType": "監査種別",
       "standard": "適用規格",
       "schedule": "日程",
@@ -2297,6 +2327,7 @@
       "auditTeam": "監査チーム",
       "leadAuditor": "主任監査員",
       "auditors": "監査員",
+      "auditorSignaturePlaceholder": "例: 監査担当 山田 太郎",
       "cancel": "キャンセル",
       "create": "作成",
       "creating": "作成中",
@@ -2392,6 +2423,12 @@
         "updateFailed": "フォローアップの更新に失敗しました。",
         "titleRequired": "タイトルを入力してください。"
       }
+    },
+    "types": {
+      "internal": "内部監査",
+      "external": "外部監査",
+      "certification": "認証審査",
+      "surveillance": "継続運用"
     }
   },
   "home": {
@@ -2548,6 +2585,7 @@
         "documentUpdated": "{actor}が文書「{resource}」を更新しました",
         "documentApproved": "{actor}が文書「{resource}」を承認しました",
         "documentApprovalRequested": "{actor}が文書「{resource}」の承認を依頼しました",
+        "documentApprovalStepCompleted": "{actor}が文書「{resource}」の一次承認（上司確認）を完了しました",
         "riskCreated": "{actor}がリスク「{resource}」を登録しました",
         "riskUpdated": "{actor}がリスク「{resource}」を更新しました",
         "riskDeleted": "{actor}がリスク「{resource}」を削除しました",
@@ -2603,7 +2641,7 @@
       },
       "filters": {
         "search": "検索",
-        "searchPlaceholder": "検索中",
+        "searchPlaceholder": "キーワードで検索...",
         "category": "カテゴリ",
         "allCategories": "すべてのカテゴリ"
       },
@@ -2624,7 +2662,7 @@
           "title": "管理策タイトル",
           "category": "カテゴリ",
           "controlCode": "管理策番号",
-          "controlCodePlaceholder": "処理中",
+          "controlCodePlaceholder": "例：A.5.1",
           "description": "詳細説明",
           "tags": "タグ",
           "tagsPlaceholder": "例：アクセス管理, テレワーク",
@@ -2830,7 +2868,7 @@
           "description": "少なくとも1件のリスクを登録し、初期評価と対応方針を記録します。",
           "pending": "登録済みリスク {count}/{target} 件",
           "complete": "登録済みリスク {count} 件",
-          "action": "リスク評価を開始"
+          "action": "リスクアセスメントを開始"
         },
         "phase_scope_review": {
           "title": "適用範囲と部門を再確認",
@@ -3107,7 +3145,7 @@
                   "assetsRisks": {
                     "status": "リスク {count} 件",
                     "title": "情報資産とリスクをつなげる",
-                    "next": "情報資産台帳からリスク評価へ進み、対応中リスクを見直します。",
+                    "next": "情報資産台帳からリスクアセスメントへ進み、対応中リスクを見直します。",
                     "done": "主要資産にリスクと対応が紐づく",
                     "impact": "リスク台帳と管理策判断の根拠になる"
                   },
@@ -3278,10 +3316,10 @@
       },
       "user": {
         "title": "マイダッシュボード",
-        "subtitle": "あなたのタスク、担当文書、受講中の教育をまとめて確認できます。",
+        "subtitle": "あなたのタスク、組織の承認済み文書、割り当てられた教育をまとめて確認できます。",
         "summary": {
           "tasks": "マイタスク",
-          "documents": "担当文書",
+          "documents": "承認済み文書",
           "training": "未完了の教育"
         },
         "sections": {
@@ -3331,8 +3369,8 @@
             }
           },
           "documents": {
-            "title": "必読文書",
-            "subtitle": "確認すべき承認済み文書です。",
+            "title": "承認済み文書",
+            "subtitle": "組織で承認され、参照できる文書です。",
             "cta": "承認済み文書を見る",
             "status": {
               "pendingAck": "確認待ち",
@@ -3390,7 +3428,7 @@
             },
             "items": {
               "documentationCleanup": {
-                "title": "運用ドキュメント整理",
+                "title": "運用文書整理",
                 "owner": "担当: 田中",
                 "eta": "予定: 4月末"
               },
@@ -3869,7 +3907,7 @@
       },
       "list": {
         "title": "ユーザー一覧",
-        "search": "検索中",
+        "search": "ユーザーを検索...",
         "filter": {
           "all": "すべて",
           "active": "アクティブ",
@@ -4045,6 +4083,7 @@
         "actions": "操作"
       },
       "roles": {
+        "super_admin": "スーパー管理者",
         "system_operator": "システム運営者",
         "org_admin": "組織管理者",
         "auditor": "監査員",
@@ -4058,7 +4097,7 @@
     },
     "assets": {
       "title": "情報資産管理",
-      "description": "組織の情報資産を管理し、リスク評価と連携します。",
+      "description": "組織の情報資産を管理し、リスクアセスメントと連携します。",
       "actions": {
         "edit": "編集",
         "delete": "削除",
@@ -4322,9 +4361,12 @@
         "trialing": "トライアル中",
         "past_due": "支払い遅延",
         "canceled": "キャンセル済み",
-        "incomplete": "未完了"
+        "incomplete": "未完了",
+        "unpaid": "未払い",
+        "incomplete_expired": "期限切れ"
       },
       "perMonth": "月",
+      "customQuote": "個別見積",
       "cancelScheduled": "サブスクリプションは{date}にキャンセルされます",
       "noSubscription": "アクティブなサブスクリプションがありません",
       "usage": {
@@ -4686,6 +4728,7 @@
     "setup": {
       "title": "初期セットアップ",
       "description": "CSVファイルで初期データを一括登録します",
+      "forbidden": "この操作にはシステム運営者または組織管理者の権限が必要です",
       "auditUnits": "監査対象ユニット",
       "uploadCsv": "CSVファイルを選択",
       "downloadTemplate": "テンプレートをダウンロード",
@@ -5226,7 +5269,9 @@
     "summary": { "pending": "承認待ち {count}", "dueSoon": "期限接近 {count}", "escalated": "管理者にも通知 {count}" },
     "filters": { "due": "期限が近い承認依頼のみ表示中", "escalation": "管理者にも通知された承認依頼のみ表示中", "clear": "絞り込みを解除" },
     "columns": { "subject": "判断対象", "people": "申請者・承認者", "due": "期限", "impact": "承認後の影響", "actions": "判断" },
-    "statuses": { "pending": "承認待ち", "approved": "承認済み", "rejected": "却下済み", "expired": "期限切れ" },
+    "statuses": { "pending": "承認待ち", "approved": "承認済み", "rejected": "却下済み", "expired": "期限切れ", "cancelled": "取消済み" },
+    "steps": { "first": "一次承認", "final": "最終承認" },
+    "errors": { "nextStepNoApprover": "組織管理者が不在のため次の承認段階へ進められません。組織管理者を追加してください" },
     "resourceTypes": { "document": "文書", "incident": "インシデント", "audit_plan": "監査計画", "audit_report": "監査報告書", "nonconformity_closure": "是正完了", "followup_record": "フォローアップ", "iso_control_soa": "適用管理策", "soa_version": "適用管理策の版", "risk_residual_acceptance": "残留リスク受容" },
     "impacts": { "document": "承認済み文書として公開・次工程へ進みます。", "incident": "インシデント報告が承認済みとなり、対応記録へ反映されます。", "audit_plan": "監査計画が確定し、監査実施へ進めます。", "audit_report": "監査報告が確定し、是正とマネジメントレビューへ引き渡されます。", "nonconformity_closure": "是正処置を完了扱いにし、監査証跡へ反映します。", "followup_record": "フォローアップ確認を完了し、是正の有効性記録へ反映します。", "iso_control_soa": "管理策の適用判断が承認済みとなり、SoAへ反映されます。", "soa_version": "適用管理策判断の版を承認し、レビュー済み記録として残します。", "risk_residual_acceptance": "残留リスクを組織として受容した記録を残します。" },
     "decision": { "approveTitle": "この内容を承認しますか？", "rejectTitle": "この内容を却下しますか？", "rejectReasonLabel": "却下理由", "rejectReasonPlaceholder": "修正してほしい内容と理由（必須）", "confirmApprove": "承認を確定", "confirmReject": "却下を確定" },

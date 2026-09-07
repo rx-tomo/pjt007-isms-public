@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server'
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { getUser } from '@/lib/server/auth/getUser'
 import { getDb } from '@/lib/db/drizzle/client'
 import { userMemberships, userProfiles } from '@/lib/db/drizzle/schema/users'
 import { organizations } from '@/lib/db/drizzle/schema/organizations'
+import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+
+const TENANT_ROLES = [
+  'system_operator',
+  'org_admin',
+  'auditor',
+  'approver',
+  'user',
+] as const
 
 function serializeOrganization(row: {
   id: string
@@ -49,14 +58,14 @@ export async function GET() {
     const profileRows = await db
       .select({
         organizationId: userProfiles.organizationId,
-        role: userProfiles.role,
+        isActive: userProfiles.isActive,
       })
       .from(userProfiles)
       .where(eq(userProfiles.id, user.id))
       .limit(1)
 
     const profile = profileRows[0]
-    if (!profile?.organizationId) {
+    if (!profile?.organizationId || profile.isActive !== true) {
       return NextResponse.json({ error: 'organization not found' }, { status: 404 })
     }
 
@@ -81,6 +90,7 @@ export async function GET() {
       .where(and(
         eq(userMemberships.userId, user.id),
         eq(userMemberships.status, 'active'),
+        inArray(userMemberships.role, TENANT_ROLES),
         isNull(organizations.deletedAt)
       ))
       .orderBy(asc(organizations.name))
@@ -107,6 +117,7 @@ export async function GET() {
         eq(userMemberships.userId, user.id),
         eq(userMemberships.organizationId, profile.organizationId),
         eq(userMemberships.status, 'active'),
+        inArray(userMemberships.role, TENANT_ROLES),
         eq(organizations.id, profile.organizationId),
         isNull(organizations.deletedAt)
       ))
@@ -114,6 +125,15 @@ export async function GET() {
 
     const row = orgRows[0]
     if (!row) {
+      return NextResponse.json({ error: 'organization not found' }, { status: 404 })
+    }
+
+    const authorization = await resolveTenantAuthorizationContext(
+      db,
+      user.id,
+      profile.organizationId
+    )
+    if (!authorization.ok || authorization.context.role === 'super_admin') {
       return NextResponse.json({ error: 'organization not found' }, { status: 404 })
     }
 
@@ -141,13 +161,12 @@ export async function PATCH(request: Request) {
     }
 
     const db = getDb()
-    const profileRows = await db
-      .select({ role: userProfiles.role })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, user.id))
-      .limit(1)
-    const profile = profileRows[0]
-    if (profile?.role !== 'system_operator') {
+    const authorization = await resolveTenantAuthorizationContext(
+      db,
+      user.id,
+      organizationId
+    )
+    if (!authorization.ok || authorization.context.role !== 'system_operator') {
       return NextResponse.json({ error: 'organization switch is restricted to system operators' }, { status: 403 })
     }
 
@@ -172,7 +191,6 @@ export async function PATCH(request: Request) {
       .update(userProfiles)
       .set({
         organizationId,
-        role: membership.role,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(userProfiles.id, user.id))

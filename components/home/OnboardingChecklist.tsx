@@ -111,7 +111,7 @@ const STEP_ICONS: Record<OnboardingStepId, JSX.Element> = {
 }
 
 const PHASE_BADGE_TONE: Record<IsmsPhase, string> = {
-  initial: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+  initial: 'bg-blue-50 text-blue-700 ring-blue-100',
   surveillance: 'bg-emerald-50 text-emerald-700 ring-emerald-100'
 }
 
@@ -138,11 +138,11 @@ export default function OnboardingChecklist({
   const router = useRouter()
 
   const loadingView = (
-    <section className="rounded-3xl border border-indigo-100 bg-surface/90 p-6 shadow-sm backdrop-blur">
+    <section className="rounded-3xl border border-blue-100 bg-surface/90 p-6 shadow-sm backdrop-blur">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
-            <span className="h-2 w-2 rounded-full bg-indigo-400" />
+          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            <span className="h-2 w-2 rounded-full bg-blue-400" />
             {t('onboardingChecklist.badge')}
           </div>
           <div className="space-y-1">
@@ -152,7 +152,7 @@ export default function OnboardingChecklist({
         </div>
         <div className="flex items-center gap-4">
           <div className="relative h-20 w-20">
-            <div className="h-full w-full animate-pulse rounded-full bg-indigo-100" />
+            <div className="h-full w-full animate-pulse rounded-full bg-blue-100" />
           </div>
           <div className="space-y-2">
             <div className="h-3 w-32 rounded-full bg-surface-elevated" />
@@ -171,11 +171,11 @@ export default function OnboardingChecklist({
   )
 
   const unavailableView = (
-    <section className="rounded-3xl border border-indigo-100 bg-surface/90 p-6 shadow-sm backdrop-blur">
+    <section className="rounded-3xl border border-blue-100 bg-surface/90 p-6 shadow-sm backdrop-blur">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
-            <span className="h-2 w-2 rounded-full bg-indigo-400" />
+          <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            <span className="h-2 w-2 rounded-full bg-blue-400" />
             {t('onboardingChecklist.badge')}
           </span>
           <div>
@@ -187,13 +187,13 @@ export default function OnboardingChecklist({
           <button
             type="button"
             onClick={() => router.refresh()}
-            className="inline-flex items-center gap-1 rounded-full border border-indigo-200 px-3 py-1.5 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50"
+            className="inline-flex items-center gap-1 rounded-full border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-50"
           >
             {t('onboardingChecklist.unavailable.retry')}
           </button>
           <Link
             href={`/${locale}/settings/organization`}
-            className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-500"
+            className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-500"
           >
             {t('onboardingChecklist.unavailable.settings')}
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,11 +305,11 @@ export default function OnboardingChecklist({
   const phaseHistoryEntries = progress.phaseHistory.slice(0, 3)
 
   return (
-    <section className="rounded-3xl border border-indigo-100 bg-surface/90 p-6 shadow-sm backdrop-blur">
+    <section className="rounded-3xl border border-blue-100 bg-surface/90 p-6 shadow-sm backdrop-blur">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
-            <span className="h-2 w-2 rounded-full bg-indigo-400" />
+          <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            <span className="h-2 w-2 rounded-full bg-blue-400" />
             {t('onboardingChecklist.badge')}
           </span>
           <div>
@@ -338,7 +338,7 @@ export default function OnboardingChecklist({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-semibold text-indigo-600">{activePeriod.completionRate}%</span>
+                <span className="text-lg font-semibold text-blue-600">{activePeriod.completionRate}%</span>
               </div>
             </div>
             <span className="text-xs text-text-muted">{t('onboardingChecklist.rateLabel')}</span>
@@ -365,7 +365,7 @@ export default function OnboardingChecklist({
                   onClick={() => setSelectedPeriod(period.fiscalYear)}
                   className={`rounded-full px-3 py-1 text-xs transition ${
                     period.fiscalYear === activePeriod.fiscalYear
-                      ? 'bg-surface text-indigo-600 shadow'
+                      ? 'bg-surface text-blue-600 shadow'
                       : 'text-text-muted hover:text-text-secondary'
                   }`}
                 >
@@ -384,7 +384,7 @@ export default function OnboardingChecklist({
                 type="button"
                 onClick={() => setStatusFilter(filter.value)}
                 className={`flex items-center gap-1 rounded-full px-3 py-1 transition ${
-                  statusFilter === filter.value ? 'bg-surface text-indigo-600 shadow' : 'text-text-muted hover:text-text-secondary'
+                  statusFilter === filter.value ? 'bg-surface text-blue-600 shadow' : 'text-text-muted hover:text-text-secondary'
                 }`}
               >
                 {t(`onboardingChecklist.filters.status.${filter.key}` as const)}
@@ -446,11 +446,11 @@ export default function OnboardingChecklist({
                   key={step.id}
                   href={href}
                   data-testid={`onboarding-step-${step.id}`}
-                  className="flex flex-col gap-4 rounded-2xl border border-border bg-surface/80 p-4 transition hover:border-indigo-200 hover:bg-surface"
+                  className="flex flex-col gap-4 rounded-2xl border border-border bg-surface/80 p-4 transition hover:border-blue-200 hover:bg-surface"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                         {STEP_ICONS[step.id]}
                       </div>
                       <div>
@@ -481,7 +481,7 @@ export default function OnboardingChecklist({
                   </div>
                   <div className="relative h-1.5 rounded-full bg-surface-elevated">
                     <div
-                      className={`absolute inset-y-0 left-0 rounded-full ${isComplete ? 'bg-indigo-500' : 'bg-border'}`}
+                      className={`absolute inset-y-0 left-0 rounded-full ${isComplete ? 'bg-blue-500' : 'bg-border'}`}
                       style={{ width: `${Math.min(100, Math.round((count / Math.max(target, 1)) * 100))}%` }}
                     />
                   </div>
@@ -492,13 +492,13 @@ export default function OnboardingChecklist({
         </div>
 
         <div className="space-y-4">
-          <div className={`rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 ${phaseBadgeTone}`}>
+          <div className={`rounded-2xl border border-blue-100 bg-blue-50/60 p-4 ${phaseBadgeTone}`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{t('onboardingChecklist.phasesTitle')}</p>
                 <p className="text-lg font-semibold text-text-primary">{phaseLabel}</p>
               </div>
-              <span className="rounded-full px-3 py-1 text-xs font-semibold text-indigo-600">
+              <span className="rounded-full px-3 py-1 text-xs font-semibold text-blue-600">
                 {activePeriod.label}
               </span>
             </div>
@@ -512,7 +512,7 @@ export default function OnboardingChecklist({
               </div>
               <Link
                 href={`/${locale}/settings/organization?tab=phase`}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+                className="text-xs font-medium text-blue-600 hover:text-blue-500"
               >
                 {t('onboardingChecklist.history.manage')}
               </Link>

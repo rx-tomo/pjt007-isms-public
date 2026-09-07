@@ -18,10 +18,12 @@ import {
   followUpRecords,
   auditChecklists,
   auditPlans,
+  auditLogs,
   correctiveActions,
   nonconformities,
+  userMemberships,
 } from '@/lib/db/drizzle/schema'
-import { eq, and, desc, asc } from 'drizzle-orm'
+import { eq, and, desc, asc, inArray, ne } from 'drizzle-orm'
 import { ApprovalService, type ApprovalResourceType } from '@/lib/services/approval'
 import { NotificationService } from '@/lib/services/notification'
 import { StorageQuotaService } from '@/lib/services/storageQuota'
@@ -86,16 +88,36 @@ import type {
   AuditUnit
 } from '@/lib/db/repositories/interfaces/IAuditPlanRepository'
 
+export class AuditTenantMutationError extends Error {
+  constructor(
+    public readonly status: 400 | 404 | 409,
+    message: string
+  ) {
+    super(message)
+    this.name = 'AuditTenantMutationError'
+  }
+}
+
+export function isAuditTenantMutationError(error: unknown): error is AuditTenantMutationError {
+  return error instanceof AuditTenantMutationError
+}
+
 export class AuditService {
   private storageQuota: StorageQuotaService
   private approvalService: ApprovalService
+  private readonly injectedDb?: ReturnType<typeof getDb>
   private repositoryPromise: Promise<IAuditPlanRepository> | null = null
   private auditLogPromise: Promise<IAuditLogRepository> | null = null
   private authProviderPromise: Promise<IAuthProvider> | null = null
 
-  constructor() {
+  constructor(dependencies?: { db?: ReturnType<typeof getDb> }) {
+    this.injectedDb = dependencies?.db
     this.storageQuota = new StorageQuotaService()
     this.approvalService = new ApprovalService()
+  }
+
+  private get db(): ReturnType<typeof getDb> {
+    return this.injectedDb ?? getDb()
   }
 
   private async getRepository(): Promise<IAuditPlanRepository> {
@@ -201,28 +223,36 @@ export class AuditService {
         organizationId: input.organizationId,
         resourceType: input.resourceType
       })
-      if (userIds[0]) return userIds[0]
+      for (const userId of userIds) {
+        if (await this.isEligibleAuditApprover(input.organizationId, userId)) {
+          return userId
+        }
+      }
     } catch (error) {
       console.error('[AuditService] Failed to resolve audit approver', error)
     }
 
     try {
-      const db = getDb()
+      const db = this.db
       const baseWhere = and(
-        eq(userProfiles.organizationId, input.organizationId),
+        eq(userMemberships.organizationId, input.organizationId),
+        eq(userMemberships.status, 'active'),
+        inArray(userMemberships.role, ['approver', 'org_admin', 'system_operator']),
         eq(userProfiles.isActive, true)
       )
       const fallbackCandidates = [
         eq(userProfiles.isCiso, true),
         eq(userProfiles.isSecurityManager, true),
-        eq(userProfiles.role, 'approver'),
-        eq(userProfiles.role, 'org_admin'),
+        eq(userMemberships.role, 'approver'),
+        eq(userMemberships.role, 'org_admin'),
+        eq(userMemberships.role, 'system_operator'),
       ]
 
       for (const condition of fallbackCandidates) {
         const [candidate] = await db
           .select({ id: userProfiles.id })
           .from(userProfiles)
+          .innerJoin(userMemberships, eq(userMemberships.userId, userProfiles.id))
           .where(and(baseWhere, condition))
           .orderBy(asc(userProfiles.fullName))
           .limit(1)
@@ -234,6 +264,27 @@ export class AuditService {
     }
 
     return null
+  }
+
+  private async isEligibleAuditApprover(
+    organizationId: string,
+    userId: string
+  ): Promise<boolean> {
+    const [candidate] = await this.db
+      .select({ id: userProfiles.id })
+      .from(userProfiles)
+      .innerJoin(userMemberships, and(
+        eq(userMemberships.userId, userProfiles.id),
+        eq(userMemberships.organizationId, organizationId),
+        eq(userMemberships.status, 'active'),
+        inArray(userMemberships.role, ['approver', 'org_admin', 'system_operator'])
+      ))
+      .where(and(
+        eq(userProfiles.id, userId),
+        eq(userProfiles.isActive, true)
+      ))
+      .limit(1)
+    return Boolean(candidate)
   }
 
   async getAuditUnits(organizationId: string): Promise<AuditUnit[]> {
@@ -573,6 +624,93 @@ export class AuditService {
     return data
   }
 
+  /**
+   * Server-side team mutation used by the authenticated route. Target
+   * membership, insert, and audit event are one transaction so a failed audit
+   * insert cannot leave an unaudited team assignment.
+   */
+  async addTeamMemberForActor(input: {
+    planId: string
+    organizationId: string
+    userId: string
+    role: TeamRole
+    actorUserId: string
+  }): Promise<AuditTeamMember> {
+    if (
+      !input.planId.trim()
+      || !input.organizationId.trim()
+      || !input.userId.trim()
+      || !input.actorUserId.trim()
+    ) {
+      throw new AuditTenantMutationError(400, 'Invalid audit team member payload')
+    }
+
+    return this.db.transaction(async tx => {
+      const [plan] = await tx
+        .select({ id: auditPlans.id })
+        .from(auditPlans)
+        .where(and(
+          eq(auditPlans.id, input.planId),
+          eq(auditPlans.organizationId, input.organizationId)
+        ))
+        .limit(1)
+      if (!plan) {
+        throw new AuditTenantMutationError(404, 'Audit plan not found')
+      }
+
+      const [target] = await tx
+        .select({ id: userProfiles.id })
+        .from(userProfiles)
+        .innerJoin(userMemberships, and(
+          eq(userMemberships.userId, userProfiles.id),
+          eq(userMemberships.organizationId, input.organizationId),
+          eq(userMemberships.status, 'active'),
+          ne(userMemberships.role, 'super_admin')
+        ))
+        .where(and(
+          eq(userProfiles.id, input.userId),
+          eq(userProfiles.isActive, true)
+        ))
+        .limit(1)
+      if (!target) {
+        throw new AuditTenantMutationError(404, 'Audit team member not found')
+      }
+
+      const id = crypto.randomUUID()
+      const now = new Date().toISOString()
+      await tx.insert(auditTeamMembers).values({
+        id,
+        auditPlanId: input.planId,
+        userId: input.userId,
+        role: input.role,
+        assignedAt: now,
+      })
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId: input.organizationId,
+        userId: input.actorUserId,
+        action: 'audit.team_member.added',
+        resourceType: 'audit_team_member',
+        resourceId: id,
+        changes: JSON.stringify({
+          audit_plan_id: input.planId,
+          user_id: input.userId,
+          role: input.role,
+        }),
+        scope: 'tenant',
+        createdAt: now,
+      })
+
+      return {
+        id,
+        audit_plan_id: input.planId,
+        user_id: input.userId,
+        role: input.role,
+        assigned_at: now,
+      }
+    })
+  }
+
   async updateTeamMember(
     memberId: string,
     updates: Partial<Pick<AuditTeamMember, 'role'>>
@@ -601,6 +739,64 @@ export class AuditService {
     })
 
     return data
+  }
+
+  async updateTeamMemberForActor(input: {
+    memberId: string
+    organizationId: string
+    role: TeamRole
+    actorUserId: string
+  }): Promise<AuditTeamMember> {
+    return this.db.transaction(async tx => {
+      const [existing] = await tx
+        .select({
+          id: auditTeamMembers.id,
+          auditPlanId: auditTeamMembers.auditPlanId,
+          userId: auditTeamMembers.userId,
+          assignedAt: auditTeamMembers.assignedAt,
+          previousRole: auditTeamMembers.role,
+        })
+        .from(auditTeamMembers)
+        .innerJoin(auditPlans, eq(auditPlans.id, auditTeamMembers.auditPlanId))
+        .where(and(
+          eq(auditTeamMembers.id, input.memberId),
+          eq(auditPlans.organizationId, input.organizationId)
+        ))
+        .limit(1)
+      if (!existing?.auditPlanId || !existing.userId) {
+        throw new AuditTenantMutationError(404, 'Audit team member not found')
+      }
+
+      await tx
+        .update(auditTeamMembers)
+        .set({ role: input.role })
+        .where(eq(auditTeamMembers.id, input.memberId))
+
+      const now = new Date().toISOString()
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId: input.organizationId,
+        userId: input.actorUserId,
+        action: 'audit.team_member.updated',
+        resourceType: 'audit_team_member',
+        resourceId: input.memberId,
+        changes: JSON.stringify({
+          before: { role: existing.previousRole },
+          after: { role: input.role },
+        }),
+        scope: 'tenant',
+        createdAt: now,
+      })
+
+      return {
+        id: existing.id,
+        audit_plan_id: existing.auditPlanId,
+        user_id: existing.userId,
+        role: input.role,
+        assigned_at: existing.assignedAt ?? now,
+        user: null,
+      }
+    })
   }
 
   async removeTeamMember(memberId: string): Promise<void> {
@@ -642,6 +838,52 @@ export class AuditService {
         }
       })
     }
+  }
+
+  async removeTeamMemberForActor(input: {
+    memberId: string
+    organizationId: string
+    actorUserId: string
+  }): Promise<void> {
+    await this.db.transaction(async tx => {
+      const [existing] = await tx
+        .select({
+          id: auditTeamMembers.id,
+          auditPlanId: auditTeamMembers.auditPlanId,
+          userId: auditTeamMembers.userId,
+          role: auditTeamMembers.role,
+        })
+        .from(auditTeamMembers)
+        .innerJoin(auditPlans, eq(auditPlans.id, auditTeamMembers.auditPlanId))
+        .where(and(
+          eq(auditTeamMembers.id, input.memberId),
+          eq(auditPlans.organizationId, input.organizationId)
+        ))
+        .limit(1)
+      if (!existing) {
+        throw new AuditTenantMutationError(404, 'Audit team member not found')
+      }
+
+      await tx
+        .delete(auditTeamMembers)
+        .where(eq(auditTeamMembers.id, input.memberId))
+
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId: input.organizationId,
+        userId: input.actorUserId,
+        action: 'audit.team_member.removed',
+        resourceType: 'audit_team_member',
+        resourceId: input.memberId,
+        changes: JSON.stringify({
+          audit_plan_id: existing.auditPlanId,
+          user_id: existing.userId,
+          role: existing.role,
+        }),
+        scope: 'tenant',
+        createdAt: new Date().toISOString(),
+      })
+    })
   }
 
   // =====================================================

@@ -77,7 +77,7 @@ export function AssetSelector({
           <input
             id="asset-search"
             type="search"
-            className="w-full px-2 py-1 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-2 py-1 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={labels.searchPlaceholder}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -102,19 +102,19 @@ export function AssetSelector({
               <label
                 key={asset.id}
                 className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                  isChecked ? 'bg-indigo-50' : 'hover:bg-surface-elevated'
+                  isChecked ? 'bg-blue-50' : 'hover:bg-surface-elevated'
                 }`}
               >
                 <input
                   type="checkbox"
-                  className="mt-1 h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                  className="mt-1 h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                   checked={isChecked}
                   onChange={() => toggleAsset(asset.id)}
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm text-text-primary">{asset.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                       {formatAssetType(asset.asset_type)}
                     </span>
                   </div>

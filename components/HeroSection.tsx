@@ -103,6 +103,12 @@ export default function HeroSection() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
+            <Link
+              href={`/${locale}/resources`}
+              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-text-secondary bg-surface border-2 border-border rounded-lg hover:text-accent hover:border-accent transition-colors duration-200"
+            >
+              {t('publicSeo.resources.heroLink')}
+            </Link>
             <a
               href={PUBLIC_REPOSITORY_URL}
               target="_blank"

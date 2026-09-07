@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { NotificationService, type Notification } from '@/lib/services/notification'
-import { useNotificationStream } from '@/lib/hooks/useNotificationStream'
+import type { Notification } from '@/lib/services/notification'
+import {
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  useNotificationStream,
+} from '@/lib/hooks/useNotificationStream'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
 import { ja, enUS } from 'date-fns/locale'
@@ -30,13 +34,13 @@ export function NotificationBell() {
   }, [polledNotifications])
 
   const handleMarkAsRead = async (notificationId: string) => {
-    await NotificationService.markAsRead(notificationId)
+    await markNotificationAsRead(notificationId)
     refresh()
   }
 
   const handleMarkAllAsRead = async () => {
     if (!user) return
-    await NotificationService.markAllAsRead(user.id)
+    await markAllNotificationsAsRead(user.id)
     refresh()
   }
 

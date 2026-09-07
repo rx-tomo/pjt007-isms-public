@@ -1,7 +1,7 @@
 ---
 title: Audit and Local Storage Guideline
 category: operations
-last_updated: 2026-06-18
+last_updated: 2026-07-17
 status: active
 ---
 
@@ -31,10 +31,12 @@ For attachment behavior, use the practical QA suites or targeted Playwright spec
 
 When local artifacts are stale:
 
+実行前にアプリ、開発サーバー、DBクライアントを停止し、現在地が対象リポジトリで、`local.db`を破棄してよいことを確認してください。
+
 ```bash
-rm -f local.db local.db-shm local.db-wal
-npx drizzle-kit push
+rm -f local.db local.db-shm local.db-wal local.db-journal
+node scripts/provision-local-database.mjs --root "$(pwd -P)" --name local.db
 npm run db:seed
 ```
 
-Use destructive cleanup only in local development. Do not run equivalent deletion against Turso Cloud without an explicit backup and owner approval.
+このコマンドは、開始時に存在しないlocal SQLite DB専用です。remote/Turso、既存DBの更新・migrationには使用できません。Use destructive cleanup only in local development.

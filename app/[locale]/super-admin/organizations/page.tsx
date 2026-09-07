@@ -326,7 +326,7 @@ export default function SuperAdminOrganizationsPage(props: PageProps) {
                 className={classNames(
                   'flex-1 px-6 py-3 text-sm font-medium transition-colors',
                   viewMode === 'active'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600 bg-indigo-50/50'
+                    ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                 )}
               >
@@ -342,7 +342,7 @@ export default function SuperAdminOrganizationsPage(props: PageProps) {
                 className={classNames(
                   'flex-1 px-6 py-3 text-sm font-medium transition-colors',
                   viewMode === 'deleted'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600 bg-indigo-50/50'
+                    ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                 )}
               >

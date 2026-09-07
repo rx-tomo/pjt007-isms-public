@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
 import { TaskService } from '@/lib/services/task'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { TaskTenantMutationService } from '@/lib/server/tasks/taskTenantMutationService'
 import { isTaskTenantInvariantError } from '@/lib/services/taskTenantInvariant'
 
@@ -23,9 +26,18 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
   }
 
   const db = getDb()
-  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'tasks.read'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   const task = await service.getTaskByIdForOrganization(params.id, authorization.context.organizationId)
   if (!task) return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
@@ -54,9 +66,18 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
     }
 
     const db = getDb()
-    const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+    const authorization = await authorizeTenantAction(
+      db,
+      user.id,
+      organizationId,
+      'tasks.update'
+    )
     if (!authorization.ok) {
-      return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      const status = tenantActionDenialStatus(authorization)
+      return applyCookies(NextResponse.json(
+        { error: status === 403 ? 'Forbidden' : 'Not found' },
+        { status }
+      ))
     }
     const service = new TaskTenantMutationService()
     const result = await service.updateTask(
@@ -96,9 +117,18 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
       return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
     }
 
-    const authorization = await resolveTenantAuthorizationContext(getDb(), user.id, organizationId)
+    const authorization = await authorizeTenantAction(
+      getDb(),
+      user.id,
+      organizationId,
+      'tasks.delete'
+    )
     if (!authorization.ok) {
-      return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      const status = tenantActionDenialStatus(authorization)
+      return applyCookies(NextResponse.json(
+        { error: status === 403 ? 'Forbidden' : 'Not found' },
+        { status }
+      ))
     }
 
     const service = new TaskTenantMutationService()

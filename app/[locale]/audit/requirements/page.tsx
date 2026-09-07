@@ -301,7 +301,7 @@ export default function AuditRequirementsPage(
                 <button
                   type="button"
                   onClick={handleGenerateChecklist}
-                  className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={generating}
                 >
                   {generating ? t('requirements.actions.generating') : t('requirements.actions.generate')}

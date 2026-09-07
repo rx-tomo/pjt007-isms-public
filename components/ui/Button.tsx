@@ -137,6 +137,7 @@ export const Button: React.FC<ButtonProps> = ({
 
         .btn-secondary:hover:not(:disabled) {
           background-color: var(--color-secondary-200);
+          color: #0369a1;
         }
 
         .btn-secondary:active:not(:disabled) {
