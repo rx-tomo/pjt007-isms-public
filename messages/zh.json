@@ -1,8 +1,49 @@
 {
   "publicSeo": {
-    "resources": {"metaTitle":"ISMS 运营资源 | Riscala AI for ISMS","metaDescription":"用于查看 ISMS 准备情况和运营访谈要点的公开资源。","heroLink":"查看公开资源","title":"ISMS 运营资源","description":"帮助整理 ISMS 准备和日常运营的公开指南与简易检查。","toolTitle":"ISMS 准备检查","toolDescription":"可在此页面逐项查看准备情况。","openTool":"打开检查","interviewTitle":"运营访谈指南","interviewDescription":"介绍复盘运营实践时可关注的主题。","openInterview":"阅读指南","navigationLabel":"资源导航","homeLink":"返回首页","loginLink":"登录"},
-    "readiness": {"metaTitle":"ISMS 准备检查 | Riscala AI for ISMS","metaDescription":"不保存选择结果的公开 ISMS 准备检查。","title":"ISMS 准备检查","description":"通过简短检查梳理关键事项，并找出下一步可整理的内容。","checkTitle":"检查项目","progress":"共 {total} 项，已检查 {complete} 项，还剩 {remaining} 项。","items":{"scope":"已整理范围和相关人员","owner":"已确定负责人和复核方式","evidence":"正在查看需要的记录","review":"正在考虑定期复核的机会"},"memoryOnly":"选择结果仅在本页面打开期间保留，不会提交或保存。","navigationLabel":"准备检查导航","resourcesLink":"资源列表","homeLink":"返回首页","loginLink":"登录"},
-    "interview": {"metaTitle":"ISMS 运营访谈指南 | Riscala AI for ISMS","metaDescription":"介绍复盘 ISMS 运营时可讨论要点的公开指南。","title":"ISMS 运营访谈指南","description":"在讨论运营情况前，可先确认的一些有用视角。","topicsTitle":"可确认的视角","topics":{"scope":"范围或相关人员是否发生变化","evidence":"记录和处理情况是否可以复核","review":"如何让复核带来下一步行动"},"informationOnly":"本页面仅提供信息，不提供表单，也不会提交或保存回答。","githubInquiry":{"title":"通过 GitHub 联系","publicNotice":"您的咨询将作为公开的 GitHub Issue 发布。","loginNotice":"发布需要登录 GitHub。","dataNotice":"请勿包含个人信息、凭据或机密信息。","notAnonymousNotice":"这不是匿名访谈收集渠道。","linkLabel":"打开 GitHub Issues"},"navigationLabel":"访谈指南导航","resourcesLink":"资源列表","homeLink":"返回首页","loginLink":"登录"}
+    "resources": {
+      "metaTitle": "ISMS 运营资源 | Riscala AI for ISMS",
+      "metaDescription": "汇总 ISMS 指南文章、自我检查与运营访谈说明的公开资源。",
+      "heroLink": "查看公开资源",
+      "title": "ISMS 运营资源",
+      "description": "用于整理 ISMS 准备与日常运营的公开指南、检查工具与说明。",
+      "guideTitle": "ISO27001（ISMS）认证获取指南",
+      "guideDescription": "讲解认证费用、获取流程、风险评估、必要文件以及与隐私标志区别的文章。",
+      "openGuide": "阅读指南",
+      "selfCheckTitle": "ISMS 现状自我检查",
+      "selfCheckDescription": "通过 5 个固定选择题，以三个结果区间确认准备状况。回答不会被发送。",
+      "openSelfCheck": "开始自我检查",
+      "interviewTitle": "运营访谈指南",
+      "interviewDescription": "介绍复盘运营实践时可关注的主题。",
+      "openInterview": "阅读指南",
+      "navigationLabel": "资源导航",
+      "homeLink": "返回首页",
+      "loginLink": "登录"
+    },
+    "interview": {
+      "metaTitle": "ISMS 运营访谈指南 | Riscala AI for ISMS",
+      "metaDescription": "介绍复盘 ISMS 运营时可讨论要点的公开指南。",
+      "title": "ISMS 运营访谈指南",
+      "description": "在讨论运营情况前，可先确认的一些有用视角。",
+      "topicsTitle": "可确认的视角",
+      "topics": {
+        "scope": "范围或相关人员是否发生变化",
+        "evidence": "记录和处理情况是否可以复核",
+        "review": "如何让复核带来下一步行动"
+      },
+      "informationOnly": "本页面仅提供信息，不提供表单，也不会提交或保存回答。",
+      "githubInquiry": {
+        "title": "通过 GitHub 联系",
+        "publicNotice": "您的咨询将作为公开的 GitHub Issue 发布。",
+        "loginNotice": "发布需要登录 GitHub。",
+        "dataNotice": "请勿包含个人信息、凭据或机密信息。",
+        "notAnonymousNotice": "这不是匿名访谈收集渠道。",
+        "linkLabel": "打开 GitHub Issues"
+      },
+      "navigationLabel": "访谈指南导航",
+      "resourcesLink": "资源列表",
+      "homeLink": "返回首页",
+      "loginLink": "登录"
+    }
   },
   "support": "专业支持全程陪伴每一步",
   "ai": {

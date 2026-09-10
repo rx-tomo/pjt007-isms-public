@@ -1,8 +1,49 @@
 {
   "publicSeo": {
-    "resources": {"metaTitle":"ISMS operations resources | Riscala AI for ISMS","metaDescription":"Public resources for reviewing ISMS preparation and operation discussion topics.","heroLink":"Explore resources","title":"ISMS operations resources","description":"Public guidance and a lightweight check for organizing ISMS preparation and day-to-day operations.","toolTitle":"ISMS readiness check","toolDescription":"Review preparation items on this page, one item at a time.","openTool":"Open the check","interviewTitle":"Operations interview guide","interviewDescription":"Explore useful topics for reviewing your operating practices.","openInterview":"Read the guide","navigationLabel":"Resource navigation","homeLink":"Back to home","loginLink":"Log in"},
-    "readiness": {"metaTitle":"ISMS readiness check | Riscala AI for ISMS","metaDescription":"A public ISMS preparation check that does not save your selections.","title":"ISMS readiness check","description":"A short check to review key items and identify what you may want to organize next.","checkTitle":"Check items","progress":"{complete} of {total} items checked. {remaining} remaining.","items":{"scope":"The scope and relevant people are organized","owner":"Owners and the review approach are defined","evidence":"Required records are being reviewed","review":"A regular review opportunity is being considered"},"memoryOnly":"Selections stay only while this page is open. Nothing is submitted or saved.","navigationLabel":"Readiness check navigation","resourcesLink":"Resources","homeLink":"Back to home","loginLink":"Log in"},
-    "interview": {"metaTitle":"ISMS operations interview guide | Riscala AI for ISMS","metaDescription":"A public guide to discussion topics for reviewing ISMS operations.","title":"ISMS operations interview guide","description":"Topics that can help frame a conversation about how operations are working.","topicsTitle":"Topics to consider","topics":{"scope":"Whether the scope or relevant people have changed","evidence":"Whether records and actions can be reviewed","review":"How reviews can lead to the next actions"},"informationOnly":"This page is informational only. It provides no form and does not submit or save responses.","githubInquiry":{"title":"Ask on GitHub","publicNotice":"Your inquiry will be posted as a public GitHub Issue.","loginNotice":"Posting requires you to log in to GitHub.","dataNotice":"Do not include personal data, credentials, or confidential information.","notAnonymousNotice":"This is not an anonymous interview intake.","linkLabel":"Open GitHub Issues"},"navigationLabel":"Interview guide navigation","resourcesLink":"Resources","homeLink":"Back to home","loginLink":"Log in"}
+    "resources": {
+      "metaTitle": "ISMS operations resources | Riscala AI for ISMS",
+      "metaDescription": "Public resources for ISMS: guide articles, a self-check, and an operations interview overview.",
+      "heroLink": "Explore resources",
+      "title": "ISMS operations resources",
+      "description": "Public guides, a self-check, and interview information to organise ISMS preparation and day-to-day operation.",
+      "guideTitle": "ISO 27001 (ISMS) Certification Guide",
+      "guideDescription": "Articles on certification cost, the certification process, risk assessment, required documents, and ISMS vs the Privacy Mark.",
+      "openGuide": "Read the guide",
+      "selfCheckTitle": "ISMS self-check",
+      "selfCheckDescription": "Five fixed-choice questions show where your ISMS stands in three bands. Answers are never sent.",
+      "openSelfCheck": "Start the self-check",
+      "interviewTitle": "Operations interview guide",
+      "interviewDescription": "Explore useful topics for reviewing your operating practices.",
+      "openInterview": "Read the guide",
+      "navigationLabel": "Resource navigation",
+      "homeLink": "Back to home",
+      "loginLink": "Log in"
+    },
+    "interview": {
+      "metaTitle": "ISMS operations interview guide | Riscala AI for ISMS",
+      "metaDescription": "A public guide to discussion topics for reviewing ISMS operations.",
+      "title": "ISMS operations interview guide",
+      "description": "Topics that can help frame a conversation about how operations are working.",
+      "topicsTitle": "Topics to consider",
+      "topics": {
+        "scope": "Whether the scope or relevant people have changed",
+        "evidence": "Whether records and actions can be reviewed",
+        "review": "How reviews can lead to the next actions"
+      },
+      "informationOnly": "This page is informational only. It provides no form and does not submit or save responses.",
+      "githubInquiry": {
+        "title": "Ask on GitHub",
+        "publicNotice": "Your inquiry will be posted as a public GitHub Issue.",
+        "loginNotice": "Posting requires you to log in to GitHub.",
+        "dataNotice": "Do not include personal data, credentials, or confidential information.",
+        "notAnonymousNotice": "This is not an anonymous interview intake.",
+        "linkLabel": "Open GitHub Issues"
+      },
+      "navigationLabel": "Interview guide navigation",
+      "resourcesLink": "Resources",
+      "homeLink": "Back to home",
+      "loginLink": "Log in"
+    }
   },
   "support": "Professional support at every step",
   "ai": {

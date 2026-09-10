@@ -1,8 +1,49 @@
 {
   "publicSeo": {
-    "resources": {"metaTitle":"ISMS運用リソース | Riscala AI for ISMS","metaDescription":"ISMSの準備確認と運用ヒアリングの案内をまとめた公開リソースです。","heroLink":"公開リソースを見る","title":"ISMS運用リソース","description":"ISMSの準備や日々の運用を整理するための、公開の確認ツールと案内です。","toolTitle":"ISMS準備チェック","toolDescription":"今の準備状況を、画面上で項目ごとに確認できます。","openTool":"チェックを開く","interviewTitle":"運用ヒアリングの案内","interviewDescription":"運用を振り返る際に確認したい論点を紹介します。","openInterview":"案内を読む","navigationLabel":"リソースの移動","homeLink":"トップへ戻る","loginLink":"ログイン"},
-    "readiness": {"metaTitle":"ISMS準備チェック | Riscala AI for ISMS","metaDescription":"ISMSの準備項目を画面上で確認できる、保存を行わない公開チェックです。","title":"ISMS準備チェック","description":"必要な項目を確認し、次に整理したい点を見つけるための簡易チェックです。","checkTitle":"確認項目","progress":"{total}項目中 {complete}項目を確認済み。残り {remaining}項目です。","items":{"scope":"対象範囲と関係者を整理している","owner":"担当と確認の進め方を決めている","evidence":"必要な記録を見直している","review":"定期的な見直しの機会を考えている"},"memoryOnly":"このチェックの状態はこの画面を開いている間だけ保持され、送信・保存は行いません。","navigationLabel":"準備チェックの移動","resourcesLink":"リソース一覧へ","homeLink":"トップへ戻る","loginLink":"ログイン"},
-    "interview": {"metaTitle":"ISMS運用ヒアリングの案内 | Riscala AI for ISMS","metaDescription":"ISMS運用を振り返るためのヒアリング論点を紹介する公開案内です。","title":"ISMS運用ヒアリングの案内","description":"運用の状況を話し合う前に、確認しておくと役立つ観点をまとめました。","topicsTitle":"確認の観点","topics":{"scope":"対象範囲や関係者に変化があったか","evidence":"記録や対応状況を見直せる状態か","review":"見直しから次の対応につなげる方法があるか"},"informationOnly":"このページは案内のみです。回答の送信、入力内容の保存、フォームの提供は行いません。","githubInquiry":{"title":"GitHubで問い合わせる","publicNotice":"お問い合わせは公開のGitHub Issueとして投稿されます。","loginNotice":"投稿にはGitHubへのログインが必要です。","dataNotice":"個人情報、認証情報、機密情報は記載しないでください。","notAnonymousNotice":"これは匿名のヒアリング受付ではありません。","linkLabel":"GitHub Issuesを開く"},"navigationLabel":"ヒアリング案内の移動","resourcesLink":"リソース一覧へ","homeLink":"トップへ戻る","loginLink":"ログイン"}
+    "resources": {
+      "metaTitle": "ISMS運用リソース | Riscala AI for ISMS",
+      "metaDescription": "ISMSのガイド記事、セルフチェック、運用ヒアリングの案内をまとめた公開リソースです。",
+      "heroLink": "公開リソースを見る",
+      "title": "ISMS運用リソース",
+      "description": "ISMSの準備や日々の運用を整理するための、公開のガイド・確認ツール・案内です。",
+      "guideTitle": "ISO27001（ISMS）認証取得ガイド",
+      "guideDescription": "費用・取得の流れ・リスクアセスメント・必要な文書・Pマークとの違いを解説した記事です。",
+      "openGuide": "ガイドを読む",
+      "selfCheckTitle": "ISMS現在地セルフチェック",
+      "selfCheckDescription": "5問の固定選択式質問で、準備状況を3つの結果帯で確認できます。回答は送信されません。",
+      "openSelfCheck": "セルフチェックを始める",
+      "interviewTitle": "運用ヒアリングの案内",
+      "interviewDescription": "運用を振り返る際に確認したい論点を紹介します。",
+      "openInterview": "案内を読む",
+      "navigationLabel": "リソースの移動",
+      "homeLink": "トップへ戻る",
+      "loginLink": "ログイン"
+    },
+    "interview": {
+      "metaTitle": "ISMS運用ヒアリングの案内 | Riscala AI for ISMS",
+      "metaDescription": "ISMS運用を振り返るためのヒアリング論点を紹介する公開案内です。",
+      "title": "ISMS運用ヒアリングの案内",
+      "description": "運用の状況を話し合う前に、確認しておくと役立つ観点をまとめました。",
+      "topicsTitle": "確認の観点",
+      "topics": {
+        "scope": "対象範囲や関係者に変化があったか",
+        "evidence": "記録や対応状況を見直せる状態か",
+        "review": "見直しから次の対応につなげる方法があるか"
+      },
+      "informationOnly": "このページは案内のみです。回答の送信、入力内容の保存、フォームの提供は行いません。",
+      "githubInquiry": {
+        "title": "GitHubで問い合わせる",
+        "publicNotice": "お問い合わせは公開のGitHub Issueとして投稿されます。",
+        "loginNotice": "投稿にはGitHubへのログインが必要です。",
+        "dataNotice": "個人情報、認証情報、機密情報は記載しないでください。",
+        "notAnonymousNotice": "これは匿名のヒアリング受付ではありません。",
+        "linkLabel": "GitHub Issuesを開く"
+      },
+      "navigationLabel": "ヒアリング案内の移動",
+      "resourcesLink": "リソース一覧へ",
+      "homeLink": "トップへ戻る",
+      "loginLink": "ログイン"
+    }
   },
   "support": "専門サポートが全ステップで伴走",
   "ai": {
