@@ -33,7 +33,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 whitespace-nowrap">
             {navItems.map((item) => (
               <a
                 key={item.key}
@@ -47,7 +47,7 @@ export default function Header() {
               href={PUBLIC_REPOSITORY_URL}
               target="_blank"
               rel="noreferrer"
-              className="text-text-secondary hover:text-accent transition-colors duration-200"
+              className="hidden lg:inline text-text-secondary hover:text-accent transition-colors duration-200"
             >
               {t('common.publicLinks.source')}
             </a>
@@ -55,7 +55,7 @@ export default function Header() {
               href={PUBLIC_REPOSITORY_ISSUES_URL}
               target="_blank"
               rel="noreferrer"
-              className="text-text-secondary hover:text-accent transition-colors duration-200"
+              className="hidden lg:inline text-text-secondary hover:text-accent transition-colors duration-200"
             >
               {t('common.publicLinks.feedback')}
             </a>
