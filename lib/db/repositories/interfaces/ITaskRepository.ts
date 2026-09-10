@@ -297,7 +297,11 @@ export interface ITaskRepository extends IOrganizationScopedRepository<Task, Tas
   // Task Attachment operations
   getAttachments(taskId: string): Promise<TaskAttachment[]>
   createAttachment(input: TaskAttachmentCreateInput): Promise<TaskAttachment>
-  deleteAttachment(attachmentId: string): Promise<{ filePath: string | null }>
+  deleteAttachment(
+    attachmentId: string,
+    taskId?: string,
+    organizationId?: string
+  ): Promise<{ filePath: string | null }>
 
   // Task Tag operations
   getTags(organizationId: string): Promise<TaskTag[]>

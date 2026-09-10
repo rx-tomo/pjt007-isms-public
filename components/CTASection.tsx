@@ -69,7 +69,25 @@ export default function CTASection() {
             </div>
 
             <div
-              className={`mx-auto mt-10 max-w-3xl rounded-lg border border-white/20 bg-white/10 px-5 py-4 text-left text-sm leading-7 text-primary-50 transition-all duration-1000 delay-600 ${
+              className={`mx-auto mt-10 max-w-3xl rounded-2xl border border-white/20 bg-white/10 p-6 text-left transition-all duration-1000 delay-500 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
+              <h3 className="text-xl font-semibold text-white">{t('landing.cta.researchTitle')}</h3>
+              <p className="mt-3 text-sm leading-7 text-primary-50">{t('landing.cta.researchDescription')}</p>
+              <Link
+                href={`/${locale}/research`}
+                className="mt-5 inline-flex items-center rounded-xl bg-surface px-5 py-3 font-semibold text-accent transition-colors hover:bg-primary-50"
+                data-testid="landing-research-cta"
+              >
+                {t('landing.cta.researchButton')}
+                <span aria-hidden="true" className="ml-2">→</span>
+              </Link>
+              <p className="mt-3 text-xs leading-6 text-primary-100">{t('landing.cta.researchNote')}</p>
+            </div>
+
+            <div
+              className={`mx-auto mt-6 max-w-3xl rounded-lg border border-white/20 bg-white/10 px-5 py-4 text-left text-sm leading-7 text-primary-50 transition-all duration-1000 delay-600 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
             >

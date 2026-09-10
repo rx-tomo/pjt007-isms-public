@@ -2,13 +2,19 @@
 title: Riscala AI for ISMS PR/FAQ Index
 category: business
 created: 2026-06-09
-last_updated: 2026-06-28
+last_updated: 2026-08-04
 status: split_index
 ---
 
 # Riscala AI for ISMS PR/FAQ
 
 このファイルはPR/FAQ関連文書の入口である。
+
+## Long-term North Star
+
+[Riscala AI 2.0](riscala-ai-2.0.md)は、現行のISMS実務支援を起点に、企業内の判断と証跡をAssurance Graphへつなぎ、許可制のTrust PassportとTrust Networkへ発展させる長期事業構想である。
+
+この文書はtarget-onlyであり、以下の顧客向け・内部向けPR/FAQを置き換えない。Riscala AI 2.0の作成は、商用提供、顧客需要、認証・審査結果、外部制度適合、公開承認を意味しない。開発上の併存方法は[Riscala AI 2.0 Development Policy](../../02-project/riscala-ai-2.0-development-policy.md)を参照する。
 
 顧客向けにそのまま見せる候補文と、内部の開発判断・未決定事項を混ぜないため、PR/FAQを次の2ファイルに分ける。
 

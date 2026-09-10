@@ -1,4 +1,4 @@
-import { BcpService } from '@/lib/services/bcp'
+import { BcpService, parsePlanCreateBody } from '@/lib/services/bcp'
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
 import { handleRouteError } from '@/lib/errors/handleRouteError'
@@ -22,11 +22,14 @@ export async function POST(request: NextRequest) {
   if (caller.error) return caller.error
 
   try {
-    const body = await request.json()
+    const input = parsePlanCreateBody(await request.json().catch(() => null))
+    if (!input) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    }
 
     // Force organization_id to caller's org (ignore client-provided value)
     const plan = await bcpService.createPlan({
-      ...body,
+      ...input,
       organization_id: caller.organizationId,
       created_by: caller.userId,
     })

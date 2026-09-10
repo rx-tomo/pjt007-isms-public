@@ -21,7 +21,7 @@ interface ToastState {
   message: string
 }
 
-const STATUS_OPTIONS: NonconformityStatus[] = ['open', 'in_progress', 'resolved', 'verified', 'closed']
+const STATUS_OPTIONS: NonconformityStatus[] = ['open', 'in_progress', 'resolved', 'pending_verification', 'verified', 'closed']
 const TYPE_OPTIONS: NonconformityType[] = ['major', 'minor']
 const CORRECTIVE_STATUS_OPTIONS: CorrectiveActionStatus[] = ['planned', 'in_progress', 'completed', 'verified']
 

@@ -157,7 +157,7 @@ export default function SuperAdminUsersPage(props: PageProps) {
                   id="sa-user-email"
                   type="email"
                   required
-                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                   placeholder="admin@example.com"
@@ -170,7 +170,7 @@ export default function SuperAdminUsersPage(props: PageProps) {
                 </label>
                 <select
                   id="sa-user-role"
-                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={form.role}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -192,7 +192,7 @@ export default function SuperAdminUsersPage(props: PageProps) {
                 </label>
                 <select
                   id="sa-user-locale"
-                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={form.locale}
                   onChange={(e) => setForm((prev) => ({ ...prev, locale: e.target.value }))}
                 >
@@ -210,7 +210,7 @@ export default function SuperAdminUsersPage(props: PageProps) {
                   <select
                     id="sa-user-org"
                     disabled={form.role === 'super_admin' || orgsLoading}
-                    className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:bg-app"
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-app"
                     value={form.organizationId}
                     onChange={(e) => setForm((prev) => ({ ...prev, organizationId: e.target.value }))}
                   >
@@ -238,7 +238,7 @@ export default function SuperAdminUsersPage(props: PageProps) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-400"
+                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
               >
                 {submitting ? t('form.creating') : t('form.submit')}
               </button>

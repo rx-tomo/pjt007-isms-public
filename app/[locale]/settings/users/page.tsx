@@ -93,7 +93,7 @@ export default function UsersManagementPage(
         return
       }
 
-      if (!['org_admin', 'system_operator'].includes(user.role)) {
+      if (!user.effective_role || !['org_admin', 'system_operator'].includes(user.effective_role)) {
         router.push(`/${locale}/home`)
         return
       }
@@ -104,7 +104,7 @@ export default function UsersManagementPage(
         return
       }
 
-      setCurrentUser(user)
+      setCurrentUser({ ...user, role: user.effective_role })
       setOrganization(org)
 
       const [usersList, structure, departmentRows] = await Promise.all([
@@ -656,7 +656,7 @@ export default function UsersManagementPage(
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -677,7 +677,7 @@ export default function UsersManagementPage(
                 setInviteForm({ email: '', role: 'user', projectRoleIds: [] })
                 setShowInviteModal(true)
               }}
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+              className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
             >
               {t('actions.invite')}
             </button>
@@ -692,7 +692,7 @@ export default function UsersManagementPage(
                   <p className="text-sm font-semibold text-text-secondary">{t('invitations.title')}</p>
                   <p className="text-xs text-text-muted">{t('invitations.subtitle')}</p>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                   {pendingInvitations.length} {t('invitations.badge')}
                 </span>
               </div>
@@ -700,7 +700,7 @@ export default function UsersManagementPage(
             <div className="px-4 py-4 sm:px-6">
               {invitesLoading ? (
                 <div className="flex justify-center py-6">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : pendingInvitations.length === 0 ? (
                 <p className="text-sm text-text-muted">{t('invitations.empty')}</p>
@@ -728,7 +728,7 @@ export default function UsersManagementPage(
                               navigator.clipboard.writeText(invitation.email).catch(() => null)
                             }
                           }}
-                          className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+                          className="text-xs font-medium text-blue-600 hover:text-blue-500"
                         >
                           {t('invitations.actions.copy')}
                         </button>
@@ -736,7 +736,7 @@ export default function UsersManagementPage(
                           type="button"
                           onClick={() => handleResendInvitation(invitation.id)}
                           disabled={resendingInvitationId === invitation.id}
-                          className="inline-flex items-center rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {resendingInvitationId === invitation.id
                             ? t('invitations.actions.resending')
@@ -767,7 +767,7 @@ export default function UsersManagementPage(
               id="users-department-filter"
               value={departmentFilter}
               onChange={event => setDepartmentFilter(event.target.value)}
-              className="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-text-muted"
+              className="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-text-muted"
               disabled={Boolean(departmentScope.enforcedFilterValue)}
             >
               <option value="">{t('filters.department.all')}</option>
@@ -780,13 +780,13 @@ export default function UsersManagementPage(
             </select>
           </div>
           {appliedDepartmentFilter && (
-            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
               <span>{t('filters.department.active', { department: activeDepartmentLabel })}</span>
               {!departmentScope.enforcedFilterValue && (
                 <button
                   type="button"
                   onClick={() => setDepartmentFilter('')}
-                  className="rounded-full px-2 py-0.5 text-indigo-500 transition hover:bg-indigo-100"
+                  className="rounded-full px-2 py-0.5 text-blue-500 transition hover:bg-blue-100"
                 >
                   {t('filters.department.clear')}
                 </button>
@@ -869,7 +869,7 @@ export default function UsersManagementPage(
                                 {roleNames.map(name => (
                                   <span
                                     key={`${user.id}-${name}`}
-                                    className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                                    className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
                                   >
                                     {name}
                                   </span>
@@ -894,7 +894,7 @@ export default function UsersManagementPage(
                           <div className="flex items-center justify-end gap-4">
             <button
               onClick={() => openPermissionModal(user)}
-              className="text-indigo-600 hover:text-indigo-900"
+              className="text-blue-600 hover:text-blue-900"
             >
               {t('actions.permissions')}
             </button>
@@ -953,7 +953,7 @@ export default function UsersManagementPage(
                           type="email"
                           id="invite-email"
                           required
-                          className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                          className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                           value={inviteForm.email}
                           onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                         />
@@ -965,7 +965,7 @@ export default function UsersManagementPage(
                         </label>
                         <select
                           id="invite-role"
-                          className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                           value={inviteForm.role}
                           onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as UserRole })}
                         >
@@ -1003,7 +1003,7 @@ export default function UsersManagementPage(
                                 </span>
                                 <input
                                   type="checkbox"
-                                  className="h-4 w-4 text-indigo-600 border-border rounded focus:ring-indigo-500"
+                                  className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
                                   checked={inviteForm.projectRoleIds.includes(role.id)}
                                   onChange={() => {
                                     setInviteForm(prev => {
@@ -1029,7 +1029,7 @@ export default function UsersManagementPage(
                     <button
                       type="submit"
                       disabled={isInviting}
-                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                     >
                       {isInviting ? t('invite.sending') : t('invite.send')}
                     </button>
@@ -1039,7 +1039,7 @@ export default function UsersManagementPage(
                         setShowInviteModal(false)
                         setInviteForm({ email: '', role: 'user', projectRoleIds: [] })
                       }}
-                      className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                     >
                       {t('invite.cancel')}
                     </button>
@@ -1069,7 +1069,7 @@ export default function UsersManagementPage(
                   <div className="mt-6">
                     {isPermissionsLoading ? (
                       <div className="flex justify-center py-6">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                       </div>
                     ) : (
                       <div className="grid gap-6 md:grid-cols-2">
@@ -1090,8 +1090,8 @@ export default function UsersManagementPage(
                                   disabled={card.disabled}
                                   className={`w-full rounded-xl border px-4 py-3 text-left transition ${
                                     selectedRole === card.key
-                                      ? 'border-indigo-500 bg-indigo-50'
-                                      : 'border-border bg-surface hover:border-indigo-200'
+                                      ? 'border-blue-500 bg-blue-50'
+                                      : 'border-border bg-surface hover:border-blue-200'
                                   } ${card.disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                                 >
                                   <div className="flex items-start justify-between gap-3">
@@ -1100,7 +1100,7 @@ export default function UsersManagementPage(
                                       <p className="mt-1 text-xs text-text-secondary">{card.description}</p>
                                     </div>
                                     {selectedRole === card.key && (
-                                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white">
+                                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
                                         ✓
                                       </span>
                                     )}
@@ -1134,7 +1134,7 @@ export default function UsersManagementPage(
                                   </span>
                                   <input
                                     type="checkbox"
-                                    className="h-4 w-4 text-indigo-600 border-border rounded focus:ring-indigo-500"
+                                    className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
                                     checked={Boolean(permissionForm[option.key])}
                                     onChange={(event) =>
                                       handlePermissionChange(option.key, event.target.checked)
@@ -1163,7 +1163,7 @@ export default function UsersManagementPage(
                                     </span>
                                     <input
                                       type="checkbox"
-                                      className="h-4 w-4 text-indigo-600 border-border rounded focus:ring-indigo-500"
+                                      className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
                                       checked={departmentScopeSelection.has(option.id)}
                                       onChange={() => handleDepartmentScopeToggle(option.id)}
                                     />
@@ -1193,7 +1193,7 @@ export default function UsersManagementPage(
                                     </span>
                                     <input
                                       type="checkbox"
-                                      className="h-4 w-4 text-indigo-600 border-border rounded focus:ring-indigo-500"
+                                      className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
                                       checked={projectRoleSelection.has(role.id)}
                                       onChange={() => handleProjectRoleToggle(role.id)}
                                     />
@@ -1213,14 +1213,14 @@ export default function UsersManagementPage(
                     type="button"
                     onClick={handleSavePermissions}
                     disabled={isSavingPermissions || isPermissionsLoading}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                   >
                     {isSavingPermissions ? t('permissions.saving') : t('permissions.save')}
                   </button>
                   <button
                     type="button"
                     onClick={closePermissionModal}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-border shadow-sm px-4 py-2 bg-surface text-base font-medium text-text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   >
                     {t('permissions.cancel')}
                   </button>

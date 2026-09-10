@@ -244,7 +244,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
           <h3 className="text-lg font-semibold text-text-primary">{t('title')}</h3>
           <p className="text-sm text-text-muted">{t('description')}</p>
         </div>
-        <span className="text-xs font-medium tracking-wide text-indigo-600 uppercase">{t('subtitle')}</span>
+        <span className="text-xs font-medium tracking-wide text-blue-600 uppercase">{t('subtitle')}</span>
       </div>
 
       <div className="px-6 py-5 border-b border-border">
@@ -263,7 +263,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
               onChange={e =>
                 setFormState(prev => ({ ...prev, notificationType: e.target.value as NotificationChannel['notificationType'] }))
               }
-              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               {notificationTypeOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -278,7 +278,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
             <select
               value={formState.channelType}
               onChange={e => setFormState(prev => ({ ...prev, channelType: e.target.value as NotificationChannelType }))}
-              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               {channelTypeOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -296,7 +296,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
               value={formState.webhookUrl}
               onChange={e => setFormState(prev => ({ ...prev, webhookUrl: e.target.value }))}
               placeholder="https://hooks.slack.com/..."
-              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -311,7 +311,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
                 onChange={e => setFormState(prev => ({ ...prev, customPayloadTemplate: e.target.value }))}
                 placeholder={`{\n  "text": "{{title}}: {{message}}",\n  "priority": "{{priority}}"\n}`}
                 rows={6}
-                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <p className="mt-1 text-xs text-text-muted">
                 {t('customWebhook.placeholdersHelp')}
@@ -348,7 +348,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
                         setFormState(prev => ({ ...prev, customHeaders: newHeaders }))
                       }}
                       placeholder={t('customWebhook.headerKeyPlaceholder')}
-                      className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                     <input
                       type="text"
@@ -359,7 +359,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
                         setFormState(prev => ({ ...prev, customHeaders: newHeaders }))
                       }}
                       placeholder={t('customWebhook.headerValuePlaceholder')}
-                      className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                     <button
                       type="button"
@@ -389,7 +389,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
                     custom_headers: [...prev.customHeaders, { key: '', value: '' }]
                   }))
                 }
-                className="mt-2 text-sm text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                className="mt-2 text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
               >
                 + {t('customWebhook.addHeader')}
               </button>
@@ -402,7 +402,7 @@ export default function NotificationChannelsPanel({ organizationId }: Notificati
                 type="checkbox"
                 checked={formState.isEnabled}
                 onChange={e => setFormState(prev => ({ ...prev, isEnabled: e.target.checked }))}
-                className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
               />
               <span className="ml-2">{t('fields.isEnabled')}</span>
             </label>

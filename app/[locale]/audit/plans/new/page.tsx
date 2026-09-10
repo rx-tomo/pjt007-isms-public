@@ -205,7 +205,7 @@ export default function NewAuditPlanPage(
                   onChange={(e) => handleChange('title', e.target.value)}
                   data-testid="audit-plan-title"
                   className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例: 2025年度 内部監査（第1回）"
+                  placeholder={t('form.titlePlaceholder')}
                   required
                   disabled={loading}
                 />
@@ -221,7 +221,7 @@ export default function NewAuditPlanPage(
                   onChange={(e) => handleChange('description', e.target.value)}
                   data-testid="audit-plan-description"
                   className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="監査の目的や範囲を記載"
+                  placeholder={t('form.descriptionPlaceholder')}
                   disabled={loading}
                 />
               </div>
@@ -296,7 +296,7 @@ export default function NewAuditPlanPage(
                   onChange={(e) => handleChange('auditorSignature', e.target.value)}
                   data-testid="audit-plan-auditor-signature"
                   className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例: 監査担当 山田 太郎"
+                  placeholder={t('form.auditorSignaturePlaceholder')}
                   disabled={loading}
                 />
               </div>

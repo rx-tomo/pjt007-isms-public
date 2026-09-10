@@ -23,6 +23,7 @@ import type {
   ApprovalCandidatePurpose,
   ApprovalCandidateResponse,
 } from '@/lib/approvals/approvalCandidateContract'
+import type { EffectiveCapabilities } from '@/lib/server/auth/actionPolicy'
 
 // Re-export types for backward compatibility
 export type { UserProfile, UserRole }
@@ -30,6 +31,7 @@ export type { UserProfile, UserRole }
 export interface CurrentUserProfile extends UserProfile {
   effective_role: UserRole | null
   effective_organization_id: string | null
+  effective_capabilities: EffectiveCapabilities | null
 }
 
 export class UserService {
@@ -203,6 +205,7 @@ export class UserService {
       ...profile,
       effective_role: null,
       effective_organization_id: null,
+      effective_capabilities: null,
     } : null
   }
 

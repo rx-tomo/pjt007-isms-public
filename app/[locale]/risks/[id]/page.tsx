@@ -15,7 +15,7 @@ import {
   type RiskReadinessStatus
 } from '@/lib/utils/riskOperationalReadiness'
 import type { RiskWithRelations, RiskTreatment, RiskAssetWithDetails } from '@/lib/services/risk'
-import type { UserRole, UserProfile } from '@/lib/services/user'
+import type { UserProfile } from '@/lib/services/user'
 import type { ApprovalCandidate } from '@/lib/approvals/approvalCandidateContract'
 
 interface TreatmentFormState {
@@ -60,10 +60,14 @@ export default function RiskDetailPage(
   const t = useTranslations('risks')
   const assetDetailText = useTranslations('risks.detail.assets')
   const assetLabelT = useTranslations('settings.assets.labels')
+  const permissionT = useTranslations('tasks.errors')
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [risk, setRisk] = useState<RiskWithRelations | null>(null)
-  const [userRole, setUserRole] = useState<UserRole | null>(null)
+  const [canUpdate, setCanUpdate] = useState(false)
+  const [canReadControls, setCanReadControls] = useState(false)
+  const [canReadAssets, setCanReadAssets] = useState(false)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const [users, setUsers] = useState<UserProfile[]>([])
   const [approvalCandidates, setApprovalCandidates] = useState<ApprovalCandidate[]>([])
   const [showTreatmentForm, setShowTreatmentForm] = useState(false)
@@ -89,7 +93,21 @@ export default function RiskDetailPage(
   const loadRiskDetails = useCallback(async () => {
     setLoading(true)
     try {
-      // Load risk details
+      const profile = await userService.getUserProfile()
+      const capabilities = profile?.effective_capabilities?.modules.risks
+      if (capabilities?.read !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
+      setCanUpdate(capabilities.update)
+      const canManageMembers = profile?.effective_capabilities?.memberAdministration === true
+      const controlsRead = profile?.effective_capabilities?.modules.controls.read === true
+      const assetsRead = profile?.effective_capabilities?.modules.assets.read === true
+      setCanReadControls(controlsRead)
+      setCanReadAssets(assetsRead)
+
+      // Load risk details only after the profile capability gate passes.
       const riskData = await riskService.getRiskById(id)
       if (!riskData) {
         throw new Error('Risk not found')
@@ -100,10 +118,6 @@ export default function RiskDetailPage(
       if (riskData?.organization_id) {
         // Profile and approval candidates are required for separate UI paths.
         // Loading administrative members must not make either path fail.
-        const profilePromise = userService.getUserProfile().catch(error => {
-          console.error('Failed to load current user profile', error)
-          return null
-        })
         const candidatePromise = userService.getApprovalCandidates(
           riskData.organization_id,
           'risk_acceptance',
@@ -112,19 +126,19 @@ export default function RiskDetailPage(
           console.error('Failed to load risk acceptance candidates', error)
           return []
         })
-        const [profile, candidateRows] = await Promise.all([profilePromise, candidatePromise])
+        const candidateRows = await candidatePromise
 
         setApprovalCandidates(candidateRows)
 
-        if (profile) {
-          setUserRole(profile.effective_role)
-          if (['system_operator', 'org_admin'].includes(profile.effective_role ?? '')) {
-            try {
-              setUsers(await userService.getOrganizationUsers(riskData.organization_id))
-            } catch (error) {
-              console.error('Failed to load organization members', error)
-            }
+        if (capabilities.update && canManageMembers) {
+          try {
+            setUsers(await userService.getOrganizationUsers(riskData.organization_id))
+          } catch (error) {
+            console.error('Failed to load organization members', error)
+            setUsers(riskData.owner ? [riskData.owner] : [])
           }
+        } else {
+          setUsers(riskData.owner ? [riskData.owner] : [])
         }
       }
     } catch (err) {
@@ -139,7 +153,7 @@ export default function RiskDetailPage(
   }, [loadRiskDetails])
 
   const loadIsoControlOptions = useCallback(async () => {
-    if (!organizationId) return
+    if (!organizationId || !canReadControls) return
     setControlsLoading(true)
     setControlLoadError(null)
     try {
@@ -155,10 +169,10 @@ export default function RiskDetailPage(
     } finally {
       setControlsLoading(false)
     }
-  }, [organizationId, isoControlService, controlSearch, controlCategory, t])
+  }, [organizationId, canReadControls, isoControlService, controlSearch, controlCategory, t])
 
   useEffect(() => {
-    if (!organizationId) {
+    if (!organizationId || !canReadControls) {
       setAvailableControls([])
       return
     }
@@ -168,10 +182,10 @@ export default function RiskDetailPage(
     }, 300)
 
     return () => clearTimeout(handler)
-  }, [organizationId, controlSearch, controlCategory, loadIsoControlOptions])
+  }, [organizationId, canReadControls, controlSearch, controlCategory, loadIsoControlOptions])
 
   useEffect(() => {
-    if (!organizationId) {
+    if (!organizationId || !canReadControls) {
       setControlCategories([])
       return
     }
@@ -191,7 +205,7 @@ export default function RiskDetailPage(
     return () => {
       isMounted = false
     }
-  }, [organizationId, isoControlService])
+  }, [organizationId, canReadControls, isoControlService])
 
   const layoutSummary = risk
     ? {
@@ -234,7 +248,7 @@ export default function RiskDetailPage(
   }, [risk?.treatments])
 
   const linkedControls = useMemo(() => {
-    if (!risk?.treatments) return []
+    if (!canReadControls || !risk?.treatments) return []
     const map = new Map<string, IsoControl>()
 
     risk.treatments.forEach((treatment) => {
@@ -246,7 +260,7 @@ export default function RiskDetailPage(
     })
 
     return Array.from(map.values())
-  }, [risk?.treatments])
+  }, [canReadControls, risk?.treatments])
 
   const residualAcceptanceReadiness = useMemo(
     () => assessResidualAcceptanceReadiness(risk?.treatments ?? []),
@@ -405,7 +419,7 @@ export default function RiskDetailPage(
   const ownerDisplayName = risk?.owner?.full_name || risk?.owner?.email || t('detail.unassigned')
   const categoryDisplayName = risk?.category?.name || '-'
   const riskScore = risk?.risk_score || 0
-  const assetCount = risk?.assets?.length ?? 0
+  const assetCount = canReadAssets ? risk?.assets?.length ?? 0 : 0
   const identifiedDate = formatDate(risk?.identified_date)
   const updatedDate = formatDate(risk?.updated_at)
   const treatmentStatusEntries = TREATMENT_STATUS_ORDER.map((status) => ({
@@ -413,8 +427,6 @@ export default function RiskDetailPage(
     label: t(`treatment.statuses.${status}` as const),
     count: treatmentSummary.statuses[status] ?? 0
   }))
-  const canEdit = userRole ? ['system_operator', 'org_admin'].includes(userRole) : false
-
   const renderLoading = () => (
     <div className="max-w-5xl mx-auto">
       <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
@@ -449,6 +461,18 @@ export default function RiskDetailPage(
     return (
       <DashboardLayout locale={locale} headerSummary={layoutSummary}>
         <div className="px-4 py-8 sm:px-6 lg:px-8">{renderLoading()}</div>
+      </DashboardLayout>
+    )
+  }
+
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale} headerSummary={layoutSummary}>
+        <div className="px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{permissionT('permissionDenied')}</h1>
+          </div>
+        </div>
       </DashboardLayout>
     )
   }
@@ -490,7 +514,7 @@ export default function RiskDetailPage(
                     {getRiskLevelText(riskScore)} ({riskScore || 0})
                   </span>
                 </div>
-                {canEdit && (
+                {canUpdate && (
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Link
                       href={`/${locale}/risks/${risk.id}/edit`}
@@ -595,18 +619,27 @@ export default function RiskDetailPage(
                   <span className="text-sm text-text-muted">{assetCount}</span>
                 </div>
                 <div className="mt-4">
-                  <AssetSummaryList
-                    assets={(risk.assets ?? []) as RiskAssetWithDetails[]}
-                    labels={{
-                      title: assetDetailText('title'),
-                      empty: assetDetailText('empty'),
-                      classification: assetDetailText('classification'),
-                      criticality: assetDetailText('criticality')
-                    }}
-                    formatAssetType={(value) => assetLabelT(`types.${value}`)}
-                    formatClassification={(value) => assetLabelT(`classification.${value}`)}
-                    formatCriticality={(value) => assetLabelT(`criticality.${value}`)}
-                  />
+                  {canReadAssets ? (
+                    <AssetSummaryList
+                      assets={(risk.assets ?? []) as RiskAssetWithDetails[]}
+                      labels={{
+                        title: assetDetailText('title'),
+                        empty: assetDetailText('empty'),
+                        classification: assetDetailText('classification'),
+                        criticality: assetDetailText('criticality')
+                      }}
+                      formatAssetType={(value) => assetLabelT(`types.${value}`)}
+                      formatClassification={(value) => assetLabelT(`classification.${value}`)}
+                      formatCriticality={(value) => assetLabelT(`criticality.${value}`)}
+                    />
+                  ) : (
+                    <p
+                      data-testid="risk-detail-assets-read-denied"
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                    >
+                      {permissionT('permissionDenied')}
+                    </p>
+                  )}
                 </div>
               </section>
 
@@ -620,7 +653,7 @@ export default function RiskDetailPage(
                         : t('detail.noTreatments')}
                     </p>
                   </div>
-                  {canEdit && !showTreatmentForm && (
+                  {canUpdate && !showTreatmentForm && (
                     <button
                       onClick={() => {
                         setTreatmentForm(createInitialTreatmentState())
@@ -729,7 +762,7 @@ export default function RiskDetailPage(
                           />
                         </div>
                       )}
-                      <div>
+                      {canReadControls && <div>
                         <div className="flex items-center justify-between">
                           <label className="block text-sm font-medium text-text-secondary">
                             {t('treatment.controls.title')}
@@ -796,7 +829,7 @@ export default function RiskDetailPage(
                             </ul>
                           )}
                         </div>
-                      </div>
+                      </div>}
                       <div className="flex items-center justify-end gap-3">
                         <button
                           type="button"
@@ -866,7 +899,7 @@ export default function RiskDetailPage(
                             </p>
                           </div>
                         )}
-                        {treatment.control_links && treatment.control_links.length > 0 && (
+                        {canReadControls && treatment.control_links && treatment.control_links.length > 0 && (
                           <div className="mt-4 rounded-xl border border-border bg-app p-3">
                             <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
                               {t('treatment.controls.assignedTitle')}
@@ -889,7 +922,7 @@ export default function RiskDetailPage(
                             </ul>
                           </div>
                         )}
-                        {canEdit && (
+                        {canUpdate && (
                           <div className="mt-4 flex flex-wrap items-center gap-3">
                             {treatment.status !== 'completed' && (
                               <button
@@ -917,7 +950,7 @@ export default function RiskDetailPage(
                                   : t('treatment.residualApproval.submit')}
                               </button>
                             )}
-                            {editingTreatmentId === treatment.id ? (
+                            {canReadControls && (editingTreatmentId === treatment.id ? (
                               <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3" data-testid="risk-treatment-control-editor">
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                   <div>
@@ -997,7 +1030,7 @@ export default function RiskDetailPage(
                               >
                                 {t('treatment.controls.editLinks')}
                               </button>
-                            )}
+                            ))}
                           </div>
                         )}
                       </div>
@@ -1043,7 +1076,7 @@ export default function RiskDetailPage(
                 )}
               </section>
 
-              <section className="rounded-2xl border border-white/60 bg-surface p-6 shadow-sm" data-testid="evidence-vault-readiness-panel">
+              {canReadControls && <section className="rounded-2xl border border-white/60 bg-surface p-6 shadow-sm" data-testid="evidence-vault-readiness-panel">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="text-base font-semibold text-text-primary">{t('operationalReadiness.evidenceVault.title')}</h3>
@@ -1074,7 +1107,7 @@ export default function RiskDetailPage(
                     ))}
                   </ul>
                 )}
-              </section>
+              </section>}
 
               <section className="rounded-2xl border border-white/60 bg-surface p-6 shadow-sm">
                 <h3 className="text-base font-semibold text-text-primary">{t('detail.treatmentStatus')}</h3>

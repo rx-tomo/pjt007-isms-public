@@ -182,7 +182,7 @@ export default function ProfileSettingsPage(
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -239,7 +239,7 @@ export default function ProfileSettingsPage(
                       name="full_name"
                       id="full_name"
                       required
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.full_name}
                       onChange={handleInputChange}
                     />
@@ -253,7 +253,7 @@ export default function ProfileSettingsPage(
                       type="text"
                       name="full_name_en"
                       id="full_name_en"
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.full_name_en}
                       onChange={handleInputChange}
                     />
@@ -267,7 +267,7 @@ export default function ProfileSettingsPage(
                       type="text"
                       name="department"
                       id="department"
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.department}
                       onChange={handleInputChange}
                     />
@@ -281,7 +281,7 @@ export default function ProfileSettingsPage(
                       type="text"
                       name="position"
                       id="position"
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.position}
                       onChange={handleInputChange}
                     />
@@ -295,7 +295,7 @@ export default function ProfileSettingsPage(
                       type="tel"
                       name="phone"
                       id="phone"
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={formData.phone}
                       onChange={handleInputChange}
                     />
@@ -308,7 +308,7 @@ export default function ProfileSettingsPage(
                     <select
                       id="language_preference"
                       name="language_preference"
-                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="mt-1 block w-full py-2 px-3 border border-border bg-surface rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       value={formData.language_preference}
                       onChange={handleInputChange}
                     >
@@ -325,7 +325,7 @@ export default function ProfileSettingsPage(
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {isSaving ? t('actions.saving') : t('actions.save')}
             </button>
@@ -379,7 +379,7 @@ export default function ProfileSettingsPage(
                 <button
                   type="button"
                   onClick={() => setShowPasswordForm(true)}
-                  className="inline-flex items-center px-4 py-2 border border-border shadow-sm text-sm font-medium rounded-md text-text-primary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-4 py-2 border border-border shadow-sm text-sm font-medium rounded-md text-text-primary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   {t('actions.changePassword')}
                 </button>
@@ -394,7 +394,7 @@ export default function ProfileSettingsPage(
                         name="currentPassword"
                         id="currentPassword"
                         required
-                        className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                         value={passwordForm.currentPassword}
                         onChange={handlePasswordInputChange}
                       />
@@ -408,7 +408,7 @@ export default function ProfileSettingsPage(
                       name="newPassword"
                       id="newPassword"
                       required
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={passwordForm.newPassword}
                       onChange={handlePasswordInputChange}
                     />
@@ -423,7 +423,7 @@ export default function ProfileSettingsPage(
                       name="confirmPassword"
                       id="confirmPassword"
                       required
-                      className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-border rounded-md"
                       value={passwordForm.confirmPassword}
                       onChange={handlePasswordInputChange}
                     />
@@ -433,7 +433,7 @@ export default function ProfileSettingsPage(
                     <button
                       type="submit"
                       disabled={isChangingPassword}
-                      className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                      className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                     >
                       {isChangingPassword ? t('actions.changing') : t('actions.change')}
                     </button>
@@ -443,7 +443,7 @@ export default function ProfileSettingsPage(
                         setShowPasswordForm(false)
                         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
                       }}
-                      className="inline-flex justify-center py-2 px-4 border border-border shadow-sm text-sm font-medium rounded-md text-text-primary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="inline-flex justify-center py-2 px-4 border border-border shadow-sm text-sm font-medium rounded-md text-text-primary bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       {t('actions.cancel')}
                     </button>

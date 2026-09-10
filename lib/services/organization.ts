@@ -39,7 +39,14 @@ type Organization = Database['public']['Tables']['organizations']['Row']
 type OrganizationScopeRow = Database['public']['Tables']['organization_isms_scopes']['Row']
 type DepartmentRow = Database['public']['Tables']['organization_departments']['Row']
 type ProjectRoleRow = Database['public']['Tables']['project_roles']['Row']
-type UserRole = Database['public']['Enums']['user_role']
+type TenantRole = 'system_operator' | 'org_admin' | 'auditor' | 'approver' | 'user'
+const TENANT_ROLES: readonly TenantRole[] = [
+  'system_operator',
+  'org_admin',
+  'auditor',
+  'approver',
+  'user',
+]
 
 // Re-export for backward compatibility
 export type ProjectRole = ProjectRoleRow
@@ -220,48 +227,29 @@ export class OrganizationService {
   async updateMembershipRole(
     organizationId: string,
     userId: string,
-    role: UserRole
+    role: TenantRole
   ): Promise<void> {
-    if (typeof window !== 'undefined') {
-      await this.fetchStructureApi<void>(organizationId, 'updateMembershipRole', {
-        method: 'POST', body: { userId, role }
-      })
-      return
-    }
-    const { getDb } = await import('@/lib/db/drizzle/client')
-    const { userMemberships, userProfiles } = await import('@/lib/db/drizzle/schema')
-    const { eq, and } = await import('drizzle-orm')
-    const db = getDb()
-
-    const now = new Date().toISOString()
-
-    // Update membership role
-    const membershipRows = await db
-      .update(userMemberships)
-      .set({ role, updatedAt: now })
-      .where(and(
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.userId, userId)
-      ))
-      .returning({ userId: userMemberships.userId })
-
-    if (!membershipRows || membershipRows.length === 0) {
-      throw new Error('ロールの更新に失敗しました')
+    if (!TENANT_ROLES.includes(role)) {
+      throw new Error('Invalid tenant role')
     }
 
-    // Update profile role
-    await db
-      .update(userProfiles)
-      .set({ role, updatedAt: now })
-      .where(eq(userProfiles.id, userId))
+    if (typeof window === 'undefined') {
+      throw new Error('updateMembershipRole must use the canonical member role API')
+    }
 
-    await this.logAudit({
-      organizationId,
-      action: 'user.role_updated',
-      resourceType: 'user_profile',
-      resourceId: userId,
-      changes: { role }
-    })
+    const response = await fetch(
+      `/api/organizations/${encodeURIComponent(organizationId)}/members/role`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role }),
+        credentials: 'include',
+      }
+    )
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error ?? `API error ${response.status}`)
+    }
   }
 
   async updateIsmsPhase(

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { TaskService } from '@/lib/services/task'
 import { buildTaskCsv } from '@/lib/utils/exporters/taskExport'
 import type { TaskPriority, TaskStatus } from '@/lib/db/repositories/interfaces/ITaskRepository'
@@ -55,9 +58,18 @@ export async function GET(request: NextRequest) {
     return applyCookies(NextResponse.json({ error: 'organizationId is required' }, { status: 400 }))
   }
 
-  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'tasks.read'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   if (isTemplate) {

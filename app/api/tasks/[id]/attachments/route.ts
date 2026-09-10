@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { and, eq } from 'drizzle-orm'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { getAccessibleTaskForUser } from '@/lib/server/auth/taskAccess'
 import { getAuditLogRepository } from '@/lib/container'
 import { getDb } from '@/lib/db/drizzle/client'
@@ -53,6 +57,19 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.read'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
 
   const attachmentId = request.nextUrl.searchParams.get('attachmentId')?.trim()
   if (!attachmentId) {
@@ -94,6 +111,19 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
   const task = await getAccessibleTaskForUser(getDb(), params.id, user.id)
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.update'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   const formDataResult = await parseLimitedFormData(
@@ -161,6 +191,19 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
   if (!task) {
     return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
   }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    task.organizationId,
+    'tasks.update'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
+  }
 
   const attachmentId = new URL(request.url).searchParams.get('attachmentId')?.trim()
   if (!attachmentId) {
@@ -171,9 +214,16 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
   if (!attachment) {
     return applyCookies(NextResponse.json({ error: 'Attachment not found' }, { status: 404 }))
   }
+  if (!isTaskAttachmentStoragePath(
+    attachment.filePath,
+    task.organizationId,
+    task.id
+  )) {
+    return applyCookies(NextResponse.json({ error: 'Attachment not found' }, { status: 404 }))
+  }
 
   const service = new TaskService()
-  await service.deleteAttachment(attachmentId)
+  await service.deleteAttachment(attachmentId, params.id, task.organizationId)
 
   const auditLog = await getAuditLogRepository()
   await auditLog.log({

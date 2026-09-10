@@ -5,30 +5,15 @@ import { getDb } from '@/lib/db/drizzle/client'
 import { userProfiles, userMemberships, auditLogs } from '@/lib/db/drizzle/schema'
 import { isoControls, riskControlLinks, riskTreatments, risks, soaVersions } from '@/lib/db/drizzle/schema/risks'
 import { IsoControlService } from '@/lib/services/isoControl'
-import { ApprovalService } from '@/lib/services/approval'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
 import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
-
-async function assertOrganizationAccess(db: ReturnType<typeof getDb>, userId: string, organizationId: string) {
-  const [[profile], [membership]] = await Promise.all([
-    db
-      .select({ organizationId: userProfiles.organizationId })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1),
-    db
-      .select({ id: userMemberships.id })
-      .from(userMemberships)
-      .where(and(
-        eq(userMemberships.userId, userId),
-        eq(userMemberships.organizationId, organizationId),
-        eq(userMemberships.status, 'active')
-      ))
-      .limit(1),
-  ])
-
-  return profile?.organizationId === organizationId || Boolean(membership)
-}
+import { authorizeTenantAction } from '@/lib/server/auth/actionPolicy'
+import {
+  publishSoaVersionWithAudit,
+  isSoaApprovalSubmissionError,
+  submitSoaApprovalWithAudit,
+  updateControlSoaWithAudit,
+} from '@/lib/services/tenantAuditedMutations'
 
 const soaStatusValues = ['not_reviewed', 'applicable', 'not_applicable'] as const
 type SoaStatus = typeof soaStatusValues[number]
@@ -133,28 +118,28 @@ function buildSoaVersionDiff(
   }
 }
 
-async function resolveCisoApproverId(db: ReturnType<typeof getDb>, organizationId: string) {
-  const [ciso] = await db
-    .select({ id: userProfiles.id })
-    .from(userProfiles)
+async function resolveCisoApproverId(
+  db: ReturnType<typeof getDb>,
+  organizationId: string,
+  requesterId: string
+) {
+  const candidates = await db
+    .select({
+      id: userProfiles.id,
+      isCiso: userProfiles.isCiso,
+      role: userMemberships.role,
+    })
+    .from(userMemberships)
+    .innerJoin(userProfiles, eq(userProfiles.id, userMemberships.userId))
     .where(and(
-      eq(userProfiles.organizationId, organizationId),
-      eq(userProfiles.isCiso, true)
+      eq(userMemberships.organizationId, organizationId),
+      eq(userMemberships.status, 'active'),
+      eq(userProfiles.isActive, true)
     ))
-    .limit(1)
 
-  if (ciso?.id) return ciso.id
-
-  const [fallbackApprover] = await db
-    .select({ id: userProfiles.id })
-    .from(userProfiles)
-    .where(and(
-      eq(userProfiles.organizationId, organizationId),
-      eq(userProfiles.role, 'org_admin')
-    ))
-    .limit(1)
-
-  return fallbackApprover?.id ?? null
+  return candidates.find(candidate => candidate.id !== requesterId && candidate.isCiso === true)?.id
+    ?? candidates.find(candidate => candidate.id !== requesterId && candidate.role === 'org_admin')?.id
+    ?? null
 }
 
 async function buildSoaReadinessSnapshot(db: ReturnType<typeof getDb>, organizationId: string) {
@@ -228,8 +213,13 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
-  const hasAccess = await assertOrganizationAccess(db, user.id, organizationId)
-  if (!hasAccess) {
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'controls.read'
+  )
+  if (!authorization.ok) {
     return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
 
@@ -391,22 +381,16 @@ export async function PATCH(request: NextRequest) {
   }
 
   const db = getDb()
-  const hasAccess = await assertOrganizationAccess(db, user.id, body.organizationId)
-  if (!hasAccess) {
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    body.organizationId,
+    'controls.update'
+  )
+  if (!authorization.ok) {
     return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
 
-  const [current] = await db
-    .select()
-    .from(isoControls)
-    .where(and(eq(isoControls.id, body.id), eq(isoControls.organizationId, body.organizationId)))
-    .limit(1)
-
-  if (!current) {
-    return applyCookies(NextResponse.json({ error: 'Control not found' }, { status: 404 }))
-  }
-
-  const now = new Date().toISOString()
   const applicabilityReason = typeof body.soaApplicabilityReason === 'string'
     ? body.soaApplicabilityReason.trim()
     : ''
@@ -414,46 +398,20 @@ export async function PATCH(request: NextRequest) {
     ? body.soaExclusionReason.trim()
     : ''
 
-  const [updated] = await db
-    .update(isoControls)
-    .set({
-      soaStatus: body.soaStatus,
-      soaApplicabilityReason: applicabilityReason || null,
-      soaExclusionReason: body.soaStatus === 'not_applicable' ? exclusionReason || null : null,
-      soaReviewedBy: user.id,
-      soaReviewedAt: now,
-      soaApprovalStatus: 'draft',
-      soaApprovedBy: null,
-      soaApprovedAt: null,
-      soaRejectionReason: null,
-      updatedAt: now,
-    })
-    .where(and(eq(isoControls.id, body.id), eq(isoControls.organizationId, body.organizationId)))
-    .returning()
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
+  const updated = await updateControlSoaWithAudit(db, {
     organizationId: body.organizationId,
-    userId: user.id,
-    action: 'control.soa_decision.updated',
-    resourceType: 'iso_control',
-    resourceId: body.id,
-    changes: JSON.stringify({
-      before: {
-        soaStatus: current.soaStatus,
-        soaApplicabilityReason: current.soaApplicabilityReason,
-        soaExclusionReason: current.soaExclusionReason,
-      },
-      after: {
-        soaStatus: updated.soaStatus,
-        soaApplicabilityReason: updated.soaApplicabilityReason,
-        soaExclusionReason: updated.soaExclusionReason,
-      },
-    }),
+    actorUserId: user.id,
+    controlId: body.id,
+    soaStatus: body.soaStatus,
+    soaApplicabilityReason: applicabilityReason || null,
+    soaExclusionReason: exclusionReason || null,
     ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip'),
     userAgent: request.headers.get('user-agent'),
-    scope: 'tenant',
   })
+
+  if (!updated) {
+    return applyCookies(NextResponse.json({ error: 'Control not found' }, { status: 404 }))
+  }
 
   return applyCookies(NextResponse.json(updated))
 }
@@ -491,8 +449,15 @@ export async function POST(request: NextRequest) {
   }
 
   const db = getDb()
-  const hasAccess = await assertOrganizationAccess(db, user.id, body.organizationId)
-  if (!hasAccess) {
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    body.organizationId,
+    body.action === 'publish_soa_version'
+      ? 'controls.publish'
+      : 'controls.submit'
+  )
+  if (!authorization.ok) {
     return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
 
@@ -512,58 +477,18 @@ export async function POST(request: NextRequest) {
       return applyCookies(NextResponse.json({ error: '適用管理策の判断に承認待ちの管理策が含まれています' }, { status: 400 }))
     }
 
-    const [{ maxVersion }] = await db
-      .select({ maxVersion: sql<number>`coalesce(max(${soaVersions.versionNumber}), 0)` })
-      .from(soaVersions)
-      .where(eq(soaVersions.organizationId, body.organizationId))
-
-    const versionNumber = Number(maxVersion ?? 0) + 1
-    const now = new Date().toISOString()
     const approvedControlCount = snapshot.filter((control) => control.soa_approval_status === 'approved').length
     const changeSummary = typeof body.changeSummary === 'string'
       ? body.changeSummary.trim()
       : ''
-    const version = {
-      id: crypto.randomUUID(),
+    const created = await publishSoaVersionWithAudit(db, {
       organizationId: body.organizationId,
-      versionNumber,
-      title: `適用管理策判断 v${versionNumber}`,
-      changeSummary: changeSummary || null,
-      snapshot: JSON.stringify({
-        generatedAt: now,
-        organizationId: body.organizationId,
-        changeSummary: changeSummary || null,
-        controls: snapshot,
-      }),
-      controlCount: snapshot.length,
+      actorUserId: user.id,
+      snapshot,
       approvedControlCount,
-      publishedBy: user.id,
-      publishedAt: now,
-      reviewStatus: 'draft',
-      reviewedBy: null,
-      reviewedAt: null,
-      rejectionReason: null,
-      createdAt: now,
-    }
-
-    const [created] = await db.insert(soaVersions).values(version).returning()
-
-    await db.insert(auditLogs).values({
-      id: crypto.randomUUID(),
-      organizationId: body.organizationId,
-      userId: user.id,
-      action: 'control.soa.version_published',
-      resourceType: 'soa_version',
-      resourceId: created.id,
-      changes: JSON.stringify({
-        version_number: created.versionNumber,
-        change_summary: created.changeSummary,
-        control_count: created.controlCount,
-        approved_control_count: created.approvedControlCount,
-      }),
+      changeSummary: changeSummary || null,
       ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip'),
       userAgent: request.headers.get('user-agent'),
-      scope: 'tenant',
     })
 
     return applyCookies(NextResponse.json({ ok: true, version: created }))
@@ -588,54 +513,33 @@ export async function POST(request: NextRequest) {
       return applyCookies(NextResponse.json({ error: '適用管理策判断版はすでにレビュー申請中です' }, { status: 409 }))
     }
 
-    const approvalService = new ApprovalService()
-    const existingRequests = await approvalService.listRequests(body.organizationId, {
-      status: 'pending',
-      resourceType: 'soa_version',
-    })
-    if (existingRequests.some(request => request.resource_id === body.id)) {
-      return applyCookies(NextResponse.json({ error: '適用管理策判断版のレビュー申請がすでに存在します' }, { status: 409 }))
+    const approverId = await resolveCisoApproverId(db, body.organizationId, user.id)
+    if (!approverId) {
+      return applyCookies(NextResponse.json(
+        { error: '有効な承認者が見つかりません' },
+        { status: 409 }
+      ))
     }
-
-    const approverId = await resolveCisoApproverId(db, body.organizationId)
-    const requestRow = await approvalService.createRequest({
-      organization_id: body.organizationId,
-      resource_type: 'soa_version',
-      resource_id: body.id,
-      requested_by: user.id,
-      approver_id: approverId,
-    })
-
-    const now = new Date().toISOString()
-    await db
-      .update(soaVersions)
-      .set({
-        reviewStatus: 'submitted',
-        reviewedBy: null,
-        reviewedAt: null,
-        rejectionReason: null,
+    try {
+      const requestRow = await submitSoaApprovalWithAudit(db, {
+        organizationId: body.organizationId,
+        actorUserId: user.id,
+        resourceType: 'soa_version',
+        resourceId: body.id,
+        approverId,
+        ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip'),
+        userAgent: request.headers.get('user-agent'),
       })
-      .where(and(eq(soaVersions.id, body.id), eq(soaVersions.organizationId, body.organizationId)))
-
-    await db.insert(auditLogs).values({
-      id: crypto.randomUUID(),
-      organizationId: body.organizationId,
-      userId: user.id,
-      action: 'control.soa.version_review_requested',
-      resourceType: 'soa_version',
-      resourceId: body.id,
-      changes: JSON.stringify({
-        version_number: version.versionNumber,
-        approver_id: approverId,
-        approval_request_id: requestRow.id,
-        requested_at: now,
-      }),
-      ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip'),
-      userAgent: request.headers.get('user-agent'),
-      scope: 'tenant',
-    })
-
-    return applyCookies(NextResponse.json({ ok: true, request: requestRow }))
+      return applyCookies(NextResponse.json({ ok: true, request: requestRow }))
+    } catch (error) {
+      if (isSoaApprovalSubmissionError(error)) {
+        return applyCookies(NextResponse.json(
+          { error: error.message },
+          { status: error.status }
+        ))
+      }
+      throw error
+    }
   }
 
   const [control] = await db
@@ -652,50 +556,31 @@ export async function POST(request: NextRequest) {
     return applyCookies(NextResponse.json({ error: '適用管理策の判断が未完了です' }, { status: 400 }))
   }
 
-  const approvalService = new ApprovalService()
-  const existingRequests = await approvalService.listRequests(body.organizationId, {
-    status: 'pending',
-    resourceType: 'iso_control_soa',
-  })
-  if (existingRequests.some(request => request.resource_id === body.id)) {
-    return applyCookies(NextResponse.json({ error: '適用管理策判断の承認申請がすでに存在します' }, { status: 409 }))
+  const approverId = await resolveCisoApproverId(db, body.organizationId, user.id)
+  if (!approverId) {
+    return applyCookies(NextResponse.json(
+      { error: '有効な承認者が見つかりません' },
+      { status: 409 }
+    ))
   }
-
-  const approverId = await resolveCisoApproverId(db, body.organizationId)
-  const requestRow = await approvalService.createRequest({
-    organization_id: body.organizationId,
-    resource_type: 'iso_control_soa',
-    resource_id: body.id,
-    requested_by: user.id,
-    approver_id: approverId,
-  })
-
-  const now = new Date().toISOString()
-  await db
-    .update(isoControls)
-    .set({
-      soaApprovalStatus: 'submitted',
-      soaRejectionReason: null,
-      updatedAt: now,
+  try {
+    const requestRow = await submitSoaApprovalWithAudit(db, {
+      organizationId: body.organizationId,
+      actorUserId: user.id,
+      resourceType: 'iso_control_soa',
+      resourceId: body.id,
+      approverId,
+      ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip'),
+      userAgent: request.headers.get('user-agent'),
     })
-    .where(and(eq(isoControls.id, body.id), eq(isoControls.organizationId, body.organizationId)))
-
-  await db.insert(auditLogs).values({
-    id: crypto.randomUUID(),
-    organizationId: body.organizationId,
-    userId: user.id,
-    action: 'control.soa.approval_requested',
-    resourceType: 'iso_control',
-    resourceId: body.id,
-    changes: JSON.stringify({
-      approver_id: approverId,
-      approval_request_id: requestRow.id,
-      soa_status: control.soaStatus,
-    }),
-    ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip'),
-    userAgent: request.headers.get('user-agent'),
-    scope: 'tenant',
-  })
-
-  return applyCookies(NextResponse.json({ ok: true, request: requestRow }))
+    return applyCookies(NextResponse.json({ ok: true, request: requestRow }))
+  } catch (error) {
+    if (isSoaApprovalSubmissionError(error)) {
+      return applyCookies(NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      ))
+    }
+    throw error
+  }
 }

@@ -315,7 +315,7 @@ export default function AuditChecklistPage(
           <button
             type="button"
             onClick={() => handleSaveChecklist(checklist)}
-            className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={savingChecklistId === checklist.id}
           >
             {savingChecklistId === checklist.id ? t('checklist.actions.saving') : t('checklist.actions.save')}
@@ -366,7 +366,7 @@ export default function AuditChecklistPage(
                   <div className="flex items-center gap-2">
                     <Link
                       href="#"
-                      className="text-indigo-600 hover:text-indigo-700"
+                      className="text-blue-600 hover:text-blue-700"
                       onClick={async event => {
                         event.preventDefault()
                         try {

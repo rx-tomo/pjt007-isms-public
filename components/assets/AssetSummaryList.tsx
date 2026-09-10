@@ -52,7 +52,7 @@ export function AssetSummaryList({
                       <p className="mt-1 text-xs text-text-muted">{asset.description}</p>
                     )}
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 h-fit">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 h-fit">
                     {formatAssetType(asset.asset_type ?? '')}
                   </span>
                 </div>

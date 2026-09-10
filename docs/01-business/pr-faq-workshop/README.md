@@ -2,7 +2,7 @@
 title: PR/FAQ Workshop
 category: business
 created: 2026-06-09
-last_updated: 2026-06-28
+last_updated: 2026-08-04
 status: active_practical_verification_backlog
 ---
 
@@ -15,6 +15,11 @@ status: active_practical_verification_backlog
 2026-06-28時点で、PR/FAQ workshop内のActive Unknownはゼロ。ただしBacklogはゼロではない。6/26〜6/28のロール別UX更新により、ホーム、承認、監査、課金、審査準備パッケージは利用者の判断順へ寄った。一方で、承認行の業務対象解決、ホーム下部カードの圧縮、自然なUI文言の仕上げは実務検証Backlogとして残る。公開snapshotの実行、public repo反映、preview/production環境確認、商用前hardeningは、Backlogではなく公開同期運用、deployment/release gate、または将来実装ゲートで扱う。
 
 ## 読む順番
+
+- [riscala-ai-2.0.md](riscala-ai-2.0.md)
+  - Riscala AI 2.0を企業信頼OSへ育てる長期North Star
+  - 現行コード資産、事業モデル、逆算ロードマップ、claim register
+  - target-onlyであり、現行PR/FAQ、商用準備、公開判断を置き換えない
 
 1. `pr-faq.md`
    - PR/FAQ関連文書の入口
@@ -49,6 +54,8 @@ status: active_practical_verification_backlog
 ## 現在成熟度
 
 最終ゴールは、初回審査登録準備と認証後1年間の継続運用を支援するSaaSサービスである。
+
+2026-08-04に、さらに長期のNorth Starを[Riscala AI 2.0](riscala-ai-2.0.md)として追加した。これは企業内のISMS Work OSからAssurance Graph、Trust Passport、Trust Networkへ発展するtarget-onlyの事業構想である。現在の実務検証、release readiness、商用判断、公開候補文は従来の正本を使い、2.0文書だけを根拠にcurrent claimへ昇格させない。
 
 ただし、2026-06-19時点の直近ゴールは商用サービス開始ではない。直近ゴールは、開発途上のプロダクトを source-available evaluation snapshot として公開用リポジトリへ配置し、Build in Publicとして現在地を示すことである。これは顧客向けSaaSの正式提供、課金開始、本番SLAの開始を意味しない。
 

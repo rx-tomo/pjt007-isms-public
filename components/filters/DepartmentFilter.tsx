@@ -93,7 +93,7 @@ export function DepartmentFilter({
   }
 
   const baseClassName =
-    'px-4 py-2 rounded-md border border-border bg-surface text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-text-muted'
+    'px-4 py-2 rounded-md border border-border bg-surface text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-text-muted'
 
   return (
     <select

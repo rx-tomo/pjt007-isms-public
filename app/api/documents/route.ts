@@ -4,7 +4,10 @@ import { getDb } from '@/lib/db/drizzle/client'
 import { DocumentService } from '@/lib/services/document'
 import { StorageQuotaService } from '@/lib/services/storageQuota'
 import { hydratePracticalDocumentFile } from '@/lib/fixtures/practicalDocumentFixtures'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
 import { isDocumentTenantInvariantError } from '@/lib/services/documentTenantInvariant'
 
@@ -24,9 +27,18 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
-  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'documents.read'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   const documentService = new DocumentService()
@@ -109,9 +121,18 @@ export async function POST(request: NextRequest) {
     return applyCookies(NextResponse.json({ error: 'Invalid document payload' }, { status: 400 }))
   }
 
-  const authorization = await resolveTenantAuthorizationContext(getDb(), user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    organizationId,
+    'documents.create'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   try {
     const service = new DocumentTenantMutationService()

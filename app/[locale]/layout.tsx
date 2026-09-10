@@ -24,11 +24,17 @@ const notoSansJP = Noto_Sans_JP({
   display: 'swap',
 });
 
-const gtmDisabled = process.env.NEXT_PUBLIC_GTM_ENABLED === 'false';
+// 計測タグは本番デプロイ（Vercel production）だけで発火させる。
+// ローカル開発や preview のアクセスが本番の GA4 プロパティに混入していたため。
+// Vercel 以外の本番で使う場合は NEXT_PUBLIC_ANALYTICS_ENABLED=true で明示する。
+const analyticsEnabled =
+  process.env.VERCEL_ENV === 'production' ||
+  process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === 'true';
+const gtmDisabled = !analyticsEnabled || process.env.NEXT_PUBLIC_GTM_ENABLED === 'false';
 const gtmId = gtmDisabled
   ? null
   : process.env.NEXT_PUBLIC_GTM_ID?.match(/^GTM-[A-Z0-9]+$/)?.[0] ?? null;
-const gaMeasurementId = gtmId
+const gaMeasurementId = !analyticsEnabled || gtmId
   ? null
   : process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.match(/^G-[A-Z0-9]+$/)?.[0] ?? null;
 

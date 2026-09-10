@@ -13,6 +13,7 @@ import { StorageQuotaService } from '@/lib/services/storageQuota'
 import { getStorageProvider, type IStorageProvider } from '@/lib/storage'
 import {
   createTaskAttachmentStoragePath,
+  isTaskAttachmentStoragePath,
   isTaskAttachmentSizeAllowed,
   validateTaskAttachment,
 } from '@/lib/storage/taskAttachmentPolicy'
@@ -413,7 +414,11 @@ export class TaskService {
     })
   }
 
-  async deleteAttachment(attachmentId: string, taskId?: string): Promise<void> {
+  async deleteAttachment(
+    attachmentId: string,
+    taskId?: string,
+    organizationId?: string
+  ): Promise<void> {
     if (typeof window !== 'undefined') {
       if (!taskId) {
         throw new Error('taskId is required to delete an attachment from the browser')
@@ -426,19 +431,28 @@ export class TaskService {
       return
     }
 
-    const repo = await this.getRepository()
+    if (!taskId || !organizationId) {
+      throw new Error('taskId and organizationId are required to delete an attachment')
+    }
 
-    // Delete from database and get file path
-    const { filePath } = await repo.deleteAttachment(attachmentId)
+    const repo = await this.getRepository()
+    const { filePath } = await repo.deleteAttachment(
+      attachmentId,
+      taskId,
+      organizationId
+    )
 
     // Delete from storage
-    if (filePath) {
-      const storage = getStorageProvider()
-      const { error: deleteStorageError } = await storage.remove('task-attachments', [filePath])
+    if (!filePath) return
+    if (!isTaskAttachmentStoragePath(filePath, organizationId, taskId)) {
+      throw new Error('Attachment storage path is outside its tenant task boundary')
+    }
 
-      if (deleteStorageError) {
-        console.error('Failed to delete file from storage:', deleteStorageError)
-      }
+    const storage = this.storageProvider ?? getStorageProvider()
+    const { error: deleteStorageError } = await storage.remove('task-attachments', [filePath])
+
+    if (deleteStorageError) {
+      console.error('Failed to delete file from storage:', deleteStorageError)
     }
   }
 

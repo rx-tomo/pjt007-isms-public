@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
 import { getStorageProvider } from '@/lib/storage'
 import { isDocumentStoragePath } from '@/lib/storage/documentFilePolicy'
@@ -34,13 +37,18 @@ export async function POST(request: NextRequest) {
   ) {
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-  const authorization = await resolveTenantAuthorizationContext(
+  const authorization = await authorizeTenantAction(
     getDb(),
     user.id,
-    input.organizationId
+    input.organizationId,
+    'documents.update'
   )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   const service = new DocumentTenantMutationService()

@@ -241,7 +241,7 @@ export default function DepartmentManagement({
             setLocalError(null)
             onError?.(null)
           }}
-          className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-sm font-medium rounded-lg shadow-md hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
+          className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
         >
           <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -273,7 +273,7 @@ export default function DepartmentManagement({
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                   placeholder={t('departmentNamePlaceholder')}
                   disabled={isSubmitting}
                 />
@@ -287,7 +287,7 @@ export default function DepartmentManagement({
                   type="text"
                   value={formData.name_en}
                   onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                   placeholder={t('departmentNameEnPlaceholder')}
                   disabled={isSubmitting}
                 />
@@ -302,7 +302,7 @@ export default function DepartmentManagement({
                   onChange={(e) =>
                     setFormData({ ...formData, parent_department_id: e.target.value })
                   }
-                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   <option value="">{t('noParent')}</option>
@@ -322,7 +322,7 @@ export default function DepartmentManagement({
                   type="text"
                   value={formData.manager}
                   onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                  className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                   placeholder={t('departmentManagerPlaceholder')}
                   disabled={isSubmitting}
                 />
@@ -336,7 +336,7 @@ export default function DepartmentManagement({
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                className="w-full px-4 py-2.5 bg-surface/70 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                 rows={3}
                 placeholder={t('descriptionPlaceholder')}
                 disabled={isSubmitting}
@@ -354,7 +354,7 @@ export default function DepartmentManagement({
               </button>
               <button
                 type="submit"
-                className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50"
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50"
                 disabled={isSubmitting}
               >
                 {editingDepartment ? t('update') : t('create')}

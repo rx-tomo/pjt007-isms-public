@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import type { getDb } from '@/lib/db/drizzle/client'
 import { userPermissionSets } from '@/lib/db/drizzle/schema/users'
+import { isApprovalCandidateRole } from '@/lib/approvals/approvalCandidateContract'
 import {
   resolveTenantAuthorizationContext,
   type TenantAuthorizationContext,
@@ -110,7 +111,13 @@ export function buildEffectiveCapabilities(
 
   return {
     modules,
-    approvalDecision: context.role === 'approver',
+    // 二段階承認（設計 §5.6）: capability は「決裁UIを出してよいか」に留める。
+    // 実際に決裁できるかは、当該 approval_request の assigned approver かどうかを
+    // リポジトリ層 / 決裁経路で fail-closed に検査する。
+    // org_admin は 2段目に assigned されているときだけ決裁が通る。
+    // `!tenantActionsDisabled` は設計書に無い追加の締め付け（停止テナント/super_admin では
+    // 決裁不可）。fail-closed 方向のため採用しているが、PO 追認事項。
+    approvalDecision: !tenantActionsDisabled && isApprovalCandidateRole(context.role),
     memberAdministration: fullTenantManagers.has(context.role),
     billingAdministration: fullTenantManagers.has(context.role),
     // Global operations use the dedicated global-profile guard. A tenant

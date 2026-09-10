@@ -9,6 +9,15 @@
  * switching between different database backends via DI container.
  */
 import { getInformationAssetRepository, getAuditLogRepository } from '@/lib/container'
+import { getDb } from '@/lib/db/drizzle/client'
+import {
+  auditLogs,
+  informationAssetImportRows,
+  informationAssets,
+  userMemberships,
+  userProfiles,
+} from '@/lib/db/drizzle/schema'
+import { and, eq } from 'drizzle-orm'
 import type {
   IInformationAssetRepository,
   InformationAssetForRisk
@@ -29,9 +38,45 @@ export type {
 // Legacy type aliases for backward compatibility
 export type RiskAssetLink = Database['public']['Tables']['risk_assets']['Row']
 
+type InformationAssetDb = ReturnType<typeof getDb>
+type InformationAssetReadDb = Pick<InformationAssetDb, 'select'>
+
+export class InformationAssetMutationError extends Error {
+  constructor(
+    public readonly status: 400 | 404 | 409,
+    message: string
+  ) {
+    super(message)
+    this.name = 'InformationAssetMutationError'
+  }
+}
+
+export function isInformationAssetMutationError(
+  error: unknown
+): error is InformationAssetMutationError {
+  return error instanceof InformationAssetMutationError
+}
+
+export type InformationAssetMutationContext = {
+  organizationId: string
+  actorUserId: string
+}
+
+export type InformationAssetImportTracking = {
+  jobId: string
+  lineNumber: number
+  rawData: string
+}
+
 export class InformationAssetService {
   private repositoryPromise: Promise<IInformationAssetRepository> | null = null
   private auditLogPromise: Promise<IAuditLogRepository> | null = null
+
+  constructor(private readonly injectedDb?: InformationAssetDb) {}
+
+  private get db(): InformationAssetDb {
+    return this.injectedDb ?? getDb()
+  }
 
   private async fetchAssetsApi<T>(params: Record<string, string | undefined>): Promise<T> {
     if (typeof window === 'undefined') {
@@ -147,6 +192,254 @@ export class InformationAssetService {
 
     const repo = await this.getRepository()
     return repo.getAssetsForRisk(organizationId)
+  }
+
+  private assertMutationContext(context: InformationAssetMutationContext): void {
+    if (!context.organizationId.trim() || !context.actorUserId.trim()) {
+      throw new InformationAssetMutationError(400, 'organizationId and actorUserId are required')
+    }
+  }
+
+  private async assertActiveOwner(
+    db: InformationAssetReadDb,
+    organizationId: string,
+    ownerId: string | null | undefined
+  ): Promise<void> {
+    if (!ownerId) return
+
+    const [owner] = await db
+      .select({
+        id: userProfiles.id,
+        role: userMemberships.role,
+      })
+      .from(userProfiles)
+      .innerJoin(userMemberships, and(
+        eq(userMemberships.userId, userProfiles.id),
+        eq(userMemberships.organizationId, organizationId),
+        eq(userMemberships.status, 'active')
+      ))
+      .where(and(
+        eq(userProfiles.id, ownerId),
+        eq(userProfiles.isActive, true)
+      ))
+      .limit(1)
+
+    if (!owner || owner.role === 'super_admin') {
+      throw new InformationAssetMutationError(404, 'Information asset owner not found')
+    }
+  }
+
+  private mapTransactionalRow(row: typeof informationAssets.$inferSelect) {
+    return {
+      id: row.id,
+      organization_id: row.organizationId,
+      name: row.name,
+      asset_type: row.assetType,
+      classification: row.classification,
+      criticality: row.criticality,
+      owner_id: row.ownerId,
+      location: row.location,
+      status: row.status,
+      description: row.description,
+      created_at: row.createdAt,
+      updated_at: row.updatedAt,
+    }
+  }
+
+  /**
+   * Server-side fail-closed mutation. The asset row and its audit event commit
+   * together, and owner identity is resolved from an active membership in the
+   * same organization.
+   */
+  async createAssetForActor(
+    context: InformationAssetMutationContext,
+    asset: Omit<Database['public']['Tables']['information_assets']['Insert'], 'id' | 'created_at' | 'updated_at'>,
+    importTracking?: InformationAssetImportTracking
+  ) {
+    this.assertMutationContext(context)
+    if (asset.organization_id !== context.organizationId) {
+      throw new InformationAssetMutationError(404, 'Information asset organization not found')
+    }
+
+    return this.db.transaction(async tx => {
+      await this.assertActiveOwner(tx, context.organizationId, asset.owner_id)
+      const now = new Date().toISOString()
+      const [created] = await tx
+        .insert(informationAssets)
+        .values({
+          id: crypto.randomUUID(),
+          organizationId: context.organizationId,
+          name: asset.name,
+          assetType: asset.asset_type ?? 'data',
+          classification: asset.classification ?? 'internal',
+          criticality: asset.criticality ?? 'medium',
+          ownerId: asset.owner_id ?? null,
+          location: asset.location ?? null,
+          status: asset.status ?? 'in_use',
+          description: asset.description ?? null,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning()
+
+      if (!created) {
+        throw new InformationAssetMutationError(409, 'Information asset create conflict')
+      }
+
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId: context.organizationId,
+        userId: context.actorUserId,
+        action: 'asset.created',
+        resourceType: 'information_asset',
+        resourceId: created.id,
+        changes: JSON.stringify({ name: created.name }),
+        scope: 'tenant',
+        createdAt: now,
+      })
+
+      if (importTracking) {
+        await tx.insert(informationAssetImportRows).values({
+          id: crypto.randomUUID(),
+          jobId: importTracking.jobId,
+          lineNumber: importTracking.lineNumber,
+          rawData: importTracking.rawData,
+          status: 'imported',
+          assetId: created.id,
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+
+      return this.mapTransactionalRow(created)
+    })
+  }
+
+  async updateAssetForActor(
+    context: InformationAssetMutationContext,
+    id: string,
+    updates: Database['public']['Tables']['information_assets']['Update'],
+    importTracking?: InformationAssetImportTracking
+  ) {
+    this.assertMutationContext(context)
+
+    return this.db.transaction(async tx => {
+      const [existing] = await tx
+        .select()
+        .from(informationAssets)
+        .where(and(
+          eq(informationAssets.id, id),
+          eq(informationAssets.organizationId, context.organizationId)
+        ))
+        .limit(1)
+      if (!existing) {
+        throw new InformationAssetMutationError(404, 'Information asset not found')
+      }
+
+      if (updates.owner_id !== undefined) {
+        await this.assertActiveOwner(
+          tx,
+          context.organizationId,
+          updates.owner_id
+        )
+      }
+
+      const now = new Date().toISOString()
+      const setPayload: Partial<typeof informationAssets.$inferInsert> = { updatedAt: now }
+      if (updates.name !== undefined) setPayload.name = updates.name
+      if (updates.asset_type !== undefined) setPayload.assetType = updates.asset_type
+      if (updates.classification !== undefined) setPayload.classification = updates.classification
+      if (updates.criticality !== undefined) setPayload.criticality = updates.criticality
+      if (updates.owner_id !== undefined) setPayload.ownerId = updates.owner_id
+      if (updates.location !== undefined) setPayload.location = updates.location
+      if (updates.status !== undefined) setPayload.status = updates.status
+      if (updates.description !== undefined) setPayload.description = updates.description
+
+      const [updated] = await tx
+        .update(informationAssets)
+        .set(setPayload)
+        .where(and(
+          eq(informationAssets.id, id),
+          eq(informationAssets.organizationId, context.organizationId)
+        ))
+        .returning()
+      if (!updated) {
+        throw new InformationAssetMutationError(409, 'Information asset update conflict')
+      }
+
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId: context.organizationId,
+        userId: context.actorUserId,
+        action: 'asset.updated',
+        resourceType: 'information_asset',
+        resourceId: id,
+        changes: JSON.stringify(updates),
+        scope: 'tenant',
+        createdAt: now,
+      })
+      if (importTracking) {
+        await tx.insert(informationAssetImportRows).values({
+          id: crypto.randomUUID(),
+          jobId: importTracking.jobId,
+          lineNumber: importTracking.lineNumber,
+          rawData: importTracking.rawData,
+          status: 'imported',
+          assetId: updated.id,
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+      return this.mapTransactionalRow(updated)
+    })
+  }
+
+  async deleteAssetForActor(
+    context: InformationAssetMutationContext,
+    id: string
+  ): Promise<void> {
+    this.assertMutationContext(context)
+
+    await this.db.transaction(async tx => {
+      const [existing] = await tx
+        .select({ id: informationAssets.id, name: informationAssets.name })
+        .from(informationAssets)
+        .where(and(
+          eq(informationAssets.id, id),
+          eq(informationAssets.organizationId, context.organizationId)
+        ))
+        .limit(1)
+      if (!existing) {
+        throw new InformationAssetMutationError(404, 'Information asset not found')
+      }
+
+      await tx
+        .update(informationAssetImportRows)
+        .set({ assetId: null })
+        .where(eq(informationAssetImportRows.assetId, id))
+      const deleted = await tx
+        .delete(informationAssets)
+        .where(and(
+          eq(informationAssets.id, id),
+          eq(informationAssets.organizationId, context.organizationId)
+        ))
+        .returning({ id: informationAssets.id })
+      if (deleted.length !== 1) {
+        throw new InformationAssetMutationError(409, 'Information asset delete conflict')
+      }
+
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId: context.organizationId,
+        userId: context.actorUserId,
+        action: 'asset.deleted',
+        resourceType: 'information_asset',
+        resourceId: id,
+        changes: JSON.stringify({ name: existing.name }),
+        scope: 'tenant',
+        createdAt: new Date().toISOString(),
+      })
+    })
   }
 
   /**

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
 import { getDb } from '@/lib/db/drizzle/client'
 import { informationAssets, informationAssetImportJobs, informationAssetImportRows } from '@/lib/db/drizzle/schema/risks'
-import { userProfiles } from '@/lib/db/drizzle/schema/users'
 import { eq, and } from 'drizzle-orm'
+import { InformationAssetService } from '@/lib/services/informationAsset'
+import { resolveActiveTenantMemberByEmail } from '@/lib/server/auth/targetMember'
+import { parseCsvToObjects } from '@/lib/utils/importers/csv'
 
 export const runtime = 'nodejs'
 
@@ -20,96 +22,35 @@ interface ParsedCsvRow {
   description?: string
 }
 
-function parseCsvLine(line: string): string[] {
-  const values: string[] = []
-  let current = ''
-  let inQuotes = false
+const INFORMATION_ASSET_CSV_MAX_BYTES = 5 * 1024 * 1024
+const INFORMATION_ASSET_CSV_LIMITS = {
+  strictColumnCount: true,
+  strictQuoteSyntax: true,
+  maxRows: 1_000,
+  maxColumns: 32,
+  maxTotalCells: 32_032,
+  maxCellLength: 16_384,
+} as const
 
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i]
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i += 1
-      } else {
-        inQuotes = !inQuotes
-      }
-    } else if (char === ',' && !inQuotes) {
-      values.push(current.trim())
-      current = ''
-    } else {
-      current += char
-    }
-  }
-
-  values.push(current.trim())
-  return values
-}
-
-function normalizeHeader(value: string): string {
-  return value.replace(/^\uFEFF/, '').trim().toLowerCase()
-}
-
-function parseCsv(content: string): ParsedCsvRow[] {
-  const rawLines = content.split(/\r?\n/)
-  const lines = rawLines
-    .map((line, index) => ({ lineNumber: index + 1, value: line.trim() }))
-    .filter(({ value }) => value.length > 0)
-
-  if (lines.length === 0) {
-    throw new Error('CSV is empty')
-  }
-
-  const headerEntry = lines.shift()
-  if (!headerEntry) {
-    throw new Error('CSV header is missing')
-  }
-
-  const headers = parseCsvLine(headerEntry.value).map(normalizeHeader)
-  const nameIndex = headers.indexOf('name')
-  if (nameIndex === -1) {
-    throw new Error('CSV header must include "name" column')
-  }
-
-  const assetTypeIndex = headers.indexOf('asset_type')
-  const classificationIndex = headers.indexOf('classification')
-  const criticalityIndex = headers.indexOf('criticality')
-  const statusIndex = headers.indexOf('status')
-  const ownerEmailIndex = headers.indexOf('owner_email')
-  const ownerNameIndex = headers.indexOf('owner_name')
-  const locationIndex = headers.indexOf('location')
-  const descriptionIndex = headers.indexOf('description')
-
-  const rows: ParsedCsvRow[] = []
-  for (const entry of lines) {
-    const values = parseCsvLine(entry.value)
-    const name = values[nameIndex]?.trim()
-    if (!name) {
-      continue
-    }
-
-    rows.push({
-      line_number: entry.lineNumber,
-      name,
-      asset_type: assetTypeIndex >= 0 ? values[assetTypeIndex]?.trim() ?? undefined : undefined,
-      classification: classificationIndex >= 0 ? values[classificationIndex]?.trim() ?? undefined : undefined,
-      criticality: criticalityIndex >= 0 ? values[criticalityIndex]?.trim() ?? undefined : undefined,
-      status: statusIndex >= 0 ? values[statusIndex]?.trim() ?? undefined : undefined,
-      owner_email: ownerEmailIndex >= 0 ? values[ownerEmailIndex]?.trim() ?? undefined : undefined,
-      owner_name: ownerNameIndex >= 0 ? values[ownerNameIndex]?.trim() ?? undefined : undefined,
-      location: locationIndex >= 0 ? values[locationIndex]?.trim() ?? undefined : undefined,
-      description: descriptionIndex >= 0 ? values[descriptionIndex]?.trim() ?? undefined : undefined
-    })
-  }
-
+function parseCsv(content: ArrayBuffer): ParsedCsvRow[] {
+  const parsed = parseCsvToObjects(content, ['name'], INFORMATION_ASSET_CSV_LIMITS)
+  const rows = parsed
+    .map((row, index) => ({
+      line_number: index + 2,
+      name: row['name']?.trim() ?? '',
+      asset_type: row['asset_type']?.trim() || undefined,
+      classification: row['classification']?.trim() || undefined,
+      criticality: row['criticality']?.trim() || undefined,
+      status: row['status']?.trim() || undefined,
+      owner_email: row['owner_email']?.trim() || undefined,
+      owner_name: row['owner_name']?.trim() || undefined,
+      location: row['location']?.trim() || undefined,
+      description: row['description']?.trim() || undefined,
+    }))
+    .filter(row => row.name.length > 0)
   if (rows.length === 0) {
     throw new Error('No valid rows were found in CSV')
   }
-
-  if (rows.length > 1000) {
-    throw new Error('CSV row limit exceeded (max 1000 rows)')
-  }
-
   return rows
 }
 
@@ -152,19 +93,22 @@ export async function POST(request: NextRequest) {
     if (!(file instanceof Blob)) {
       return json({ error: 'CSV file is required' }, { status: 400 })
     }
+    if (file.size <= 0 || file.size > INFORMATION_ASSET_CSV_MAX_BYTES) {
+      return json({ error: 'CSV file is invalid or too large' }, { status: 400 })
+    }
 
     if (!normalizedOrgId) {
       return json({ error: 'organizationId is required' }, { status: 400 })
     }
 
-    const text = await file.text()
     const allowedModes = new Set(['insert', 'upsert', 'replace'])
     if (!allowedModes.has(normalizedMode)) {
       return json({ error: 'Unsupported import mode' }, { status: 400 })
     }
 
-    const rows = parseCsv(text)
+    const rows = parseCsv(await file.arrayBuffer())
     const db = getDb()
+    const informationAssetService = new InformationAssetService(db)
 
     // Create import job
     const jobId = crypto.randomUUID()
@@ -185,26 +129,6 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     })
 
-    // Resolve owner emails to user IDs
-    const ownerEmails = new Set<string>()
-    for (const row of rows) {
-      if (row.owner_email) ownerEmails.add(row.owner_email.toLowerCase())
-    }
-
-    const ownerMap = new Map<string, string>()
-    if (ownerEmails.size > 0) {
-      const profiles = await db
-        .select({ id: userProfiles.id, email: userProfiles.email })
-        .from(userProfiles)
-        .where(eq(userProfiles.organizationId, normalizedOrgId))
-
-      for (const p of profiles) {
-        if (p.email && ownerEmails.has(p.email.toLowerCase())) {
-          ownerMap.set(p.email.toLowerCase(), p.id)
-        }
-      }
-    }
-
     let successCount = 0
     let errorCount = 0
     const errors: string[] = []
@@ -222,9 +146,21 @@ export async function POST(request: NextRequest) {
       const status = row.status && VALID_STATUSES.has(row.status.toLowerCase())
         ? row.status.toLowerCase()
         : 'in_use'
-      const ownerId = row.owner_email ? ownerMap.get(row.owner_email.toLowerCase()) ?? null : null
-
       try {
+        const ownerEmail = (row.owner_email ?? '').trim().toLowerCase()
+        const owner = ownerEmail
+          ? await resolveActiveTenantMemberByEmail(db, normalizedOrgId, ownerEmail)
+          : null
+        if (ownerEmail && !owner) {
+          throw new Error('Information asset owner not found')
+        }
+        const ownerId = owner?.userId ?? null
+        const importTracking = {
+          jobId,
+          lineNumber: row.line_number,
+          rawData: JSON.stringify(row),
+        }
+
         if (normalizedMode === 'upsert') {
           // Check for existing by name
           const [existing] = await db
@@ -237,30 +173,20 @@ export async function POST(request: NextRequest) {
             .limit(1)
 
           if (existing) {
-            await db
-              .update(informationAssets)
-              .set({
-                assetType,
+            await informationAssetService.updateAssetForActor(
+              { organizationId: normalizedOrgId, actorUserId: sessionUserId },
+              existing.id,
+              {
+                asset_type: assetType,
                 classification,
                 criticality,
                 status,
-                ownerId,
+                owner_id: ownerId,
                 location: row.location ?? null,
                 description: row.description ?? null,
-                updatedAt: now,
-              })
-              .where(eq(informationAssets.id, existing.id))
-
-            await db.insert(informationAssetImportRows).values({
-              id: crypto.randomUUID(),
-              jobId,
-              lineNumber: row.line_number,
-              rawData: JSON.stringify(row),
-              status: 'imported',
-              assetId: existing.id,
-              createdAt: now,
-              updatedAt: now,
-            })
+              },
+              importTracking
+            )
 
             successCount += 1
             continue
@@ -268,32 +194,21 @@ export async function POST(request: NextRequest) {
         }
 
         // Insert new asset
-        const assetId = crypto.randomUUID()
-        await db.insert(informationAssets).values({
-          id: assetId,
-          organizationId: normalizedOrgId,
-          name: row.name,
-          assetType,
-          classification,
-          criticality,
-          status,
-          ownerId,
-          location: row.location ?? null,
-          description: row.description ?? null,
-          createdAt: now,
-          updatedAt: now,
-        })
-
-        await db.insert(informationAssetImportRows).values({
-          id: crypto.randomUUID(),
-          jobId,
-          lineNumber: row.line_number,
-          rawData: JSON.stringify(row),
-          status: 'imported',
-          assetId,
-          createdAt: now,
-          updatedAt: now,
-        })
+        await informationAssetService.createAssetForActor(
+          { organizationId: normalizedOrgId, actorUserId: sessionUserId },
+          {
+            organization_id: normalizedOrgId,
+            name: row.name,
+            asset_type: assetType,
+            classification,
+            criticality,
+            status,
+            owner_id: ownerId,
+            location: row.location ?? null,
+            description: row.description ?? null,
+          },
+          importTracking
+        )
 
         successCount += 1
       } catch (rowErr) {

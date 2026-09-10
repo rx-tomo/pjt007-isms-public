@@ -7,7 +7,7 @@ import Link from 'next/link'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { RiskService } from '@/lib/services/risk'
 import { OrganizationService } from '@/lib/services/organization'
-import { UserService, type UserProfile } from '@/lib/services/user'
+import { UserService, type CurrentUserProfile } from '@/lib/services/user'
 import type { RiskWithRelations, RiskCategory, RiskStatus } from '@/lib/services/risk'
 import { buildDepartmentOptions } from '@/lib/utils/departments'
 import type { Database } from '@/types/database.types'
@@ -34,6 +34,7 @@ export default function RisksPage(
 
   const t = useTranslations('risks')
   const commonT = useTranslations('common')
+  const permissionT = useTranslations('tasks.errors')
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -41,7 +42,8 @@ export default function RisksPage(
   const [categories, setCategories] = useState<RiskCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [organization, setOrganization] = useState<Organization | null>(null)
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [currentUser, setCurrentUser] = useState<CurrentUserProfile | null>(null)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const [filterStatus, setFilterStatus] = useState<RiskStatus | ''>(
     () => (searchParams?.get('status') as RiskStatus | '') ?? ''
   )
@@ -89,6 +91,11 @@ export default function RisksPage(
 
       setOrganization(org)
       setCurrentUser(profile)
+      if (profile.effective_capabilities?.modules.risks.read !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
 
       const [risksData, categoriesData, departmentRows] = await Promise.all([
         riskService.getRisksScoped(org.id, profile.id),
@@ -241,11 +248,11 @@ export default function RisksPage(
   const departmentScope = useMemo(
     () =>
       evaluateDepartmentScope({
-        role: currentUser?.role ?? null,
+        role: currentUser?.effective_role ?? null,
         departmentName: currentUser?.department ?? null,
         departmentNameToId
       }),
-    [currentUser?.department, currentUser?.role, departmentNameToId]
+    [currentUser?.department, currentUser?.effective_role, departmentNameToId]
   )
 
   const appliedDepartmentFilter = departmentScope.enforcedFilterValue ?? filterDepartment
@@ -533,14 +540,14 @@ export default function RisksPage(
 
 
   const handleDeleteRisk = async (riskId: string) => {
-    if (!confirm('このリスクを削除してもよろしいですか？')) return
+    if (!confirm(t('messages.confirmDelete'))) return
 
     try {
       await riskService.deleteRisk(riskId)
       await loadData()
     } catch (error: any) {
       console.error('Error deleting risk:', error)
-      alert(error.message || 'リスクの削除に失敗しました')
+      alert(error.message || t('errors.deleteFailed'))
     }
   }
 
@@ -549,6 +556,18 @@ export default function RisksPage(
       <DashboardLayout locale={locale}>
         <div className="flex h-64 items-center justify-center">
           <LoadingSpinner size="lg" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{permissionT('permissionDenied')}</h1>
+          </div>
         </div>
       </DashboardLayout>
     )
@@ -565,7 +584,7 @@ export default function RisksPage(
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 <span className={`inline-flex items-center rounded-full px-3 py-1 font-medium ${
-                  filterPeriod ? 'bg-indigo-50 text-indigo-700' : 'bg-surface-elevated text-text-secondary'
+                  filterPeriod ? 'bg-blue-50 text-blue-700' : 'bg-surface-elevated text-text-secondary'
                 }`}>
                   {filterPeriod || t('periodTag.all')}
                 </span>
@@ -573,7 +592,7 @@ export default function RisksPage(
                   <button
                     type="button"
                     onClick={() => handlePeriodChange('')}
-                    className="text-indigo-600 hover:underline"
+                    className="text-blue-600 hover:underline"
                   >
                     {t('periodTag.clear')}
                   </button>
@@ -583,7 +602,7 @@ export default function RisksPage(
             <div className="mt-4 sm:mt-0 sm:ml-16 flex gap-3 flex-wrap justify-end">
               <button
                 onClick={() => setShowHelp(!showHelp)}
-                className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -594,22 +613,23 @@ export default function RisksPage(
                 <button
                   onClick={() => handleExportRisks('excel')}
                   disabled={!organization || !!exportingFormat}
-                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
                 >
                   {exportingFormat === 'excel' ? t('actions.exporting') : t('actions.exportExcel')}
                 </button>
                 <button
                   onClick={() => handleExportRisks('pdf')}
                   disabled={!organization || !!exportingFormat}
-                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
                 >
                   {exportingFormat === 'pdf' ? t('actions.exporting') : t('actions.exportPdf')}
                 </button>
               </div>
-              {['org_admin', 'system_operator'].includes(currentUser?.role ?? '') && (
+              {currentUser?.effective_capabilities?.modules.risks.create === true
+                && currentUser.effective_capabilities.modules.risks.update === true && (
                 <Link
                   href={`/${locale}/settings/setup`}
-                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -617,12 +637,12 @@ export default function RisksPage(
                   {t('importCsv')}
                 </Link>
               )}
-              <Link
+              {currentUser?.effective_capabilities?.modules.risks.create === true && <Link
                 href={`/${locale}/risks/new`}
-                className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
               >
                 {t('actions.newRisk')}
-            </Link>
+            </Link>}
           </div>
         </div>
 
@@ -631,12 +651,12 @@ export default function RisksPage(
           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-lg font-medium text-blue-900 mb-2">リスクアセスメントの使い方</h3>
+                <h3 className="text-lg font-medium text-blue-900 mb-2">{t('help.title')}</h3>
                 <div className="space-y-2 text-sm text-blue-800">
-                  <p>• <strong>リスクスコア</strong>：影響度 × 発生可能性で自動計算されます（1～25）</p>
-                  <p>• <strong>色分け</strong>：高リスク（赤）、中リスク（黄）、低リスク（緑）で視覚的に確認できます</p>
-                  <p>• <strong>ステータス管理</strong>：「特定済み」→「分析中」→「対応中」→「監視中」→「対応完了」の流れで管理</p>
-                  <p>• <strong>リスクマトリックス</strong>：下部の表で全リスクの分布を俯瞰できます</p>
+                  <p>• <strong>{t('help.items.riskScore.label')}</strong>{t('help.items.riskScore.text')}</p>
+                  <p>• <strong>{t('help.items.colorCoding.label')}</strong>{t('help.items.colorCoding.text')}</p>
+                  <p>• <strong>{t('help.items.statusManagement.label')}</strong>{t('help.items.statusManagement.text')}</p>
+                  <p>• <strong>{t('help.items.riskMatrix.label')}</strong>{t('help.items.riskMatrix.text')}</p>
                 </div>
               </div>
               <button
@@ -680,13 +700,13 @@ export default function RisksPage(
             />
           )}
           {appliedDepartmentFilter && (
-            <div className="flex items-center gap-2 text-xs text-indigo-700">
+            <div className="flex items-center gap-2 text-xs text-blue-700">
               <span>{t('filterDepartmentActive', { department: activeDepartmentLabel })}</span>
               {!departmentScope.enforcedFilterValue && (
                 <button
                   type="button"
                   onClick={() => handleDepartmentChange('')}
-                  className="text-indigo-500 hover:underline"
+                  className="text-blue-500 hover:underline"
                 >
                   {t('clearDepartmentFilter')}
                 </button>
@@ -699,37 +719,43 @@ export default function RisksPage(
           {filteredRisks.length === 0 ? (
             <EmptyState
               title={emptyStateMessage}
-              action={risks.length === 0 ? (
+              action={risks.length === 0 && currentUser?.effective_capabilities?.modules.risks.create === true ? (
                 <div className="bg-surface-elevated rounded-lg p-6 max-w-2xl text-left">
-                  <h4 className="font-medium text-text-primary mb-3">サンプルリスクを参考にしてください：</h4>
+                  <h4 className="font-medium text-text-primary mb-3">{t('help.sample.heading')}</h4>
                   <div className="space-y-3 text-sm text-text-secondary">
                     <div className="flex items-start">
                       <span className="font-medium mr-2">1.</span>
                       <div>
-                        <strong>不正アクセスリスク</strong>：外部からの不正アクセスによる情報漏洩<br />
-                        <span className="text-xs">影響度: 5, 発生可能性: 3, リスクスコア: 15（高）</span>
+                        <strong>{t('help.sample.items.unauthorizedAccess.title')}</strong>{t('help.sample.items.unauthorizedAccess.description')}<br />
+                        <span className="text-xs">
+                          {t('help.sample.detailTemplate', { impact: 5, likelihood: 3, score: 15, level: t('riskLevel.high') })}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-start">
                       <span className="font-medium mr-2">2.</span>
                       <div>
-                        <strong>データバックアップ不備</strong>：災害時のデータ復旧が困難<br />
-                        <span className="text-xs">影響度: 4, 発生可能性: 2, リスクスコア: 8（中）</span>
+                        <strong>{t('help.sample.items.backupFailure.title')}</strong>{t('help.sample.items.backupFailure.description')}<br />
+                        <span className="text-xs">
+                          {t('help.sample.detailTemplate', { impact: 4, likelihood: 2, score: 8, level: t('riskLevel.medium') })}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-start">
                       <span className="font-medium mr-2">3.</span>
                       <div>
-                        <strong>従業員の情報管理不徹底</strong>：人的ミスによる情報流出<br />
-                        <span className="text-xs">影響度: 3, 発生可能性: 3, リスクスコア: 9（中）</span>
+                        <strong>{t('help.sample.items.employeeMismanagement.title')}</strong>{t('help.sample.items.employeeMismanagement.description')}<br />
+                        <span className="text-xs">
+                          {t('help.sample.detailTemplate', { impact: 3, likelihood: 3, score: 9, level: t('riskLevel.medium') })}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <Link
                     href={`/${locale}/risks/new`}
-                    className="inline-flex items-center mt-4 text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                    className="inline-flex items-center mt-4 text-blue-600 hover:text-blue-500 text-sm font-medium"
                   >
-                    新規リスクを登録する
+                    {t('help.sample.cta')}
                     <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
@@ -776,7 +802,7 @@ export default function RisksPage(
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
                             <Link href={`/${locale}/risks/${risk.id}`} className="block hover:bg-surface-elevated -m-2 p-2 rounded">
                               <div>
-                                <div className="font-medium text-text-primary hover:text-indigo-600">{risk.title}</div>
+                                <div className="font-medium text-text-primary hover:text-blue-600">{risk.title}</div>
                                 {risk.description && (
                                   <div className="text-text-muted truncate max-w-xs">
                                     {risk.description}
@@ -823,18 +849,18 @@ export default function RisksPage(
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex items-center justify-end space-x-2">
-                              <Link
+                              {currentUser?.effective_capabilities?.modules.risks.update === true && <Link
                                 href={`/${locale}/risks/${risk.id}/edit`}
-                                className="text-indigo-600 hover:text-indigo-900"
+                                className="text-blue-600 hover:text-blue-900"
                               >
                                 {t('actions.edit')}
-                              </Link>
-                              <button
+                              </Link>}
+                              {currentUser?.effective_capabilities?.modules.risks.delete === true && <button
                                 onClick={() => handleDeleteRisk(risk.id)}
                                 className="text-red-600 hover:text-red-900"
                               >
                                 {t('actions.delete')}
-                              </button>
+                              </button>}
                             </div>
                           </td>
                         </tr>
@@ -899,8 +925,8 @@ export default function RisksPage(
                             : score >= 8
                               ? 'bg-yellow-100 text-yellow-800'
                               : 'bg-green-100 text-green-800'
-                        } cursor-pointer hover:ring-2 hover:ring-indigo-300 ${
-                          isSelected ? 'ring-2 ring-indigo-500' : ''
+                        } cursor-pointer hover:ring-2 hover:ring-blue-300 ${
+                          isSelected ? 'ring-2 ring-blue-500' : ''
                         }`}
                       >
                         <div>{score}</div>

@@ -58,7 +58,7 @@
   --color-secondary-300: #7dd3fc;
 
   /* Semantic palette */
-  --destructive: #ef4444;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --color-error-500: #ef4444;
   --color-error-700: #b91c1c;
@@ -124,6 +124,14 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.28);
   --shadow-md: 0 14px 28px -12px rgba(0, 0, 0, 0.48);
   --glass-blur: 0px;
+
+  /* Surfaces — legacy hex tokens kept in sync with the rgb triplets above
+     (Card/Table/Badge/AIパネル/設定通知ページ still read these hex vars). */
+  --background: #0f172a;
+  --card-background: #18181b;
+  --foreground: #f4f4f5;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
 
   /* Brand palette — dark surface overrides.
      -50/-100/-700 are intentional dark-surface values (bg/text pairs).
@@ -275,7 +283,7 @@
 }
 
 .user-avatar {
-  @apply w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center;
+  @apply w-8 h-8 rounded-full bg-accent/10 text-accent flex items-center justify-center;
 }
 
 .user-avatar-initial {
@@ -414,7 +422,7 @@
 }
 
 .user-avatar-small {
-  @apply flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full;
+  @apply flex items-center justify-center w-8 h-8 bg-accent/10 text-accent rounded-full;
 }
 
 .user-menu-text {

@@ -124,11 +124,11 @@ export default function AssetManagementPage(
 
     try {
       const profile = await userService.getUserProfile()
-      if (!profile?.organization_id) {
+      if (!profile?.effective_organization_id || !profile.effective_role) {
         throw new Error('Organization not found')
       }
 
-      if (!['system_operator', 'org_admin'].includes(profile.role as string)) {
+      if (profile.effective_capabilities?.modules.assets.read !== true) {
         pushToast({ message: t('messages.forbidden'), variant: 'error', duration: 0 })
         try {
           router.push(`/${locale}/home`)
@@ -137,13 +137,13 @@ export default function AssetManagementPage(
         return
       }
 
-      setOrganizationId(profile.organization_id)
+      setOrganizationId(profile.effective_organization_id)
       setCurrentUserId(profile.id)
-      setCurrentUserRole(profile.role ?? null)
+      setCurrentUserRole(profile.effective_role)
 
       const [assetList, orgUsers] = await Promise.all([
-        assetService.getAssets(profile.organization_id),
-        userService.getOrganizationUsers(profile.organization_id)
+        assetService.getAssets(profile.effective_organization_id),
+        userService.getOrganizationUsers(profile.effective_organization_id)
       ])
 
       setAssets(assetList)
@@ -440,7 +440,7 @@ export default function AssetManagementPage(
         <p className="text-sm text-text-secondary mb-4">{t('messages.organizationNotResolved')}</p>
         <button
           onClick={() => router.push(`/${locale}/home`)}
-          className="inline-flex items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="inline-flex items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           {t('messages.goHome')}
         </button>
@@ -466,7 +466,7 @@ export default function AssetManagementPage(
             <select
               value={importMode}
               onChange={(event) => setImportMode(event.target.value as typeof importMode)}
-              className="w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500 md:min-w-[240px]"
+              className="w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500 md:min-w-[240px]"
             >
               <option value="insert">{t('importModes.insert')}</option>
               <option value="upsert">{t('importModes.upsert')}</option>
@@ -483,7 +483,7 @@ export default function AssetManagementPage(
               type="button"
               onClick={handleDownloadTemplate}
               disabled={isTemplateDownloading || !organizationId}
-              className="inline-flex items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+              className="inline-flex items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
             >
               {isTemplateDownloading ? t('actions.downloadingTemplate') : t('actions.downloadTemplate')}
             </button>
@@ -491,7 +491,7 @@ export default function AssetManagementPage(
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting || !organizationId}
-              className="inline-flex items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+              className="inline-flex items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
             >
               {isImporting ? t('actions.importing') : t('actions.importCsv')}
             </button>
@@ -511,7 +511,7 @@ export default function AssetManagementPage(
               <label className="block text-sm font-medium text-text-secondary">{t('form.fields.name')}</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={formState.name}
                 onChange={(event) => handleChange('name', event.target.value)}
                 placeholder={t('form.placeholders.name')}
@@ -523,7 +523,7 @@ export default function AssetManagementPage(
               <label className="block text-sm font-medium text-text-secondary">{t('form.fields.description')}</label>
               <textarea
                 rows={4}
-                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={formState.description}
                 onChange={(event) => handleChange('description', event.target.value)}
                 disabled={isSubmitting}
@@ -536,7 +536,7 @@ export default function AssetManagementPage(
               <div>
                 <label className="block text-sm font-medium text-text-secondary">{t('form.fields.assetType')}</label>
                 <select
-                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={formState.assetType ?? ''}
                   onChange={(event) => handleChange('assetType', event.target.value as InformationAsset['asset_type'])}
                   disabled={isSubmitting}
@@ -551,7 +551,7 @@ export default function AssetManagementPage(
               <div>
                 <label className="block text-sm font-medium text-text-secondary">{t('form.fields.classification')}</label>
                 <select
-                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={formState.classification ?? ''}
                   onChange={(event) =>
                     handleChange('classification', event.target.value as InformationAsset['classification'])
@@ -571,7 +571,7 @@ export default function AssetManagementPage(
               <div>
                 <label className="block text-sm font-medium text-text-secondary">{t('form.fields.criticality')}</label>
                 <select
-                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={formState.criticality ?? ''}
                   onChange={(event) =>
                     handleChange('criticality', event.target.value as InformationAsset['criticality'])
@@ -588,7 +588,7 @@ export default function AssetManagementPage(
               <div>
                 <label className="block text-sm font-medium text-text-secondary">{t('form.fields.status')}</label>
                 <select
-                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={formState.status ?? ''}
                   onChange={(event) => handleChange('status', event.target.value as InformationAsset['status'])}
                   disabled={isSubmitting}
@@ -605,7 +605,7 @@ export default function AssetManagementPage(
             <div>
               <label className="block text-sm font-medium text-text-secondary">{t('form.fields.owner')}</label>
               <select
-                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={formState.ownerId}
                 onChange={(event) => handleChange('ownerId', event.target.value)}
                 disabled={isSubmitting}
@@ -623,7 +623,7 @@ export default function AssetManagementPage(
               <label className="block text-sm font-medium text-text-secondary">{t('form.fields.location')}</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 value={formState.location}
                 onChange={(event) => handleChange('location', event.target.value)}
                 placeholder={t('form.placeholders.location')}
@@ -645,7 +645,7 @@ export default function AssetManagementPage(
             )}
             <button
               type="submit"
-              className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
+              className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
               disabled={isSubmitting}
             >
               {editingAsset ? t('form.actions.update') : t('form.actions.create')}
@@ -669,7 +669,7 @@ export default function AssetManagementPage(
                 <input
                   id="asset-search"
                   type="search"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={t('table.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
@@ -680,7 +680,7 @@ export default function AssetManagementPage(
                 type="button"
                 onClick={handleExportCsv}
                 disabled={isExporting || filteredAssets.length === 0}
-                className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isExporting ? t('actions.exportingCsv') : t('actions.exportCsv')}
               </button>
@@ -730,7 +730,7 @@ export default function AssetManagementPage(
                       {asset.location && <div className="text-xs text-text-muted">{asset.location}</div>}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                         {t(`labels.types.${asset.asset_type}`)}
                       </span>
                     </td>
@@ -754,7 +754,7 @@ export default function AssetManagementPage(
                     <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
                       <button
                         type="button"
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-blue-600 hover:text-blue-900"
                         onClick={() => handleEdit(asset)}
                       >
                         {t('actions.edit', { defaultValue: '編集' })}

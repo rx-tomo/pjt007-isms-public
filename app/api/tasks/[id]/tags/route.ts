@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { getAccessibleTaskForUser } from '@/lib/server/auth/taskAccess'
 import { getDb } from '@/lib/db/drizzle/client'
 import { TaskService } from '@/lib/services/task'
@@ -34,9 +38,22 @@ export async function PUT(request: NextRequest, props: { params: Promise<Params>
     if (!task) {
       return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
     }
+    const authorization = await authorizeTenantAction(
+      getDb(),
+      user.id,
+      task.organizationId,
+      'tasks.update'
+    )
+    if (!authorization.ok) {
+      const status = tenantActionDenialStatus(authorization)
+      return applyCookies(NextResponse.json(
+        { error: status === 403 ? 'Forbidden' : 'Not found' },
+        { status }
+      ))
+    }
 
     const service = new TaskTenantMutationService()
-    await service.setTaskTags(task.authorization, params.id, tagIds, {
+    await service.setTaskTags(authorization.context, params.id, tagIds, {
       userId: user.id,
       userAgent: request.headers.get('user-agent'),
     })

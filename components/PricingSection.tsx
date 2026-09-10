@@ -3,6 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
+import { PUBLIC_REPOSITORY_ISSUES_URL } from '@/lib/publicLinks';
 
 export default function PricingSection() {
   const t = useTranslations();
@@ -123,16 +124,27 @@ export default function PricingSection() {
                   </ul>
 
                   {/* CTA button */}
-                  <Link
-                    href={plan.id === 'enterprise' ? `/${locale}/contact` : `/${locale}/auth/signup`}
-                    className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-all duration-300 ${
-                      isPopular
-                        ? 'bg-primary-600 text-white hover:bg-primary-700'
-                        : 'bg-surface-elevated text-text-primary hover:bg-surface-hover'
-                    }`}
-                  >
-                    {t(`landing.pricing.${plan.id}.cta`)}
-                  </Link>
+                  {plan.id === 'enterprise' ? (
+                    <a
+                      href={PUBLIC_REPOSITORY_ISSUES_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block w-full text-center py-3 px-6 rounded-lg font-medium transition-all duration-300 bg-surface-elevated text-text-primary hover:bg-surface-hover"
+                    >
+                      {t(`landing.pricing.${plan.id}.cta`)}
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/${locale}/auth/signup`}
+                      className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-all duration-300 ${
+                        isPopular
+                          ? 'bg-primary-600 text-white hover:bg-primary-700'
+                          : 'bg-surface-elevated text-text-primary hover:bg-surface-hover'
+                      }`}
+                    >
+                      {t(`landing.pricing.${plan.id}.cta`)}
+                    </Link>
+                  )}
                 </div>
               </div>
             );

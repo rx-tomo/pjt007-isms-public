@@ -4,6 +4,10 @@ import { getDb } from '@/lib/db/drizzle/client'
 import { pricingPlans } from '@/lib/db/drizzle/schema'
 import { eq, desc } from 'drizzle-orm'
 import { requireMockBillingAccess } from '@/lib/server/auth/mockBillingGuard'
+import {
+  completeMockBilling,
+  MockBillingCompletionError,
+} from '@/lib/server/billing/mockBillingCompletion'
 
 export async function POST(request: NextRequest) {
   const db = getDb()
@@ -31,24 +35,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'pricing plan not found' }, { status: 404 })
     }
 
-    // 既存のモック完了エンドポイントを利用して整合更新
-    const origin = new URL(request.url).origin
-    const res = await fetch(`${origin}/api/stripe/mock/complete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: request.headers.get('cookie') ?? '',
-      },
-      body: JSON.stringify({ organizationId, planId: plan.id, status: 'active' })
+    await completeMockBilling(db, {
+      organizationId,
+      planId: plan.id,
+      status: 'active',
     })
-
-    if (!res.ok) {
-      const text = await res.text()
-      return NextResponse.json({ error: `mock complete failed: ${text}` }, { status: 500 })
-    }
 
     return NextResponse.json({ ok: true })
   } catch (e) {
+    if (e instanceof MockBillingCompletionError) {
+      return NextResponse.json({ error: e.message }, { status: e.status })
+    }
     return NextResponse.json({ error: 'invalid payload' }, { status: 400 })
   }
 }

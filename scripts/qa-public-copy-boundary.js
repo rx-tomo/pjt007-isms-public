@@ -15,6 +15,7 @@ const textFiles = [
 const sourceRoots = [
   'app',
   'components',
+  'lib/guides',
 ]
 
 const sourceExtensions = new Set(['.ts', '.tsx', '.js', '.jsx'])

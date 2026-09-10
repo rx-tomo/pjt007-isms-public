@@ -62,8 +62,14 @@ export default function SettingsLayout(props: SettingsLayoutProps) {
         }
 
         const body = await response.json()
-        const role = body?.profile?.role
-        if (!['system_operator', 'org_admin'].includes(role)) {
+        const profile = body?.profile
+        const pathWithoutLocale = pathname.replace(/^\/(ja|en|zh)(?=\/)/, '')
+        const allowed = pathWithoutLocale.startsWith('/settings/assets')
+          ? profile?.effective_capabilities?.modules?.assets?.read === true
+          : pathWithoutLocale.startsWith('/settings/controls')
+            ? profile?.effective_capabilities?.modules?.controls?.read === true
+            : profile?.effective_capabilities?.memberAdministration === true
+        if (!allowed) {
           router.replace(`/${locale}/home`)
         }
       } catch {
@@ -76,7 +82,7 @@ export default function SettingsLayout(props: SettingsLayoutProps) {
     return () => {
       isActive = false
     }
-  }, [isAdminOnlySettingsPath, locale, router])
+  }, [isAdminOnlySettingsPath, locale, pathname, router])
 
   const navigationItems: SettingsNavItem[] = [
     {
