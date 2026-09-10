@@ -47,7 +47,7 @@ export default function Header() {
               href={PUBLIC_REPOSITORY_URL}
               target="_blank"
               rel="noreferrer"
-              className="hidden lg:inline text-text-secondary hover:text-accent transition-colors duration-200"
+              className="hidden xl:inline text-text-secondary hover:text-accent transition-colors duration-200"
             >
               {t('common.publicLinks.source')}
             </a>
@@ -55,7 +55,7 @@ export default function Header() {
               href={PUBLIC_REPOSITORY_ISSUES_URL}
               target="_blank"
               rel="noreferrer"
-              className="hidden lg:inline text-text-secondary hover:text-accent transition-colors duration-200"
+              className="hidden xl:inline text-text-secondary hover:text-accent transition-colors duration-200"
             >
               {t('common.publicLinks.feedback')}
             </a>
@@ -67,13 +67,13 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-3">
               <Link
                 href={`/${locale}/auth/login`}
-                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-accent transition-colors duration-200"
+                className="px-4 py-2 text-sm font-medium whitespace-nowrap text-text-secondary hover:text-accent transition-colors duration-200"
               >
                 {t('common.login.title')}
               </Link>
               <Link
                 href={`/${locale}/dev-login`}
-                className="px-4 py-2 text-sm font-medium text-accent-foreground bg-accent rounded-lg hover:bg-primary-700 transition-colors duration-200"
+                className="px-4 py-2 text-sm font-medium whitespace-nowrap text-accent-foreground bg-accent rounded-lg hover:bg-primary-700 transition-colors duration-200"
               >
                 {t('common.devLogin')}
               </Link>
