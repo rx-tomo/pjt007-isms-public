@@ -4,7 +4,7 @@ import { GUIDE_ARTICLES, getLatestGuideUpdate } from '@/lib/guides';
 const DEFAULT_SITE_URL = 'https://riscala-ai.com';
 const PUBLIC_LOCALES = ['ja', 'en', 'zh'] as const;
 const PUBLIC_PATHS = ['', '/research', '/guide'] as const;
-const PUBLIC_RESOURCE_PATHS = ['/resources', '/tools/isms-readiness-check', '/interviews/isms-operations'] as const;
+const PUBLIC_RESOURCE_PATHS = ['/resources', '/interviews/isms-operations'] as const;
 
 function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
