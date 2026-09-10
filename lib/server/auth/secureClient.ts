@@ -178,6 +178,9 @@ export async function requireServiceRole(
       if (!GLOBAL_PROFILE_ROLES.has(effectiveRole)) {
         return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
       }
+      if (effectiveRole === 'super_admin' && profileRecord.organizationId !== null) {
+        return { error: respondJson({ error: 'Forbidden' }, { status: 403 }) }
+      }
       contextOrganizationId = profileRecord.organizationId
     }
 

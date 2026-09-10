@@ -22,14 +22,14 @@ export function SettingsNav({ items }: { items: SettingsNavItem[] }) {
             href={item.href}
             className={`${
               isActive
-                ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                ? 'bg-blue-50 border-blue-500 text-blue-700'
                 : 'border-transparent text-text-primary hover:bg-surface-elevated hover:text-text-primary'
             } group border-l-4 px-3 py-2 flex items-center text-sm font-medium`}
             aria-current={isActive ? 'page' : undefined}
           >
             <span
               className={`${
-                isActive ? 'text-indigo-500' : 'text-text-muted group-hover:text-text-secondary'
+                isActive ? 'text-blue-500' : 'text-text-muted group-hover:text-text-secondary'
               } flex-shrink-0 -ml-1 mr-3`}
             >
               {item.icon}

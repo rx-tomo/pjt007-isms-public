@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+  type TenantAction,
+} from '@/lib/server/auth/actionPolicy'
 import { DocumentTenantFolderService } from '@/lib/server/documents/documentTenantFolderService'
 import { isDocumentTenantInvariantError } from '@/lib/services/documentTenantInvariant'
 
@@ -14,9 +18,12 @@ function hasOnlyFields(value: Record<string, unknown>, fields: readonly string[]
   return Object.keys(value).every(key => allowed.has(key))
 }
 
-async function authorize(userId: string, organizationId: string) {
-  const result = await resolveTenantAuthorizationContext(getDb(), userId, organizationId)
-  return result.ok ? result.context : null
+async function authorize(
+  userId: string,
+  organizationId: string,
+  action: TenantAction
+) {
+  return authorizeTenantAction(getDb(), userId, organizationId, action)
 }
 
 function mutationError(error: unknown) {
@@ -41,13 +48,17 @@ export async function POST(request: NextRequest) {
   ) {
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-  const authorization = await authorize(user.id, body.organizationId)
-  if (!authorization) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+  const authorization = await authorize(user.id, body.organizationId, 'documents.update')
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   try {
     const data = await new DocumentTenantFolderService().createFolder(
-      authorization,
+      authorization.context,
       body.folder,
       { userId: user.id, userAgent: request.headers.get('user-agent') }
     )
@@ -72,13 +83,17 @@ export async function PATCH(request: NextRequest) {
   ) {
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
-  const authorization = await authorize(user.id, body.organizationId)
-  if (!authorization) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+  const authorization = await authorize(user.id, body.organizationId, 'documents.update')
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   try {
     const data = await new DocumentTenantFolderService().updateFolder(
-      authorization,
+      authorization.context,
       body.folderId,
       body.changes,
       { userId: user.id, userAgent: request.headers.get('user-agent') }
@@ -99,13 +114,17 @@ export async function DELETE(request: NextRequest) {
   if (!organizationId || !folderId) {
     return applyCookies(NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 }))
   }
-  const authorization = await authorize(user.id, organizationId)
-  if (!authorization) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+  const authorization = await authorize(user.id, organizationId, 'documents.delete')
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   try {
     await new DocumentTenantFolderService().deleteFolder(
-      authorization,
+      authorization.context,
       folderId,
       { userId: user.id, userAgent: request.headers.get('user-agent') }
     )

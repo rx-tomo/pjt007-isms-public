@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   ROLE_KEYS,
   ROLE_SCENARIOS,
-  PERMISSION_KEYS,
   requiresTenantSelection,
   requiresUserSelection,
   type RoleKey,
@@ -34,6 +33,7 @@ import {
 } from '@/lib/db/drizzle/schema'
 import { authUsers, authAccounts } from '@/lib/db/drizzle/schema/auth'
 import { isDevApiAvailable } from '@/lib/dev-login/availability'
+import { planPermissionSetWrite } from './permission-set'
 
 class OrganizationResolutionError extends Error {
   status: number
@@ -597,27 +597,19 @@ async function ensureUserPermissionSet(
       ))
       .limit(1)
 
-    const permValues = {
-      organizationId,
-      userId,
-      canManageDocuments: permissions.can_manage_documents ?? false,
-      canManageRisks: permissions.can_manage_risks ?? false,
-      canManageTasks: permissions.can_manage_tasks ?? false,
-      canManageAudit: permissions.can_manage_audit ?? false,
-      canManageAssets: permissions.can_manage_assets ?? false,
-      canManageControls: permissions.can_manage_controls ?? false,
+    const plan = planPermissionSetWrite(existingPerms.length > 0, permissions)
+
+    // 既存行はロール既定値で上書きしない（seed が付与した追加権限を壊さないため）
+    if (plan.action === 'preserve') {
+      return
     }
 
-    if (existingPerms.length === 0) {
-      await db.insert(userPermissionSets).values({
-        id: crypto.randomUUID(),
-        ...permValues,
-      })
-    } else {
-      await db.update(userPermissionSets)
-        .set(permValues)
-        .where(eq(userPermissionSets.id, existingPerms[0].id))
-    }
+    await db.insert(userPermissionSets).values({
+      id: crypto.randomUUID(),
+      organizationId,
+      userId,
+      ...plan.values,
+    })
   } catch (error) {
     console.warn('[DevLogin] failed to ensure permission set', error)
   }

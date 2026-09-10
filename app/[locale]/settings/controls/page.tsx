@@ -12,7 +12,7 @@ import {
 } from '@/lib/services/isoControl'
 import { UserService } from '@/lib/services/user'
 import { OrganizationService } from '@/lib/services/organization'
-import type { UserProfile } from '@/lib/services/user'
+import type { CurrentUserProfile } from '@/lib/services/user'
 import { useToast } from '@/components/ui/ToastProvider'
 import { ControlTemplateWizard } from '@/components/settings/controls/ControlTemplateWizard'
 
@@ -65,7 +65,7 @@ export default function ControlsManagementPage(
   const organizationService = useMemo(() => new OrganizationService(), [])
 
   const [organizationId, setOrganizationId] = useState<string | null>(null)
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [currentUser, setCurrentUser] = useState<CurrentUserProfile | null>(null)
   const [hasAccess, setHasAccess] = useState(true)
 
   const [controls, setControls] = useState<IsoControl[]>([])
@@ -112,7 +112,7 @@ export default function ControlsManagementPage(
         setCurrentUser(user)
         setOrganizationId(org.id)
 
-        if (['system_operator', 'org_admin'].includes(user.role)) {
+        if (user.effective_capabilities?.modules.controls.read === true) {
           setHasAccess(true)
           return
         }
@@ -488,7 +488,7 @@ export default function ControlsManagementPage(
             <button
               onClick={() => setIsWizardOpen(true)}
               disabled={!organizationId}
-              className="px-4 py-2 rounded-md border border-indigo-200 bg-surface text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+              className="px-4 py-2 rounded-md border border-blue-200 bg-surface text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
             >
               {t('actions.openWizard')}
             </button>
@@ -552,15 +552,17 @@ export default function ControlsManagementPage(
           >
             {isSoaLoading ? t('soa.actions.loading') : t('soa.actions.refresh')}
           </button>
-          <button
-            type="button"
-            onClick={handlePublishSoaVersion}
-            disabled={isPublishingSoaVersion || !organizationId || soaRows.length === 0}
-            className="px-3 py-2 text-sm font-medium rounded-md border border-indigo-300 text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
-            data-testid="soa-version-publish"
-          >
-            {isPublishingSoaVersion ? t('soa.actions.publishingVersion') : t('soa.actions.publishVersion')}
-          </button>
+          {currentUser?.effective_capabilities?.controlVersionPublish === true && (
+            <button
+              type="button"
+              onClick={handlePublishSoaVersion}
+              disabled={isPublishingSoaVersion || !organizationId || soaRows.length === 0}
+              className="px-3 py-2 text-sm font-medium rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+              data-testid="soa-version-publish"
+            >
+              {isPublishingSoaVersion ? t('soa.actions.publishingVersion') : t('soa.actions.publishVersion')}
+            </button>
+          )}
         </div>
         <label className="mt-4 block text-sm font-medium text-text-secondary" htmlFor="soa-version-change-summary">
           {t('soa.version.changeSummaryLabel')}
@@ -600,7 +602,7 @@ export default function ControlsManagementPage(
                 </p>
               )}
             </div>
-            <button
+            {currentUser?.effective_capabilities?.controlWorkflowSubmit === true && <button
               type="button"
               onClick={handleSubmitSoaVersionReview}
               disabled={
@@ -612,12 +614,12 @@ export default function ControlsManagementPage(
               data-testid="soa-version-review-submit"
             >
               {isSubmittingSoaVersionReview ? t('soa.actions.submitting') : t('soa.actions.submitVersionReview')}
-            </button>
+            </button>}
           </div>
         )}
         {latestSoaDiff && (
           <div
-            className="mt-3 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-950"
+            className="mt-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950"
             data-testid="soa-version-diff-summary"
           >
             <p className="font-semibold">
@@ -750,7 +752,7 @@ export default function ControlsManagementPage(
                     </td>
                     <td className="px-4 py-3 align-top text-right">
                       <div className="flex flex-col items-end gap-2">
-                        <button
+                        {currentUser?.effective_capabilities?.controlWorkflowSubmit === true && <button
                           type="button"
                           onClick={() => handleSaveSoaDecision(row)}
                           disabled={savingSoaId === row.id}
@@ -758,7 +760,7 @@ export default function ControlsManagementPage(
                           data-testid={`soa-decision-save-${row.id}`}
                         >
                           {savingSoaId === row.id ? t('soa.actions.saving') : t('soa.actions.saveDecision')}
-                        </button>
+                        </button>}
                         <button
                           type="button"
                           onClick={() => handleSubmitSoaApproval(row)}

@@ -36,13 +36,17 @@ export default function NewRiskPage(
   const t = useTranslations('risks')
   const assetText = useTranslations('risks.form.assets')
   const assetLabelT = useTranslations('settings.assets.labels')
+  const permissionT = useTranslations('tasks.errors')
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [accessLoading, setAccessLoading] = useState(true)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<RiskCategory[]>([])
   const [users, setUsers] = useState<UserProfile[]>([])
   const [assets, setAssets] = useState<InformationAssetForRisk[]>([])
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([])
+  const [canReadAssets, setCanReadAssets] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState<RiskFormState>({
@@ -85,11 +89,23 @@ export default function NewRiskPage(
         setLoading(false)
         return
       }
+      if (profile.effective_capabilities?.modules.risks.create !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
+      const hasAssetRead = profile.effective_capabilities?.modules.assets.read === true
+      const canManageMembers = profile.effective_capabilities?.memberAdministration === true
+      setCanReadAssets(hasAssetRead)
 
       const [categoriesData, orgUsers, assetList] = await Promise.all([
         riskService.getRiskCategories(profile.organization_id),
-        userService.getOrganizationUsers(profile.organization_id),
-        assetService.getAssetsForRisk(profile.organization_id)
+        canManageMembers
+          ? userService.getOrganizationUsers(profile.organization_id).catch(() => [profile])
+          : Promise.resolve([profile]),
+        hasAssetRead
+          ? assetService.getAssetsForRisk(profile.organization_id)
+          : Promise.resolve([])
       ])
 
       setCategories(categoriesData)
@@ -99,6 +115,8 @@ export default function NewRiskPage(
     } catch (err) {
       console.error('Error loading form data:', err)
       setError(t('errors.loadFailed'))
+    } finally {
+      setAccessLoading(false)
     }
   }, [assetService, riskService, t, userService])
 
@@ -140,6 +158,28 @@ export default function NewRiskPage(
 
   const handleChange = <K extends keyof RiskFormState>(field: K, value: RiskFormState[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  if (accessLoading) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{permissionT('permissionDenied')}</h1>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -206,28 +246,37 @@ export default function NewRiskPage(
           </div>
 
           <div>
-            <AssetSelector
-              assets={assets}
-              selectedAssetIds={selectedAssetIds}
-              onChange={setSelectedAssetIds}
-              labels={{
-                title: assetText('title'),
-                searchPlaceholder: assetText('search'),
-                empty: assetText('empty'),
-                selectedCount: (count: number) => assetText('selectedCount', { count }),
-                classification: assetText('classification'),
-                criticality: assetText('criticality'),
-                owner: assetText('owner'),
-                department: assetText('department')
-              }}
-              formatAssetType={(value) => assetLabelT(`types.${value}`)}
-              formatClassification={(value) => assetLabelT(`classification.${value}`)}
-              formatCriticality={(value) => assetLabelT(`criticality.${value}`)}
-            />
-            {assets.length === 0 && (
+            {canReadAssets ? (
+              <AssetSelector
+                assets={assets}
+                selectedAssetIds={selectedAssetIds}
+                onChange={setSelectedAssetIds}
+                labels={{
+                  title: assetText('title'),
+                  searchPlaceholder: assetText('search'),
+                  empty: assetText('empty'),
+                  selectedCount: (count: number) => assetText('selectedCount', { count }),
+                  classification: assetText('classification'),
+                  criticality: assetText('criticality'),
+                  owner: assetText('owner'),
+                  department: assetText('department')
+                }}
+                formatAssetType={(value) => assetLabelT(`types.${value}`)}
+                formatClassification={(value) => assetLabelT(`classification.${value}`)}
+                formatCriticality={(value) => assetLabelT(`criticality.${value}`)}
+              />
+            ) : (
+              <p
+                className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+                data-testid="risk-assets-read-denied"
+              >
+                {permissionT('permissionDenied')}
+              </p>
+            )}
+            {canReadAssets && assets.length === 0 && (
               <p className="mt-2 text-xs text-text-muted">
                 {assetText('noAssets')}{' '}
-                <Link href={`/${locale}/settings/assets`} className="text-indigo-600 hover:underline">
+                <Link href={`/${locale}/settings/assets`} className="text-blue-600 hover:underline">
                   {assetText('manageLink')}
                 </Link>
               </p>

@@ -12,7 +12,6 @@ import type { UserProfile } from '@/lib/services/user'
 import { sanitizeTaskFileName } from '@/lib/utils/exporters/taskExport'
 import { FilterBar, type FilterBarItem } from '@/components/filters/FilterBar'
 import { StatusFilterBanner } from '@/components/filters/StatusFilterBanner'
-import { canCreateTask } from '@/lib/constants/taskPermissions'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -185,7 +184,10 @@ export default function TasksPage(
   const [categories, setCategories] = useState<TaskCategory[]>([])
   const [users, setUsers] = useState<UserProfile[]>([])
   const [organizationId, setOrganizationId] = useState<string | null>(null)
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+  const [canCreateTasks, setCanCreateTasks] = useState(false)
+  const [canUpdateTasks, setCanUpdateTasks] = useState(false)
+  const [canDeleteTasks, setCanDeleteTasks] = useState(false)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [exportingCsv, setExportingCsv] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -292,18 +294,26 @@ export default function TasksPage(
       if (!authUser) return
 
       const profile = await userService.getUserProfile()
-      if (!profile?.organization_id) return
-      setOrganizationId(profile.organization_id)
-      setCurrentUserRole(profile.role)
+      if (!profile?.effective_organization_id) return
+      const capabilities = profile.effective_capabilities?.modules.tasks
+      if (capabilities?.read !== true) {
+        setPermissionDenied(true)
+        return
+      }
+      setPermissionDenied(false)
+      setOrganizationId(profile.effective_organization_id)
+      setCanCreateTasks(capabilities.create)
+      setCanUpdateTasks(capabilities.update)
+      setCanDeleteTasks(capabilities.delete)
       setCurrentUserId(profile.id)
 
       // Load categories
-      const categoriesData = await taskService.getTaskCategories(profile.organization_id)
+      const categoriesData = await taskService.getTaskCategories(profile.effective_organization_id)
       setCategories(categoriesData)
 
       // Members may not be allowed to browse the full user directory.
       // Keep the personal task view usable with the current profile as fallback.
-      const usersData = await userService.getOrganizationUsers(profile.organization_id).catch(() => {
+      const usersData = await userService.getOrganizationUsers(profile.effective_organization_id).catch(() => {
         return [profile]
       })
       setUsers(usersData)
@@ -312,7 +322,7 @@ export default function TasksPage(
 
       // Load tasks with filters
       const tasksData = await taskService.getTasks({
-        organizationId: profile.organization_id,
+        organizationId: profile.effective_organization_id,
         ...(filters.status && { status: filters.status as TaskStatus }),
         ...(filters.priority && { priority: filters.priority as TaskPriority }),
         ...(effectiveAssigneeId && { assigneeId: effectiveAssigneeId }),
@@ -351,7 +361,7 @@ export default function TasksPage(
       await loadData()
     } catch (error) {
       console.error('Error updating task status:', error)
-      alert('タスクの更新に失敗しました')
+      alert(t('errors.updateFailed'))
     }
   }
 
@@ -363,7 +373,7 @@ export default function TasksPage(
       await loadData()
     } catch (error) {
       console.error('Error deleting task:', error)
-      alert('タスクの削除に失敗しました')
+      alert(t('errors.deleteFailed'))
     }
   }
 
@@ -410,8 +420,6 @@ export default function TasksPage(
 
   const completionFallbackText = t('list.noCompletionCriteria')
   const noDueDateLabel = t('list.noDueDate')
-  const canAuthorTasks = canCreateTask(currentUserRole)
-
   const monthFormatter = useMemo(() => new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long' }), [locale])
 
   const weekdayLabels = useMemo(() => {
@@ -736,13 +744,25 @@ export default function TasksPage(
     )
   }
 
+  if (permissionDenied) {
+    return (
+      <DashboardLayout locale={locale}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-700 shadow-sm">
+            <h1 className="text-lg font-semibold">{t('errors.permissionDenied')}</h1>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout locale={locale}>
       <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex justify-between items-center">
         <h1 className="text-3xl font-bold">{t('title')}</h1>
         <div className="flex gap-3">
-          {['org_admin', 'system_operator'].includes(currentUserRole ?? '') && (
+          {canCreateTasks && canUpdateTasks && (
             <Link
               href={`/${locale}/settings/setup`}
               className="inline-flex items-center px-4 py-2 rounded-md border border-border bg-surface text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-elevated"
@@ -753,7 +773,7 @@ export default function TasksPage(
               {t('importCsv')}
             </Link>
           )}
-          {canAuthorTasks && (
+          {canCreateTasks && (
             <Link
               href={`/${locale}/tasks/new`}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
@@ -931,7 +951,7 @@ export default function TasksPage(
                         value={task.status}
                         onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
                         className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(task.status)}`}
-                        disabled={!canAuthorTasks}
+                        disabled={!canUpdateTasks}
                       >
                         <option value="todo">{t('list.status.todo')}</option>
                         <option value="in_progress">{t('list.status.in_progress')}</option>
@@ -959,25 +979,25 @@ export default function TasksPage(
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        {canAuthorTasks ? (
+                        {canUpdateTasks || canDeleteTasks ? (
                           <>
-                            <Link
+                            {canUpdateTasks && <Link
                               href={`/${locale}/tasks/${task.id}/edit`}
-                              className="text-indigo-600 hover:text-indigo-900"
+                              className="text-blue-600 hover:text-blue-900"
                             >
                               {t('actions.edit')}
-                            </Link>
-                            <button
+                            </Link>}
+                            {canDeleteTasks && <button
                               onClick={() => handleDeleteTask(task.id)}
                               className="text-red-600 hover:text-red-900"
                             >
                               {t('actions.delete')}
-                            </button>
+                            </button>}
                           </>
                         ) : (
                           <Link
                             href={`/${locale}/tasks/${task.id}`}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="text-blue-600 hover:text-blue-900"
                           >
                             {t('detail.overview')}
                           </Link>

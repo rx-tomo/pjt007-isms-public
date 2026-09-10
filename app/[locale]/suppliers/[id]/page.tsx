@@ -33,10 +33,11 @@ export default function SupplierDetailPage(props: { params: Promise<{ locale: st
         const [supplierRes, assessmentsRes, contractsRes] = await Promise.all([
           fetch(`/api/suppliers/${id}`),
           fetch(`/api/suppliers/${id}/assessments`),
-          fetch(`/api/suppliers/${id}/assessments`), // contracts route can be added later
+          fetch(`/api/suppliers/${id}/contracts`),
         ])
 
         if (!supplierRes.ok) throw new Error('Failed to load supplier')
+        if (!contractsRes.ok) throw new Error('Failed to load supplier contracts')
 
         const supplierJson = await supplierRes.json()
         setSupplier(supplierJson.data)
@@ -46,10 +47,8 @@ export default function SupplierDetailPage(props: { params: Promise<{ locale: st
           setAssessments(assessmentsJson.data ?? [])
         }
 
-        // Contracts are not fetched from assessments endpoint - use proper endpoint when available
-        if (contractsRes.ok) {
-          // placeholder: contracts endpoint needed
-        }
+        const contractsJson = await contractsRes.json()
+        setContracts(contractsJson.contracts ?? [])
       } catch (err) {
         console.error(err)
         setError(t('errors.loadFailed'))

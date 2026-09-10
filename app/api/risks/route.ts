@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db/drizzle/client'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import {
   RiskTenantLifecycleError,
   RiskTenantLifecycleService,
   type RiskCreateInput,
 } from '@/lib/server/risks/riskTenantLifecycleService'
+import { projectRiskForCapabilities } from '@/lib/server/risks/riskOutputProjection'
 import { RiskService } from '@/lib/services/risk'
 import type { RiskStatus } from '@/lib/db/repositories/interfaces/IRiskRepository'
 
@@ -84,9 +88,18 @@ export async function GET(request: NextRequest) {
     return applyCookies(NextResponse.json({ error: 'Missing organizationId' }, { status: 400 }))
   }
   const db = getDb()
-  const authorization = await resolveTenantAuthorizationContext(db, user.id, organizationId)
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'risks.read'
+  )
   if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   try {
     const action = searchParams.get('action') ?? 'risks'
@@ -104,7 +117,9 @@ export async function GET(request: NextRequest) {
       status: parseStatus(statusValue),
       assessmentPeriod: searchParams.get('assessmentPeriod') ?? undefined,
     })
-    return applyCookies(NextResponse.json(data))
+    return applyCookies(NextResponse.json(
+      data.map(risk => projectRiskForCapabilities(risk, authorization.capabilities))
+    ))
   } catch (error) {
     return applyCookies(lifecycleError(error))
   }
@@ -120,6 +135,19 @@ export async function POST(request: NextRequest) {
   const input = parseCreate(body as Record<string, unknown>)
   if (!input) {
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
+  }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    user.id,
+    input.organizationId,
+    'risks.create'
+  )
+  if (!authorization.ok) {
+    const status = tenantActionDenialStatus(authorization)
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   try {
     const data = await new RiskTenantLifecycleService(getDb()).createRisk(

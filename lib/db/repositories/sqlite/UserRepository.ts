@@ -462,14 +462,17 @@ export class SQLiteUserRepository extends BaseSQLiteRepository implements IUserR
   /**
    * Update membership role
    *
-   * Updates both the membership role and the user profile role.
+   * Tenant roles are membership-local. The global/legacy profile role must
+   * never be changed through a tenant repository operation.
    */
   async updateMembershipRole(organizationId: string, userId: string, role: UserRole): Promise<void> {
     this.requireOrganizationId(organizationId, 'updateMembershipRole')
+    if (role === 'super_admin') {
+      throw new Error('super_admin is not a tenant membership role')
+    }
 
     const now = new Date().toISOString()
 
-    // Update membership
     await this.db
       .update(userMemberships)
       .set({ role, updatedAt: now })
@@ -479,12 +482,6 @@ export class SQLiteUserRepository extends BaseSQLiteRepository implements IUserR
           eq(userMemberships.userId, userId)
         )
       )
-
-    // Update user profile role
-    await this.db
-      .update(userProfiles)
-      .set({ role, updatedAt: now })
-      .where(eq(userProfiles.id, userId))
 
     this.logDataAccess('updateMembershipRole', organizationId, {
       userId,

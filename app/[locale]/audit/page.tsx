@@ -23,7 +23,7 @@ type AuditStatistics = Awaited<ReturnType<AuditService['getAuditStatistics']>>
 
 const PERIOD_STATUS_ORDER: AuditStatus[] = ['planning', 'scheduled', 'in_progress', 'completed', 'cancelled']
 const PERIOD_STATUS_COLORS: Record<AuditStatus, string> = {
-  planning: 'bg-indigo-500',
+  planning: 'bg-blue-500',
   scheduled: 'bg-blue-500',
   in_progress: 'bg-yellow-500',
   completed: 'bg-emerald-500',
@@ -132,6 +132,7 @@ export default function AuditPage(
         open: 0,
         in_progress: 0,
         resolved: 0,
+        pending_verification: 0,
         closed: 0,
         verified: 0
       },
@@ -144,6 +145,7 @@ export default function AuditPage(
         open: 0,
         in_progress: 0,
         resolved: 0,
+        pending_verification: 0,
         closed: 0,
         verified: 0
       },
@@ -161,7 +163,7 @@ export default function AuditPage(
   }
 
   const followUpStatusOrder: AuditFollowUpStatus[] = ['completed', 'on_hold', 'reopened']
-  const nonconformityStatusOrder: NonconformityStatus[] = ['open', 'in_progress', 'resolved', 'closed', 'verified']
+  const nonconformityStatusOrder: NonconformityStatus[] = ['open', 'in_progress', 'resolved', 'pending_verification', 'closed', 'verified']
 
   const periodSelectOptions = useMemo(() => {
     const normalized = [...availablePeriods]
@@ -402,13 +404,8 @@ export default function AuditPage(
   }
 
   const getAuditTypeLabel = (type: string) => {
-    const labels = {
-      internal: '内部監査',
-      external: '外部監査',
-      certification: '認証審査',
-      surveillance: '継続運用'
-    }
-    return labels[type as keyof typeof labels] || type
+    const knownTypes = ['internal', 'external', 'certification', 'surveillance']
+    return knownTypes.includes(type) ? t(`types.${type}` as const) : type
   }
 
   const formatDateRange = (startDate?: string | null, endDate?: string | null) => {
@@ -471,10 +468,10 @@ export default function AuditPage(
                 key={stage.key}
                 href={stage.href}
                 data-testid={`audit-lifecycle-stage-${stage.key}`}
-                className="block rounded-xl border border-border bg-surface-elevated/70 p-4 transition hover:border-indigo-200 hover:bg-surface hover:shadow-sm"
+                className="block rounded-xl border border-border bg-surface-elevated/70 p-4 transition hover:border-blue-200 hover:bg-surface hover:shadow-sm"
               >
                 <div className="flex items-start gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
@@ -505,7 +502,7 @@ export default function AuditPage(
           </div>
           <div className="bg-surface p-6 rounded-lg shadow-sm">
             <h3 className="text-sm font-medium text-text-secondary">{t('stats.checklistCompletion')}</h3>
-            <p className="text-2xl font-bold text-indigo-600 mt-2">{completionRate}%</p>
+            <p className="text-2xl font-bold text-blue-600 mt-2">{completionRate}%</p>
             <p className="text-xs text-text-muted mt-1">
               {t('stats.checklistCompletionHint', {
                 completed: statistics?.completedChecklistItems ?? 0,
@@ -517,7 +514,7 @@ export default function AuditPage(
             <h3 className="text-sm font-medium text-text-secondary">{t('stats.totalNonconformities')}</h3>
             <p className="text-2xl font-bold text-red-600 mt-2">{statistics?.totalNonconformities ?? 0}</p>
             <p className="text-xs text-text-muted mt-1">
-              重大: {safeNcByType.major}, 軽微: {safeNcByType.minor}
+              {t('stats.majorMinorSummary', { major: safeNcByType.major, minor: safeNcByType.minor })}
             </p>
           </div>
           <div className="bg-surface p-6 rounded-lg shadow-sm">
@@ -543,7 +540,7 @@ export default function AuditPage(
         <div className="mb-8 rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs font-semibold text-text-muted">監査の進捗</p>
+              <p className="text-xs font-semibold text-text-muted">{t('stats.progressHeading')}</p>
               <p
                 data-testid="audit-period-label"
                 className="text-lg font-semibold text-text-primary"
@@ -551,7 +548,7 @@ export default function AuditPage(
                 {periodLabel}
               </p>
               <p className="mt-1 text-xs text-text-muted">
-                計画、実施、指摘、是正、フォローアップの順に未対応を確認します。
+                {t('stats.progressHint')}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -567,7 +564,7 @@ export default function AuditPage(
                 href={`/${locale}/audit?status=in_progress`}
                 className="rounded-full bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-700"
               >
-                進行中を見る
+                {t('stats.viewInProgress')}
               </Link>
             </div>
           </div>
@@ -590,11 +587,11 @@ export default function AuditPage(
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {[
-                { key: 'planning', label: '計画', count: safePlansByStatus.planning, percent: periodStatusSegments.find(segment => segment.status === 'planning')?.percent ?? 0 },
-                { key: 'in_progress', label: '実施', count: safePlansByStatus.in_progress, percent: periodStatusSegments.find(segment => segment.status === 'in_progress')?.percent ?? 0 },
-                { key: 'nonconformities', label: '指摘', count: statistics.totalNonconformities, percent: 0 },
-                { key: 'corrective', label: '是正', count: statistics.openCorrectiveActions, percent: 0 },
-                { key: 'follow_up', label: 'フォロー', count: statistics.overdueCorrectiveActions, percent: 0 },
+                { key: 'planning', label: t('stats.progressSegments.planning'), count: safePlansByStatus.planning, percent: periodStatusSegments.find(segment => segment.status === 'planning')?.percent ?? 0 },
+                { key: 'in_progress', label: t('stats.progressSegments.inProgress'), count: safePlansByStatus.in_progress, percent: periodStatusSegments.find(segment => segment.status === 'in_progress')?.percent ?? 0 },
+                { key: 'nonconformities', label: t('stats.progressSegments.nonconformities'), count: statistics.totalNonconformities, percent: 0 },
+                { key: 'corrective', label: t('stats.progressSegments.corrective'), count: statistics.openCorrectiveActions, percent: 0 },
+                { key: 'follow_up', label: t('stats.progressSegments.followUp'), count: statistics.overdueCorrectiveActions, percent: 0 },
               ].map(segment => (
                 <div key={segment.key} className="rounded-xl border border-border bg-surface-elevated p-3 text-xs text-text-secondary">
                   <p className="font-semibold text-text-primary">{segment.label}</p>
@@ -852,7 +849,7 @@ export default function AuditPage(
                       {plan.status === 'planning' && (
                         <Link
                           href={`/${locale}/audit/plans/${plan.id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-blue-600 hover:text-blue-900"
                         >
                           {t('actions.edit')}
                         </Link>
@@ -910,7 +907,7 @@ export default function AuditPage(
                   href={`/${locale}/audit/plans/${audit.id}`}
                   className="text-blue-600 hover:text-blue-800 text-sm"
                 >
-                  詳細を見る
+                  {t('stats.viewDetails')}
                 </Link>
               </div>
             ))}
@@ -963,7 +960,7 @@ export default function AuditPage(
                   )}
                   <Link
                     href={resolveActionLink(action)}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-500"
                   >
                     {t('nextActions.labels.viewDetails')}
                   </Link>

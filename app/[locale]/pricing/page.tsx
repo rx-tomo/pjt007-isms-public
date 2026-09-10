@@ -8,6 +8,7 @@ import { StripeService, getStripe } from '@/lib/services/stripe'
 import { UserService } from '@/lib/services/user'
 import type { PricingPlan } from '@/lib/services/stripe'
 import { DEFAULT_PRICING_PLANS } from '@/lib/stripe/defaultPricingPlans'
+import { PUBLIC_REPOSITORY_ISSUES_URL } from '@/lib/publicLinks'
 
 export default function PricingPage(
   props: {
@@ -118,7 +119,7 @@ export default function PricingPage(
 
       const stripe = await getStripe()
       if (!stripe) {
-        alert('Stripe.js の読み込みに失敗しました。公開鍵の設定を確認してください。')
+        alert(t('errors.stripeLoadFailed'))
         return
       }
 
@@ -130,7 +131,7 @@ export default function PricingPage(
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      alert('決済の開始に失敗しました。もう一度お試しください。')
+      alert(t('errors.checkoutFailed'))
     } finally {
       setProcessing(false)
     }
@@ -157,7 +158,7 @@ export default function PricingPage(
       window.location.href = url
     } catch (error) {
       console.error('Error creating portal session:', error)
-      alert('カスタマーポータルへのアクセスに失敗しました。')
+      alert(t('errors.portalFailed'))
     } finally {
       setProcessing(false)
     }
@@ -252,6 +253,7 @@ export default function PricingPage(
             {plans.map((plan) => {
               const isCurrentPlan = currentSubscription?.pricing_plan_id === plan.id
               const isTrialPlan = plan.name === 'トライアル'
+              const isCustomQuotePlan = plan.price_monthly < 0
 
               return (
                 <div
@@ -275,6 +277,10 @@ export default function PricingPage(
                         <div>
                           <span className="text-3xl font-bold text-text-primary">14日間</span>
                           <span className="text-text-secondary ml-1">無料</span>
+                        </div>
+                      ) : isCustomQuotePlan ? (
+                        <div>
+                          <span className="text-3xl font-bold text-text-primary">{t('customQuote')}</span>
                         </div>
                       ) : (
                         <div>
@@ -304,6 +310,15 @@ export default function PricingPage(
                       >
                         現在のプラン
                       </button>
+                    ) : isCustomQuotePlan ? (
+                      <a
+                        href={PUBLIC_REPOSITORY_ISSUES_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full text-center py-2 px-4 rounded-md transition-colors bg-surface-elevated text-text-primary hover:bg-surface-hover"
+                      >
+                        {t('contactUs')}
+                      </a>
                     ) : (
                       <button
                         onClick={() => handleSelectPlan(plan.id)}
@@ -331,7 +346,7 @@ export default function PricingPage(
           {/* Additional Info */}
           <div className="mt-16 text-center">
             <p className="text-text-secondary mb-8">
-              すべてのプランに含まれるもの: SSL証明書、99.9%稼働率保証、24時間365日監視
+              すべてのプランに含まれるもの: SSL証明書、24時間365日監視
             </p>
 
             <div className="bg-surface-elevated rounded-lg p-8 max-w-3xl mx-auto">

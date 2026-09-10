@@ -256,23 +256,9 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
         return guard.json(diff)
       }
 
-      case 'updateMembershipRole': {
-        const userId = body.userId as string | undefined
-        const role = body.role as string | undefined
-        if (!userId || !role) {
-          return guard.json({ error: 'userId and role are required' }, { status: 400 })
-        }
-        const ALLOWED_ROLES = ['org_admin', 'user', 'auditor', 'approver'] as const
-        if (!ALLOWED_ROLES.includes(role as any)) {
-          return guard.json({ error: `Invalid role. Allowed: ${ALLOWED_ROLES.join(', ')}` }, { status: 400 })
-        }
-        await service.updateMembershipRole(organizationId, userId, role as any)
-        return guard.json({ status: 'ok' })
-      }
-
       default:
         return guard.json(
-          { error: `Invalid action: ${action}. Valid actions: setCiso, clearCiso, bulkUpdateRoleFlags, createProjectRole, updateProjectRole, deleteProjectRole, setRoleAssignments, syncProjectAssignments, bulkUpsertProjectRoles, createSnapshot, compareSnapshots, updateMembershipRole` },
+          { error: `Invalid action: ${action}. Valid actions: setCiso, clearCiso, bulkUpdateRoleFlags, createProjectRole, updateProjectRole, deleteProjectRole, setRoleAssignments, syncProjectAssignments, bulkUpsertProjectRoles, createSnapshot, compareSnapshots` },
           { status: 400 }
         )
     }

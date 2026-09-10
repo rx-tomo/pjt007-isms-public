@@ -94,7 +94,7 @@ export default function StructureManagementPage(
       }
 
       // Permission check: only org_admin / system_operator
-      if (!['org_admin', 'system_operator'].includes(user.role)) {
+      if (!user.effective_role || !['org_admin', 'system_operator'].includes(user.effective_role)) {
         setError('Permission denied')
         setIsLoading(false)
         return
@@ -276,7 +276,7 @@ export default function StructureManagementPage(
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -322,7 +322,7 @@ export default function StructureManagementPage(
               </label>
               <select
                 id="ciso-select"
-                className="block w-full rounded-md border border-border bg-surface py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-md border border-border bg-surface py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                 value={selectedCisoId}
                 onChange={e => setSelectedCisoId(e.target.value)}
               >
@@ -338,7 +338,7 @@ export default function StructureManagementPage(
               type="button"
               onClick={handleCisoChange}
               disabled={isCisoSaving || selectedCisoId === (currentCisoId ?? '')}
-              className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCisoSaving ? '...' : t('cisoUpdated').split(' ')[0]}
             </button>
@@ -355,7 +355,7 @@ export default function StructureManagementPage(
             </label>
             <select
               id="role-select"
-              className="block w-full max-w-xs rounded-md border border-border bg-surface py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+              className="block w-full max-w-xs rounded-md border border-border bg-surface py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               value={selectedRole}
               onChange={e => setSelectedRole(e.target.value as RoleFlagKey)}
             >
@@ -375,13 +375,13 @@ export default function StructureManagementPage(
                 {roleFlagMembers.map(member => (
                   <label
                     key={member.id}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3 hover:border-indigo-200 cursor-pointer transition"
+                    className="flex items-center gap-3 rounded-lg border border-border p-3 hover:border-blue-200 cursor-pointer transition"
                   >
                     <input
                       type="checkbox"
                       checked={checkedMemberIds.has(member.id)}
                       onChange={() => handleToggleMember(member.id)}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                     />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-text-primary block truncate">
@@ -402,14 +402,14 @@ export default function StructureManagementPage(
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     {t('selectAll')}
                   </button>
                   <button
                     type="button"
                     onClick={handleDeselectAll}
-                    className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     {t('deselectAll')}
                   </button>
@@ -418,7 +418,7 @@ export default function StructureManagementPage(
                   type="button"
                   onClick={handleBulkAssign}
                   disabled={isBulkSaving || !isBulkDirty}
-                  className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isBulkSaving ? '...' : t('assignSelected', { count: checkedMemberIds.size })}
                 </button>
@@ -439,7 +439,7 @@ export default function StructureManagementPage(
               <input
                 id="snapshot-name"
                 type="text"
-                className="block w-full rounded-md border border-border py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-md border border-border py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                 value={snapshotName}
                 onChange={e => setSnapshotName(e.target.value)}
                 placeholder={t('snapshotNamePlaceholder')}
@@ -449,7 +449,7 @@ export default function StructureManagementPage(
               type="button"
               onClick={handleSaveSnapshot}
               disabled={isSnapshotSaving || !snapshotName.trim()}
-              className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSnapshotSaving ? '...' : t('saveSnapshot')}
             </button>
@@ -472,7 +472,7 @@ export default function StructureManagementPage(
                     <div
                       key={snap.id}
                       className={`flex items-center justify-between rounded-lg border p-4 transition cursor-pointer ${
-                        isSelected ? 'border-indigo-500 bg-indigo-50' : 'border-border hover:border-indigo-200'
+                        isSelected ? 'border-blue-500 bg-blue-50' : 'border-border hover:border-blue-200'
                       }`}
                       onClick={() => toggleCompareSelection(snap.id)}
                       role="button"
@@ -491,7 +491,7 @@ export default function StructureManagementPage(
                           checked={isSelected}
                           onChange={() => toggleCompareSelection(snap.id)}
                           onClick={e => e.stopPropagation()}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 rounded"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                         />
                       </div>
                     </div>
@@ -505,7 +505,7 @@ export default function StructureManagementPage(
                     type="button"
                     onClick={handleCompare}
                     disabled={isComparing}
-                    className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                    className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
                   >
                     {isComparing ? '...' : t('compare')}
                   </button>

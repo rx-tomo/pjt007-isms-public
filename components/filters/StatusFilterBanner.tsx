@@ -15,7 +15,7 @@ export function StatusFilterBanner({ label, clearLabel, onClear, className }: St
   return (
     <div
       className={[
-        'flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-xs text-indigo-800',
+        'flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800',
         className
       ]
         .filter(Boolean)
@@ -27,7 +27,7 @@ export function StatusFilterBanner({ label, clearLabel, onClear, className }: St
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex items-center gap-1 rounded-full border border-indigo-200 px-3 py-1 font-semibold text-indigo-700 transition hover:bg-surface"
+        className="inline-flex items-center gap-1 rounded-full border border-blue-200 px-3 py-1 font-semibold text-blue-700 transition hover:bg-surface"
       >
         {clearLabel}
       </button>

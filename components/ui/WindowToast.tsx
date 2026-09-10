@@ -76,7 +76,7 @@ export default function WindowToast({
             setVisible(false)
             onDismiss?.()
           }}
-          className="rounded-md p-1 text-current transition hover:bg-surface/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-md p-1 text-current transition hover:bg-surface/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           <span className="sr-only">Close</span>
           <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">

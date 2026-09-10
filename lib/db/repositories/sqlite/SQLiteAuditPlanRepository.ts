@@ -97,6 +97,7 @@ const ACTIVE_NONCONFORMITY_STATUSES: ReadonlySet<NonconformityStatus> = new Set(
   'open',
   'in_progress',
   'resolved',
+  'pending_verification',
 ])
 
 export function deriveAuditFollowUpStatus(
@@ -1666,7 +1667,7 @@ export class SQLiteAuditPlanRepository
       plansByStatus: { planning: 0, scheduled: 0, in_progress: 0, completed: 0, cancelled: 0 },
       totalNonconformities: orgNonconformities.length,
       ncByType: { major: 0, minor: 0 },
-      ncByStatus: { open: 0, in_progress: 0, resolved: 0, closed: 0, verified: 0 },
+      ncByStatus: { open: 0, in_progress: 0, resolved: 0, pending_verification: 0, closed: 0, verified: 0 },
       upcomingAudits: upcomingAudits.map(p => this.mapAuditPlanRow(p)),
       checklistStatus,
       totalChecklistItems: checklistRows.length,
@@ -1677,7 +1678,7 @@ export class SQLiteAuditPlanRepository
       overdueCorrectiveActions: 0,
       nextActions: [],
       followUpStatusCounts: { completed: 0, on_hold: 0, reopened: 0 },
-      nonconformityStatusCounts: { open: 0, in_progress: 0, resolved: 0, closed: 0, verified: 0 },
+      nonconformityStatusCounts: { open: 0, in_progress: 0, resolved: 0, pending_verification: 0, closed: 0, verified: 0 },
     }
 
     filteredPlans.forEach(plan => {

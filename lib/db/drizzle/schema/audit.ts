@@ -51,7 +51,7 @@ export const nonconformityTypeValues = ['major', 'minor'] as const
 export type NonconformityType = (typeof nonconformityTypeValues)[number]
 
 // nonconformities.status
-export const nonconformityStatusValues = ['open', 'in_progress', 'resolved', 'closed', 'verified'] as const
+export const nonconformityStatusValues = ['open', 'in_progress', 'resolved', 'pending_verification', 'closed', 'verified'] as const
 export type NonconformityStatus = (typeof nonconformityStatusValues)[number]
 
 // corrective_actions.status

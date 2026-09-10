@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+} from '@/lib/server/auth/actionPolicy'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
+import { parseLimitedFormData } from '@/lib/server/http/limitedFormData'
 import { parseCsvToObjects } from '@/lib/utils/importers/csv'
 import { getDb } from '@/lib/db/drizzle/client'
 import { risks, riskCategories } from '@/lib/db/drizzle/schema/risks'
@@ -18,6 +24,15 @@ type SummaryBlock = {
   errors: string[]
 }
 
+const RISK_IMPORT_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
+const RISK_IMPORT_MULTIPART_OVERHEAD_BYTES = 1024 * 1024
+const RISK_IMPORT_MAX_ROWS = 5000
+const RISK_IMPORT_MAX_COLUMNS = 64
+const RISK_IMPORT_MAX_TOTAL_CELLS = (
+  RISK_IMPORT_MAX_ROWS + 1
+) * RISK_IMPORT_MAX_COLUMNS
+const RISK_IMPORT_MAX_CELL_LENGTH = 50000
+
 const VALID_STATUSES = new Set([
   'identified',
   'analyzing',
@@ -35,32 +50,99 @@ function clampLevel(raw: string | undefined, defaultVal: RiskLevel): RiskLevel {
   return n as RiskLevel
 }
 
-export async function POST(request: NextRequest) {
-  const formData = await request.formData()
-  const file = formData.get('file')
-  const organizationId = (formData.get('organizationId') as string | null)?.trim()
+function requestOrganizationId(request: NextRequest): string | null {
+  const headerValue = request.headers.get('x-organization-id')?.trim() ?? ''
+  const queryValue = request.nextUrl.searchParams.get('organizationId')?.trim() ?? ''
+  if (headerValue && queryValue && headerValue !== queryValue) return null
+  const value = headerValue || queryValue
+  if (!value || value.length > 128 || /[\u0000-\u001f\u007f]/.test(value)) return null
+  return value
+}
 
-  if (!(file instanceof Blob)) {
-    return NextResponse.json({ error: 'file is required' }, { status: 400 })
+function formDataError(reason: 'too_large' | 'invalid_content_length' | 'invalid_form_data') {
+  if (reason === 'too_large') {
+    return NextResponse.json({ error: 'Import request is too large' }, { status: 413 })
   }
+  return NextResponse.json({ error: 'Invalid multipart form data' }, { status: 400 })
+}
+
+function isRiskImportShapeAllowed(rows: Record<string, string>[]): boolean {
+  if (rows.length > RISK_IMPORT_MAX_ROWS) return false
+  let totalCells = 0
+  for (const row of rows) {
+    const entries = Object.entries(row)
+    if (entries.length > RISK_IMPORT_MAX_COLUMNS) return false
+    totalCells += entries.length
+    if (totalCells > RISK_IMPORT_MAX_TOTAL_CELLS) return false
+    if (entries.some(([, value]) => (
+      typeof value !== 'string' || value.length > RISK_IMPORT_MAX_CELL_LENGTH
+    ))) return false
+  }
+  return true
+}
+
+export async function POST(request: NextRequest) {
+  const { user, applyCookies } = await getRouteAuth(request)
+  const respond = <T extends NextResponse>(response: T): T => applyCookies(response)
+  if (!user) {
+    return respond(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  }
+  const organizationId = requestOrganizationId(request)
   if (!organizationId) {
-    return NextResponse.json({ error: 'organizationId is required' }, { status: 400 })
+    return respond(NextResponse.json(
+      { error: 'X-Organization-Id or organizationId query is required' },
+      { status: 400 }
+    ))
+  }
+  const [createAuthorization, updateAuthorization] = await Promise.all([
+    authorizeTenantAction(getDb(), user.id, organizationId, 'risks.create'),
+    authorizeTenantAction(getDb(), user.id, organizationId, 'risks.update'),
+  ])
+  if (!createAuthorization.ok || !updateAuthorization.ok) {
+    const status = !createAuthorization.ok
+      ? tenantActionDenialStatus(createAuthorization)
+      : !updateAuthorization.ok
+        ? tenantActionDenialStatus(updateAuthorization)
+        : 404
+    return respond(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
 
   const { guard, error } = await requireServiceRole(request, {
     mode: 'tenant',
-    allowedRoles: ['org_admin', 'system_operator'],
     organizationId,
     actionName: 'risks.import'
   })
 
   if (error || !guard) {
-    return error ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return respond(error ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  }
+
+  const limitedFormData = await parseLimitedFormData(
+    request,
+    RISK_IMPORT_MAX_FILE_SIZE_BYTES + RISK_IMPORT_MULTIPART_OVERHEAD_BYTES
+  )
+  if (!limitedFormData.ok) {
+    return respond(formDataError(limitedFormData.reason))
+  }
+  const formData = limitedFormData.formData
+  const formOrganizationId = typeof formData.get('organizationId') === 'string'
+    ? String(formData.get('organizationId')).trim()
+    : ''
+  if (formOrganizationId !== organizationId) {
+    return respond(NextResponse.json({ error: 'Organization mismatch' }, { status: 400 }))
+  }
+  const file = formData.get('file')
+  if (!(file instanceof Blob)) {
+    return respond(NextResponse.json({ error: 'file is required' }, { status: 400 }))
+  }
+  if (file.size > RISK_IMPORT_MAX_FILE_SIZE_BYTES) {
+    return respond(NextResponse.json({ error: 'CSV file is too large' }, { status: 413 }))
   }
 
   const { logEvent, json, userId } = guard
-  const db = getDb()
-  const lifecycle = new RiskTenantLifecycleService(db)
 
   const summary: SummaryBlock = {
     processed: 0,
@@ -70,10 +152,28 @@ export async function POST(request: NextRequest) {
     errors: []
   }
 
+  let rows: ReturnType<typeof parseCsvToObjects>
   try {
-    const buffer = await file.arrayBuffer()
-    const rows = parseCsvToObjects(buffer, ['title'])
+    rows = parseCsvToObjects(await file.arrayBuffer(), ['title'], {
+      strictColumnCount: true,
+      strictQuoteSyntax: true,
+      maxColumns: RISK_IMPORT_MAX_COLUMNS,
+      maxRows: RISK_IMPORT_MAX_ROWS,
+      maxCellLength: RISK_IMPORT_MAX_CELL_LENGTH,
+      maxTotalCells: RISK_IMPORT_MAX_TOTAL_CELLS,
+    })
+    if (!isRiskImportShapeAllowed(rows)) {
+      return respond(NextResponse.json({ error: 'Invalid CSV file' }, { status: 400 }))
+    }
+  } catch {
+    console.warn('[risks/import] invalid CSV')
+    return respond(NextResponse.json({ error: 'Invalid CSV file' }, { status: 400 }))
+  }
 
+  const db = getDb()
+  const lifecycle = new RiskTenantLifecycleService(db)
+
+  try {
     // Pre-fetch category lookup
     const categories = await db
       .select({ id: riskCategories.id, name: riskCategories.name })
@@ -162,8 +262,9 @@ export async function POST(request: NextRequest) {
             }, { userAgent: request.headers.get('user-agent') })
 
             summary.updated += 1
-          } catch (updateErr) {
-            summary.errors.push(`Line ${lineNumber}: failed to update "${title}" - ${updateErr instanceof Error ? updateErr.message : String(updateErr)}`)
+          } catch {
+            console.error('[risks/import] row update failed', { lineNumber })
+            summary.errors.push(`Line ${lineNumber}: failed to update risk`)
             summary.skipped += 1
           }
         } else {
@@ -183,28 +284,27 @@ export async function POST(request: NextRequest) {
             }, { userAgent: request.headers.get('user-agent') })
 
             summary.created += 1
-          } catch (insertErr) {
-            summary.errors.push(`Line ${lineNumber}: failed to insert "${title}" - ${insertErr instanceof Error ? insertErr.message : String(insertErr)}`)
+          } catch {
+            console.error('[risks/import] row insert failed', { lineNumber })
+            summary.errors.push(`Line ${lineNumber}: failed to insert risk`)
             summary.skipped += 1
           }
         }
-      } catch (rowErr) {
-        summary.errors.push(`Line ${lineNumber}: ${rowErr instanceof Error ? rowErr.message : String(rowErr)}`)
+      } catch {
+        console.error('[risks/import] row processing failed', { lineNumber })
+        summary.errors.push(`Line ${lineNumber}: failed to process risk`)
         summary.skipped += 1
       }
     }
 
     await logEvent('success', { summary })
-    return json({ message: 'Import completed', summary })
-  } catch (err) {
-    console.error('[risks/import] failed', err)
-    await logEvent('error', { reason: err instanceof Error ? err.message : String(err) })
-    return NextResponse.json(
-      {
-        error: 'Failed to import risks',
-        details: err instanceof Error ? err.message : String(err)
-      },
+    return respond(json({ message: 'Import completed', summary }))
+  } catch {
+    console.error('[risks/import] failed')
+    await logEvent('error', { reason: 'risk_import_failed' })
+    return respond(NextResponse.json(
+      { error: 'Failed to import risks' },
       { status: 500 }
-    )
+    ))
   }
 }

@@ -6,6 +6,8 @@ const baseConfig = {
 } as const
 
 const tursoUrl = process.env.TURSO_DATABASE_URL
+const sqlitePath = process.env.SQLITE_DB_PATH || 'local.db'
+const sqliteUrl = sqlitePath.startsWith('file:') ? sqlitePath : `file:${sqlitePath}`
 
 const config: Config = tursoUrl
   ? {
@@ -20,7 +22,7 @@ const config: Config = tursoUrl
       ...baseConfig,
       dialect: 'sqlite',
       dbCredentials: {
-        url: 'file:local.db',
+        url: sqliteUrl,
       },
     }
 

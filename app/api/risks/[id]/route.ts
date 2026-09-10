@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db/drizzle/client'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+  type TenantAction,
+} from '@/lib/server/auth/actionPolicy'
+import {
   RiskTenantLifecycleError,
   RiskTenantLifecycleService,
   type RiskPatchInput,
 } from '@/lib/server/risks/riskTenantLifecycleService'
+import { projectRiskForCapabilities } from '@/lib/server/risks/riskOutputProjection'
 import type { RiskStatus, RiskUpdate } from '@/lib/services/risk'
 
 type Params = { id: string }
@@ -79,13 +85,46 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: 'Failed to process risk' }, { status: 500 })
 }
 
+async function authorizeRisk(
+  service: RiskTenantLifecycleService,
+  userId: string,
+  riskId: string,
+  action: TenantAction
+) {
+  const organizationId = await service.resolveOrganizationId(riskId)
+  if (!organizationId) return { ok: false as const, status: 404 as const }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    userId,
+    organizationId,
+    action
+  )
+  if (!authorization.ok) {
+    return {
+      ok: false as const,
+      status: tenantActionDenialStatus(authorization),
+    }
+  }
+  return { ok: true as const, authorization }
+}
+
 export async function GET(request: NextRequest, props: { params: Promise<Params> }) {
   const { user, applyCookies } = await getRouteAuth(request)
   if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   const { id } = await props.params
+  const service = new RiskTenantLifecycleService(getDb())
+  const authorization = await authorizeRisk(service, user.id, id, 'risks.read')
+  if (!authorization.ok) {
+    return applyCookies(NextResponse.json(
+      { error: authorization.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: authorization.status }
+    ))
+  }
   try {
-    const data = await new RiskTenantLifecycleService(getDb()).getRisk(user.id, id)
-    return applyCookies(NextResponse.json({ data }))
+    const data = await service.getRisk(user.id, id)
+    return applyCookies(NextResponse.json({
+      data: projectRiskForCapabilities(data, authorization.authorization.capabilities),
+    }))
   } catch (error) {
     return applyCookies(errorResponse(error))
   }
@@ -103,8 +142,16 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
   const { id } = await props.params
+  const service = new RiskTenantLifecycleService(getDb())
+  const authorization = await authorizeRisk(service, user.id, id, 'risks.update')
+  if (!authorization.ok) {
+    return applyCookies(NextResponse.json(
+      { error: authorization.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: authorization.status }
+    ))
+  }
   try {
-    const data = await new RiskTenantLifecycleService(getDb()).patchRisk(
+    const data = await service.patchRisk(
       user.id,
       id,
       input,
@@ -120,8 +167,16 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
   const { user, applyCookies } = await getRouteAuth(request)
   if (!user) return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   const { id } = await props.params
+  const service = new RiskTenantLifecycleService(getDb())
+  const authorization = await authorizeRisk(service, user.id, id, 'risks.delete')
+  if (!authorization.ok) {
+    return applyCookies(NextResponse.json(
+      { error: authorization.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: authorization.status }
+    ))
+  }
   try {
-    await new RiskTenantLifecycleService(getDb()).deleteRisk(
+    await service.deleteRisk(
       user.id,
       id,
       { userAgent: request.headers.get('user-agent') }

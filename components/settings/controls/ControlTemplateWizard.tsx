@@ -161,7 +161,7 @@ export function ControlTemplateWizard({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 md:max-w-sm"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500 md:max-w-sm"
             />
             <div className="flex gap-3 text-xs text-text-muted">
               <span className="inline-flex items-center gap-1">
@@ -190,7 +190,7 @@ export function ControlTemplateWizard({
                         type="checkbox"
                         checked={selected}
                         onChange={() => toggleSelection(template.id)}
-                        className="mt-1 h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                        className="mt-1 h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export function ControlTemplateWizard({
             )}
           </div>
 
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 px-4 py-4 text-sm text-indigo-900">
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4 text-sm text-blue-900">
             <p className="font-semibold mb-2">{t('modeSection.title')}</p>
             <div className="flex flex-col gap-2">
               {(['insert', 'restore', 'overwrite'] as SeedMode[]).map(value => (
@@ -226,7 +226,7 @@ export function ControlTemplateWizard({
                     value={value}
                     checked={mode === value}
                     onChange={() => setMode(value)}
-                    className="h-4 w-4 border-border text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 border-border text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm">{renderModeLabel(value)}</span>
                 </label>
@@ -251,7 +251,7 @@ export function ControlTemplateWizard({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting || selectedIds.size === 0}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
             >
               {isSubmitting ? t('actions.applying') : t('actions.apply')}
             </button>

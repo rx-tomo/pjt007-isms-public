@@ -44,6 +44,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/guide" className="text-sm hover:text-accent transition-colors">
+                  {t('landing.footer.product.guide')}
+                </Link>
+              </li>
+              <li>
                 <a
                   href={PUBLIC_REPOSITORY_URL}
                   target="_blank"
@@ -73,11 +78,6 @@ export default function Footer() {
               <li>
                 <Link href="/about" className="text-sm hover:text-accent transition-colors">
                   {t('landing.footer.company.about')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-sm hover:text-accent transition-colors">
-                  {t('landing.footer.company.contact')}
                 </Link>
               </li>
               <li>

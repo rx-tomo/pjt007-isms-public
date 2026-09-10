@@ -157,7 +157,7 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
     if (!confirmed) return
 
     try {
-      await bcpService.deletePlan(plan.id)
+      await bcpService.deletePlan(plan.organization_id, plan.id)
       router.push(`/${locale}/bcp`)
     } catch (err) {
       console.error(err)
@@ -170,8 +170,9 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
     setScenarioSaving(true)
     try {
       await bcpService.createScenario({
-        plan_id: id,
-        organization_id: organizationId,
+        planId: id,
+        organizationId,
+      }, {
         title: scenarioTitle,
         scenario_type: scenarioType,
         impact_level: scenarioImpactLevel,
@@ -195,8 +196,13 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
   }
 
   const handleDeleteScenario = async (scenarioId: string) => {
+    if (!organizationId) return
     try {
-      await bcpService.deleteScenario(scenarioId)
+      await bcpService.deleteScenario({
+        organizationId,
+        planId: id,
+        childId: scenarioId,
+      })
       await loadScenarios()
     } catch (err) {
       console.error(err)
@@ -209,8 +215,9 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
     setDrillSaving(true)
     try {
       await bcpService.createDrill({
-        plan_id: id,
-        organization_id: organizationId,
+        planId: id,
+        organizationId,
+      }, {
         title: drillTitle,
         scheduled_date: new Date(drillScheduledDate).toISOString(),
         status: drillStatus
@@ -230,8 +237,13 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
   }
 
   const handleDeleteDrill = async (drillId: string) => {
+    if (!organizationId) return
     try {
-      await bcpService.deleteDrill(drillId)
+      await bcpService.deleteDrill({
+        organizationId,
+        planId: id,
+        childId: drillId,
+      })
       await loadDrills()
     } catch (err) {
       console.error(err)
@@ -244,8 +256,9 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
     setObjectiveSaving(true)
     try {
       await bcpService.createRecoveryObjective({
-        plan_id: id,
-        organization_id: organizationId,
+        planId: id,
+        organizationId,
+      }, {
         target_system: objectiveTargetSystem,
         rto_hours: objectiveRtoHours,
         rpo_hours: objectiveRpoHours,
@@ -269,8 +282,13 @@ export default function BcpDetailPage(props: { params: Promise<{ locale: string;
   }
 
   const handleDeleteObjective = async (objectiveId: string) => {
+    if (!organizationId) return
     try {
-      await bcpService.deleteRecoveryObjective(objectiveId)
+      await bcpService.deleteRecoveryObjective({
+        organizationId,
+        planId: id,
+        childId: objectiveId,
+      })
       await loadRecoveryObjectives()
     } catch (err) {
       console.error(err)

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+  type TenantAction,
+} from '@/lib/server/auth/actionPolicy'
 import { parseLimitedFormData } from '@/lib/server/http/limitedFormData'
 import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
 import { StorageQuotaService } from '@/lib/services/storageQuota'
@@ -24,15 +28,34 @@ import { getPracticalDocumentFixture } from '@/lib/fixtures/practicalDocumentFix
 
 type Params = { id: string }
 
-async function resolveDocumentAuthorization(userId: string, documentId: string) {
+async function resolveDocumentAuthorization(
+  userId: string,
+  documentId: string,
+  action: TenantAction
+) {
   const service = new DocumentTenantMutationService()
   const organizationId = await service.getOrganizationId(documentId)
-  if (!organizationId) return null
-  const authorization = await resolveTenantAuthorizationContext(getDb(), userId, organizationId)
-  if (!authorization.ok) return null
+  if (!organizationId) return { ok: false as const, status: 404 as const }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    userId,
+    organizationId,
+    action
+  )
+  if (!authorization.ok) {
+    return {
+      ok: false as const,
+      status: tenantActionDenialStatus(authorization),
+    }
+  }
   const document = await service.getDocument(authorization.context, documentId)
-  if (!document) return null
-  return { service, authorization: authorization.context, document }
+  if (!document) return { ok: false as const, status: 404 as const }
+  return {
+    ok: true as const,
+    service,
+    authorization: authorization.context,
+    document,
+  }
 }
 
 export async function GET(request: NextRequest, props: { params: Promise<Params> }) {
@@ -41,9 +64,12 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
     return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   const { id } = await props.params
-  const resolved = await resolveDocumentAuthorization(user.id, id)
-  if (!resolved) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  const resolved = await resolveDocumentAuthorization(user.id, id, 'documents.read')
+  if (!resolved.ok) {
+    return applyCookies(NextResponse.json(
+      { error: resolved.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: resolved.status }
+    ))
   }
   const versionId = request.nextUrl.searchParams.get('versionId')?.trim()
   const version = versionId
@@ -88,9 +114,12 @@ export async function POST(request: NextRequest, props: { params: Promise<Params
     return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   const { id } = await props.params
-  const resolved = await resolveDocumentAuthorization(user.id, id)
-  if (!resolved) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  const resolved = await resolveDocumentAuthorization(user.id, id, 'documents.update')
+  if (!resolved.ok) {
+    return applyCookies(NextResponse.json(
+      { error: resolved.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: resolved.status }
+    ))
   }
   const formDataResult = await parseLimitedFormData(
     request,

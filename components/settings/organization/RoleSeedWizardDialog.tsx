@@ -259,9 +259,9 @@ export default function RoleSeedWizardDialog({
                 <div
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${
                     step === s
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-blue-600 text-white'
                       : (['selection', 'confirmation', 'result'].indexOf(step) > index)
-                      ? 'bg-indigo-100 text-indigo-600'
+                      ? 'bg-blue-100 text-blue-600'
                       : 'bg-surface-elevated text-text-muted'
                   }`}
                 >
@@ -311,7 +311,7 @@ export default function RoleSeedWizardDialog({
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder={t('search.placeholder')}
-                    className="w-full rounded-lg border border-border py-2 pl-10 pr-4 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-border py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                   <svg
                     className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
@@ -352,7 +352,7 @@ export default function RoleSeedWizardDialog({
                     key={role.key}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                       role.selected
-                        ? 'border-indigo-200 bg-indigo-50/50'
+                        ? 'border-blue-200 bg-blue-50/50'
                         : 'border-border hover:bg-surface-elevated'
                     }`}
                   >
@@ -360,7 +360,7 @@ export default function RoleSeedWizardDialog({
                       type="checkbox"
                       checked={role.selected}
                       onChange={() => toggleRole(role.key)}
-                      className="mt-1 h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                      className="mt-1 h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -479,7 +479,7 @@ export default function RoleSeedWizardDialog({
                 type="button"
                 onClick={handleNext}
                 disabled={selectedRoles.length === 0}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
               >
                 {commonT('next')}
               </button>
@@ -489,7 +489,7 @@ export default function RoleSeedWizardDialog({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
               >
                 {isSubmitting ? t('actions.submitting') : t('actions.submit')}
               </button>
@@ -498,7 +498,7 @@ export default function RoleSeedWizardDialog({
               <button
                 type="button"
                 onClick={handleClose}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+                className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
               >
                 {commonT('close')}
               </button>

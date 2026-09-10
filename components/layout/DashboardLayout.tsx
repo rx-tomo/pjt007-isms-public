@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { UserService, type UserRole } from '@/lib/services/user';
 import { useAuditAccess } from '@/lib/hooks/useAuditAccess';
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
@@ -519,11 +518,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
 
   useEffect(() => {
     let cancelled = false;
-    const userService = new UserService();
 
     async function loadHeaderSummary() {
       try {
-        const user = headerSummary ? null : await userService.getCurrentUser();
+        const userResponse = headerSummary
+          ? null
+          : await fetch('/api/auth/profile', {
+              method: 'GET',
+              credentials: 'include',
+              cache: 'no-store',
+            });
+        const userPayload = userResponse?.ok
+          ? await userResponse.json().catch(() => ({}))
+          : {};
+        const user = userPayload.profile ?? null;
         if (!headerSummary && (!user || cancelled)) return;
 
         const organizationResponse = await fetch('/api/auth/organization', {
@@ -546,7 +554,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
           setAutoSummary({
             name: user?.full_name ?? user?.email ?? null,
             organizationName: organization?.name ?? null,
-            role: user?.role ?? null
+            role: user?.effective_role ?? null
           });
         }
         setActiveOrganizationId(organization?.id ?? null);
@@ -828,7 +836,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
           <button
             onClick={toggleSidebar}
             className="sidebar-toggle"
-            aria-label="Toggle sidebar"
+            aria-label={t('common.a11y.toggleSidebar')}
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -876,7 +884,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
         <header className="dashboard-header">
           <div className="header-content">
             <div className="header-context">
-              <nav className="breadcrumb" aria-label="Breadcrumb">
+              <nav className="breadcrumb" aria-label={t('common.a11y.breadcrumb')}>
                 <ol className="breadcrumb-list">
                   {breadcrumbs.map((crumb, index) => (
                     <li key={crumb.href} className="breadcrumb-item">

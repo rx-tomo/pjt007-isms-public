@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
+import { authorizeTenantAction } from '@/lib/server/auth/actionPolicy'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userProfiles, userMemberships, subscriptions, documents, auditLogs } from '@/lib/db/drizzle/schema'
-import { eq, and } from 'drizzle-orm'
+import { subscriptions, documents, auditLogs } from '@/lib/db/drizzle/schema'
+import { desc, eq } from 'drizzle-orm'
+import { SubscriptionProjectionService } from '@/lib/services/subscriptionProjection'
 
 export const runtime = 'nodejs'
 
@@ -23,42 +25,38 @@ export async function POST(request: NextRequest) {
 
   const db = getDb()
 
-  const [profile] = await db
-    .select({
-      id: userProfiles.id,
-      organizationId: userProfiles.organizationId,
-      role: userProfiles.role,
-    })
-    .from(userProfiles)
-    .where(eq(userProfiles.id, user.id))
-    .limit(1)
-
-  if (!profile?.organizationId) {
-    return json({ error: 'Profile missing' }, { status: 403 })
-  }
-
-  if (profile.organizationId !== organizationId) {
-    return json({ error: 'Forbidden - cross tenant request' }, { status: 403 })
-  }
-
-  const [membership] = await db
-    .select({ role: userMemberships.role })
-    .from(userMemberships)
-    .where(and(
-      eq(userMemberships.userId, user.id),
-      eq(userMemberships.organizationId, organizationId)
-    ))
-    .limit(1)
-
-  const effectiveRole = membership?.role || profile.role
-  if (!effectiveRole || !['org_admin', 'system_operator'].includes(effectiveRole)) {
+  const authorization = await authorizeTenantAction(
+    db,
+    user.id,
+    organizationId,
+    'billing.manage'
+  )
+  if (!authorization.ok) {
     return json({ error: 'Forbidden - insufficient permissions' }, { status: 403 })
+  }
+
+  const preflight = await new SubscriptionProjectionService(db).inspect()
+  const targetConflicts = preflight.conflicts.filter(conflict => (
+    'organizationId' in conflict && conflict.organizationId === organizationId
+  ))
+  if (targetConflicts.length > 0) {
+    return json(
+      { error: 'Subscription state is inconsistent', conflicts: targetConflicts },
+      { status: 409 }
+    )
+  }
+  if (preflight.currentByOrganization[organizationId]) {
+    return json(
+      { error: 'Immediate deletion is only available for canceled subscriptions' },
+      { status: 400 }
+    )
   }
 
   const [subscription] = await db
     .select({ status: subscriptions.status, canceledAt: subscriptions.canceledAt })
     .from(subscriptions)
     .where(eq(subscriptions.organizationId, organizationId))
+    .orderBy(desc(subscriptions.createdAt), desc(subscriptions.id))
     .limit(1)
 
   if (!subscription || subscription.status !== 'canceled') {
@@ -71,32 +69,30 @@ export async function POST(request: NextRequest) {
   const now = new Date().toISOString()
 
   try {
-    await db
-      .update(documents)
-      .set({ retentionDeleteAt: now })
-      .where(eq(documents.organizationId, organizationId))
-  } catch (updateError) {
-    console.error('Failed to update retention_delete_at', updateError)
-    return json({ error: 'Failed to schedule deletion' }, { status: 500 })
-  }
+    await db.transaction(async tx => {
+      await tx
+        .update(documents)
+        .set({ retentionDeleteAt: now })
+        .where(eq(documents.organizationId, organizationId))
 
-  try {
-    await db.insert(auditLogs).values({
-      id: crypto.randomUUID(),
-      organizationId,
-      userId: user.id,
-      action: 'immediate_data_deletion_requested',
-      resourceType: 'organization',
-      resourceId: organizationId,
-      changes: JSON.stringify({
-        retention_delete_at: now,
-        requested_by: user.email
-      }),
-      scope: 'tenant',
-      createdAt: now,
+      await tx.insert(auditLogs).values({
+        id: crypto.randomUUID(),
+        organizationId,
+        userId: user.id,
+        action: 'immediate_data_deletion_requested',
+        resourceType: 'organization',
+        resourceId: organizationId,
+        changes: JSON.stringify({
+          retention_delete_at: now,
+          requested_by: user.email,
+        }),
+        scope: 'tenant',
+        createdAt: now,
+      })
     })
-  } catch (auditError) {
-    console.error('Failed to insert audit log', auditError)
+  } catch (updateError) {
+    console.error('Failed to schedule immediate deletion', updateError)
+    return json({ error: 'Failed to schedule deletion' }, { status: 500 })
   }
 
   return json({

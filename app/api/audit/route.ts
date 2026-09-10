@@ -4,7 +4,7 @@ import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 import { getDb } from '@/lib/db/drizzle/client'
 import { auditChecklists, auditEvidence, auditPlans, auditReports, auditTeamMembers, correctiveActions, followUpRecords, nonconformities } from '@/lib/db/drizzle/schema/audit'
-import { AuditService } from '@/lib/services/audit'
+import { AuditService, isAuditTenantMutationError } from '@/lib/services/audit'
 import type {
   AuditPlan,
   AuditReport,
@@ -69,7 +69,7 @@ function parseTeamRole(value: unknown): TeamRole | undefined {
 
 function parseNonconformityStatus(value: string | null): NonconformityStatus | undefined {
   if (!value) return undefined
-  if (['open', 'in_progress', 'resolved', 'closed', 'verified'].includes(value)) {
+  if (['open', 'in_progress', 'resolved', 'pending_verification', 'closed', 'verified'].includes(value)) {
     return value as NonconformityStatus
   }
   return undefined
@@ -663,8 +663,24 @@ export async function POST(request: NextRequest) {
       }
 
       const service = new AuditService()
-      const data = await service.addTeamMember(planId, userId, role)
-      return applyCookies(NextResponse.json(data, { status: 201 }))
+      try {
+        const data = await service.addTeamMemberForActor({
+          planId,
+          organizationId,
+          userId,
+          role,
+          actorUserId: user.id,
+        })
+        return applyCookies(NextResponse.json(data, { status: 201 }))
+      } catch (error) {
+        if (isAuditTenantMutationError(error)) {
+          return applyCookies(NextResponse.json(
+            { error: error.message },
+            { status: error.status }
+          ))
+        }
+        throw error
+      }
     }
 
     if (action === 'updateTeamMember') {
@@ -686,8 +702,23 @@ export async function POST(request: NextRequest) {
       }
 
       const service = new AuditService()
-      const data = await service.updateTeamMember(memberId, { role })
-      return applyCookies(NextResponse.json(data))
+      try {
+        const data = await service.updateTeamMemberForActor({
+          memberId,
+          organizationId,
+          role,
+          actorUserId: user.id,
+        })
+        return applyCookies(NextResponse.json(data))
+      } catch (error) {
+        if (isAuditTenantMutationError(error)) {
+          return applyCookies(NextResponse.json(
+            { error: error.message },
+            { status: error.status }
+          ))
+        }
+        throw error
+      }
     }
 
     if (action === 'removeTeamMember') {
@@ -708,8 +739,22 @@ export async function POST(request: NextRequest) {
       }
 
       const service = new AuditService()
-      await service.removeTeamMember(memberId)
-      return applyCookies(NextResponse.json({ ok: true }))
+      try {
+        await service.removeTeamMemberForActor({
+          memberId,
+          organizationId,
+          actorUserId: user.id,
+        })
+        return applyCookies(NextResponse.json({ ok: true }))
+      } catch (error) {
+        if (isAuditTenantMutationError(error)) {
+          return applyCookies(NextResponse.json(
+            { error: error.message },
+            { status: error.status }
+          ))
+        }
+        throw error
+      }
     }
 
     if (action === 'deleteEvidence') {

@@ -1,0 +1,40 @@
+name: Research interview interest
+description: Share interest in a public product research conversation.
+title: "[Research] Interview interest"
+labels: ["research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for your interest in product research.
+
+        This issue will be public on GitHub and associated with the GitHub account that submits it. Please do not include names, organization details, email addresses, phone numbers, secrets, or other personal information in any field or in the issue title.
+
+        This form uses fixed choices only. The self-assessment answers from the Riscala AI for ISMS website are not sent to GitHub or to the app.
+  - type: dropdown
+    id: preferred_language
+    attributes:
+      label: Preferred conversation language
+      options:
+        - Japanese
+        - English
+        - Chinese
+    validations:
+      required: true
+  - type: dropdown
+    id: participation_style
+    attributes:
+      label: How would you like to participate?
+      options:
+        - Share a short research interview
+        - Answer fixed questions asynchronously
+        - Learn more before deciding
+    validations:
+      required: true
+  - type: checkboxes
+    id: public_data_acknowledgement
+    attributes:
+      label: Public GitHub acknowledgment
+      options:
+        - label: I understand that submitting this form creates a public GitHub issue associated with my GitHub account, and that I should not include personal or confidential information.
+          required: true

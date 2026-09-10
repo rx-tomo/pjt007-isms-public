@@ -27,9 +27,9 @@ const BINARY_SIGNATURES: Partial<Record<string, readonly number[]>> = {
 }
 
 const OLE_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1] as const
-const ZIP_MAX_ENTRIES = 1_024
-const ZIP_MAX_ENTRY_UNCOMPRESSED_BYTES = STORAGE_MAX_FILE_SIZE
-const ZIP_MAX_TOTAL_UNCOMPRESSED_BYTES = 64 * 1024 * 1024
+export const ZIP_MAX_ENTRIES = 1_024
+export const ZIP_MAX_ENTRY_UNCOMPRESSED_BYTES = STORAGE_MAX_FILE_SIZE
+export const ZIP_MAX_TOTAL_UNCOMPRESSED_BYTES = 64 * 1024 * 1024
 
 const TEXT_EXTENSIONS = new Set(['.txt', '.md', '.csv'])
 
@@ -79,14 +79,31 @@ function readZipEntryCount(bytes: Uint8Array): number | null {
   return null
 }
 
-function hasSafeZipShape(bytes: Uint8Array): boolean {
+export function hasSafeZipShape(
+  bytes: Uint8Array,
+  maxEntries = ZIP_MAX_ENTRIES
+): boolean {
   const entryCount = readZipEntryCount(bytes)
-  return entryCount !== null && entryCount > 0 && entryCount <= ZIP_MAX_ENTRIES
+  return entryCount !== null && entryCount > 0 && entryCount <= maxEntries
 }
 
-function hasSafeZipExpansion(zip: JSZip): boolean {
+export function hasSafeZipExpansion(
+  zip: JSZip,
+  limits: {
+    maxEntries?: number
+    maxEntryUncompressedBytes?: number
+    maxTotalUncompressedBytes?: number
+  } = {}
+): boolean {
+  const maxEntries = limits.maxEntries ?? ZIP_MAX_ENTRIES
+  const maxEntryUncompressedBytes = (
+    limits.maxEntryUncompressedBytes ?? ZIP_MAX_ENTRY_UNCOMPRESSED_BYTES
+  )
+  const maxTotalUncompressedBytes = (
+    limits.maxTotalUncompressedBytes ?? ZIP_MAX_TOTAL_UNCOMPRESSED_BYTES
+  )
   const entries = Object.values(zip.files)
-  if (entries.length === 0 || entries.length > ZIP_MAX_ENTRIES) return false
+  if (entries.length === 0 || entries.length > maxEntries) return false
 
   let totalUncompressedBytes = 0
   for (const entry of entries) {
@@ -100,14 +117,14 @@ function hasSafeZipExpansion(zip: JSZip): boolean {
     if (
       !Number.isSafeInteger(size)
       || (size ?? -1) < 0
-      || (size ?? 0) > ZIP_MAX_ENTRY_UNCOMPRESSED_BYTES
+      || (size ?? 0) > maxEntryUncompressedBytes
       || originalName.length > 512
       || originalName.split('/').some(segment => segment === '..')
     ) {
       return false
     }
     totalUncompressedBytes += size ?? 0
-    if (totalUncompressedBytes > ZIP_MAX_TOTAL_UNCOMPRESSED_BYTES) return false
+    if (totalUncompressedBytes > maxTotalUncompressedBytes) return false
   }
   return true
 }

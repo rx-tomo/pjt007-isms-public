@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import JSZip from 'jszip'
+import type JSZip from 'jszip'
 import { randomUUID } from 'crypto'
 import { requireServiceRole } from '@/lib/server/auth/secureClient'
+import { authorizeTenantAction } from '@/lib/server/auth/actionPolicy'
 import { normalizeHeader, parseCsvToObjects, splitList } from '@/lib/utils/importers/csv'
+import {
+  loadOrganizationDataArchive,
+  createOrganizationDataArchiveReadBudget,
+  ORGANIZATION_DATA_CSV_LIMITS,
+  OrganizationDataArchivePolicyError,
+  readOrganizationDataArchiveEntry,
+  type OrganizationDataArchiveReadBudget,
+} from '@/lib/storage/organizationDataArchivePolicy'
+import { InformationAssetService } from '@/lib/services/informationAsset'
+import { resolveActiveTenantMemberByEmail } from '@/lib/server/auth/targetMember'
 import { getDb } from '@/lib/db/drizzle/client'
 import {
   organizationDepartments,
@@ -11,8 +22,9 @@ import {
   projectAssignments,
 } from '@/lib/db/drizzle/schema/organizations'
 import { userProfiles, userMemberships, organizationInvitations } from '@/lib/db/drizzle/schema/users'
+import { auditLogs } from '@/lib/db/drizzle/schema/audit-logs'
 import { isoControls, informationAssets, informationAssetImportJobs, informationAssetImportRows } from '@/lib/db/drizzle/schema/risks'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, sql } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
 
@@ -36,6 +48,16 @@ type ImportSummary = {
 
 const emptyBlock = (): SummaryBlock => ({ processed: 0, created: 0, updated: 0, skipped: 0, errors: [] })
 
+const TENANT_ROLES = ['system_operator', 'org_admin', 'auditor', 'approver', 'user'] as const
+type TenantRole = typeof TENANT_ROLES[number]
+
+function parseTenantRole(value: string | undefined): TenantRole | null {
+  const normalized = (value ?? 'user').trim().toLowerCase() || 'user'
+  return TENANT_ROLES.includes(normalized as TenantRole)
+    ? normalized as TenantRole
+    : null
+}
+
 function normalizeRoleKey(value: string) {
   return value
     .trim()
@@ -54,11 +76,15 @@ const numberOr = (value: string | undefined, fallback: number) => {
   return Number.isFinite(n) ? n : fallback
 }
 
-async function loadCsv(zip: JSZip, filename: string, requiredHeaders: string[]): Promise<Record<string, string>[]> {
-  const file = zip.file(filename)
-  if (!file) return []
-  const content = await file.async('arraybuffer')
-  return parseCsvToObjects(content, requiredHeaders)
+async function loadCsv(
+  zip: JSZip,
+  filename: string,
+  requiredHeaders: string[],
+  budget: OrganizationDataArchiveReadBudget
+): Promise<Record<string, string>[]> {
+  const content = await readOrganizationDataArchiveEntry(zip, filename, budget)
+  if (!content) return []
+  return parseCsvToObjects(content, requiredHeaders, ORGANIZATION_DATA_CSV_LIMITS)
 }
 
 export async function POST(request: NextRequest) {
@@ -86,6 +112,15 @@ export async function POST(request: NextRequest) {
 
   const { logEvent, userId, json } = guard
   const db = getDb()
+  const authorization = await authorizeTenantAction(
+    db,
+    userId,
+    organizationId,
+    'members.manage'
+  )
+  if (!authorization.ok) {
+    return json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const summary: ImportSummary = {
     scope: emptyBlock(),
@@ -98,11 +133,27 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const buffer = await file.arrayBuffer()
-    const zip = await JSZip.loadAsync(buffer)
+    const zip = await loadOrganizationDataArchive(file)
+    const archiveBudget = createOrganizationDataArchiveReadBudget()
+    const departmentRows = await loadCsv(zip, 'departments.csv', ['name'], archiveBudget)
+    const scopeRows = await loadCsv(
+      zip,
+      'isms_scope.csv',
+      ['physical_locations', 'it_systems', 'departments', 'processes', 'exclusions'].map(normalizeHeader),
+      archiveBudget
+    )
+    const userRows = await loadCsv(zip, 'users.csv', ['email'], archiveBudget)
+    const roleRows = await loadCsv(zip, 'project_roles.csv', ['key', 'name'], archiveBudget)
+    const assignmentRows = await loadCsv(
+      zip,
+      'project_assignments.csv',
+      ['role_key', 'email'],
+      archiveBudget
+    )
+    const controlRows = await loadCsv(zip, 'iso_controls.csv', ['category', 'title'], archiveBudget)
+    const assetRows = await loadCsv(zip, 'information_assets.csv', ['name'], archiveBudget)
 
     // 1) Departments
-    const departmentRows = await loadCsv(zip, 'departments.csv', ['name'])
     const deptPathToId = new Map<string, string>()
     const deptRecords = departmentRows
       .map(row => ({
@@ -189,7 +240,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 2) ISMS Scope (single row expected)
-    const scopeRows = await loadCsv(zip, 'isms_scope.csv', ['physical_locations', 'it_systems', 'departments', 'processes', 'exclusions'].map(normalizeHeader))
     if (scopeRows.length > 0) {
       const row = scopeRows[0]
       const now = new Date().toISOString()
@@ -234,7 +284,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 3) Users (create invitation if profile doesn't exist)
-    const userRows = await loadCsv(zip, 'users.csv', ['email'])
     for (const row of userRows) {
       summary.users.processed += 1
       const email = (row['email'] ?? '').trim().toLowerCase()
@@ -244,62 +293,103 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const role = ((row['role'] ?? 'member').trim() || 'member') as string
-      const fullName = (row['full_name'] ?? row['name'] ?? '').trim()
+      const role = parseTenantRole(row['role'])
+      if (!role) {
+        summary.users.errors.push(
+          `invalid tenant role for ${email}; allowed: ${TENANT_ROLES.join(', ')}`
+        )
+        summary.users.skipped += 1
+        continue
+      }
+
       const isActive = parseBool(row['is_active'] ?? 'true')
 
-      const [profile] = await db
-        .select({ id: userProfiles.id, organizationId: userProfiles.organizationId })
-        .from(userProfiles)
-        .where(eq(userProfiles.email, email))
-        .limit(1)
+      const tenantMembers = await db
+        .select({
+          profileId: userProfiles.id,
+          membershipId: userMemberships.id,
+          previousRole: userMemberships.role,
+          previousStatus: userMemberships.status,
+        })
+        .from(userMemberships)
+        .innerJoin(userProfiles, eq(userProfiles.id, userMemberships.userId))
+        .where(and(
+          eq(userMemberships.organizationId, organizationId),
+          eq(userProfiles.email, email)
+        ))
 
-      if (profile && profile.organizationId !== organizationId) {
-        summary.users.errors.push(`email ${email} belongs to another organization`)
+      if (tenantMembers.length > 1) {
+        summary.users.errors.push(`email ${email} matches multiple tenant memberships`)
+        summary.users.skipped += 1
+        continue
+      }
+
+      const tenantMember = tenantMembers[0]
+      if (
+        authorization.context.role === 'org_admin'
+        && (role === 'system_operator' || tenantMember?.previousRole === 'system_operator')
+      ) {
+        summary.users.errors.push(`org_admin cannot manage system_operator role for ${email}`)
         summary.users.skipped += 1
         continue
       }
 
       const now = new Date().toISOString()
+      const status = isActive ? 'active' : 'inactive'
 
-      if (profile) {
-        await db
-          .update(userProfiles)
-          .set({
-            fullName: fullName || undefined,
-            role,
-            isActive,
-            updatedAt: now,
+      if (tenantMember) {
+        try {
+          await db.transaction(async tx => {
+            const membershipId = tenantMember.membershipId
+            if (
+              tenantMember.previousRole === 'system_operator'
+              && (role !== 'system_operator' || status !== 'active')
+            ) {
+              const [row] = await tx
+                .select({ count: sql<number>`count(*)` })
+                .from(userMemberships)
+                .where(and(
+                  eq(userMemberships.organizationId, organizationId),
+                  eq(userMemberships.role, 'system_operator'),
+                  eq(userMemberships.status, 'active')
+                ))
+              if ((row?.count ?? 0) <= 1) {
+                throw new Error('At least one system_operator must remain in the tenant')
+              }
+            }
+
+            const updatedMemberships = await tx
+              .update(userMemberships)
+              .set({ role, status, updatedAt: now })
+              .where(and(
+                eq(userMemberships.id, membershipId),
+                eq(userMemberships.organizationId, organizationId)
+              ))
+              .returning({ id: userMemberships.id })
+            if (updatedMemberships.length !== 1) {
+              throw new Error('Tenant membership changed during import')
+            }
+
+            await tx.insert(auditLogs).values({
+              id: randomUUID(),
+              organizationId,
+              userId,
+              action: 'organization_data.user_membership_upserted',
+              resourceType: 'user_membership',
+              resourceId: membershipId,
+              changes: JSON.stringify({
+                email,
+                role: { from: tenantMember?.previousRole ?? null, to: role },
+                status: { from: tenantMember?.previousStatus ?? null, to: status },
+              }),
+              createdAt: now,
+            })
           })
-          .where(eq(userProfiles.id, profile.id))
-
-        const [membership] = await db
-          .select({ id: userMemberships.id })
-          .from(userMemberships)
-          .where(and(
-            eq(userMemberships.organizationId, organizationId),
-            eq(userMemberships.userId, profile.id)
-          ))
-          .limit(1)
-
-        if (membership) {
-          await db
-            .update(userMemberships)
-            .set({ role, status: 'active', updatedAt: now })
-            .where(eq(userMemberships.id, membership.id))
-        } else {
-          await db.insert(userMemberships).values({
-            id: randomUUID(),
-            organizationId,
-            userId: profile.id,
-            role,
-            status: 'active',
-            createdAt: now,
-            updatedAt: now,
-          })
+          summary.users.updated += 1
+        } catch {
+          summary.users.errors.push(`failed to update tenant membership for ${email}`)
+          summary.users.skipped += 1
         }
-
-        summary.users.updated += 1
       } else {
         const [existingInvite] = await db
           .select({ id: organizationInvitations.id })
@@ -317,15 +407,28 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          await db.insert(organizationInvitations).values({
-            id: randomUUID(),
-            organizationId,
-            email,
-            role,
-            invitedBy: userId,
-            token: randomUUID(),
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: now,
+          await db.transaction(async tx => {
+            const invitationId = randomUUID()
+            await tx.insert(organizationInvitations).values({
+              id: invitationId,
+              organizationId,
+              email,
+              role,
+              invitedBy: userId,
+              token: randomUUID(),
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              createdAt: now,
+            })
+            await tx.insert(auditLogs).values({
+              id: randomUUID(),
+              organizationId,
+              userId,
+              action: 'organization_data.user_invited',
+              resourceType: 'organization_invitation',
+              resourceId: invitationId,
+              changes: JSON.stringify({ email, role }),
+              createdAt: now,
+            })
           })
           summary.users.created += 1
         } catch {
@@ -336,7 +439,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 4) Project Roles
-    const roleRows = await loadCsv(zip, 'project_roles.csv', ['key', 'name'])
     const roleKeyToId = new Map<string, string>()
     for (const row of roleRows) {
       summary.roles.processed += 1
@@ -400,7 +502,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 5) Project Assignments
-    const assignmentRows = await loadCsv(zip, 'project_assignments.csv', ['role_key', 'email'])
     for (const row of assignmentRows) {
       summary.assignments.processed += 1
       const roleKey = normalizeRoleKey(row['role_key'] ?? '')
@@ -486,7 +587,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 6) ISO Controls
-    const controlRows = await loadCsv(zip, 'iso_controls.csv', ['category', 'title'])
     for (const row of controlRows) {
       summary.controls.processed += 1
       const category = (row['category'] ?? '').trim()
@@ -558,11 +658,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 7) Information Assets (direct insert/upsert)
-    const assetRows = await loadCsv(zip, 'information_assets.csv', ['name'])
+    // 7) Information Assets
     if (assetRows.length > 0) {
       const jobId = randomUUID()
       const now = new Date().toISOString()
+      const informationAssetService = new InformationAssetService(db)
 
       await db.insert(informationAssetImportJobs).values({
         id: jobId,
@@ -582,33 +682,21 @@ export async function POST(request: NextRequest) {
       let successCount = 0
       let errorCount = 0
 
-      // Resolve owner emails
-      const ownerEmails = new Set<string>()
-      for (const row of assetRows) {
-        const email = (row['owner_email'] ?? '').trim().toLowerCase()
-        if (email) ownerEmails.add(email)
-      }
-      const ownerMap = new Map<string, string>()
-      if (ownerEmails.size > 0) {
-        const profiles = await db
-          .select({ id: userProfiles.id, email: userProfiles.email })
-          .from(userProfiles)
-          .where(eq(userProfiles.organizationId, organizationId))
-        for (const p of profiles) {
-          if (p.email && ownerEmails.has(p.email.toLowerCase())) {
-            ownerMap.set(p.email.toLowerCase(), p.id)
-          }
-        }
-      }
-
       for (let i = 0; i < assetRows.length; i++) {
         const row = assetRows[i]
         const name = (row['name'] ?? '').trim()
         if (!name) continue
 
-        const ownerId = row['owner_email'] ? ownerMap.get(row['owner_email'].toLowerCase()) ?? null : null
-
         try {
+          const ownerEmail = (row['owner_email'] ?? '').trim().toLowerCase()
+          const owner = ownerEmail
+            ? await resolveActiveTenantMemberByEmail(db, organizationId, ownerEmail)
+            : null
+          if (ownerEmail && !owner) {
+            throw new Error('Information asset owner not found')
+          }
+          const ownerId = owner?.userId ?? null
+
           const [existing] = await db
             .select({ id: informationAssets.id })
             .from(informationAssets)
@@ -616,45 +704,45 @@ export async function POST(request: NextRequest) {
             .limit(1)
 
           if (existing) {
-            await db
-              .update(informationAssets)
-              .set({
-                assetType: row['asset_type'] || 'data',
+            await informationAssetService.updateAssetForActor(
+              { organizationId, actorUserId: userId },
+              existing.id,
+              {
+                asset_type: row['asset_type'] || 'data',
                 classification: row['classification'] || 'internal',
                 criticality: row['criticality'] || 'medium',
                 status: row['status'] || 'in_use',
-                ownerId,
+                owner_id: ownerId,
                 location: row['location'] || null,
                 description: row['description'] || null,
-                updatedAt: now,
-              })
-              .where(eq(informationAssets.id, existing.id))
+              },
+              {
+                jobId,
+                lineNumber: i + 2,
+                rawData: JSON.stringify(row),
+              }
+            )
           } else {
-            await db.insert(informationAssets).values({
-              id: randomUUID(),
-              organizationId,
-              name,
-              assetType: row['asset_type'] || 'data',
-              classification: row['classification'] || 'internal',
-              criticality: row['criticality'] || 'medium',
-              status: row['status'] || 'in_use',
-              ownerId,
-              location: row['location'] || null,
-              description: row['description'] || null,
-              createdAt: now,
-              updatedAt: now,
-            })
+            await informationAssetService.createAssetForActor(
+              { organizationId, actorUserId: userId },
+              {
+                organization_id: organizationId,
+                name,
+                asset_type: row['asset_type'] || 'data',
+                classification: row['classification'] || 'internal',
+                criticality: row['criticality'] || 'medium',
+                status: row['status'] || 'in_use',
+                owner_id: ownerId,
+                location: row['location'] || null,
+                description: row['description'] || null,
+              },
+              {
+                jobId,
+                lineNumber: i + 2,
+                rawData: JSON.stringify(row),
+              }
+            )
           }
-
-          await db.insert(informationAssetImportRows).values({
-            id: randomUUID(),
-            jobId,
-            lineNumber: i + 2,
-            rawData: JSON.stringify(row),
-            status: 'imported',
-            createdAt: now,
-            updatedAt: now,
-          })
 
           successCount += 1
         } catch (err) {
@@ -696,6 +784,9 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[organization-data/import] failed', err)
     await logEvent('error', { reason: err instanceof Error ? err.message : String(err) })
+    if (err instanceof OrganizationDataArchivePolicyError) {
+      return json({ error: 'Invalid or oversized organization data archive' }, { status: 400 })
+    }
     return NextResponse.json({ error: 'Failed to import organization data', details: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }
 }

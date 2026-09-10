@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isStripeMockMode } from '@/lib/stripe/config'
 import { getDb } from '@/lib/db/drizzle/client'
-import { userProfiles } from '@/lib/db/drizzle/schema/users'
-import { eq } from 'drizzle-orm'
-
-const ALLOWED_ROLES = new Set(['org_admin', 'system_operator', 'super_admin'])
-const CROSS_ORG_ROLES = new Set(['system_operator', 'super_admin'])
+import { authorizeTenantAction } from '@/lib/server/auth/actionPolicy'
 
 export async function requireMockBillingAccess(
   request: NextRequest,
@@ -30,23 +26,14 @@ export async function requireMockBillingAccess(
   }
 
   const db = getDb()
-  const profiles = await db
-    .select({
-      role: userProfiles.role,
-      organizationId: userProfiles.organizationId,
-    })
-    .from(userProfiles)
-    .where(eq(userProfiles.id, session.user.id))
-    .limit(1)
-
-  const profile = profiles[0]
-  const role = profile?.role?.toLowerCase() ?? ''
-  if (!profile || !ALLOWED_ROLES.has(role)) {
+  const authorization = await authorizeTenantAction(
+    db,
+    session.user.id,
+    organizationId,
+    'billing.manage'
+  )
+  if (!authorization.ok) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
-  }
-
-  if (profile.organizationId !== organizationId && !CROSS_ORG_ROLES.has(role)) {
-    return { error: NextResponse.json({ error: 'Organization mismatch' }, { status: 403 }) }
   }
 
   return {}

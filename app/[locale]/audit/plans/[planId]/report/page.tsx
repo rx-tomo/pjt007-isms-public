@@ -438,7 +438,7 @@ export default function AuditReportPage(
                 type="button"
                 onClick={handleSubmitForApproval}
                 disabled={submittingApproval || !plan?.report?.id || formState.approval_status === 'submitted' || formState.approval_status === 'approved'}
-                className="rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                 data-testid="audit-report-submit-approval"
               >
                 {submittingApproval ? t('report.actions.submittingApproval') : t('report.actions.submitApproval')}
@@ -447,7 +447,7 @@ export default function AuditReportPage(
                 type="button"
                 onClick={handleSubmit}
                 data-testid="audit-report-save-button"
-                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={saving}
               >
                 {saving ? t('report.actions.saving') : t('report.actions.save')}

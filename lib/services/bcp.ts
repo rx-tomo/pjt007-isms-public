@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/db/drizzle/client'
+import { getDb, type DrizzleDb } from '@/lib/db/drizzle/client'
 import { NotFoundError } from '@/lib/errors/NotFoundError'
 import {
   bcpDrills,
@@ -34,6 +34,15 @@ export interface BcpPlanRecord {
   created_by: string | null
   created_at: string
   updated_at: string
+}
+
+export interface PlanUpdateInput {
+  title?: string
+  scope?: string | null
+  status?: BcpPlanStatus
+  version?: string | null
+  last_reviewed_at?: string | null
+  next_review_date?: string | null
 }
 
 export interface BcpScenarioRecord {
@@ -77,7 +86,67 @@ export interface BcpRecoveryObjectiveRecord {
   updated_at: string
 }
 
+export interface BcpChildBinding {
+  organizationId: string
+  planId: string
+  childId: string
+}
+
+export type BcpParentBinding = Omit<BcpChildBinding, 'childId'>
+
 export class BcpService {
+  constructor(private readonly dbOverride?: DrizzleDb) {}
+
+  private get db(): DrizzleDb {
+    return this.dbOverride ?? getDb()
+  }
+
+  private async requestApi<T>(
+    path: string,
+    options: { method: 'POST' | 'PUT' | 'DELETE'; body?: unknown }
+  ): Promise<T> {
+    const response = await fetch(path, {
+      method: options.method,
+      headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as { error?: string }
+      throw new Error(payload.error ?? `BCP API request failed: ${response.status}`)
+    }
+    return response.json() as Promise<T>
+  }
+
+  private childPath(
+    binding: BcpChildBinding,
+    collection: 'scenarios' | 'drills' | 'recovery-objectives'
+  ): string {
+    return `/api/bcp/${encodeURIComponent(binding.planId)}/${collection}/${encodeURIComponent(binding.childId)}`
+  }
+
+  private collectionPath(
+    binding: BcpParentBinding,
+    collection: 'scenarios' | 'drills' | 'recovery-objectives'
+  ): string {
+    return `/api/bcp/${encodeURIComponent(binding.planId)}/${collection}`
+  }
+
+  private async assertParentBinding(binding: BcpParentBinding): Promise<void> {
+    const rows = await this.db
+      .select({ id: bcpPlans.id })
+      .from(bcpPlans)
+      .where(and(
+        eq(bcpPlans.organizationId, binding.organizationId),
+        eq(bcpPlans.id, binding.planId)
+      ))
+      .limit(1)
+
+    if (!rows[0]) {
+      throw new NotFoundError('BCP plan not found')
+    }
+  }
+
   private mapPlanRow(row: typeof bcpPlans.$inferSelect): BcpPlanRecord {
     return {
       id: row.id,
@@ -147,8 +216,7 @@ export class BcpService {
   // Plans CRUD
   // =========================================
   async listPlans(organizationId: string): Promise<BcpPlanRecord[]> {
-    const db = getDb()
-    const rows = await db
+    const rows = await this.db
       .select()
       .from(bcpPlans)
       .where(and(eq(bcpPlans.organizationId, organizationId)))
@@ -158,8 +226,7 @@ export class BcpService {
   }
 
   async getPlanById(id: string): Promise<BcpPlanRecord> {
-    const db = getDb()
-    const rows = await db
+    const rows = await this.db
       .select()
       .from(bcpPlans)
       .where(eq(bcpPlans.id, id))
@@ -180,11 +247,10 @@ export class BcpService {
     version?: string | null
     created_by?: string | null
   }): Promise<BcpPlanRecord> {
-    const db = getDb()
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .insert(bcpPlans)
       .values({
         id,
@@ -206,18 +272,22 @@ export class BcpService {
     return this.mapPlanRow(rows[0])
   }
 
+  // 子リソースと同じく、組織条件を検査ではなくWHEREへ入れる。呼び出し前の
+  // check-then-act は、検査と実行の間に前提が変わる経路や、別の呼び出し元が
+  // 増えたときに組織境界を落とす。
   async updatePlan(
+    organizationId: string,
     id: string,
-    input: {
-      title?: string
-      scope?: string | null
-      status?: BcpPlanStatus
-      version?: string | null
-      last_reviewed_at?: string | null
-      next_review_date?: string | null
-    }
+    input: PlanUpdateInput
   ): Promise<BcpPlanRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpPlanRecord }>(
+        `/api/bcp/${encodeURIComponent(id)}`,
+        { method: 'PUT', body: input }
+      )
+      return response.data
+    }
+
     const now = new Date().toISOString()
 
     const updates = {
@@ -230,10 +300,13 @@ export class BcpService {
       updatedAt: now,
     }
 
-    const rows = await db
+    const rows = await this.db
       .update(bcpPlans)
       .set(updates)
-      .where(eq(bcpPlans.id, id))
+      .where(and(
+        eq(bcpPlans.organizationId, organizationId),
+        eq(bcpPlans.id, id)
+      ))
       .returning()
 
     if (!rows[0]) {
@@ -243,12 +316,21 @@ export class BcpService {
     return this.mapPlanRow(rows[0])
   }
 
-  async deletePlan(id: string): Promise<void> {
-    const db = getDb()
+  async deletePlan(organizationId: string, id: string): Promise<void> {
+    if (typeof window !== 'undefined') {
+      await this.requestApi<{ success: true }>(
+        `/api/bcp/${encodeURIComponent(id)}`,
+        { method: 'DELETE' }
+      )
+      return
+    }
 
-    const rows = await db
+    const rows = await this.db
       .delete(bcpPlans)
-      .where(eq(bcpPlans.id, id))
+      .where(and(
+        eq(bcpPlans.organizationId, organizationId),
+        eq(bcpPlans.id, id)
+      ))
       .returning({ id: bcpPlans.id })
 
     if (!rows[0]) {
@@ -260,8 +342,7 @@ export class BcpService {
   // Scenarios CRUD
   // =========================================
   async listScenarios(planId: string): Promise<BcpScenarioRecord[]> {
-    const db = getDb()
-    const rows = await db
+    const rows = await this.db
       .select()
       .from(bcpScenarios)
       .where(and(eq(bcpScenarios.planId, planId)))
@@ -270,25 +351,31 @@ export class BcpService {
     return rows.map(row => this.mapScenarioRow(row))
   }
 
-  async createScenario(input: {
-    plan_id: string
-    organization_id: string
+  async createScenario(binding: BcpParentBinding, input: {
     title: string
     scenario_type: BcpScenarioType
     impact_level: BcpImpactLevel
     likelihood: BcpLikelihood
     response_procedure?: string | null
   }): Promise<BcpScenarioRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpScenarioRecord }>(
+        this.collectionPath(binding, 'scenarios'),
+        { method: 'POST', body: input }
+      )
+      return response.data
+    }
+
+    await this.assertParentBinding(binding)
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .insert(bcpScenarios)
       .values({
         id,
-        planId: input.plan_id,
-        organizationId: input.organization_id,
+        planId: binding.planId,
+        organizationId: binding.organizationId,
         title: input.title,
         scenarioType: input.scenario_type,
         impactLevel: input.impact_level,
@@ -307,7 +394,7 @@ export class BcpService {
   }
 
   async updateScenario(
-    id: string,
+    binding: BcpChildBinding,
     input: {
       title?: string
       scenario_type?: BcpScenarioType
@@ -316,10 +403,17 @@ export class BcpService {
       response_procedure?: string | null
     }
   ): Promise<BcpScenarioRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpScenarioRecord }>(
+        this.childPath(binding, 'scenarios'),
+        { method: 'PUT', body: input }
+      )
+      return response.data
+    }
+
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .update(bcpScenarios)
       .set({
         title: input.title,
@@ -329,26 +423,40 @@ export class BcpService {
         responseProcedure: input.response_procedure,
         updatedAt: now,
       })
-      .where(eq(bcpScenarios.id, id))
+      .where(and(
+        eq(bcpScenarios.organizationId, binding.organizationId),
+        eq(bcpScenarios.planId, binding.planId),
+        eq(bcpScenarios.id, binding.childId)
+      ))
       .returning()
 
     if (!rows[0]) {
-      throw new NotFoundError(`BCP scenario not found: ${id}`)
+      throw new NotFoundError('BCP scenario not found')
     }
 
     return this.mapScenarioRow(rows[0])
   }
 
-  async deleteScenario(id: string): Promise<void> {
-    const db = getDb()
+  async deleteScenario(binding: BcpChildBinding): Promise<void> {
+    if (typeof window !== 'undefined') {
+      await this.requestApi<{ success: true }>(
+        this.childPath(binding, 'scenarios'),
+        { method: 'DELETE' }
+      )
+      return
+    }
 
-    const rows = await db
+    const rows = await this.db
       .delete(bcpScenarios)
-      .where(eq(bcpScenarios.id, id))
+      .where(and(
+        eq(bcpScenarios.organizationId, binding.organizationId),
+        eq(bcpScenarios.planId, binding.planId),
+        eq(bcpScenarios.id, binding.childId)
+      ))
       .returning({ id: bcpScenarios.id })
 
     if (!rows[0]) {
-      throw new NotFoundError(`BCP scenario not found: ${id}`)
+      throw new NotFoundError('BCP scenario not found')
     }
   }
 
@@ -356,8 +464,7 @@ export class BcpService {
   // Drills CRUD
   // =========================================
   async listDrills(planId: string): Promise<BcpDrillRecord[]> {
-    const db = getDb()
-    const rows = await db
+    const rows = await this.db
       .select()
       .from(bcpDrills)
       .where(and(eq(bcpDrills.planId, planId)))
@@ -366,9 +473,7 @@ export class BcpService {
     return rows.map(row => this.mapDrillRow(row))
   }
 
-  async createDrill(input: {
-    plan_id: string
-    organization_id: string
+  async createDrill(binding: BcpParentBinding, input: {
     title: string
     scheduled_date: string
     status?: BcpDrillStatus
@@ -376,16 +481,24 @@ export class BcpService {
     result?: string | null
     findings?: string | null
   }): Promise<BcpDrillRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpDrillRecord }>(
+        this.collectionPath(binding, 'drills'),
+        { method: 'POST', body: input }
+      )
+      return response.data
+    }
+
+    await this.assertParentBinding(binding)
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .insert(bcpDrills)
       .values({
         id,
-        planId: input.plan_id,
-        organizationId: input.organization_id,
+        planId: binding.planId,
+        organizationId: binding.organizationId,
         title: input.title,
         scheduledDate: input.scheduled_date,
         status: input.status ?? 'planned',
@@ -405,7 +518,7 @@ export class BcpService {
   }
 
   async updateDrill(
-    id: string,
+    binding: BcpChildBinding,
     input: {
       title?: string
       scheduled_date?: string
@@ -416,10 +529,17 @@ export class BcpService {
       findings?: string | null
     }
   ): Promise<BcpDrillRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpDrillRecord }>(
+        this.childPath(binding, 'drills'),
+        { method: 'PUT', body: input }
+      )
+      return response.data
+    }
+
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .update(bcpDrills)
       .set({
         title: input.title,
@@ -431,26 +551,40 @@ export class BcpService {
         findings: input.findings,
         updatedAt: now,
       })
-      .where(eq(bcpDrills.id, id))
+      .where(and(
+        eq(bcpDrills.organizationId, binding.organizationId),
+        eq(bcpDrills.planId, binding.planId),
+        eq(bcpDrills.id, binding.childId)
+      ))
       .returning()
 
     if (!rows[0]) {
-      throw new NotFoundError(`BCP drill not found: ${id}`)
+      throw new NotFoundError('BCP drill not found')
     }
 
     return this.mapDrillRow(rows[0])
   }
 
-  async deleteDrill(id: string): Promise<void> {
-    const db = getDb()
+  async deleteDrill(binding: BcpChildBinding): Promise<void> {
+    if (typeof window !== 'undefined') {
+      await this.requestApi<{ success: true }>(
+        this.childPath(binding, 'drills'),
+        { method: 'DELETE' }
+      )
+      return
+    }
 
-    const rows = await db
+    const rows = await this.db
       .delete(bcpDrills)
-      .where(eq(bcpDrills.id, id))
+      .where(and(
+        eq(bcpDrills.organizationId, binding.organizationId),
+        eq(bcpDrills.planId, binding.planId),
+        eq(bcpDrills.id, binding.childId)
+      ))
       .returning({ id: bcpDrills.id })
 
     if (!rows[0]) {
-      throw new NotFoundError(`BCP drill not found: ${id}`)
+      throw new NotFoundError('BCP drill not found')
     }
   }
 
@@ -458,8 +592,7 @@ export class BcpService {
   // Recovery Objectives CRUD
   // =========================================
   async listRecoveryObjectives(planId: string): Promise<BcpRecoveryObjectiveRecord[]> {
-    const db = getDb()
-    const rows = await db
+    const rows = await this.db
       .select()
       .from(bcpRecoveryObjectives)
       .where(and(eq(bcpRecoveryObjectives.planId, planId)))
@@ -468,25 +601,31 @@ export class BcpService {
     return rows.map(row => this.mapRecoveryObjectiveRow(row))
   }
 
-  async createRecoveryObjective(input: {
-    plan_id: string
-    organization_id: string
+  async createRecoveryObjective(binding: BcpParentBinding, input: {
     target_system: string
     rto_hours: string
     rpo_hours: string
     priority?: BcpPriority
     notes?: string | null
   }): Promise<BcpRecoveryObjectiveRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpRecoveryObjectiveRecord }>(
+        this.collectionPath(binding, 'recovery-objectives'),
+        { method: 'POST', body: input }
+      )
+      return response.data
+    }
+
+    await this.assertParentBinding(binding)
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .insert(bcpRecoveryObjectives)
       .values({
         id,
-        planId: input.plan_id,
-        organizationId: input.organization_id,
+        planId: binding.planId,
+        organizationId: binding.organizationId,
         targetSystem: input.target_system,
         rtoHours: input.rto_hours,
         rpoHours: input.rpo_hours,
@@ -505,7 +644,7 @@ export class BcpService {
   }
 
   async updateRecoveryObjective(
-    id: string,
+    binding: BcpChildBinding,
     input: {
       target_system?: string
       rto_hours?: string
@@ -514,10 +653,17 @@ export class BcpService {
       notes?: string | null
     }
   ): Promise<BcpRecoveryObjectiveRecord> {
-    const db = getDb()
+    if (typeof window !== 'undefined') {
+      const response = await this.requestApi<{ data: BcpRecoveryObjectiveRecord }>(
+        this.childPath(binding, 'recovery-objectives'),
+        { method: 'PUT', body: input }
+      )
+      return response.data
+    }
+
     const now = new Date().toISOString()
 
-    const rows = await db
+    const rows = await this.db
       .update(bcpRecoveryObjectives)
       .set({
         targetSystem: input.target_system,
@@ -527,26 +673,40 @@ export class BcpService {
         notes: input.notes,
         updatedAt: now,
       })
-      .where(eq(bcpRecoveryObjectives.id, id))
+      .where(and(
+        eq(bcpRecoveryObjectives.organizationId, binding.organizationId),
+        eq(bcpRecoveryObjectives.planId, binding.planId),
+        eq(bcpRecoveryObjectives.id, binding.childId)
+      ))
       .returning()
 
     if (!rows[0]) {
-      throw new NotFoundError(`BCP recovery objective not found: ${id}`)
+      throw new NotFoundError('BCP recovery objective not found')
     }
 
     return this.mapRecoveryObjectiveRow(rows[0])
   }
 
-  async deleteRecoveryObjective(id: string): Promise<void> {
-    const db = getDb()
+  async deleteRecoveryObjective(binding: BcpChildBinding): Promise<void> {
+    if (typeof window !== 'undefined') {
+      await this.requestApi<{ success: true }>(
+        this.childPath(binding, 'recovery-objectives'),
+        { method: 'DELETE' }
+      )
+      return
+    }
 
-    const rows = await db
+    const rows = await this.db
       .delete(bcpRecoveryObjectives)
-      .where(eq(bcpRecoveryObjectives.id, id))
+      .where(and(
+        eq(bcpRecoveryObjectives.organizationId, binding.organizationId),
+        eq(bcpRecoveryObjectives.planId, binding.planId),
+        eq(bcpRecoveryObjectives.id, binding.childId)
+      ))
       .returning({ id: bcpRecoveryObjectives.id })
 
     if (!rows[0]) {
-      throw new NotFoundError(`BCP recovery objective not found: ${id}`)
+      throw new NotFoundError('BCP recovery objective not found')
     }
   }
 
@@ -571,4 +731,397 @@ export class BcpService {
       recoveryObjectives,
     }
   }
+}
+
+export type ScenarioCreateInput = Parameters<BcpService['createScenario']>[1]
+export type DrillCreateInput = Parameters<BcpService['createDrill']>[1]
+export type RecoveryObjectiveCreateInput = Parameters<BcpService['createRecoveryObjective']>[1]
+export type ScenarioUpdateInput = Parameters<BcpService['updateScenario']>[1]
+export type DrillUpdateInput = Parameters<BcpService['updateDrill']>[1]
+export type RecoveryObjectiveUpdateInput = Parameters<BcpService['updateRecoveryObjective']>[1]
+
+const INVALID_OPTIONAL_TEXT = Symbol('invalid-optional-text')
+
+function plainRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+  const prototype = Object.getPrototypeOf(value)
+  if (prototype !== Object.prototype && prototype !== null) return null
+  return value as Record<string, unknown>
+}
+
+function hasOnlyKeys(record: Record<string, unknown>, allowed: readonly string[]): boolean {
+  const allowedKeys = new Set(allowed)
+  return Object.keys(record).every(key => allowedKeys.has(key))
+}
+
+function hasOwn(record: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key)
+}
+
+function requiredText(value: unknown, maxLength: number): string | null {
+  if (typeof value !== 'string') return null
+  const text = value.trim()
+  if (!text || text.length > maxLength) return null
+  return text
+}
+
+function optionalText(
+  value: unknown,
+  maxLength: number
+): string | null | undefined | typeof INVALID_OPTIONAL_TEXT {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value !== 'string') return INVALID_OPTIONAL_TEXT
+  const text = value.trim()
+  if (text.length > maxLength) return INVALID_OPTIONAL_TEXT
+  return text || null
+}
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
+  return typeof value === 'string' && allowed.includes(value as T)
+}
+
+function validCalendarDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (!match) return false
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  if (year < 1900 || year > 2200) return false
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+}
+
+function scheduledDate(value: unknown): string | null {
+  const text = requiredText(value, 40)
+  if (!text || !validCalendarDate(text)) return null
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(text)
+  const dateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(text)
+  if ((!dateOnly && !dateTime) || !Number.isFinite(Date.parse(text))) return null
+  return text
+}
+
+function hourValue(value: unknown): string | null {
+  const text = requiredText(value, 12)
+  if (!text || !/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(text)) return null
+  const hours = Number(text)
+  if (!Number.isFinite(hours) || hours < 0 || hours > 87_600) return null
+  return text
+}
+
+export function parseScenarioCreateBody(body: unknown): ScenarioCreateInput | null {
+  const record = plainRecord(body)
+  if (!record || !hasOnlyKeys(record, [
+    'title',
+    'scenario_type',
+    'impact_level',
+    'likelihood',
+    'response_procedure',
+  ])) {
+    return null
+  }
+  const title = requiredText(record.title, 200)
+  const responseProcedure = optionalText(record.response_procedure, 10_000)
+  if (
+    !title
+    || !oneOf(record.scenario_type, [
+      'natural_disaster',
+      'cyber_attack',
+      'system_failure',
+      'pandemic',
+      'supply_chain',
+      'power_outage',
+      'other',
+    ])
+    || !oneOf(record.impact_level, ['low', 'medium', 'high', 'critical'])
+    || !oneOf(record.likelihood, [
+      'rare',
+      'unlikely',
+      'possible',
+      'likely',
+      'almost_certain',
+    ])
+    || responseProcedure === INVALID_OPTIONAL_TEXT
+  ) return null
+
+  return {
+    title,
+    scenario_type: record.scenario_type,
+    impact_level: record.impact_level,
+    likelihood: record.likelihood,
+    response_procedure: responseProcedure,
+  }
+}
+
+export function parseDrillCreateBody(body: unknown): DrillCreateInput | null {
+  const record = plainRecord(body)
+  if (!record || !hasOnlyKeys(record, [
+    'title',
+    'scheduled_date',
+    'status',
+    'participants',
+    'result',
+    'findings',
+  ])) {
+    return null
+  }
+  const title = requiredText(record.title, 200)
+  const scheduled = scheduledDate(record.scheduled_date)
+  const participants = optionalText(record.participants, 10_000)
+  const result = optionalText(record.result, 10_000)
+  const findings = optionalText(record.findings, 10_000)
+  if (
+    !title
+    || !scheduled
+    || (record.status !== undefined
+      && !oneOf(record.status, ['planned', 'in_progress', 'completed', 'cancelled']))
+    || participants === INVALID_OPTIONAL_TEXT
+    || result === INVALID_OPTIONAL_TEXT
+    || findings === INVALID_OPTIONAL_TEXT
+  ) return null
+
+  return {
+    title,
+    scheduled_date: scheduled,
+    status: record.status,
+    participants,
+    result,
+    findings,
+  }
+}
+
+export function parseRecoveryObjectiveCreateBody(body: unknown): RecoveryObjectiveCreateInput | null {
+  const record = plainRecord(body)
+  if (!record || !hasOnlyKeys(record, [
+    'target_system',
+    'rto_hours',
+    'rpo_hours',
+    'priority',
+    'notes',
+  ])) {
+    return null
+  }
+  const targetSystem = requiredText(record.target_system, 200)
+  const rtoHours = hourValue(record.rto_hours)
+  const rpoHours = hourValue(record.rpo_hours)
+  const notes = optionalText(record.notes, 10_000)
+  if (
+    !targetSystem
+    || !rtoHours
+    || !rpoHours
+    || (record.priority !== undefined
+      && !oneOf(record.priority, ['low', 'medium', 'high', 'critical']))
+    || notes === INVALID_OPTIONAL_TEXT
+  ) return null
+
+  return {
+    target_system: targetSystem,
+    rto_hours: rtoHours,
+    rpo_hours: rpoHours,
+    priority: record.priority,
+    notes,
+  }
+}
+
+export function parsePlanCreateBody(
+  body: unknown
+): { title: string; scope?: string | null; status?: BcpPlanStatus; version?: string | null } | null {
+  const record = plainRecord(body)
+  const allowed = ['title', 'scope', 'status', 'version'] as const
+  if (!record || !hasOnlyKeys(record, allowed)) return null
+
+  const title = requiredText(record.title, 200)
+  if (!title) return null
+
+  const created: { title: string; scope?: string | null; status?: BcpPlanStatus; version?: string | null } = { title }
+  if (hasOwn(record, 'status')) {
+    if (!oneOf(record.status, ['draft', 'active', 'under_review', 'archived'])) return null
+    created.status = record.status
+  }
+  if (hasOwn(record, 'scope')) {
+    const scope = optionalText(record.scope, 10_000)
+    if (scope === INVALID_OPTIONAL_TEXT || scope === undefined) return null
+    created.scope = scope
+  }
+  if (hasOwn(record, 'version')) {
+    const version = optionalText(record.version, 40)
+    if (version === INVALID_OPTIONAL_TEXT || version === undefined) return null
+    created.version = version
+  }
+  return created
+}
+
+export function parsePlanUpdateBody(body: unknown): PlanUpdateInput | null {
+  const record = plainRecord(body)
+  const allowed = [
+    'title',
+    'scope',
+    'status',
+    'version',
+    'last_reviewed_at',
+    'next_review_date',
+  ] as const
+  if (!record || !hasOnlyKeys(record, allowed) || Object.keys(record).length === 0) return null
+
+  const input: PlanUpdateInput = {}
+  if (hasOwn(record, 'title')) {
+    const title = requiredText(record.title, 200)
+    if (!title) return null
+    input.title = title
+  }
+  if (hasOwn(record, 'status')) {
+    if (!oneOf(record.status, ['draft', 'active', 'under_review', 'archived'])) return null
+    input.status = record.status
+  }
+  if (hasOwn(record, 'scope')) {
+    const scope = optionalText(record.scope, 10_000)
+    if (scope === INVALID_OPTIONAL_TEXT || scope === undefined) return null
+    input.scope = scope
+  }
+  if (hasOwn(record, 'version')) {
+    const version = optionalText(record.version, 40)
+    if (version === INVALID_OPTIONAL_TEXT || version === undefined) return null
+    input.version = version
+  }
+  for (const key of ['last_reviewed_at', 'next_review_date'] as const) {
+    if (!hasOwn(record, key)) continue
+    if (record[key] === null) {
+      input[key] = null
+      continue
+    }
+    const date = scheduledDate(record[key])
+    if (!date) return null
+    input[key] = date
+  }
+  return input
+}
+
+export function parseScenarioUpdateBody(body: unknown): ScenarioUpdateInput | null {
+  const record = plainRecord(body)
+  const allowed = [
+    'title',
+    'scenario_type',
+    'impact_level',
+    'likelihood',
+    'response_procedure',
+  ] as const
+  if (!record || !hasOnlyKeys(record, allowed) || Object.keys(record).length === 0) return null
+
+  const input: ScenarioUpdateInput = {}
+  if (hasOwn(record, 'title')) {
+    const title = requiredText(record.title, 200)
+    if (!title) return null
+    input.title = title
+  }
+  if (hasOwn(record, 'scenario_type')) {
+    if (!oneOf(record.scenario_type, [
+      'natural_disaster',
+      'cyber_attack',
+      'system_failure',
+      'pandemic',
+      'supply_chain',
+      'power_outage',
+      'other',
+    ])) return null
+    input.scenario_type = record.scenario_type
+  }
+  if (hasOwn(record, 'impact_level')) {
+    if (!oneOf(record.impact_level, ['low', 'medium', 'high', 'critical'])) return null
+    input.impact_level = record.impact_level
+  }
+  if (hasOwn(record, 'likelihood')) {
+    if (!oneOf(record.likelihood, [
+      'rare',
+      'unlikely',
+      'possible',
+      'likely',
+      'almost_certain',
+    ])) return null
+    input.likelihood = record.likelihood
+  }
+  if (hasOwn(record, 'response_procedure')) {
+    const responseProcedure = optionalText(record.response_procedure, 10_000)
+    if (responseProcedure === INVALID_OPTIONAL_TEXT || responseProcedure === undefined) return null
+    input.response_procedure = responseProcedure
+  }
+  return input
+}
+
+export function parseDrillUpdateBody(body: unknown): DrillUpdateInput | null {
+  const record = plainRecord(body)
+  const allowed = [
+    'title',
+    'scheduled_date',
+    'conducted_date',
+    'status',
+    'participants',
+    'result',
+    'findings',
+  ] as const
+  if (!record || !hasOnlyKeys(record, allowed) || Object.keys(record).length === 0) return null
+
+  const input: DrillUpdateInput = {}
+  if (hasOwn(record, 'title')) {
+    const title = requiredText(record.title, 200)
+    if (!title) return null
+    input.title = title
+  }
+  if (hasOwn(record, 'scheduled_date')) {
+    const scheduled = scheduledDate(record.scheduled_date)
+    if (!scheduled) return null
+    input.scheduled_date = scheduled
+  }
+  if (hasOwn(record, 'conducted_date')) {
+    if (record.conducted_date === null) {
+      input.conducted_date = null
+    } else {
+      const conducted = scheduledDate(record.conducted_date)
+      if (!conducted) return null
+      input.conducted_date = conducted
+    }
+  }
+  if (hasOwn(record, 'status')) {
+    if (!oneOf(record.status, ['planned', 'in_progress', 'completed', 'cancelled'])) return null
+    input.status = record.status
+  }
+  for (const key of ['participants', 'result', 'findings'] as const) {
+    if (!hasOwn(record, key)) continue
+    const value = optionalText(record[key], 10_000)
+    if (value === INVALID_OPTIONAL_TEXT || value === undefined) return null
+    input[key] = value
+  }
+  return input
+}
+
+export function parseRecoveryObjectiveUpdateBody(
+  body: unknown
+): RecoveryObjectiveUpdateInput | null {
+  const record = plainRecord(body)
+  const allowed = ['target_system', 'rto_hours', 'rpo_hours', 'priority', 'notes'] as const
+  if (!record || !hasOnlyKeys(record, allowed) || Object.keys(record).length === 0) return null
+
+  const input: RecoveryObjectiveUpdateInput = {}
+  if (hasOwn(record, 'target_system')) {
+    const targetSystem = requiredText(record.target_system, 200)
+    if (!targetSystem) return null
+    input.target_system = targetSystem
+  }
+  for (const key of ['rto_hours', 'rpo_hours'] as const) {
+    if (!hasOwn(record, key)) continue
+    const hours = hourValue(record[key])
+    if (!hours) return null
+    input[key] = hours
+  }
+  if (hasOwn(record, 'priority')) {
+    if (!oneOf(record.priority, ['low', 'medium', 'high', 'critical'])) return null
+    input.priority = record.priority
+  }
+  if (hasOwn(record, 'notes')) {
+    const notes = optionalText(record.notes, 10_000)
+    if (notes === INVALID_OPTIONAL_TEXT || notes === undefined) return null
+    input.notes = notes
+  }
+  return input
 }

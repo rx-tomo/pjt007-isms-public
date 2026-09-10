@@ -8,28 +8,238 @@
  */
 
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { applyDatabaseInvariants } from './database-invariant-application.mjs';
-import { renderDropInvariantTriggersSql } from './database-invariant-definitions.mjs';
-
-const args = process.argv.slice(2);
-const reset = args.includes('--reset');
-const dryRun = args.includes('--dry-run');
-const scenarioArgIndex = args.findIndex((arg) => arg === '--scenario');
-const scenario = scenarioArgIndex >= 0 ? args[scenarioArgIndex + 1] : 'all';
+import {
+  invariantTriggerDefinitions,
+  renderDropInvariantTriggersSql,
+  renderInvariantTriggerSql,
+} from './database-invariant-definitions.mjs';
 
 const supportedScenarios = ['all', 'initial', 'surveillance', 'enterprise', 'suspended'];
+const usage = `Usage:
+  SQLITE_DB_PATH=/absolute/tmp-root/seed.db \\
+  LOCAL_STORAGE_ROOT=/absolute/tmp-root/storage \\
+  npm run seed:practical-verification -- [--reset] [--scenario <${supportedScenarios.join('|')}>]
 
-if (!supportedScenarios.includes(scenario)) {
-  throw new Error(`unsupported --scenario: ${scenario}`);
+Options:
+  --reset                Remove matching practical verification rows before seeding.
+  --scenario <name>      Seed one scenario or all scenarios (default: all).
+  --dry-run              Print the planned seed without connecting to a database or writing files.
+  --public-demo-remote-reset  Reset the production public-demo Turso fixture (guarded internal use only).
+  -h, --help             Show this help and exit without writes.
+
+Safety:
+  Write mode only accepts an explicit SQLite database and storage directory inside
+  the same pre-created mkdtemp-style directory directly below the OS temp directory.
+  Remote/Turso databases, repository local.db, and repository .storage are rejected.`;
+
+function parseArgs(argv) {
+  let reset = false;
+  let dryRun = false;
+  let publicDemoRemoteReset = false;
+  let scenario = 'all';
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--reset') {
+      reset = true;
+    } else if (arg === '--dry-run') {
+      dryRun = true;
+    } else if (arg === '--public-demo-remote-reset') {
+      publicDemoRemoteReset = true;
+    } else if (arg === '--scenario') {
+      const value = argv[index + 1];
+      if (!value || value.startsWith('-')) {
+        return { error: 'missing --scenario value' };
+      }
+      scenario = value;
+      index += 1;
+    } else {
+      return { error: 'unsupported argument' };
+    }
+  }
+
+  if (!supportedScenarios.includes(scenario)) {
+    return { error: 'unsupported --scenario value' };
+  }
+
+  return { reset, dryRun, scenario, publicDemoRemoteReset };
 }
 
-const now = new Date().toISOString();
-const nowMs = Date.now();
+const argv = process.argv.slice(2);
+if (argv.includes('--help') || argv.includes('-h')) {
+  console.log(usage);
+  process.exit(0);
+}
+
+const parsedArgs = parseArgs(argv);
+if (parsedArgs.error) {
+  console.error(`Error: ${parsedArgs.error}\n\n${usage}`);
+  process.exit(64);
+}
+
+const { reset, dryRun, scenario, publicDemoRemoteReset } = parsedArgs;
+const invariantTriggerCount = invariantTriggerDefinitions.length;
+const testFailureAfterInvariantDrop = process.env.SEED_TEST_FAILURE_AFTER_INVARIANT_DROP;
+const testInvariantRestoreFailure = process.env.SEED_TEST_INVARIANT_RESTORE_FAILURE;
+
+function validateTestFailureSeams() {
+  const configuredSeams = [
+    ['SEED_TEST_FAILURE_AFTER_INVARIANT_DROP', testFailureAfterInvariantDrop],
+    ['SEED_TEST_INVARIANT_RESTORE_FAILURE', testInvariantRestoreFailure],
+  ].filter(([, value]) => value !== undefined);
+
+  if (configuredSeams.some(([, value]) => value !== '1')) {
+    throw new Error('test failure injection flags only accept the value 1');
+  }
+  if (configuredSeams.length > 0 && process.env.NODE_ENV !== 'test') {
+    throw new Error('test failure injection is only available when NODE_ENV=test');
+  }
+}
+
+validateTestFailureSeams();
+
+function isWithin(parent, candidate) {
+  const relative = path.relative(parent, candidate);
+  return relative !== '' && !relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative);
+}
+
+function directTemporaryRoot(tempRoot, candidate) {
+  const relative = path.relative(tempRoot, candidate);
+  if (!relative || relative.startsWith(`..${path.sep}`) || relative === '..' || path.isAbsolute(relative)) {
+    return null;
+  }
+  return path.join(tempRoot, relative.split(path.sep)[0]);
+}
+
+function validateRawPath(rawPath, label) {
+  if (path.normalize(rawPath) !== rawPath) {
+    throw new Error(`${label} must already be normalized`);
+  }
+  if (/[%?#]/.test(rawPath)) {
+    throw new Error(`${label} contains unsupported URL metacharacters`);
+  }
+}
+
+function validateWriteTargets() {
+  if (publicDemoRemoteReset) {
+    const dbUrl = process.env.TURSO_DATABASE_URL ?? '';
+    const expectedDbUrl = process.env.PUBLIC_DEMO_EXPECTED_DATABASE_URL ?? '';
+    const expectedDatabaseId = process.env.PUBLIC_DEMO_EXPECTED_DATABASE_ID ?? '';
+    const fixtureVersion = process.env.PUBLIC_DEMO_FIXTURE_VERSION ?? '';
+    const fixtureEpoch = process.env.PUBLIC_DEMO_FIXTURE_EPOCH ?? '';
+    if (process.env.PUBLIC_DEMO_REMOTE_RESET !== 'true') throw new Error('public demo remote reset is disabled');
+    if (process.env.NODE_ENV !== 'production') throw new Error('public demo remote reset requires production');
+    if (!reset || scenario !== 'all' || dryRun) throw new Error('public demo remote reset requires reset all write mode');
+    if (!dbUrl.startsWith('libsql://') || !expectedDbUrl || dbUrl !== expectedDbUrl) throw new Error('public demo database target mismatch');
+    if (!process.env.TURSO_AUTH_TOKEN || !expectedDatabaseId || !fixtureVersion) throw new Error('public demo reset contract is incomplete');
+    if (fixtureEpoch !== PUBLIC_DEMO_FIXTURE_EPOCH) throw new Error('public demo fixture epoch mismatch');
+    if (process.env.SQLITE_DB_PATH || process.env.LOCAL_STORAGE_ROOT || process.env.SEED_OUTPUT_DIR) throw new Error('public demo reset forbids local and output targets');
+    return { dbPath: null, dbUrl, storageRoot: null, outputDir: null, expectedDatabaseId, fixtureVersion };
+  }
+
+  if (process.env.TURSO_DATABASE_URL) {
+    throw new Error('remote database configuration is not supported by this seed');
+  }
+
+  if (dryRun) {
+    return {
+      dbPath: null,
+      dbUrl: 'dry-run:no-database',
+      storageRoot: null,
+      outputDir: null,
+    };
+  }
+
+  const rawDbPath = process.env.SQLITE_DB_PATH;
+  const rawStorageRoot = process.env.LOCAL_STORAGE_ROOT;
+  if (!rawDbPath || !rawStorageRoot) {
+    throw new Error('write mode requires explicit SQLITE_DB_PATH and LOCAL_STORAGE_ROOT');
+  }
+  if (!path.isAbsolute(rawDbPath) || !path.isAbsolute(rawStorageRoot)) {
+    throw new Error('seed write targets must be absolute paths');
+  }
+  validateRawPath(rawDbPath, 'SQLITE_DB_PATH');
+  validateRawPath(rawStorageRoot, 'LOCAL_STORAGE_ROOT');
+
+  const repoRoot = fs.realpathSync(process.cwd());
+  const tempRoot = fs.realpathSync(os.tmpdir());
+  const dbPath = path.normalize(rawDbPath);
+  const dbParent = fs.realpathSync(path.dirname(dbPath));
+  const storageStat = fs.lstatSync(rawStorageRoot);
+  if (!storageStat.isDirectory() || storageStat.isSymbolicLink()) {
+    throw new Error('LOCAL_STORAGE_ROOT must be a pre-created real directory');
+  }
+  const storageRoot = fs.realpathSync(rawStorageRoot);
+  if (path.dirname(dbPath) !== dbParent || path.normalize(rawStorageRoot) !== storageRoot) {
+    throw new Error('seed write targets must use canonical paths without symbolic-link parents');
+  }
+  const dbRoot = directTemporaryRoot(tempRoot, dbParent);
+  const storageIsolationRoot = directTemporaryRoot(tempRoot, storageRoot);
+
+  if (!dbRoot || dbRoot !== storageIsolationRoot) {
+    throw new Error('database and storage must share one isolated OS temporary root');
+  }
+  const isolationStat = fs.lstatSync(dbRoot);
+  if (!isolationStat.isDirectory() || isolationStat.isSymbolicLink() || fs.realpathSync(dbRoot) !== dbRoot) {
+    throw new Error('seed isolation root must be a pre-created real directory');
+  }
+  if (!isWithin(dbRoot, dbPath) || !isWithin(dbRoot, storageRoot)) {
+    throw new Error('database and storage must be below the isolated temporary root');
+  }
+  if (dbPath === path.join(repoRoot, 'local.db') || isWithin(repoRoot, dbPath)) {
+    throw new Error('repository database paths are not allowed');
+  }
+  if (storageRoot === path.join(repoRoot, '.storage') || isWithin(repoRoot, storageRoot)) {
+    throw new Error('repository storage paths are not allowed');
+  }
+  if (fs.existsSync(dbPath)) {
+    const dbStat = fs.lstatSync(dbPath);
+    if (!dbStat.isFile() || dbStat.isSymbolicLink() || dbStat.nlink !== 1) {
+      throw new Error('SQLITE_DB_PATH must be a regular non-linked file');
+    }
+  }
+
+  const rawOutputDir = process.env.SEED_OUTPUT_DIR || path.join(dbRoot, 'test-results');
+  if (!path.isAbsolute(rawOutputDir)) {
+    throw new Error('SEED_OUTPUT_DIR must be an absolute path');
+  }
+  validateRawPath(rawOutputDir, 'SEED_OUTPUT_DIR');
+  const outputDir = path.normalize(rawOutputDir);
+  if (!path.isAbsolute(outputDir) || !isWithin(dbRoot, outputDir)) {
+    throw new Error('SEED_OUTPUT_DIR must be below the isolated temporary root');
+  }
+  if (path.dirname(outputDir) !== dbRoot) {
+    throw new Error('SEED_OUTPUT_DIR must be a direct child of the isolated temporary root');
+  }
+  if (fs.existsSync(outputDir)) {
+    const outputStat = fs.lstatSync(outputDir);
+    if (!outputStat.isDirectory() || outputStat.isSymbolicLink() || fs.realpathSync(outputDir) !== outputDir) {
+      throw new Error('SEED_OUTPUT_DIR must be a real directory');
+    }
+  }
+
+  return { dbPath, dbUrl: `file:${dbPath}`, storageRoot, outputDir };
+}
+
+const PUBLIC_DEMO_FIXTURE_EPOCH = '2026-08-01T00:00:00.000Z';
+const now = publicDemoRemoteReset ? PUBLIC_DEMO_FIXTURE_EPOCH : new Date().toISOString();
+const nowMs = new Date(now).getTime();
 const seedSource = 'practical-verification-v1';
 const bcryptPlaceholder = '$2b$10$placeholderHashForPracticalSeedOnlyXXXXXXXXXX';
 let activeSeedClient = null;
+let recoveryDbUrl = null;
+
+class PublicDemoResetConflictError extends Error {
+  constructor() {
+    super('PUBLIC_DEMO_RESET_CONFLICT');
+    this.name = 'PublicDemoResetConflictError';
+  }
+}
 
 const ids = {
   initialOrg: '70000000-0000-4000-8000-000000000001',
@@ -1850,14 +2060,6 @@ function timestamp() {
   return new Date().toISOString().replace(/[:.]/g, '-');
 }
 
-function resolveDbUrl() {
-  if (process.env.TURSO_DATABASE_URL) {
-    return process.env.TURSO_DATABASE_URL;
-  }
-  const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'local.db');
-  return `file:${dbPath}`;
-}
-
 function safeDbUrl(url) {
   if (url.startsWith('file:')) {
     return url;
@@ -1884,7 +2086,7 @@ function statements(table, columns, rows, conflictColumn = 'id') {
   return rows.map((row) => statement(table, columns, row, conflictColumn));
 }
 
-function writeDocumentSeedFiles(rows) {
+function writeDocumentSeedFiles(rows, storageRoot) {
   if (dryRun) {
     return {
       label: 'write practical document files',
@@ -1897,7 +2099,7 @@ function writeDocumentSeedFiles(rows) {
   let affected = 0;
   for (const row of rows) {
     if (!row.file_path || !row.seed_body) continue;
-    const outputPath = path.join(process.cwd(), '.storage', 'documents', row.file_path);
+    const outputPath = path.join(storageRoot, 'documents', row.file_path);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, row.seed_body, 'utf8');
     affected += 1;
@@ -1908,6 +2110,36 @@ function writeDocumentSeedFiles(rows) {
     statements: rows.length,
     affected,
   };
+}
+
+function validateDocumentSeedTargets(rows, storageRoot) {
+  if (dryRun) return;
+
+  for (const row of rows) {
+    if (!row.file_path || !row.seed_body) continue;
+    const outputPath = path.resolve(storageRoot, 'documents', row.file_path);
+    if (!isWithin(storageRoot, outputPath)) {
+      throw new Error('document seed target escapes LOCAL_STORAGE_ROOT');
+    }
+
+    let current = path.dirname(outputPath);
+    while (current !== storageRoot) {
+      if (fs.existsSync(current)) {
+        const stat = fs.lstatSync(current);
+        if (!stat.isDirectory() || stat.isSymbolicLink()) {
+          throw new Error('document seed directories must not contain symbolic links');
+        }
+      }
+      current = path.dirname(current);
+    }
+
+    if (fs.existsSync(outputPath)) {
+      const stat = fs.lstatSync(outputPath);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) {
+        throw new Error('document seed targets must be regular non-linked files');
+      }
+    }
+  }
 }
 
 function schemaStatements() {
@@ -2244,29 +2476,167 @@ async function createSeedClient(dbUrl) {
   });
 }
 
+async function acquirePublicDemoResetLease(client, targets) {
+  const leaseOwner = randomUUID();
+  const acquiredAt = new Date();
+  const leaseExpiresAt = new Date(acquiredAt.getTime() + 5 * 60 * 1000).toISOString();
+  const transaction = await client.transaction('write');
+  try {
+    const markerResult = await transaction.execute({
+      sql: "select database_id from demo_fixture_state where id = 'public-demo'",
+      args: [],
+    });
+    const marker = markerResult.rows[0];
+    if (markerResult.rows.length !== 1 || String(marker.database_id) !== targets.expectedDatabaseId) {
+      throw new Error('public demo marker mismatch');
+    }
+    const leaseUpdate = await transaction.execute({
+      sql: `update demo_fixture_state
+        set status = 'leased', lease_owner = ?, lease_expires_at = ?
+        where id = 'public-demo' and database_id = ?
+          and (status in ('idle', 'failed') or lease_expires_at <= ?)`,
+      args: [leaseOwner, leaseExpiresAt, targets.expectedDatabaseId, acquiredAt.toISOString()],
+    });
+    if (leaseUpdate.rowsAffected !== 1) throw new PublicDemoResetConflictError();
+    await transaction.commit();
+    return leaseOwner;
+  } catch (error) {
+    if (!transaction.closed) await transaction.rollback().catch(() => undefined);
+    throw error;
+  } finally {
+    transaction.close();
+  }
+}
+
+async function releaseFailedPublicDemoResetLease(client, targets, leaseOwner) {
+  let transaction = null;
+  try {
+    transaction = await client.transaction('write');
+    await transaction.execute({
+      sql: `update demo_fixture_state
+        set status = 'failed', lease_owner = null, lease_expires_at = null
+        where id = 'public-demo' and database_id = ? and status = 'leased' and lease_owner = ?`,
+      args: [targets.expectedDatabaseId, leaseOwner],
+    });
+    await transaction.commit();
+  } catch {
+    if (transaction && !transaction.closed) await transaction.rollback().catch(() => undefined);
+  } finally {
+    transaction?.close();
+  }
+}
+
+async function runPublicDemoRemoteReset(client, targets, batches) {
+  const leaseOwner = await acquirePublicDemoResetLease(client, targets);
+  const receiptAt = new Date().toISOString();
+  let transaction = null;
+  try {
+    transaction = await client.transaction('write');
+    const leaseResult = await transaction.execute({
+      sql: `select generation from demo_fixture_state
+        where id = 'public-demo' and database_id = ? and status = 'leased' and lease_owner = ?`,
+      args: [targets.expectedDatabaseId, leaseOwner],
+    });
+    if (leaseResult.rows.length !== 1) throw new PublicDemoResetConflictError();
+    const nextGeneration = Number(leaseResult.rows[0].generation) + 1;
+    for (const definition of invariantTriggerDefinitions) {
+      await transaction.execute(`DROP TRIGGER IF EXISTS ${definition.name}`);
+    }
+    for (const statement of deleteStatementsForReset()) {
+      await transaction.execute(statement);
+    }
+    for (const [, items] of batches) {
+      for (const statement of items) await transaction.execute(statement);
+    }
+    for (const definition of invariantTriggerDefinitions) {
+      await transaction.execute(renderInvariantTriggerSql(definition));
+    }
+    const seedUserIds = currentSeedUserIds();
+    const sessionDelete = await transaction.execute({
+      sql: `delete from session where userId in (${placeholders(seedUserIds)})`,
+      args: seedUserIds,
+    });
+    const organizationIds = currentOrgIds();
+    const organizationCountResult = await transaction.execute({
+      sql: `select count(*) as value from organizations where id in (${placeholders(organizationIds)})`,
+      args: organizationIds,
+    });
+    const userCountResult = await transaction.execute({
+      sql: `select count(*) as value from user_profiles where id in (${placeholders(seedUserIds)})`,
+      args: seedUserIds,
+    });
+    const membershipCountResult = await transaction.execute({
+      sql: `select count(*) as value from user_memberships
+        where organization_id in (${placeholders(organizationIds)}) and user_id in (${placeholders(seedUserIds)})`,
+      args: [...organizationIds, ...seedUserIds],
+    });
+    const fixtureCounts = {
+      organizations: Number(organizationCountResult.rows[0]?.value ?? -1),
+      users: Number(userCountResult.rows[0]?.value ?? -1),
+      memberships: Number(membershipCountResult.rows[0]?.value ?? -1),
+      sessionsInvalidated: sessionDelete.rowsAffected,
+    };
+    const expectedMemberships = batches.find(([label]) => label === 'user_memberships')?.[1].length ?? -1;
+    if (fixtureCounts.organizations !== organizationIds.length || fixtureCounts.users !== seedUserIds.length || fixtureCounts.memberships !== expectedMemberships) {
+      throw new Error('public demo fixture count verification failed');
+    }
+    const markerUpdate = await transaction.execute({
+      sql: `update demo_fixture_state
+        set fixture_version = ?, fixture_epoch = ?, generation = generation + 1,
+            status = 'idle', lease_owner = null, lease_expires_at = null, last_reset_at = ?
+        where id = 'public-demo' and database_id = ? and status = 'leased' and lease_owner = ?`,
+      args: [targets.fixtureVersion, PUBLIC_DEMO_FIXTURE_EPOCH, receiptAt, targets.expectedDatabaseId, leaseOwner],
+    });
+    if (markerUpdate.rowsAffected !== 1) throw new Error('public demo marker update failed');
+    await transaction.commit();
+    return { receiptAt, generation: nextGeneration, fixtureVersion: targets.fixtureVersion, fixtureCounts };
+  } catch (error) {
+    if (transaction && !transaction.closed) {
+      try {
+        await transaction.rollback();
+      } catch {
+        // Preserve the reset failure; close() below is idempotent and also rolls back.
+      }
+    }
+    await releaseFailedPublicDemoResetLease(client, targets, leaseOwner);
+    throw error;
+  } finally {
+    transaction?.close();
+  }
+}
+
 async function main() {
-  const dbUrl = resolveDbUrl();
+  const targets = validateWriteTargets();
+  const { dbUrl, storageRoot, outputDir } = targets;
+  recoveryDbUrl = dryRun || publicDemoRemoteReset ? null : dbUrl;
+  if (!publicDemoRemoteReset) validateDocumentSeedTargets(filterScenario(documents), storageRoot);
   let client = null;
   if (!dryRun) {
     client = await createSeedClient(dbUrl);
     activeSeedClient = client;
   }
 
-  const outputDir = process.env.SEED_OUTPUT_DIR || path.join(process.cwd(), 'test-results');
-  fs.mkdirSync(outputDir, { recursive: true });
+  if (outputDir) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
 
   const summary = [];
 
-  summary.push(await run(client, 'ensure practical verification schema', schemaStatements()));
-  summary.push(...await ensureSchemaColumns(client));
+  if (!publicDemoRemoteReset) {
+    summary.push(await run(client, 'ensure practical verification schema', schemaStatements()));
+    summary.push(...await ensureSchemaColumns(client));
+  }
 
-  if (reset) {
+  if (reset && !publicDemoRemoteReset) {
     if (!dryRun) {
       await client.executeMultiple(renderDropInvariantTriggersSql());
+      if (testFailureAfterInvariantDrop === '1') {
+        throw new Error('injected seed failure after invariant drop');
+      }
     }
     summary.push({
       label: 'suspend database invariants for deterministic demo reset',
-      statements: dryRun ? 0 : 6,
+      statements: dryRun ? 0 : invariantTriggerCount,
       affected: 0,
     });
     const cleanupTargets = await discoverResetTargets(client);
@@ -2600,10 +2970,23 @@ async function main() {
     ], filterScenario(phaseHistory))],
   ];
 
-  for (const [label, items] of batches) {
-    summary.push(await run(client, label, items));
+  if (publicDemoRemoteReset) {
+    const receipt = await runPublicDemoRemoteReset(client, targets, batches);
+    await client.close();
+    client = null;
+    activeSeedClient = null;
+    console.log(JSON.stringify({
+      ok: true,
+      resetAt: receipt.receiptAt,
+      generation: receipt.generation,
+      fixtureVersion: receipt.fixtureVersion,
+      fixtureCounts: receipt.fixtureCounts,
+    }));
+    return;
   }
-  summary.push(writeDocumentSeedFiles(filterScenario(documents)));
+
+  for (const [label, items] of batches) summary.push(await run(client, label, items));
+  summary.push(writeDocumentSeedFiles(filterScenario(documents), storageRoot));
 
   if (!dryRun) {
     await client.close();
@@ -2611,11 +2994,7 @@ async function main() {
     activeSeedClient = null;
     await applyDatabaseInvariants(dbUrl, process.env.TURSO_AUTH_TOKEN);
   }
-  summary.push({
-    label: 'apply and verify canonical database invariants',
-    statements: dryRun ? 0 : 6,
-    affected: 0,
-  });
+  summary.push({ label: 'apply and verify canonical database invariants', statements: dryRun ? 0 : invariantTriggerCount, affected: 0 });
 
   const payload = {
     ok: true,
@@ -2634,28 +3013,56 @@ async function main() {
     summary,
   };
 
-  const outputPath = path.join(outputDir, `practical-verification-seed-${scenario}-${timestamp()}-${process.pid}.json`);
-  fs.writeFileSync(outputPath, `${JSON.stringify(payload, null, 2)}\n`);
-  console.log(JSON.stringify({ ...payload, outputPath }, null, 2));
+  const outputPath = outputDir
+    ? path.join(outputDir, `practical-verification-seed-${scenario}-${timestamp()}-${process.pid}.json`)
+    : null;
+  if (outputPath) {
+    fs.writeFileSync(outputPath, `${JSON.stringify(payload, null, 2)}\n`);
+  }
+  console.log(JSON.stringify({ ...payload, ...(outputPath ? { outputPath } : {}) }, null, 2));
 
   await client?.close();
   activeSeedClient = null;
 }
 
 main().catch(async (error) => {
+  const recoveryErrors = [];
   try {
     await activeSeedClient?.close();
+  } catch (closeError) {
+    recoveryErrors.push(closeError);
+  } finally {
     activeSeedClient = null;
-    if (!dryRun) {
-      await applyDatabaseInvariants(resolveDbUrl(), process.env.TURSO_AUTH_TOKEN);
+  }
+
+  if (error instanceof PublicDemoResetConflictError) {
+    console.log(JSON.stringify({ ok: false, conflict: true, code: 'PUBLIC_DEMO_RESET_CONFLICT' }));
+    process.exit(75);
+  }
+
+  if (recoveryDbUrl) {
+    try {
+      if (testInvariantRestoreFailure === '1') {
+        throw new Error('injected invariant restore failure');
+      }
+      await applyDatabaseInvariants(recoveryDbUrl, undefined);
+    } catch (restoreError) {
+      recoveryErrors.push(restoreError);
     }
-  } catch (restoreError) {
+  }
+
+  if (recoveryErrors.length > 0) {
     console.error(JSON.stringify({
       ok: false,
       error: 'failed to restore database invariants after seed failure',
-      detail: restoreError instanceof Error ? restoreError.message : String(restoreError),
+      details: recoveryErrors.map((restoreError) => (
+        restoreError instanceof Error ? restoreError.message : String(restoreError)
+      )),
     }, null, 2));
   }
-  console.error(JSON.stringify({ ok: false, error: error.message }, null, 2));
+  console.error(JSON.stringify({
+    ok: false,
+    error: publicDemoRemoteReset ? 'public demo reset failed' : error.message,
+  }, null, 2));
   process.exit(1);
 });

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteAuth } from '@/lib/server/auth/routeAuth'
 import { getDb } from '@/lib/db/drizzle/client'
-import { resolveTenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
+import {
+  authorizeTenantAction,
+  tenantActionDenialStatus,
+  type TenantAction,
+} from '@/lib/server/auth/actionPolicy'
 import { DocumentTenantMutationService } from '@/lib/server/documents/documentTenantMutationService'
 import { isDocumentTenantInvariantError } from '@/lib/services/documentTenantInvariant'
 import { getStorageProvider } from '@/lib/storage'
@@ -29,13 +33,31 @@ function projectDocumentResponse(
   }
 }
 
-async function resolveDocumentAuthorization(userId: string, documentId: string) {
+async function resolveDocumentAuthorization(
+  userId: string,
+  documentId: string,
+  action: TenantAction
+) {
   const service = new DocumentTenantMutationService()
   const organizationId = await service.getOrganizationId(documentId)
-  if (!organizationId) return null
-  const authorization = await resolveTenantAuthorizationContext(getDb(), userId, organizationId)
-  if (!authorization.ok) return null
-  return { service, authorization: authorization.context }
+  if (!organizationId) return { ok: false as const, status: 404 as const }
+  const authorization = await authorizeTenantAction(
+    getDb(),
+    userId,
+    organizationId,
+    action
+  )
+  if (!authorization.ok) {
+    return {
+      ok: false as const,
+      status: tenantActionDenialStatus(authorization),
+    }
+  }
+  return {
+    ok: true as const,
+    service,
+    authorization: authorization.context,
+  }
 }
 
 export async function GET(request: NextRequest, props: { params: Promise<Params> }) {
@@ -44,9 +66,12 @@ export async function GET(request: NextRequest, props: { params: Promise<Params>
     return applyCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   const { id } = await props.params
-  const resolved = await resolveDocumentAuthorization(user.id, id)
-  if (!resolved) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  const resolved = await resolveDocumentAuthorization(user.id, id, 'documents.read')
+  if (!resolved.ok) {
+    return applyCookies(NextResponse.json(
+      { error: resolved.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: resolved.status }
+    ))
   }
   const document = await resolved.service.getDocument(resolved.authorization, id)
   if (!document) {
@@ -71,9 +96,12 @@ export async function PATCH(request: NextRequest, props: { params: Promise<Param
     return applyCookies(NextResponse.json({ error: 'Invalid request body' }, { status: 400 }))
   }
   const { id } = await props.params
-  const resolved = await resolveDocumentAuthorization(user.id, id)
-  if (!resolved) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+  const resolved = await resolveDocumentAuthorization(user.id, id, 'documents.update')
+  if (!resolved.ok) {
+    return applyCookies(NextResponse.json(
+      { error: resolved.status === 403 ? 'Forbidden' : 'Not found' },
+      { status: resolved.status }
+    ))
   }
   try {
     const document = await resolved.service.updateDocument(
@@ -115,17 +143,13 @@ export async function DELETE(request: NextRequest, props: { params: Promise<Para
   if (!organizationId || organizationId.length > 128 || /[\u0000-\u001f\u007f]/.test(organizationId)) {
     return applyCookies(NextResponse.json({ error: 'X-Organization-Id is required' }, { status: 400 }))
   }
-  const authorization = await resolveTenantAuthorizationContext(
-    getDb(),
-    user.id,
-    organizationId
-  )
-  if (!authorization.ok) {
-    return applyCookies(NextResponse.json({ error: 'Not found' }, { status: 404 }))
-  }
-  const resolved = {
-    service: new DocumentTenantMutationService(),
-    authorization: authorization.context,
+  const resolved = await resolveDocumentAuthorization(user.id, id, 'documents.delete')
+  if (!resolved.ok || resolved.authorization.organizationId !== organizationId) {
+    const status = resolved.ok ? 404 : resolved.status
+    return applyCookies(NextResponse.json(
+      { error: status === 403 ? 'Forbidden' : 'Not found' },
+      { status }
+    ))
   }
   const operationKey = request.headers.get('idempotency-key')?.trim()
   if (!operationKey) {

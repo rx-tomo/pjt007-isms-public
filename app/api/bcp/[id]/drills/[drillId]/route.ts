@@ -1,4 +1,4 @@
-import { BcpService } from '@/lib/services/bcp'
+import { BcpService, parseDrillUpdateBody } from '@/lib/services/bcp'
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveCallerOrg } from '@/lib/server/auth/resolveCallerOrg'
 import { handleRouteError } from '@/lib/errors/handleRouteError'
@@ -16,14 +16,15 @@ export async function PUT(
   try {
     const { id, drillId } = params
 
-    // Verify parent plan belongs to caller's org
-    const plan = await bcpService.getPlanById(id)
-    if (plan.organization_id !== caller.organizationId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const input = parseDrillUpdateBody(await request.json().catch(() => null))
+    if (!input) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
-
-    const body = await request.json()
-    const drill = await bcpService.updateDrill(drillId, body)
+    const drill = await bcpService.updateDrill({
+      organizationId: caller.organizationId,
+      planId: id,
+      childId: drillId,
+    }, input)
     return NextResponse.json({ data: drill })
   } catch (error) {
     return handleRouteError(error)
@@ -41,13 +42,11 @@ export async function DELETE(
   try {
     const { id, drillId } = params
 
-    // Verify parent plan belongs to caller's org
-    const plan = await bcpService.getPlanById(id)
-    if (plan.organization_id !== caller.organizationId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
-    await bcpService.deleteDrill(drillId)
+    await bcpService.deleteDrill({
+      organizationId: caller.organizationId,
+      planId: id,
+      childId: drillId,
+    })
     return NextResponse.json({ success: true })
   } catch (error) {
     return handleRouteError(error)

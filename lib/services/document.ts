@@ -35,6 +35,12 @@ import type { IAuthProvider } from '@/lib/auth/interfaces/IAuthProvider'
 import type { Json } from '@/types/database.types'
 import type { TenantAuthorizationContext } from '@/lib/server/auth/authorizationContext'
 import { applyDepartmentAccessFilters } from '@/lib/server/auth/departmentAccessFilters'
+import {
+  DOCUMENT_APPROVAL_TOTAL_STEPS,
+  LEGACY_DOCUMENT_APPROVAL_TOTAL_STEPS,
+  isFinalDocumentApprovalStep,
+  normalizeDocumentApprovalStep,
+} from '@/lib/approvals/documentApprovalSteps'
 
 export interface DocumentApprovalProgress {
   currentStep: number
@@ -891,12 +897,52 @@ export class DocumentService {
     })
   }
 
+  private async resolveDocumentStatus(
+    organizationId: string,
+    documentId: string
+  ): Promise<string | null> {
+    try {
+      const repo = await this.getRepository()
+      const document = await repo.findByIdAndOrganizationId(documentId, organizationId)
+      return document?.status ?? null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * 発行完了済み文書の進捗。レガシー判定（設計 §5.3）はここに閉じる。
+   * `documents.status = 'approved'` かつ step2 レコードが1件も無い場合に限り 1段表示。
+   */
+  private buildApprovedApprovalProgress(
+    requests: Array<{ step_number: number | null }>
+  ): DocumentApprovalProgress {
+    const hasFinalStepRequest = requests.some(
+      request => isFinalDocumentApprovalStep(request.step_number)
+    )
+    const totalSteps = hasFinalStepRequest
+      ? DOCUMENT_APPROVAL_TOTAL_STEPS
+      : LEGACY_DOCUMENT_APPROVAL_TOTAL_STEPS
+    return {
+      currentStep: totalSteps,
+      totalSteps,
+      currentStatus: 'approved',
+      overallStatus: 'approved'
+    }
+  }
+
   /**
    * approval_requests ベースで文書の承認進捗を取得
    */
   async getDocumentApprovalProgress(
     organizationId: string,
-    documentId: string
+    documentId: string,
+    /**
+     * 既知の `documents.status`。未指定ならリポジトリから引く。
+     * §5.3 の完了/レガシー判定は文書側の状態を必ず参照する必要がある
+     * （step2 が expired だと pending 消失 + approved イベント有になるが、文書は in_review）。
+     */
+    knownDocumentStatus?: string | null
   ): Promise<DocumentApprovalProgress> {
     const requests = await this.approvalService.listRequests(organizationId, {
       resourceType: 'document'
@@ -905,7 +951,7 @@ export class DocumentService {
     if (requests.length === 0) {
       return {
         currentStep: 0,
-        totalSteps: 1,
+        totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
         currentStatus: 'none',
         overallStatus: 'not_submitted'
       }
@@ -924,8 +970,8 @@ export class DocumentService {
     if (rejectedEvents.length > 0 && !pendingRequest) {
       const latestRejected = requests.find(r => r.status === 'rejected')
       return {
-        currentStep: 1,
-        totalSteps: 1,
+        currentStep: normalizeDocumentApprovalStep(latestRejected?.step_number),
+        totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
         currentStatus: 'rejected',
         overallStatus: 'rejected',
         currentApprover: latestRejected?.approver_id ?? undefined,
@@ -934,18 +980,29 @@ export class DocumentService {
     }
 
     if (!pendingRequest && approvedEvents.length > 0) {
+      const documentStatus = knownDocumentStatus !== undefined
+        ? knownDocumentStatus
+        : await this.resolveDocumentStatus(organizationId, documentId)
+      if (documentStatus === 'approved') {
+        return this.buildApprovedApprovalProgress(requests)
+      }
+      // 文書が approved でないのに pending が無い = 決裁が中断している
+      // （典型: step の expired）。承認済みと偽表示しない。
+      const latestRequest = requests[requests.length - 1]
       return {
-        currentStep: 1,
-        totalSteps: 1,
-        currentStatus: 'approved',
-        overallStatus: 'approved'
+        currentStep: normalizeDocumentApprovalStep(latestRequest?.step_number),
+        totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
+        currentStatus: 'none',
+        overallStatus: documentStatus === 'draft' ? 'not_submitted' : 'in_review',
+        currentApprover: latestRequest?.approver_id ?? undefined,
+        dueAt: latestRequest?.due_at ?? undefined
       }
     }
 
     if (pendingRequest) {
       return {
-        currentStep: 1,
-        totalSteps: 1,
+        currentStep: normalizeDocumentApprovalStep(pendingRequest.step_number),
+        totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
         currentStatus: 'pending',
         overallStatus: 'in_review',
         currentRequestId: pendingRequest.id,
@@ -956,7 +1013,7 @@ export class DocumentService {
 
     return {
       currentStep: 0,
-      totalSteps: 1,
+      totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
       currentStatus: 'none',
       overallStatus: 'not_submitted'
     }
@@ -976,7 +1033,7 @@ export class DocumentService {
             ...doc,
             approvalProgress: {
               currentStep: 0,
-              totalSteps: 1,
+              totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
               currentStatus: 'none' as const,
               overallStatus: 'not_submitted' as const
             }
@@ -993,14 +1050,18 @@ export class DocumentService {
             ...doc,
             approvalProgress: {
               currentStep: 0,
-              totalSteps: 1,
+              totalSteps: DOCUMENT_APPROVAL_TOTAL_STEPS,
               currentStatus: 'none' as const,
               overallStatus: 'not_submitted' as const
             }
           }
         }
         try {
-          const progress = await this.getDocumentApprovalProgress(organizationId, doc.id)
+          const progress = await this.getDocumentApprovalProgress(
+            organizationId,
+            doc.id,
+            doc.status ?? null
+          )
           return { ...doc, approvalProgress: progress }
         } catch {
           return doc

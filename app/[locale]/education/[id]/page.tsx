@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { EducationService } from '@/lib/services/education'
-import { UserService, type UserProfile } from '@/lib/services/user'
+import { UserService, type CurrentUserProfile, type UserProfile } from '@/lib/services/user'
 import type {
   EducationMaterialEntity,
   EducationPlanWithRelations,
@@ -32,7 +32,6 @@ type EducationNextAction = 'add_records' | 'follow_up' | 'review_overdue' | 'rea
 type EducationTargetMode = 'all' | 'role' | 'department' | 'users'
 
 const EDUCATION_MANAGER_ROLES = new Set([
-  'super_admin',
   'system_operator',
   'org_admin',
 ])
@@ -197,7 +196,7 @@ export default function EducationPlanDetailPage(
   const [isLoading, setIsLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
   const [users, setUsers] = useState<UserProfile[]>([])
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [currentUser, setCurrentUser] = useState<CurrentUserProfile | null>(null)
   const [materialLibrary, setMaterialLibrary] = useState<EducationMaterialEntity[]>([])
 
   // Record form state
@@ -240,9 +239,9 @@ export default function EducationPlanDetailPage(
   const educationService = useMemo(() => new EducationService(), [])
   const userService = useMemo(() => new UserService(), [])
   const canManageEducation = Boolean(
-    currentUser?.role && EDUCATION_MANAGER_ROLES.has(currentUser.role)
+    currentUser?.effective_role && EDUCATION_MANAGER_ROLES.has(currentUser.effective_role)
   )
-  const isMemberUser = currentUser?.role === 'user'
+  const isMemberUser = currentUser?.effective_role === 'user'
 
   const trainingSummary = useMemo(() => {
     const records = plan?.records ?? []
@@ -397,10 +396,14 @@ export default function EducationPlanDetailPage(
       // Load users for the record form
       const profile = await userService.getCurrentUser()
       setCurrentUser(profile)
-      if (profile?.organization_id && profile.role && EDUCATION_MANAGER_ROLES.has(profile.role)) {
+      if (
+        profile?.effective_organization_id
+        && profile.effective_role
+        && EDUCATION_MANAGER_ROLES.has(profile.effective_role)
+      ) {
         const [orgUsers, orgMaterials] = await Promise.all([
-          userService.getOrganizationUsers(profile.organization_id),
-          educationService.getMaterials(profile.organization_id),
+          userService.getOrganizationUsers(profile.effective_organization_id),
+          educationService.getMaterials(profile.effective_organization_id),
         ])
         setUsers(orgUsers)
         setMaterialLibrary(orgMaterials)
@@ -520,14 +523,14 @@ export default function EducationPlanDetailPage(
       return
     }
 
-    if (!currentUser?.organization_id) {
+    if (!currentUser?.effective_organization_id) {
       setShowMaterialLibrary(true)
       return
     }
 
     setMaterialLibraryLoading(true)
     try {
-      const orgMaterials = await educationService.getMaterials(currentUser.organization_id)
+      const orgMaterials = await educationService.getMaterials(currentUser.effective_organization_id)
       setMaterialLibrary(orgMaterials)
       setSelectedMaterialIds([])
       setShowMaterialLibrary(true)
@@ -838,7 +841,7 @@ export default function EducationPlanDetailPage(
                     key={mode}
                     className={`rounded-md border px-3 py-2 text-sm ${
                       targetMode === mode
-                        ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                        ? 'border-blue-300 bg-blue-50 text-blue-900'
                         : 'border-border bg-surface text-text-secondary'
                     }`}
                   >
@@ -848,7 +851,7 @@ export default function EducationPlanDetailPage(
                       value={mode}
                       checked={targetMode === mode}
                       onChange={() => setTargetMode(mode)}
-                      className="mr-2 h-4 w-4 border-border text-indigo-600"
+                      className="mr-2 h-4 w-4 border-border text-blue-600"
                     />
                     {t(`targetAssignment.modes.${mode}`)}
                   </label>
@@ -856,7 +859,7 @@ export default function EducationPlanDetailPage(
               </div>
 
               {targetMode === 'all' && (
-                <p className="mt-3 rounded-md border border-indigo-100 bg-surface px-3 py-2 text-sm text-text-secondary">
+                <p className="mt-3 rounded-md border border-blue-100 bg-surface px-3 py-2 text-sm text-text-secondary">
                   {t('targetAssignment.allDescription', { count: activeUsers.length })}
                 </p>
               )}
@@ -912,7 +915,7 @@ export default function EducationPlanDetailPage(
                         const activeIds = activeUsers.map(user => user.id)
                         setTargetUserIds(activeIds)
                       }}
-                      className="w-fit text-xs font-medium text-indigo-600 hover:text-indigo-500"
+                      className="w-fit text-xs font-medium text-blue-600 hover:text-blue-500"
                     >
                       {t('targetAssignment.selectAll')}
                     </button>
@@ -925,7 +928,7 @@ export default function EducationPlanDetailPage(
                       >
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 rounded border-border text-indigo-600"
+                          className="mt-1 h-4 w-4 rounded border-border text-blue-600"
                           checked={targetUserIds.includes(user.id)}
                           onChange={(e) => {
                             setTargetUserIds(prev =>
@@ -963,7 +966,7 @@ export default function EducationPlanDetailPage(
                     || (targetMode === 'role' && !targetRole)
                     || (targetMode === 'department' && !targetDepartment)
                   }
-                  className="px-3 py-1.5 rounded-md bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-md bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   {targetLoading ? t('form.updating') : t('targetAssignment.save')}
                 </button>
