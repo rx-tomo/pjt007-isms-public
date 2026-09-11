@@ -1,0 +1,58 @@
+name: Public demo health
+
+# 本番 riscala-ai.com の公開デモ（/api/demo/personas）が配信できているかを毎朝確認する。
+# 毎日 19:00 UTC の reset-demo cron（Hobby は最大1時間の揺らぎ）が終わった後に走らせる。
+# 失敗時は Issue を起票して、翌日まで気づかない事態を防ぐ。秘密値は使わない。
+# private repo は Actions の課金制限で起動しないことがあるため、公開 repo（Actions 無料）でも同じ定義を動かす。
+
+on:
+  schedule:
+    - cron: '30 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TARGET: https://riscala-ai.com/api/demo/personas
+    steps:
+      - name: Probe demo personas endpoint
+        id: probe
+        run: |
+          status=$(curl -sS -o /tmp/personas.json -w '%{http_code}' --max-time 30 "$TARGET" || echo 000)
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          ready=$(node -e "try{const j=JSON.parse(require('fs').readFileSync('/tmp/personas.json','utf8'));console.log((j.scenarios||[]).filter(s=>s.availability==='ready').length)}catch{console.log(0)}")
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          echo "HTTP $status, ready scenarios: $ready"
+          head -c 400 /tmp/personas.json || true
+
+      - name: Open or update an issue when the demo is unavailable
+        if: steps.probe.outputs.status != '200' || steps.probe.outputs.ready == '0'
+        env:
+          # 公開スナップショット検査（secret 形状）に引っかからないよう、TOKEN を含まない名前で受け取る
+          GH_AUTH: ${{ github.token }}
+          STATUS: ${{ steps.probe.outputs.status }}
+          READY: ${{ steps.probe.outputs.ready }}
+        run: |
+          printf '%s' "$GH_AUTH" | gh auth login --with-token
+          title="公開デモが利用できません（/api/demo/personas HTTP $STATUS, ready=$READY）"
+          body=$(printf '%s\n' \
+            "本番 https://riscala-ai.com/ja/dev-login の公開デモ配信チェックに失敗しました。" \
+            "" \
+            "- HTTP: $STATUS" \
+            "- ready scenarios: $READY" \
+            "- 実行: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            "" \
+            "確認: demo_fixture_state の status と reset-demo cron の直近実行ログを見る。")
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "公開デモが利用できません in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi
+          exit 1

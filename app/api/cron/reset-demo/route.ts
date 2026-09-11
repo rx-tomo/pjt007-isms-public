@@ -61,6 +61,7 @@ export async function GET(request: Request) {
   }
 
   const seedScript = path.join(process.cwd(), 'scripts', 'seed-practical-verification.mjs')
+  console.info('[reset-demo] Starting demo reset', { seedScript })
 
   try {
     const { stdout } = await execFileAsync(
@@ -98,7 +99,16 @@ export async function GET(request: Request) {
     } catch {
       // Ignore untrusted child output and return the generic failure below.
     }
-    console.error('[reset-demo] Failed to reset demo database')
+    const stderr = error && typeof error === 'object' && 'stderr' in error && typeof error.stderr === 'string'
+      ? error.stderr
+      : ''
+    const message = error instanceof Error ? error.message : String(error)
+    // Vercel のログから原因を追えるように、子プロセスの末尾出力を残す（秘密値は含まない前提の seed 出力）
+    console.error('[reset-demo] Failed to reset demo database', {
+      message,
+      stderrTail: stderr.slice(-2000),
+      stdoutTail: childStdout(error).slice(-2000),
+    })
     return jsonError('Demo reset failed', 500)
   }
 }
