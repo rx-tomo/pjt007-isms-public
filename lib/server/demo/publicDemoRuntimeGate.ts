@@ -3,6 +3,7 @@ import 'server-only'
 import { sql } from 'drizzle-orm'
 import { isPublicDemoDatabaseBindingValid, publicDemoOrigin } from '@/lib/demo/contract'
 import { getDb } from '@/lib/db/drizzle/client'
+import { decideDemoRuntime } from '@/lib/server/demo/runtimeStatus'
 
 export class PublicDemoRuntimeUnavailableError extends Error {
   constructor(readonly reason: 'configuration' | 'resetting' | 'rate-limit') {
@@ -33,7 +34,11 @@ export async function assertPublicDemoRuntimeReady(): Promise<number | null> {
     `)
     const row = rows[0]
     if (!row) throw new PublicDemoRuntimeUnavailableError('configuration')
-    if (row.status !== 'idle') throw new PublicDemoRuntimeUnavailableError('resetting')
+    const decision = decideDemoRuntime(row.status)
+    if (!decision.serve) throw new PublicDemoRuntimeUnavailableError(decision.reason)
+    if (decision.degraded) {
+      console.warn('[public-demo] fixture marker is failed; serving demo in degraded mode until the next successful reset')
+    }
     return Number(row.generation)
   } catch (error) {
     if (error instanceof PublicDemoRuntimeUnavailableError) throw error
@@ -64,7 +69,7 @@ export async function consumePublicDemoLoginPermit(): Promise<void> {
         end
       where id = 'public-demo'
         and database_id = ${expectedDatabaseId()}
-        and status = 'idle'
+        and status in ('idle', 'failed')
         and (
           login_window_started_at is null
           or login_window_started_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 minute')
