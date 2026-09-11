@@ -3,7 +3,6 @@
     "resources": {
       "metaTitle": "ISMS運用リソース | Riscala AI for ISMS",
       "metaDescription": "ISMSのガイド記事、セルフチェック、運用ヒアリングの案内をまとめた公開リソースです。",
-      "heroLink": "公開リソースを見る",
       "title": "ISMS運用リソース",
       "description": "ISMSの準備や日々の運用を整理するための、公開のガイド・確認ツール・案内です。",
       "guideTitle": "ISO27001（ISMS）認証取得ガイド",
@@ -1476,6 +1475,7 @@
       "description": "ISMS認証の費用・取得の流れと期間・リスクアセスメント・必要な文書・Pマークとの違いを、取得を検討するIT企業向けに実務の順序で解説します。"
     },
     "eyebrow": "ガイド",
+    "heroLink": "ISMS取得ガイドを読む",
     "hubTitle": "ISO27001（ISMS）認証取得ガイド",
     "hubDescription": "費用・期間・リスクアセスメント・必要な文書・Pマークとの違いまで、ISMS認証の取得を検討するIT企業向けに実務の順序で解説します。",
     "breadcrumbHome": "ホーム",

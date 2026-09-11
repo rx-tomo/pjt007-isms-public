@@ -3,7 +3,6 @@
     "resources": {
       "metaTitle": "ISMS 运营资源 | Riscala AI for ISMS",
       "metaDescription": "汇总 ISMS 指南文章、自我检查与运营访谈说明的公开资源。",
-      "heroLink": "查看公开资源",
       "title": "ISMS 运营资源",
       "description": "用于整理 ISMS 准备与日常运营的公开指南、检查工具与说明。",
       "guideTitle": "ISO27001（ISMS）认证获取指南",
@@ -1476,6 +1475,7 @@
       "description": "面向计划获取 ISMS 认证的 IT 企业，按实际推进顺序讲解费用、周期、风险评估、必要文件，以及与日本隐私标志（P Mark）的区别。"
     },
     "eyebrow": "指南",
+    "heroLink": "阅读 ISMS 获取指南",
     "hubTitle": "ISO27001（ISMS）认证获取指南",
     "hubDescription": "从费用、周期、风险评估、必要文件到与隐私标志的区别，按 IT 企业实际推进的顺序进行讲解。",
     "breadcrumbHome": "首页",
