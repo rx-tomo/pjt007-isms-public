@@ -4,6 +4,7 @@ import { iso27001CertificationProcess } from './articles/iso27001-certification-
 import { ismsRiskAssessment } from './articles/isms-risk-assessment';
 import { ismsRequiredDocuments } from './articles/isms-required-documents';
 import { ismsVsPrivacyMark } from './articles/isms-vs-privacy-mark';
+import { iso27001AnnexAControls } from './articles/iso27001-annex-a-controls';
 
 export { GUIDE_LOCALES } from './types';
 export type { GuideArticle, GuideBlock, GuideFaq, GuideLocale, GuideLocaleContent } from './types';
@@ -14,6 +15,7 @@ export const GUIDE_ARTICLES: readonly GuideArticle[] = [
   ismsCertificationCost,
   iso27001CertificationProcess,
   ismsRiskAssessment,
+  iso27001AnnexAControls,
   ismsRequiredDocuments,
 ];
 
