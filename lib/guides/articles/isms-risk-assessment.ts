@@ -4,7 +4,7 @@ export const ismsRiskAssessment: GuideArticle = {
   slug: 'isms-risk-assessment',
   publishedAt: '2026-09-10',
   updatedAt: '2026-09-10',
-  related: ['iso27001-certification-process', 'isms-required-documents', 'isms-certification-cost'],
+  related: ['iso27001-certification-process', 'isms-required-documents', 'iso27001-annex-a-controls'],
   content: {
     ja: {
       title: 'ISMSリスクアセスメントのやり方｜情報資産の洗い出しから適用宣言書まで6ステップ',

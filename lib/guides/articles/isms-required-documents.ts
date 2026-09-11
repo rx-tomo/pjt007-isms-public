@@ -4,7 +4,7 @@ export const ismsRequiredDocuments: GuideArticle = {
   slug: 'isms-required-documents',
   publishedAt: '2026-09-10',
   updatedAt: '2026-09-10',
-  related: ['iso27001-certification-process', 'isms-risk-assessment', 'isms-certification-cost'],
+  related: ['iso27001-certification-process', 'isms-risk-assessment', 'iso27001-annex-a-controls'],
   content: {
     ja: {
       title: 'ISMS（ISO27001）で必要な文書一覧｜規格が要求する文書化された情報と記録を整理',
