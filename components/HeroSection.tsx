@@ -104,10 +104,10 @@ export default function HeroSection() {
               </svg>
             </Link>
             <Link
-              href={`/${locale}/resources`}
+              href={`/${locale}/guide`}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-text-secondary bg-surface border-2 border-border rounded-lg hover:text-accent hover:border-accent transition-colors duration-200"
             >
-              {t('publicSeo.resources.heroLink')}
+              {t('guide.heroLink')}
             </Link>
             <a
               href={PUBLIC_REPOSITORY_URL}
