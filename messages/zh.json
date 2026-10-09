@@ -501,7 +501,7 @@
     "noteContent": " 创建的测试用户／组织可在 Dev Login と local.db の user_profiles 中查看和初始化。",
     "publicNotice": {
       "title": "这是 Build in Public 公开演示",
-      "body": "Riscala AI for ISMS 用于展示 ISMS 支援应用的当前状态，以及通过 AI 驱动开发构建业务应用的过程。你可以使用虚构的种子数据进行试用，输入内容会定期恢复为初始状态。源代码查看、反馈和协作咨询请通过 GitHub 进行。"
+      "body": "使用虚构数据体验文件、资产、风险与审核流程。不接受真实注册或商业合同。数据共享且每天重置。请勿输入个人或企业机密信息，也不要用于保存实际数据。"
     },
     "publicLinks": {
       "source": "在 GitHub 查看源代码",
@@ -828,7 +828,9 @@
           "确认通知·历史记录"
         ]
       }
-    }
+    },
+    "backToHome": "返回首页",
+    "publicDemoBadge": "研究与评价用公开演示"
   },
   "pricing": {
     "title": "价格套餐",
@@ -1136,9 +1138,9 @@
     "hero": {
       "title": "Riscala AI",
       "titleHighlight": "for ISMS",
-      "subtitle": "Built through AI-driven development.",
+      "subtitle": "连接ISMS文件、资产、风险与审核的公开演示。使用虚构数据体验操作并查看实现。",
       "description": "面向 ISO/IEC 27001 准备与持续运行的 ISMS 运营平台，将文件、信息资产、风险、控制措施、审核、纠正措施、管理评审和证据导出连接在同一流程中。",
-      "publicNote": "本应用程序的源代码已公开。若希望查看实现、探讨业务使用、导入或协作，请通过公开 GitHub 仓库或反馈入口联系我们。",
+      "publicNote": "本演示用于研究与评价，不接受真实用户注册或商业合同。数据每天重置。请勿输入个人或企业机密信息。AI主要指开发方式，不承诺提供使用真实数据的AI辅助服务。",
       "cta": {
         "startTrial": "14天免费试用",
         "watchDemo": "观看演示",
@@ -1198,13 +1200,14 @@
           "title": "公开代码与咨询入口",
           "body": "可在公开仓库查看实现，并就使用、导入或协作进行咨询。"
         }
-      }
+      },
+      "demoButton": "试用公开演示"
     },
     "features": {
-      "title": "为什么选择Riscala AI for ISMS",
-      "subtitle": "让经营者和管理负责人更容易掌握准备与运行状况",
+      "title": "可在公开演示中查看的功能",
+      "subtitle": "在虚构组织中体验文件、风险、任务与审核流程",
       "learnMore": "了解更多",
-      "allFeatures": "所有套餐均可使用全部功能",
+      "allFeatures": "供评价使用，不保证获得认证",
       "list": {
         "documentManagement": {
           "title": "智能文件管理",
@@ -1212,11 +1215,11 @@
         },
         "riskAssessment": {
           "title": "直观的风险评估",
-          "description": "拖放操作即可实现风险可视化，处置状态一目了然。"
+          "description": "通过风险清单与矩阵查看评估和处置情况。"
         },
         "taskManagement": {
           "title": "任务自动化",
-          "description": "自动生成认证所需任务，通过截止日期管理与提醒功能避免遗漏。"
+          "description": "查看负责人、期限与进度，使用虚构数据体验任务管理。"
         },
         "auditSupport": {
           "title": "审核应对支持",
@@ -1303,23 +1306,23 @@
       }
     },
     "process": {
-      "title": "3步轻松开始",
-      "subtitle": "适用于首次认证准备和认证后的持续运行",
-      "support": "专属支持团队全程协助",
+      "title": "如何体验公开演示",
+      "subtitle": "无需注册即可查看当前实现，并阅读相关指南",
+      "support": "请勿输入个人或企业机密信息",
       "step1": {
-        "title": "创建账户",
-        "time": "5分钟",
-        "description": "输入组织信息，开启14天免费试用。系统会根据企业规模与行业自动匹配最合适的模板"
+        "title": "选择虚构组织与角色",
+        "time": "无需注册",
+        "description": "点击“试用公开演示”，使用预设组织与用户登录。"
       },
       "step2": {
-        "title": "构建ISMS",
-        "time": "3-6个月",
-        "description": "按照引导编制文件、实施风险评估与内部审核"
+        "title": "体验操作流程",
+        "time": "使用虚构数据评价",
+        "description": "查看文件、资产、风险与审核。演示数据共享且每天重置，仅供评价使用。"
       },
       "step3": {
-        "title": "准备审核",
-        "time": "审核期间",
-        "description": "将所需文件与记录整理为审核准备资料包，用于缺口确认和相关人员评审"
+        "title": "阅读指南或参与研究",
+        "time": "自愿参与",
+        "description": "阅读实务指南。五题自检与公开GitHub研究表单均为自愿选择。"
       }
     },
     "faq": {
@@ -1328,20 +1331,20 @@
       "contactSupport": "联系支持团队",
       "items": {
         "q1": {
-          "question": "获得ISO27001认证需要多长时间？",
-          "answer": "时间因企业规模和现状而异。Riscala AI for ISMS可将适用范围、文件、风险、控制措施和审核准备放在同一流程中整理，帮助发现准备缺口。"
+          "question": "可以注册或商用吗？",
+          "answer": "公开演示用于研究与评价，不接受真实注册或商业合同；价格与支持条款尚未确定。"
         },
         "q2": {
-          "question": "不依赖咨询顾问真的能获得认证吗？",
-          "answer": "Riscala AI for ISMS会让必要信息、审批状态和缺失证据更容易查看，帮助团队自行推进准备。但它不保证取得认证或被审核机构受理。"
+          "question": "演示中可以体验什么？",
+          "answer": "通过预设虚构组织与角色体验文件、资产、风险与审核。数据共享且每天重置，请勿输入个人或企业机密信息。"
         },
         "q3": {
-          "question": "可以与现有的文件管理系统集成吗？",
-          "answer": "支持Word/Excel格式的导入与导出。标准套餐及以上版本还支持API集成。"
+          "question": "AI会自动帮助取得认证吗？",
+          "answer": "AI主要指AI驱动开发。不保证提供使用真实数据的AI辅助服务，也不保证认证或审核结果。"
         },
         "q4": {
-          "question": "安全性有保障吗？",
-          "answer": "数据经过加密，并通过基于角色的访问控制进行保护。导出功能也可用于自社备份和解约时的数据带出。"
+          "question": "指南、自检与研究参与有什么区别？",
+          "answer": "指南提供一般实务信息。五题自检概括准备情况。仅有意参与者前往公开GitHub表单，无需公开公司内部信息。"
         }
       }
     },
@@ -1360,7 +1363,7 @@
       "researchNote": "回答不会由此应用发送。通过GitHub提交后，内容会公开，并与提交者的GitHub账号关联。"
     },
     "footer": {
-      "tagline": "让成长型企业的ISO27001认证更简单",
+      "tagline": "用于ISMS流程研究与评价的公开演示",
       "product": {
         "title": "产品",
         "features": "功能",
@@ -1371,15 +1374,15 @@
         "guide": "指南"
       },
       "company": {
-        "title": "公司信息",
+        "title": "公开项目",
         "about": "公司简介",
         "contact": "联系我们",
-        "feedback": "反馈与咨询",
+        "feedback": "在GitHub公开反馈",
         "privacy": "隐私政策",
         "terms": "服务条款"
       },
       "support": {
-        "title": "支持",
+        "title": "指南与研究",
         "help": "帮助中心",
         "docs": "文档",
         "status": "系统状态"
@@ -1388,7 +1391,8 @@
       "privacyPolicy": "隐私政策",
       "termsOfService": "服务条款",
       "cookiePolicy": "Cookie政策"
-    }
+    },
+    "publicFeedbackNotice": "GitHub投稿会公开并关联您的账户。请勿公开个人信息、企业机密或安全漏洞。安全报告请参阅仓库中的SECURITY.md。"
   },
   "research": {
     "metadata": {
@@ -1399,7 +1403,7 @@
     "title": "快速进行ISMS自检",
     "description": "回答5个固定选项问题，即可在三个结果区间中了解大致情况。回答不会由此应用发送。",
     "privacyTitle": "回答如何处理",
-    "privacyNotice": "回答只会在此浏览器的内存中使用，不会由此应用传输。如果您对研究访谈感兴趣，可以在结果页面选择公开GitHub表单。通过GitHub提交的问题会公开，并与提交者的GitHub账号关联。",
+    "privacyNotice": "答案仅在浏览器内存中汇总，不保存或提交。现有统计包含开始、完成、研究链接点击与结果分组，不包含单个答案。打开或提交GitHub研究表单均为自愿选择。提交的Issue会公开并关联您的GitHub账户。",
     "disclaimer": "这是用于研究的自检，不是审核、认证、法律意见或符合性判定，也不保证或替代其中任何一项。",
     "howItWorks": {
       "title": "三个步骤",
@@ -1413,8 +1417,8 @@
           "description": "回答会在此浏览器中汇总，并显示为探索中、准备中或运行中。"
         },
         "three": {
-          "title": "选择是否参加研究",
-          "description": "如果感兴趣，可以从结果页面进入公开GitHub表单。"
+          "title": "继续阅读指南或演示",
+          "description": "阅读相关文章或体验演示。研究参与为自愿选择。"
         }
       }
     },
@@ -1451,7 +1455,15 @@
       "interviewTitle": "您是否对研究访谈感兴趣？",
       "interviewDescription": "如果愿意帮助改进产品研究，请通过公开GitHub表单表达意向。表单仅使用固定选项和公开数据确认。",
       "interviewButton": "打开公开GitHub表单",
-      "githubNotice": "通过GitHub提交后会创建公开Issue，并与提交者的GitHub账号关联。请不要填写姓名、组织、电子邮件、电话号码或其他个人信息。"
+      "githubNotice": "提交的Issue会公开并关联您的GitHub账户。请勿输入姓名、组织或联系方式、内部规程、风险清单、证据或企业机密。",
+      "nextTitle": "接下来阅读",
+      "demoButton": "使用虚构数据试用公开演示",
+      "guideLabels": {
+        "process": "认证流程",
+        "risk": "风险评估",
+        "documents": "所需文件与记录",
+        "controls": "附录A与适用性声明"
+      }
     },
     "bands": {
       "exploring": {
@@ -1472,12 +1484,12 @@
   "guide": {
     "metadata": {
       "title": "ISO27001（ISMS）认证获取指南 | Riscala AI for ISMS",
-      "description": "面向计划获取 ISMS 认证的 IT 企业，按实际推进顺序讲解费用、周期、风险评估、必要文件，以及与日本隐私标志（P Mark）的区别。"
+      "description": "按实务顺序解说ISMS费用估算、认证步骤、风险评估、文件、隐私标志差异与附录A控制措施。"
     },
     "eyebrow": "指南",
     "heroLink": "阅读 ISMS 获取指南",
     "hubTitle": "ISO27001（ISMS）认证获取指南",
-    "hubDescription": "从费用、周期、风险评估、必要文件到与隐私标志的区别，按 IT 企业实际推进的顺序进行讲解。",
+    "hubDescription": "从费用估算、认证步骤、风险、文件、隐私标志与附录A六篇指南中选择主题。",
     "breadcrumbHome": "首页",
     "breadcrumbGuide": "指南",
     "toc": "目录",
@@ -1487,8 +1499,8 @@
     "updated": "最后更新",
     "readArticle": "阅读文章",
     "cta": {
-      "title": "用 5 个问题确认贵公司 ISMS 的现状",
-      "description": "回答仅在浏览器内处理，不会从本应用发送。",
+      "title": "下一步：体验流程或梳理现状",
+      "description": "使用虚构数据体验公开演示。五题研究自检仅概括准备情况，不是审核或逐项控制措施的符合性评估。答案不会提交，但使用事件与结果分组属于现有统计范围。研究参与为自愿选择。",
       "button": "开始自我检查"
     },
     "disclaimer": "本文仅供一般信息参考，不保证任何审核结果或认证获取。制度与费用可能变化，请向认证机构确认最新信息。"

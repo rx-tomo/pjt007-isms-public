@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { getSiteUrl } from '@/lib/guides/site';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -11,6 +13,8 @@ import { ToastProvider } from '@/components/ui/ToastProvider';
 import '../globals.css';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
+
+export const metadata: Metadata = { metadataBase: new URL(getSiteUrl()) };
 
 const inter = Inter({
   subsets: ['latin'],

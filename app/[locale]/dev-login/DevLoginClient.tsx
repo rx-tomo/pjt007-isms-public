@@ -9,6 +9,7 @@ import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publi
 
 export default function DevLoginClient() {
   const t = useTranslations('devLogin')
+  const feedbackNotice = useTranslations('landing')
   const tCommon = useTranslations('common')
   const params = useParams<{ locale: string }>()
   const router = useRouter()
@@ -67,17 +68,17 @@ export default function DevLoginClient() {
     <main className="min-h-screen bg-surface px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-col gap-3 border-b border-border pb-6">
-          <span className="inline-flex w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">{t('devOnlyFeature')}</span>
+          <span className="inline-flex w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">{t('publicDemoBadge')}</span>
           <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div><h1 className="text-3xl font-semibold text-text-primary">{t('title')}</h1><p className="mt-2 max-w-3xl text-sm text-text-secondary">{t('description')}</p></div>
             <div className="flex flex-wrap gap-3 text-sm font-medium">
               <a href={PUBLIC_REPOSITORY_URL} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-500">{t('publicLinks.source')}</a>
               <a href={PUBLIC_REPOSITORY_ISSUES_URL} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-500">{t('publicLinks.feedback')}</a>
-              <Link href={`/${params.locale}/auth/login`} className="text-text-secondary hover:text-blue-500">{t('backToLogin')}</Link>
+              <Link href={`/${params.locale}`} className="text-text-secondary hover:text-blue-500">{t('backToHome')}</Link>
             </div>
           </div>
         </header>
-        <section className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-950"><h2 className="font-semibold">{t('publicNotice.title')}</h2><p className="mt-1 leading-6">{t('publicNotice.body')}</p></section>
+        <section className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-950"><h2 className="font-semibold">{t('publicNotice.title')}</h2><p className="mt-1 leading-6">{t('publicNotice.body')}</p><p className="mt-3 text-xs leading-6">{feedbackNotice('publicFeedbackNotice')}</p></section>
         <section className="space-y-4">
           <div><h2 className="text-lg font-semibold text-text-primary">{translate('personas.title', 'selectRole')}</h2><p className="mt-1 text-sm text-text-secondary">{translate('personas.description', 'description')}</p></div>
           {status === 'loading' && <div className="rounded-xl border border-border bg-surface px-5 py-4 text-sm text-text-secondary">{tCommon('loading')}</div>}

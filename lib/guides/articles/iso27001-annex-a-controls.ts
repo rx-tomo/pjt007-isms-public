@@ -28,7 +28,7 @@ const ZH_MARK = '★新增';
 export const iso27001AnnexAControls: GuideArticle = {
   slug: 'iso27001-annex-a-controls',
   publishedAt: '2026-09-11',
-  updatedAt: '2026-09-11',
+  updatedAt: '2026-10-09',
   related: ['isms-risk-assessment', 'isms-required-documents', 'iso27001-certification-process'],
   content: {
     ja: {
@@ -137,7 +137,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         {
           type: 'ol',
           items: [
-            '管理策番号と名称（附属書Aの93項目すべてを行として持つ）',
+            '管理策番号と名称（附属書Aとの比較を記録できる構成にする。93行の表は整理方法の一例）',
             '適用するかどうかの区分',
             '適用する理由（どのリスク対応から導かれたか、または法令・契約・自社方針のどれによるか）',
             '除外する場合の理由（自組織の活動に該当しない、という説明が成り立つか）',
@@ -151,6 +151,44 @@ export const iso27001AnnexAControls: GuideArticle = {
         {
           type: 'p',
           text: 'なお、除外できるかどうかはリスクアセスメントの結果次第です。たとえば自社で開発を行っていない企業が開発関連の管理策を除外することはあり得ますが、外部委託で開発している場合は8.30 外部委託による開発が関係してきます。「使っていないから除外」ではなく「自社の業務に登場しないから除外」という筋で考えてください。',
+        },
+        {
+          "type": "h2",
+          "id": "soa-examples",
+          "text": "適用・除外理由と証跡の書き方｜架空の例"
+        },
+        {
+          "type": "p",
+          "text": "以下は記載を考えるための架空の例です。適合性や除外を保証するものではありません。自社の適用範囲、リスク、契約等に照らして見直し、実際の証跡と対応させてください。附属書A以外に必要な管理策も検討対象です。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "管理策",
+            "判断・理由の例",
+            "実施状況・証跡の例"
+          ],
+          "rows": [
+            [
+              "5.18 アクセス権",
+              "適用：退職後のアカウント利用による漏えいリスクに対応するため",
+              "実施：退職手順、権限棚卸し記録、無効化の作業記録。担当者と参照日も記録"
+            ],
+            [
+              "8.13 情報のバックアップ",
+              "適用：業務データ消失に備えて復旧手段を確保するため",
+              "一部実施：バックアップ設定はあるが復元試験は未実施。試験担当・期限を記録し、完了後に結果を参照"
+            ],
+            [
+              "8.30 外部委託による開発",
+              "除外を検討する例：適用範囲内に外部委託による開発がないことを確認した場合。安い・未実施という理由では除外しない",
+              "対象業務と委託契約の確認記録。委託を開始する際に再評価。自社開発の管理策は別途検討"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "実施状況は「適用」と分けて記載します。必要な管理策が未実施なら、除外に置き換えず、担当者・期限・対応計画を残します。証跡欄には自社で管理する文書・記録の参照先を置き、実データを公開デモやGitHub Issueへ貼り付けないでください。"
         },
         {
           type: 'h2',
@@ -188,8 +226,9 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: '紐づけをツール側に持たせると、更新の波及が自動的に追跡され、適用・除外の理由が空欄のまま残っている行も検知しやすくなります。自社が93管理策のどこまで説明できる状態かを先に確かめたい場合は、[ISMS現在地セルフチェック](/research)から始めるとよいでしょう。',
+          text: 'ツールの評価では、リスク・管理策・文書の参照をたどれるか、理由や証跡の不足を確認できるかを試してください。[公開デモ](/dev-login)は架空データでの操作確認に使えます。[5問のセルフチェック](/research)は準備状況を大まかに整理するもので、93管理策の実施状況や適合性は評価しません。',
         },
+        {"type": "p", "text": "規格の現行情報は[ISOのISO/IEC 27001案内](https://www.iso.org/standard/27001)と[ISMS-ACの制度概要](https://isms.jp/isms/about.html)で確認できます（2026年10月9日）。2022年版のほか、追補Amd 1:2024も確認してください。本記事の記載例は規格本文ではなく、独自の整理例です。"},
       ],
       faq: [
         {
@@ -335,7 +374,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         {
           type: 'ol',
           items: [
-            'Control number and name, with every one of the 93 present as a row',
+            'Control number and name, with a record of the Annex A comparison; a 93-row table is one practical format',
             'Whether the control is applicable',
             'Justification for inclusion: which risk treatment led to it, or which legal, contractual or internal requirement did',
             'Justification for exclusion, stated in terms of your activities rather than convenience',
@@ -349,6 +388,44 @@ export const iso27001AnnexAControls: GuideArticle = {
         {
           type: 'p',
           text: 'Whether a control can be excluded follows from the risk assessment. A company that writes no software of its own may reasonably exclude development controls, but if development is outsourced then 8.30 outsourced development comes back into play. The test is not "we do not use it" but "this activity does not occur in our scope".',
+        },
+        {
+          "type": "h2",
+          "id": "soa-examples",
+          "text": "Applicability, exclusion and evidence: fictional examples"
+        },
+        {
+          "type": "p",
+          "text": "These fictional examples help draft entries; they do not guarantee conformity or justify an exclusion for your organization. Review scope, risks and obligations, and link actual evidence. Consider necessary controls beyond Annex A too."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Control",
+            "Example decision and reason",
+            "Example status and evidence"
+          ],
+          "rows": [
+            [
+              "5.18 Access rights",
+              "Include to address the risk of former staff retaining account access",
+              "Implemented: leaver procedure, access reviews and account-disable records; record owner and reference date"
+            ],
+            [
+              "8.13 Information backup",
+              "Include to provide recovery from business-data loss",
+              "Partly implemented: backup configured, restoration test pending; record test owner, deadline and later the result"
+            ],
+            [
+              "8.30 Outsourced development",
+              "Consider exclusion only after confirming no outsourced development within scope. Low cost or non-implementation is not an exclusion reason",
+              "Review activities and supplier contracts; reassess when outsourcing begins. Assess internal-development controls separately"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Keep implementation status separate from applicability. For a necessary control that is not implemented, record an owner, deadline and treatment plan rather than relabeling it excluded. Evidence pointers belong in your internal records; never paste real evidence into the public demo or GitHub issues."
         },
         {
           type: 'h2',
@@ -386,8 +463,9 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'Holding those links in a tool makes the ripple of an update traceable and makes empty justification fields visible. If you first want to see how much of the 93 you can currently explain, start from the [ISMS readiness self-check](/research).',
+          text: 'When evaluating tooling, check whether you can follow risk, control and document references and identify missing reasons or evidence. Try the [public demo](/dev-login) with fictional data. The [five-question self-check](/research) offers a broad starting point; it does not assess the implementation or conformity of all 93 controls.',
         },
+        {"type": "p", "text": "For current edition information, see [ISO’s standard page](https://www.iso.org/standard/27001) and [ISMS-AC’s scheme overview](https://isms.jp/isms/about.html), checked on 9 October 2026. Check Amendment 1:2024 alongside the 2022 edition. The fictional examples here are editorial illustrations, not standard text."},
       ],
       faq: [
         {
@@ -533,7 +611,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         {
           type: 'ol',
           items: [
-            '控制措施编号与名称（附录A全部93项均需成行）',
+            '控制措施编号与名称（记录与附录A的比对；93行表格是一种整理示例）',
             '是否适用的判定',
             '适用理由（来自哪项风险处置，或源于法律法规、合同、内部方针）',
             '不适用时的理由（需结合本组织活动说明为何不涉及）',
@@ -547,6 +625,44 @@ export const iso27001AnnexAControls: GuideArticle = {
         {
           type: 'p',
           text: '能否排除取决于风险评估结果。例如不自行开发软件的企业可以合理排除开发类控制措施，但若采用外包开发，8.30 外包开发仍会涉及。判断标准不是「我们没用」，而是「本组织范围内不存在该活动」。',
+        },
+        {
+          "type": "h2",
+          "id": "soa-examples",
+          "text": "适用、排除理由与证据｜虚构示例"
+        },
+        {
+          "type": "p",
+          "text": "以下为帮助起草的虚构示例，不保证符合性，也不能作为本组织排除的依据。请结合自身范围、风险与义务检查，并关联实际证据。还应考虑附录A之外所需的控制措施。"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "控制措施",
+            "判断与理由示例",
+            "实施状况与证据示例"
+          ],
+          "rows": [
+            [
+              "5.18 访问权限",
+              "适用：应对离职人员仍可使用账户导致的泄露风险",
+              "已实施：离职程序、权限检查与禁用账户记录，并记录负责人及引用日期"
+            ],
+            [
+              "8.13 信息备份",
+              "适用：为业务数据丢失提供恢复手段",
+              "部分实施：已配置备份，但尚未进行恢复测试；记录测试负责人与期限，完成后关联结果"
+            ],
+            [
+              "8.30 外包开发",
+              "仅在确认范围内没有外包开发时考虑排除；不能因费用低或尚未实施而排除",
+              "检查活动与外包合同；开始外包时重新评估，自有开发控制措施另行考虑"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "实施状况与适用性分开记录。必要措施尚未实施时，应保留负责人、期限与处置计划，而非改为排除。证据引用应保留在内部记录中，请勿将实际证据粘贴到公开演示或GitHub Issue。"
         },
         {
           type: 'h2',
@@ -584,8 +700,9 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: '把这些关联交给工具承载，更新的波及范围可被自动追踪，适用与不适用理由仍为空白的行也更容易被发现。若想先确认本公司对93项中的哪些已能说明清楚，可以从[ISMS现状自检](/research)开始。',
+          text: '评价工具时，请检查能否追踪风险、控制措施与文件引用，以及发现理由或证据缺失。可使用虚构数据体验[公开演示](/dev-login)。[五题自检](/research)仅概括准备情况，不评价93项控制措施的实施状况或符合性。',
         },
+        {"type": "p", "text": "现行版本信息请参阅[ISO标准页面](https://www.iso.org/standard/27001)与[ISMS-AC制度概要](https://isms.jp/isms/about.html)（2026年10月9日确认）。除2022版外还应查看Amd 1:2024。本文虚构示例为编辑整理，不是标准原文。"},
       ],
       faq: [
         {

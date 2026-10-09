@@ -501,7 +501,7 @@
     "noteContent": " Demo login reads existing fictional fixtures and creates only an authentication session.",
     "publicNotice": {
       "title": "This is a Build in Public demo",
-      "body": "Riscala AI for ISMS is published to show the current state of an ISMS support application and the process of building practical business software through AI-driven development. You can try it with fictional seeded data, and entered data is reset regularly. Use GitHub for source review, feedback, and collaboration inquiries."
+      "body": "Try document, asset, risk and audit workflows with fictional data. Real registration and commercial contracts are unavailable. Data is shared and resets daily. Do not enter personal or confidential business information or use this as storage for real data."
     },
     "publicLinks": {
       "source": "View source on GitHub",
@@ -828,7 +828,9 @@
           "Audit notification and change history"
         ]
       }
-    }
+    },
+    "backToHome": "Back to home",
+    "publicDemoBadge": "Public research and evaluation demo"
   },
   "pricing": {
     "title": "Pricing Plans",
@@ -1136,9 +1138,9 @@
     "hero": {
       "title": "Riscala AI",
       "titleHighlight": "for ISMS",
-      "subtitle": "Built through AI-driven development.",
+      "subtitle": "A public demo connecting ISMS documents, assets, risks and audits. Explore the implementation with fictional data.",
       "description": "An ISMS operations platform for ISO/IEC 27001 preparation and ongoing operation, connecting documents, information assets, risks, controls, audits, corrective actions, management reviews, and evidence exports.",
-      "publicNote": "The application source code is published. To review the implementation, explore business use, discuss adoption, or propose collaboration, use the public GitHub repository or feedback channel.",
+      "publicNote": "This research and evaluation demo does not accept real user registration or commercial contracts. Data resets daily. Do not enter personal or confidential business information. AI primarily describes the development approach; live AI assistance with real data is not promised.",
       "cta": {
         "startTrial": "Start 14-Day Free Trial",
         "watchDemo": "Watch Demo",
@@ -1198,13 +1200,14 @@
           "title": "Published code and contact",
           "body": "Review the implementation in the public repository and contact us about use, adoption, or collaboration."
         }
-      }
+      },
+      "demoButton": "Try the public demo"
     },
     "features": {
-      "title": "Why Choose Riscala AI for ISMS",
-      "subtitle": "Build and operate ISMS efficiently without consultants",
+      "title": "Explore the current demo",
+      "subtitle": "Try document, risk, task and audit workflows in a fictional organization",
       "learnMore": "Learn more",
-      "allFeatures": "All features included in every plan",
+      "allFeatures": "For evaluation; certification is not guaranteed",
       "list": {
         "documentManagement": {
           "title": "Smart Document Management",
@@ -1212,11 +1215,11 @@
         },
         "riskAssessment": {
           "title": "Intuitive Risk Assessment",
-          "description": "Visualize risks with drag & drop. Track mitigation status at a glance."
+          "description": "Review assessments and treatments in the risk register and matrix."
         },
         "taskManagement": {
           "title": "Task Automation",
-          "description": "Auto-generate tasks for certification. Prevent oversights with deadline management and reminders."
+          "description": "Inspect owners, deadlines and progress, and try task management with fictional data."
         },
         "auditSupport": {
           "title": "Audit Support",
@@ -1303,43 +1306,43 @@
       }
     },
     "process": {
-      "title": "Get Started in 3 Steps",
-      "subtitle": "A process that fits first-time preparation and ongoing operation",
-      "support": "Dedicated support follows every step",
+      "title": "How to explore the public demo",
+      "subtitle": "Explore the current implementation without registration, then read relevant guides",
+      "support": "Do not enter personal or confidential business information",
       "step1": {
-        "title": "Create Account",
-        "time": "5 minutes",
-        "description": "Enter your organization details and start your 14-day free trial. Optimal templates are auto-selected based on your company size and industry"
+        "title": "Choose a fictional organization and role",
+        "time": "No registration",
+        "description": "Use “Try the public demo” to sign in with a prepared organization and user."
       },
       "step2": {
-        "title": "Build ISMS",
-        "time": "3-6 months",
-        "description": "Follow the guide to create documents, conduct risk assessments, and perform internal audits"
+        "title": "Try the workflows",
+        "time": "Evaluate with fictional data",
+        "description": "Inspect documents, assets, risks and audits. Demo data is shared and resets daily; use it only for evaluation."
       },
       "step3": {
-        "title": "Prepare for Audit",
-        "time": "Audit period",
-        "description": "Organize required documents and records as an audit preparation package for gap checks and stakeholder review"
+        "title": "Read guides or join research",
+        "time": "Participation is optional",
+        "description": "Read the practical guides. The five-question self-check and public GitHub research form are optional."
       }
     },
     "faq": {
       "title": "Frequently Asked Questions",
       "items": {
         "q1": {
-          "question": "How long does ISO27001 certification take?",
-          "answer": "Timing depends on company size and current status. Riscala AI for ISMS helps organize scope, documents, risks, controls, and audit preparation in one flow so gaps are easier to find."
+          "question": "Can I register or use this commercially?",
+          "answer": "The public demo is for research and evaluation. Real registration and commercial contracts are unavailable; pricing and support terms are undecided."
         },
         "q2": {
-          "question": "Can we really achieve certification without consultants?",
-          "answer": "Riscala AI for ISMS makes required information, approval status, and missing evidence easier to see so teams can prepare in-house. It does not guarantee certification or acceptance by an auditor."
+          "question": "What can I try in the demo?",
+          "answer": "Use prepared fictional organizations and roles to explore documents, assets, risks and audits. Data is shared and resets daily. Do not enter personal or confidential business information."
         },
         "q3": {
-          "question": "Can it integrate with existing document management systems?",
-          "answer": "We support import/export in Word/Excel formats. API integration is available for Standard plans and above."
+          "question": "Does AI automatically obtain certification?",
+          "answer": "AI primarily refers to AI-driven development. Live AI assistance with real data, certification and audit outcomes are not guaranteed."
         },
         "q4": {
-          "question": "Is it secure?",
-          "answer": "Data is encrypted and protected with role-based access control. Export options also help with company backups and off-boarding."
+          "question": "How do guides, self-check and research differ?",
+          "answer": "Guides provide general practical information. The five-question self-check gives a broad starting point. Only interested participants continue to the public GitHub form; no internal company information is needed."
         }
       },
       "stillHaveQuestions": "Still have questions?",
@@ -1360,7 +1363,7 @@
       "researchNote": "Answers are not sent by this app. A GitHub submission is public and associated with the submitting GitHub account."
     },
     "footer": {
-      "tagline": "Simplifying ISO27001 certification for growing businesses worldwide",
+      "tagline": "A public research and evaluation demo for ISMS workflows",
       "product": {
         "title": "Product",
         "features": "Features",
@@ -1371,15 +1374,15 @@
         "guide": "Guide"
       },
       "company": {
-        "title": "Company",
+        "title": "Public project",
         "about": "About Us",
         "contact": "Contact",
-        "feedback": "Feedback and inquiries",
+        "feedback": "Public feedback on GitHub",
         "privacy": "Privacy Policy",
         "terms": "Terms of Service"
       },
       "support": {
-        "title": "Support",
+        "title": "Guides and research",
         "help": "Help Center",
         "docs": "Documentation",
         "status": "System Status"
@@ -1388,7 +1391,8 @@
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
       "cookiePolicy": "Cookie Policy"
-    }
+    },
+    "publicFeedbackNotice": "GitHub posts are public and linked to your account. Do not post personal information, confidential business information or security vulnerabilities. See SECURITY.md in the repository for security reporting."
   },
   "research": {
     "metadata": {
@@ -1399,7 +1403,7 @@
     "title": "Get a quick ISMS self-check",
     "description": "Answer five fixed-choice questions to see a coarse orientation across three result bands. Your answers are not sent by this app.",
     "privacyTitle": "How your answers are handled",
-    "privacyNotice": "Your answers are used only in this browser's memory and are not transmitted by this app. If you are interested in a research interview, you can choose the public GitHub form on the result screen. A GitHub issue submission is public and associated with the submitting GitHub account.",
+    "privacyNotice": "Answers are scored only in browser memory and are not stored or submitted. Existing analytics covers start, completion, research-link clicks and the result band, not individual answers. Opening or submitting the GitHub research form is optional. Submitted issues are public and associated with your GitHub account.",
     "disclaimer": "This is a research self-check. It is not an audit, certification, legal opinion, or conformity determination, and it does not guarantee or replace any of them.",
     "howItWorks": {
       "title": "Three steps",
@@ -1413,8 +1417,8 @@
           "description": "The answers are totaled in this browser and shown as exploring, preparing, or operating."
         },
         "three": {
-          "title": "Choose whether to participate",
-          "description": "If you are interested, continue to the public GitHub form from the result screen."
+          "title": "Continue to guides or demo",
+          "description": "Read relevant articles or try the demo. Research participation is optional."
         }
       }
     },
@@ -1451,7 +1455,15 @@
       "interviewTitle": "Interested in a research interview?",
       "interviewDescription": "If you would like to help shape the product research, share your interest through the public GitHub form. The form uses fixed choices and a public-data acknowledgment only.",
       "interviewButton": "Open the public GitHub form",
-      "githubNotice": "Submitting on GitHub creates a public issue associated with the submitting GitHub account. Please do not enter a name, organization, email address, phone number, or other personal information."
+      "githubNotice": "Submitted issues are public and associated with your GitHub account. Do not enter names, organization details, contact details, internal policies, risk registers, evidence or confidential business information.",
+      "nextTitle": "Read next",
+      "demoButton": "Try the public demo with fictional data",
+      "guideLabels": {
+        "process": "Certification process",
+        "risk": "Risk assessment",
+        "documents": "Required documents and records",
+        "controls": "Annex A and the SoA"
+      }
     },
     "bands": {
       "exploring": {
@@ -1472,12 +1484,12 @@
   "guide": {
     "metadata": {
       "title": "ISO 27001 (ISMS) Certification Guide | Riscala AI for ISMS",
-      "description": "Practical guides on ISMS certification cost, timeline, risk assessment, required documents, and how ISO 27001 compares with the Japanese Privacy Mark."
+      "description": "Practical guides to ISMS cost estimates, certification steps, risks, documents, Privacy Mark differences and Annex A controls."
     },
     "eyebrow": "Guide",
     "heroLink": "Read the ISMS guide",
     "hubTitle": "ISO 27001 (ISMS) Certification Guide",
-    "hubDescription": "Cost, timeline, risk assessment, required documents, and how ISMS compares with the Privacy Mark, explained in the order an IT company actually works through them.",
+    "hubDescription": "Choose from six guides covering cost estimates, certification steps, risks, documents, Privacy Mark and Annex A.",
     "breadcrumbHome": "Home",
     "breadcrumbGuide": "Guide",
     "toc": "Table of contents",
@@ -1487,8 +1499,8 @@
     "updated": "Last updated",
     "readArticle": "Read article",
     "cta": {
-      "title": "Check where your ISMS stands in 5 questions",
-      "description": "Answers are processed only in your browser and are never sent from this app.",
+      "title": "Next: try the workflows or check your starting point",
+      "description": "Try the public demo with fictional data. The five-question research self-check gives a broad starting point; it is not an audit or a control-by-control assessment. Answers are not submitted, though usage events and the result band are part of existing analytics. Research participation is optional.",
       "button": "Start the self-check"
     },
     "disclaimer": "This article is for general information only and does not guarantee any audit outcome or certification. Schemes and costs change, so confirm the latest details with certification bodies."
