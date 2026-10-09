@@ -86,6 +86,6 @@ CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium REVIEW_OUTPUT_DIR=/tmp/riscala-review
 - 通常build：Google FontsのInter/Noto Sans JP取得失敗で停止。テスト専用フォント応答を使ったbuildは成功。Google Fonts、middleware規約の既存警告・外部接続条件を変えない。
 - 画面証拠：ローカル `/tmp/riscala-review-evidence/` にhome/cost/research/annexの1440px/390px画像と `checks.json`。公開リポジトリには生成画像・ローカルDBを含めない。
 - 本番 `https://riscala-ai.com/`：CONNECT 403。CLIのGitHub GraphQL照会：403。通信拒否を迂回せず、本番HTTP・本番デモ・既存PRの再照会は未確認。
-- GitHubコネクターは未呼び出しのため、そこでの接続可否は未確認。GitHub APIに依存するDraft PR作成は別途必要。
+- GitHubコネクターの標準readは成功し、CLIの403は再現しなかった。Draft [PR #21](https://github.com/rx-tomo/pjt007-isms-public/pull/21)を作成。mainは未変更で独立レビュー待ち。本番CONNECTの拒否を迂回する通信設定変更は行っていない。
 
 ローカルDB準備では既存provisionスクリプトが `DBP_VERIFY_FAILED`、schema全ファイル指定が同名index重複で失敗した。検証専用の新規temp DBをschemaの単一export入口 `lib/db/drizzle/schema/index.ts` から作成し、既存の架空fixtureをseedしてブラウザ検証した。DB機能・schema・provisionスクリプトは変更していない。これはローカル検証環境の準備結果であり、本番DBを変更したものではない。
