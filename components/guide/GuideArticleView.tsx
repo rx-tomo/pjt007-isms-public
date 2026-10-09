@@ -62,11 +62,14 @@ function FaqSection({ faq, locale, label }: { faq: readonly GuideFaq[]; locale: 
   );
 }
 
-function ResearchCta({ locale, title, description, button }: { locale: string; title: string; description: string; button: string }) {
+function ResearchCta({ locale, title, description, button, demoButton }: { locale: string; title: string; description: string; button: string; demoButton: string }) {
   return (
     <section className="mt-14 rounded-2xl bg-gradient-to-br from-primary-50 via-surface to-secondary-50 p-8 text-center">
       <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
       <p className="mt-3 text-text-secondary">{description}</p>
+      <Link href={`/${locale}/dev-login`} className="mt-6 mr-3 inline-flex rounded-lg bg-accent px-6 py-3 font-medium text-accent-foreground hover:bg-primary-700">
+        {demoButton}
+      </Link>
       <Link href={`/${locale}/research`} className="mt-6 inline-flex rounded-lg bg-accent px-6 py-3 font-medium text-accent-foreground hover:bg-primary-700">
         {button}
       </Link>
@@ -76,6 +79,7 @@ function ResearchCta({ locale, title, description, button }: { locale: string; t
 
 export default async function GuideArticleView({ article, locale }: GuideArticleViewProps) {
   const t = await getTranslations({ locale, namespace: 'guide' });
+  const landing = await getTranslations({ locale, namespace: 'landing.hero' });
   const content = article.content[locale];
   const siteUrl = getSiteUrl();
   const related = getRelatedGuides(article);
@@ -111,7 +115,7 @@ export default async function GuideArticleView({ article, locale }: GuideArticle
 
         <FaqSection faq={content.faq} locale={locale} label={t('faq')} />
 
-        <ResearchCta locale={locale} title={t('cta.title')} description={t('cta.description')} button={t('cta.button')} />
+        <ResearchCta locale={locale} title={t('cta.title')} description={t('cta.description')} button={t('cta.button')} demoButton={landing('demoButton')} />
 
         <p className="mt-10 text-xs leading-6 text-text-muted">{t('disclaimer')}</p>
       </div>

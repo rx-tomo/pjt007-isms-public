@@ -85,6 +85,7 @@ export default function FAQSection() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
+            <p className="mt-4 text-xs leading-6 text-text-muted">{t('landing.publicFeedbackNotice')}</p>
           </div>
         </div>
       </div>

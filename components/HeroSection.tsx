@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
-import { PUBLIC_REPOSITORY_ISSUES_URL, PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
+import { PUBLIC_REPOSITORY_URL } from '@/lib/publicLinks';
 
 const AUTO_ADVANCE_MS = 5000;
 
@@ -98,7 +98,7 @@ export default function HeroSection() {
               href={`/${locale}/dev-login`}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-accent-foreground bg-accent rounded-lg hover:bg-primary-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
             >
-              {t('common.devLogin')}
+              {t('landing.hero.demoButton')}
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -117,14 +117,12 @@ export default function HeroSection() {
             >
               {t('common.publicLinks.source')}
             </a>
-            <a
-              href={PUBLIC_REPOSITORY_ISSUES_URL}
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href={`/${locale}/research`}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-text-secondary bg-surface border-2 border-border rounded-lg hover:text-accent hover:border-accent transition-colors duration-200"
             >
-              {t('common.publicLinks.feedback')}
-            </a>
+              {t('landing.cta.researchButton')}
+            </Link>
           </div>
 
           {/* Trust indicators */}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState } from 'react';
 import { PUBLIC_RESEARCH_INTERVIEW_URL } from '@/lib/publicLinks';
 
@@ -12,6 +13,12 @@ declare global {
     dataLayer?: Array<Record<string, unknown>>;
   }
 }
+
+const NEXT_GUIDES = {
+  exploring: [{ slug: 'iso27001-certification-process', label: 'process' }, { slug: 'isms-risk-assessment', label: 'risk' }],
+  preparing: [{ slug: 'isms-required-documents', label: 'documents' }, { slug: 'iso27001-annex-a-controls', label: 'controls' }],
+  operating: [{ slug: 'iso27001-annex-a-controls', label: 'controls' }, { slug: 'isms-risk-assessment', label: 'risk' }],
+} as const;
 
 const QUESTION_COUNT = 5;
 const QUESTION_KEYS = ['scope', 'risk', 'evidence', 'response', 'improvement'] as const;
@@ -47,6 +54,7 @@ function getResultBand(score: number): ResultBand {
 
 export default function ResearchAssessment() {
   const t = useTranslations('research');
+  const locale = useLocale();
   const [screen, setScreen] = useState<Screen>('intro');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -85,7 +93,7 @@ export default function ResearchAssessment() {
   };
 
   return (
-    <section className="bg-gradient-to-br from-primary-50 via-surface to-secondary-50 px-4 py-20 sm:px-6 lg:px-8">
+    <section className="bg-gradient-to-br from-primary-50 via-surface to-secondary-50 px-4 pb-20 pt-28 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-10 text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
@@ -202,6 +210,22 @@ export default function ResearchAssessment() {
               <p className="mt-4 text-lg leading-8 text-text-secondary">
                 {t(`bands.${resultBand}.description`)}
               </p>
+
+              <nav aria-label={t('result.nextTitle')} className="mt-8 rounded-xl border border-border p-6">
+                <h3 className="text-xl font-semibold text-text-primary">{t('result.nextTitle')}</h3>
+                <ul className="mt-4 space-y-3">
+                  {NEXT_GUIDES[resultBand].map((guide) => (
+                    <li key={guide.slug}>
+                      <Link href={`/${locale}/guide/${guide.slug}`} className="font-semibold text-accent underline underline-offset-4">
+                        {t(`result.guideLabels.${guide.label}`)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link href={`/${locale}/dev-login`} className="mt-5 inline-flex rounded-xl bg-accent px-5 py-3 font-semibold text-accent-foreground">
+                  {t('result.demoButton')}
+                </Link>
+              </nav>
 
               <div className="mt-8 rounded-xl border border-primary-200 bg-primary-50 p-6">
                 <h3 className="text-xl font-semibold text-primary-950">{t('result.interviewTitle')}</h3>
