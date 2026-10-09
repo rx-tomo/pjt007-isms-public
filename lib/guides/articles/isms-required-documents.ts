@@ -3,7 +3,7 @@ import type { GuideArticle } from '../types';
 export const ismsRequiredDocuments: GuideArticle = {
   slug: 'isms-required-documents',
   publishedAt: '2026-09-10',
-  updatedAt: '2026-09-10',
+  updatedAt: '2026-10-09',
   related: ['iso27001-certification-process', 'isms-risk-assessment', 'iso27001-annex-a-controls'],
   content: {
     ja: {
@@ -188,7 +188,7 @@ export const ismsRequiredDocuments: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'この作業をツール側に寄せると、承認履歴と版数が自動的に残り、レビュー期限の抜けも検知しやすくなります。まず自社にどの文書が足りていないかを確かめたい場合は、[ISMS現在地セルフチェック](/research)から始めるとよいでしょう。',
+          text: 'この作業をツール側に寄せると、承認履歴と版数が自動的に残り、レビュー期限の抜けも検知しやすくなります。[5問のISMS現在地セルフチェック](/research)では、準備状況を大まかに振り返れます。文書ごとの不足や全管理策の実施状況・適合性を判定するものではありません。必要な文書の確認は、本記事の一覧を出発点に、自社の適用範囲・リスク・規格の要求と照らして行ってください。',
         },
       ],
       faq: [
@@ -413,7 +413,7 @@ export const ismsRequiredDocuments: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'Moving that bookkeeping into a tool leaves approval history and versions in place automatically and makes missed review dates easier to spot. If you first want to see which documents you are missing, the [ISMS readiness self-check](/research) is a reasonable place to start.',
+          text: 'Moving that bookkeeping into a tool leaves approval history and versions in place automatically and makes missed review dates easier to spot. The [five-question ISMS readiness self-check](/research) offers a broad reflection on preparation. It does not identify missing documents or assess the implementation or conformity of all controls. Use the lists in this article as a starting point to review documents against your scope, risks and the standard’s requirements.',
         },
       ],
       faq: [
@@ -636,7 +636,7 @@ export const ismsRequiredDocuments: GuideArticle = {
         },
         {
           type: 'p',
-          text: '把这部分工作交给工具，审批履历与版本会自动留存，复核期限的遗漏也更容易发现。若想先确认本组织缺少哪些文件，可以从[ISMS现状自查](/research)开始梳理容易缺失的项目。',
+          text: '把这部分工作交给工具，审批履历与版本会自动留存，复核期限的遗漏也更容易发现。[五题ISMS现状自查](/research)仅用于大致回顾准备情况，不识别缺失文件，也不判定全部控制措施的实施状况或符合性。请以本文清单为起点，结合自身适用范围、风险与标准要求检查所需文件。',
         },
       ],
       faq: [
