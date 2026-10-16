@@ -153,7 +153,6 @@ export default function ProjectStructureManager({
 
   useEffect(() => {
     loadStructure()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId])
 
   const handleRoleFormChange = (field: keyof RoleFormState, value: string | number | boolean) => {

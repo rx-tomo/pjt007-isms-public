@@ -81,7 +81,6 @@ async function main() {
 
   const results = [];
   for (const route of ROUTES) {
-    // eslint-disable-next-line no-await-in-loop
     const result = await testRoute(route);
     results.push(result);
   }
