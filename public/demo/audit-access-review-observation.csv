@@ -1,0 +1,4 @@
+scenario,sample_account,permissions_list,review_date,reviewer,approval_record,observation
+DEMO-ACCESS-001,DEMO-ACCESS-01,present,missing,unassigned,missing,Fictional audit observation only; correction and effectiveness not established
+DEMO-ACCESS-001,DEMO-ACCESS-02,present,missing,unassigned,missing,Fictional audit observation only
+DEMO-ACCESS-001,DEMO-ACCESS-03,present,missing,unassigned,missing,Fictional audit observation only

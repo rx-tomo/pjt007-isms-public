@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import AuditCorrectiveDemoGuide from '@/components/demo/AuditCorrectiveDemoGuide'
 import { useAuditAccess } from '@/lib/hooks/useAuditAccess'
 import {
   AuditService,
@@ -338,6 +339,8 @@ export default function NonconformitiesPage() {
         <h1 className="text-2xl font-semibold text-text-primary">{t('nonconformities.title')}</h1>
         <p className="mt-1 text-sm text-text-secondary">{t('nonconformities.description')}</p>
       </div>
+
+      {nonconformities.some(nc => nc.id === '7c050000-0000-4000-8000-000200000091') && <AuditCorrectiveDemoGuide locale={locale} showLinks />}
 
       {toast && (
         <div

@@ -68,7 +68,7 @@ export class UserService {
 
   private async getCurrentUserViaApi(): Promise<CurrentUserProfile | null> {
     try {
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch('/api/profile', {
         method: 'GET',
         credentials: 'include',
         cache: 'no-store',

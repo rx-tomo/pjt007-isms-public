@@ -480,6 +480,19 @@ export default function AuditPlanDetailPage(
     }
   }
 
+  const handleFollowUpAssigneeChange = async (recordId: string, assignedTo: string) => {
+    setFollowUpActionId(recordId)
+    setError(null)
+    try {
+      await auditService.updateFollowUpRecord(recordId, { assignedTo: assignedTo || null })
+      await loadFollowUpRecords()
+    } catch {
+      setError(t('followUp.toast.updateFailed'))
+    } finally {
+      setFollowUpActionId(null)
+    }
+  }
+
   const renderStatusBadge = (status: AuditStatus) => {
     const tone: Record<AuditStatus, string> = {
       planning: 'bg-surface-elevated text-text-primary',
@@ -947,6 +960,20 @@ export default function AuditPlanDetailPage(
                                 {record.description}
                               </p>
                             )}
+
+                            <label className="mt-3 flex max-w-sm flex-col gap-1 text-xs text-text-secondary">
+                              <span>{t('followUp.assignedTo')}</span>
+                              <select
+                                data-testid={`follow-up-assignee-${record.id}`}
+                                value={record.assigned_to || ''}
+                                disabled={followUpActionId === record.id}
+                                onChange={event => void handleFollowUpAssigneeChange(record.id, event.target.value)}
+                                className="rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                              >
+                                <option value="">{t('followUp.selectAssignee')}</option>
+                                {availableUsers.map(user => <option key={user.id} value={user.id}>{user.full_name || user.email}</option>)}
+                              </select>
+                            </label>
 
                             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-text-muted">
                               {assigneeName && (

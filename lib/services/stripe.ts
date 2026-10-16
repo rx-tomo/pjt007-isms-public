@@ -651,10 +651,10 @@ export class StripeService {
   ): Promise<{ url: string }> {
     // キー未設定でもAPIを呼ぶ（サーバー側が /mock/portal URL を返す）。
     // クライアントから getDb() は使えないため、organizationId は呼び出し側から受け取り、
-    // 未指定時のみ /api/auth/profile から解決する
+    // 未指定時のみ /api/profile から解決する
     let orgId = organizationId ?? null
     if (!orgId) {
-      const profileResponse = await fetch('/api/auth/profile')
+      const profileResponse = await fetch('/api/profile')
       if (!profileResponse.ok) throw new Error('Not authenticated')
       const profilePayload = await profileResponse.json()
       orgId = profilePayload?.profile?.organization_id ?? profilePayload?.organization_id ?? null

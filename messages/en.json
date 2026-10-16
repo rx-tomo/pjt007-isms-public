@@ -830,7 +830,22 @@
       }
     },
     "backToHome": "Back to home",
-    "publicDemoBadge": "Public research and evaluation demo"
+    "publicDemoBadge": "Public research and evaluation demo",
+    "auditScenario": {
+      "title": "Try a corrective action from an audit finding",
+      "intro": "Fictional scenario: the quarterly access review record cannot be found. DEMO-ACCESS-001 starts open and unassigned.",
+      "start": "Start as Inoue (organization administrator)",
+      "assignment": "1. In the audit plan follow-ups, choose an assignee for the initial correction and start the work. Assignment is stored on the follow-up record.",
+      "action": "2. In nonconformities, find DEMO-ACCESS-001, investigate the cause hypothesis, and save the corrective action, deadline and progress.",
+      "evidence": "3. Save a fictional review date, scope, result and record location in the checklist evidence text field.",
+      "decision": "4. Review the result before recording completion. Leave the next-cycle effectiveness check open; the first correction alone does not establish recurrence prevention.",
+      "limits": "These steps use separate screens. File attachments are unavailable in the public demo; evidence text can be saved. Closure approval is a separate submission after saving the corrective action, and does not automatically establish approval or effectiveness.",
+      "reset": "Data is shared and reset daily. Another visitor may have progressed the scenario. The daily seed recreates the starting state. Do not enter real data.",
+      "plan": "Open assignment and follow-ups",
+      "checklist": "Open evidence text",
+      "sample": "Fictional audit observation (CSV)",
+      "prepareError": "The corrective-action scenario could not be prepared. Please try again shortly."
+    }
   },
   "pricing": {
     "title": "Pricing Plans",
