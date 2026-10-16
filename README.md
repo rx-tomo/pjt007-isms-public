@@ -17,6 +17,7 @@ You can try the current public demo here:
 
 - [Public demo site](https://riscala-ai.com)
 - [Demo login](https://riscala-ai.com/ja/dev-login)
+- [Audit finding → corrective action walkthrough](docs/06-operations/audit-corrective-demo.md)
 
 The demo is intended for hands-on evaluation with seeded fictional tenants and users. Use Demo login to inspect and write sample data. Demo data is reset to the seed state once per day, so entered data is not retained.
 

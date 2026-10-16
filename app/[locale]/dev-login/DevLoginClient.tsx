@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import AuditCorrectiveDemoGuide from '@/components/demo/AuditCorrectiveDemoGuide'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import type { PublicDemoCatalog, PublicDemoPersona } from '@/lib/demo/contract'
@@ -18,6 +19,7 @@ export default function DevLoginClient() {
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const scenarios = useMemo(() => catalog?.scenarios ?? [], [catalog])
+  const auditPersona = scenarios.find(scenario => scenario.scenarioId === 'practical-surveillance' && scenario.availability === 'ready')?.personas.find(persona => persona.personaId === 'practical-surveillance-org-admin-secretariat')
   const translate = useCallback((key: string, fallback = 'title') => (
     t.has(key) ? t(key as never) : t(fallback as never)
   ), [t])
@@ -42,7 +44,7 @@ export default function DevLoginClient() {
     return () => { cancelled = true }
   }, [translate])
 
-  async function login(persona: PublicDemoPersona) {
+  async function login(persona: PublicDemoPersona, redirectPath = persona.redirectPath, initializeAuditDemo = false) {
     setError(null)
     setActivePersonaId(persona.personaId)
     try {
@@ -57,7 +59,11 @@ export default function DevLoginClient() {
         const message = payload?.message ?? payload?.error
         throw new Error(typeof message === 'string' ? message : translate('loginError', 'userSelector.loadError'))
       }
-      router.push(`/${params.locale}${persona.redirectPath}`)
+      if (initializeAuditDemo) {
+        const scenarioResponse = await fetch('/api/demo/audit-corrective-scenario', { method: 'POST', credentials: 'same-origin' })
+        if (!scenarioResponse.ok) throw new Error(t('auditScenario.prepareError'))
+      }
+      router.push(`/${params.locale}${redirectPath}`)
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : translate('loginError', 'userSelector.loadError'))
       setActivePersonaId(null)
@@ -79,6 +85,10 @@ export default function DevLoginClient() {
           </div>
         </header>
         <section className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-950"><h2 className="font-semibold">{t('publicNotice.title')}</h2><p className="mt-1 leading-6">{t('publicNotice.body')}</p><p className="mt-3 text-xs leading-6">{feedbackNotice('publicFeedbackNotice')}</p></section>
+        <div className="space-y-3">
+          <AuditCorrectiveDemoGuide locale={params.locale} />
+          <button type="button" data-testid="start-audit-corrective-demo" disabled={!auditPersona || activePersonaId !== null} onClick={() => auditPersona && void login(auditPersona, '/audit/nonconformities', true)} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">{t('auditScenario.start')}</button>
+        </div>
         <section className="space-y-4">
           <div><h2 className="text-lg font-semibold text-text-primary">{translate('personas.title', 'selectRole')}</h2><p className="mt-1 text-sm text-text-secondary">{translate('personas.description', 'description')}</p></div>
           {status === 'loading' && <div className="rounded-xl border border-border bg-surface px-5 py-4 text-sm text-text-secondary">{tCommon('loading')}</div>}

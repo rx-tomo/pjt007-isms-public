@@ -7,6 +7,7 @@ import { auditChecklists, auditEvidence, auditPlans, auditReports, auditTeamMemb
 import { AuditService, isAuditTenantMutationError } from '@/lib/services/audit'
 import type {
   AuditPlan,
+  AuditChecklist,
   AuditReport,
   AuditStatus,
   AuditType,
@@ -1017,6 +1018,42 @@ export async function PATCH(request: NextRequest) {
 
       const data = await service.updateAuditPlan(body.id, updates)
       return applyCookies(NextResponse.json(data))
+    }
+
+    if (body.resourceType === 'checklist') {
+      const [context] = await db.select({ organizationId: auditPlans.organizationId })
+        .from(auditChecklists)
+        .innerJoin(auditPlans, eq(auditChecklists.auditPlanId, auditPlans.id))
+        .where(eq(auditChecklists.id, body.id)).limit(1)
+      if (!context?.organizationId) return applyCookies(NextResponse.json({ error: 'Checklist not found' }, { status: 404 }))
+      const access = await getOrganizationAccess(db, user.id, context.organizationId)
+      if (!access.hasAccess || !access.canManageAudit) return applyCookies(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      const value = isRecord(body.updates) ? body.updates : {}
+      const updates: Partial<AuditChecklist> = {}
+      if ('status' in value) {
+        if (typeof value.status !== 'string' || !['not_started', 'in_progress', 'completed'].includes(value.status)) return applyCookies(badRequest('Invalid checklist status'))
+        updates.status = value.status as AuditChecklist['status']
+      }
+      if ('result' in value) {
+        if (value.result !== null && (typeof value.result !== 'string' || !['conformity', 'minor_nc', 'major_nc', 'observation', 'not_applicable'].includes(value.result))) return applyCookies(badRequest('Invalid checklist result'))
+        updates.result = value.result as AuditChecklist['result']
+      }
+      for (const key of ['findings', 'evidence_provided'] as const) {
+        if (key in value) {
+          if (typeof value[key] !== 'string' && value[key] !== null) return applyCookies(badRequest('Invalid checklist text'))
+          updates[key] = value[key] as string | null
+        }
+      }
+      if ('auditor_id' in value) {
+        if (typeof value.auditor_id !== 'string' && value.auditor_id !== null) return applyCookies(badRequest('Invalid checklist auditor'))
+        if (typeof value.auditor_id === 'string' && value.auditor_id) {
+          const assigneeAccess = await getOrganizationAccess(db, value.auditor_id, context.organizationId)
+          if (!assigneeAccess.hasAccess || !assigneeAccess.canManageAudit) return applyCookies(NextResponse.json({ error: 'Forbidden auditor assignment' }, { status: 403 }))
+        }
+        updates.auditor_id = value.auditor_id || null
+      }
+      if (Object.keys(updates).length === 0) return applyCookies(badRequest('No checklist updates'))
+      return applyCookies(NextResponse.json(await service.updateChecklist(body.id, updates)))
     }
 
     if (body.resourceType === 'nonconformity') {

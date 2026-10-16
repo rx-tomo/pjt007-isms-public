@@ -8,6 +8,7 @@
  */
 
 import fs from 'node:fs';
+import { buildAuditCorrectiveDemo } from './audit-corrective-demo-fixture.mjs';
 import { randomUUID } from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
@@ -718,6 +719,16 @@ const auditEvidenceSeed = [
 const followUpRecordsSeed = [
   followUpRecord('surveillance', '01', '02', '01', '訓練後改善タスクの週次確認', '期限超過した改善タスクを週次確認へ載せ、完了まで追跡する。', '04', 'in_progress', '2026-06-18', null, null, null, '03'),
 ];
+
+// Recreate the additive audit-start scenario on every normal surveillance reset.
+const auditStartDemo = buildAuditCorrectiveDemo();
+for (const [target, table] of [
+  [auditPlans, 'audit_plans'], [auditTeamMembers, 'audit_team_members'],
+  [auditChecklists, 'audit_checklists'], [nonconformitiesSeed, 'nonconformities'],
+  [correctiveActionsSeed, 'corrective_actions'], [followUpRecordsSeed, 'follow_up_records'],
+]) {
+  target.push(...auditStartDemo[table].map(row => ({ scenario: 'surveillance', ...row })));
+}
 
 const approvalRequestsSeed = [
   approvalRequest('initial', '01', 'document', id('initial', 'document', '02'), '02', '03', 1),

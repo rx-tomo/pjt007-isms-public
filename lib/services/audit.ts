@@ -962,6 +962,10 @@ export class AuditService {
   }
 
   async updateChecklist(checklistId: string, updates: Partial<AuditChecklist>): Promise<AuditChecklist> {
+    if (typeof window !== 'undefined') {
+      return this.mutateAuditApi<AuditChecklist>('PATCH', { resourceType: 'checklist', id: checklistId, updates })
+    }
+
     const repo = await this.getRepository()
     const data = await repo.updateChecklist(checklistId, updates)
 

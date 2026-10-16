@@ -15,6 +15,7 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/cron/reset-demo': [
       './scripts/seed-practical-verification.mjs',
+      './scripts/audit-corrective-demo-fixture.mjs',
       './scripts/database-invariant-application.mjs',
       './scripts/database-invariant-definitions.mjs',
       './scripts/database-invariant-raw-definitions.mjs',

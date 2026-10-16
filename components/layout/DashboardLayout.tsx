@@ -523,7 +523,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, locale, hea
       try {
         const userResponse = headerSummary
           ? null
-          : await fetch('/api/auth/profile', {
+          : await fetch('/api/profile', {
               method: 'GET',
               credentials: 'include',
               cache: 'no-store',

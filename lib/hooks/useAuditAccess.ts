@@ -28,7 +28,7 @@ export function useAuditAccess(): AuditAccessState {
 
     async function verifyAccess() {
       try {
-        const response = await fetch('/api/auth/profile', {
+        const response = await fetch('/api/profile', {
           method: 'GET',
           credentials: 'include',
           cache: 'no-store',
