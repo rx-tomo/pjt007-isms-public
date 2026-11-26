@@ -38,7 +38,10 @@ try {
   const page = await context.newPage();
   const brokenPaths = ['/about', '/contact', '/privacy', '/terms', '/help', '/docs', '/status', '/cookies'];
   for (const locale of ['ja', 'en', 'zh']) {
-    for (const route of ['', '/guide', '/research', '/resources', '/interviews/isms-operations', '/isms-operations-impact', ...slugs.map(slug => `/guide/${slug}`)]) {
+    const retiredPath = `/${locale}/isms-operations-impact`;
+    const retired = await context.request.get(`${base}${retiredPath}`, { maxRedirects: 0 });
+    assert.equal(retired.status(), 410, retiredPath);
+    for (const route of ['', '/guide', '/research', '/resources', '/interviews/isms-operations', ...slugs.map(slug => `/guide/${slug}`)]) {
       const urlPath = `/${locale}${route}`;
       const response = await page.goto(`${base}${urlPath}`);
       assert.equal(response.status(), 200, urlPath);
@@ -47,6 +50,7 @@ try {
       assert(await page.locator('meta[name="description"]').getAttribute('content'), `${urlPath}: description`);
       const robots = page.locator('meta[name="robots"]');
       assert(!/noindex/i.test(await robots.count() ? await robots.getAttribute('content') : ''), urlPath);
+      assert.equal(await page.locator('a[href*="isms-operations-impact"]').count(), 0, urlPath);
       const footerHrefs = await page.locator('footer a').evaluateAll(links => links.map(link => link.getAttribute('href')));
       assert(!footerHrefs.some(href => brokenPaths.some(broken => href === `/${locale}${broken}`)), `${urlPath}: dead footer`);
       if (route.startsWith('/guide/')) {
@@ -68,7 +72,8 @@ try {
     const body = await response.text();
     assert(body.includes(canonicalOrigin));
     if (endpoint === '/sitemap.xml') {
-      assert.equal((body.match(/<loc>/g) || []).length, 3 * (6 + slugs.length));
+      assert.equal((body.match(/<loc>/g) || []).length, 3 * (5 + slugs.length));
+      assert(!body.includes('/isms-operations-impact'));
       assert(!body.includes('/pricing') && !body.includes('/dev-login'));
     }
   }
