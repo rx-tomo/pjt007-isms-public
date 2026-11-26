@@ -38,7 +38,7 @@ try {
   const page = await context.newPage();
   const brokenPaths = ['/about', '/contact', '/privacy', '/terms', '/help', '/docs', '/status', '/cookies'];
   for (const locale of ['ja', 'en', 'zh']) {
-    for (const route of ['', '/guide', '/research', '/resources', '/interviews/isms-operations', ...slugs.map(slug => `/guide/${slug}`)]) {
+    for (const route of ['', '/guide', '/research', '/resources', '/interviews/isms-operations', '/isms-operations-impact', ...slugs.map(slug => `/guide/${slug}`)]) {
       const urlPath = `/${locale}${route}`;
       const response = await page.goto(`${base}${urlPath}`);
       assert.equal(response.status(), 200, urlPath);
@@ -68,7 +68,7 @@ try {
     const body = await response.text();
     assert(body.includes(canonicalOrigin));
     if (endpoint === '/sitemap.xml') {
-      assert.equal((body.match(/<loc>/g) || []).length, 3 * (5 + slugs.length));
+      assert.equal((body.match(/<loc>/g) || []).length, 3 * (6 + slugs.length));
       assert(!body.includes('/pricing') && !body.includes('/dev-login'));
     }
   }
