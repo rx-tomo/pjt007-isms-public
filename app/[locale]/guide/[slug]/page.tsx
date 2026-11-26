@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: GuidePageParams): Promise<Met
   const title = `${content.metaTitle} | ${SITE_NAME}`;
 
   return {
+    metadataBase: new URL(siteUrl),
     title,
     description: content.description,
     keywords: content.keywords.join(', '),

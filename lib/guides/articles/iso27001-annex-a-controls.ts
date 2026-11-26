@@ -10,7 +10,7 @@ function controlTable(
   newMark: string,
 ): GuideBlock {
   const rows = ANNEX_A_CONTROLS.filter((control) => control.theme === theme).map((control) => [
-    control.id,
+    `A.${control.id}`,
     control[locale],
     control.isNew ? newMark : '',
   ]);
@@ -28,8 +28,8 @@ const ZH_MARK = '★新增';
 export const iso27001AnnexAControls: GuideArticle = {
   slug: 'iso27001-annex-a-controls',
   publishedAt: '2026-09-11',
-  updatedAt: '2026-10-09',
-  related: ['isms-risk-assessment', 'isms-required-documents', 'iso27001-certification-process'],
+  updatedAt: '2026-11-26',
+  related: ['isms-risk-assessment', 'isms-statement-of-applicability', 'isms-corrective-action-example'],
   content: {
     ja: {
       title: 'ISO27001:2022 附属書A 管理策一覧｜4テーマ93項目と2013年版からの変更点',
@@ -37,8 +37,52 @@ export const iso27001AnnexAControls: GuideArticle = {
       description:
         'ISO/IEC 27001:2022 附属書Aの93管理策を、組織的37・人的8・物理的14・技術的34の4テーマ別に一覧化。2013年版114管理策からの統合と新設11管理策、適用宣言書での使い方まで整理します。',
       lead:
-        'ISO/IEC 27001:2022の附属書Aには、4つのテーマに分かれた93の管理策が並んでいます。組織的37、人的8、物理的14、技術的34で、このうち11は2022年版で新しく加わったものです。ここで誤解されやすいのが附属書Aの役割です。附属書Aは好きなものを選ぶメニューではなく、リスク対応で必要と決めた管理策を出したあとに、見落としがないかを照合するための参照リストとして使います。箇条6.1.3 c)が求めているのはその比較であり、順序を逆にすると「表を埋めるための対策」になりがちです。本記事では93管理策を4テーマ別の表で一覧化し、2013年版からの変更点、適用宣言書での扱い方までを整理します。',
+        'ISO/IEC 27001:2022の附属書Aは93項目です。[組織的37項目](#organizational-controls)・[人的8項目](#people-controls)・[物理的14項目](#physical-controls)・[技術的34項目](#technological-controls)から直接開けます。番号が分かる場合は、ページ内検索に「A.5.18」のように入力してください。[日本のJISとISOの版の対応](#jis-editions)も確認できます。',
       blocks: [
+        {
+          type: 'h2',
+          id: 'organizational-controls',
+          text: '組織的管理策（5.1〜5.37）の一覧',
+        },
+        {
+          type: 'p',
+          text: '37項目と最も数が多く、方針・体制・供給者管理・インシデント対応・法令順守までを含みます。2013年版で分野をまたいでいた管理策が、ここに集約されている点が特徴です。文書として整備する対象が多いテーマでもあり、必要な文書の全体像は[ISMSで必要な文書一覧](/guide/isms-required-documents)にまとめています。',
+        },
+        controlTable('organizational', 'ja', JA_HEADERS, JA_MARK),
+        {
+          type: 'h2',
+          id: 'people-controls',
+          text: '人的管理策（6.1〜6.8）の一覧',
+        },
+        {
+          type: 'p',
+          text: '採用から退職までの人に関わる管理策です。8項目と少ないものの、就業規則・雇用契約・入退社手続きといった既存の人事プロセスと重なるため、情報システム部門だけでは完結しません。たとえば在宅勤務のルールは6.7、退職・異動後の責任は6.5で照合します。',
+        },
+        controlTable('people', 'ja', JA_HEADERS, JA_MARK),
+        {
+          type: 'h2',
+          id: 'physical-controls',
+          text: '物理的管理策（7.1〜7.14）の一覧',
+        },
+        {
+          type: 'p',
+          text: '入退管理、装置、記憶媒体、廃棄までを扱います。自社サーバールームを持たずクラウドのみで運用する企業でも、オフィスの入退室、社用PCの持ち出し、返却と廃棄は対象に残ります。適用範囲の切り方によって関係する項目が変わるテーマです。',
+        },
+        controlTable('physical', 'ja', JA_HEADERS, JA_MARK),
+        {
+          type: 'h2',
+          id: 'technological-controls',
+          text: '技術的管理策（8.1〜8.34）の一覧',
+        },
+        {
+          type: 'p',
+          text: '34項目とテーマ別では2番目に多く、新設11のうち7項目がここに含まれます。アクセス制御、暗号、ログ、ネットワーク、開発ライフサイクルが対象で、IT企業では既存の開発・運用ルールと重複する部分が大きくなります。',
+        },
+        controlTable('technological', 'ja', JA_HEADERS, JA_MARK),
+        { type: 'h2', id: 'jis-editions', text: '日本のJISとISOの版を照合する' },
+        { type: 'p', text: '旧版のJIS Q 27001:2014はISO/IEC 27001:2013に対応します。現行の本体はJIS Q 27001:2023とISO/IEC 27001:2022です。JIS Q 27001:2025は気候変動に関する追補1で、国際版のAmd 1:2024に対応し、2023年の本体と併せて使います。この追補で附属書Aの管理策番号は変わりません。' },
+        { type: 'p', text: '管理策の実施方法を調べるときは、JIS Q 27002:2024またはISO/IEC 27002:2022の同じ番号（例：5.18）を参照します。旧版の番号はそのまま転記せず、27002の対応表で内容を照合してください。' },
+        { type: 'p', text: '[認証基準と追補（ISMS-AC）](https://isms.jp/isms/about.html) ／ [旧版と現行版の対応（JIPDEC）](https://www.jipdec.or.jp/library/smpo_doc.html) ／ [27002の国内改正（経済産業省）](https://www.meti.go.jp/press/2024/06/20240620002/20240620002-d-2.pdf)' },
         {
           type: 'h2',
           id: 'what-is-annex-a',
@@ -74,7 +118,7 @@ export const iso27001AnnexAControls: GuideArticle = {
             ['分類', '14分野（A.5〜A.18）', '4テーマ（5〜8）'],
             ['テーマ内訳', 'アクセス制御・暗号など分野別', '組織的37／人的8／物理的14／技術的34'],
             ['新設', '—', '11管理策'],
-            ['属性', 'なし', '5種類の属性が付与'],
+            ['実施の手引き（27002）の属性', 'なし', '5種類'],
           ],
         },
         {
@@ -83,48 +127,8 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'もう1つの変更が**属性**です。2022年版では各管理策に5種類の属性が付与されました。管理策タイプ（予防／検知／是正）、情報セキュリティ特性（機密性／完全性／可用性）、サイバーセキュリティ概念（識別／防御／検知／対応／復旧）、運用能力（ガバナンス、資産管理など）、セキュリティドメイン（ガバナンスとエコシステム、保護、防御、レジリエンス）の5つです。これは管理策を別の切り口で並べ替えて分析するための仕組みで、属性による分類そのものが要求事項になっているわけではありません。',
+          text: 'もう1つの変更が**属性**です。ISO/IEC 27002:2022は各管理策を5種類の属性で整理しています。管理策タイプ（予防／検知／是正）、情報セキュリティ特性（機密性／完全性／可用性）、サイバーセキュリティ概念（識別／防御／検知／対応／復旧）、運用能力（ガバナンス、資産管理など）、セキュリティドメイン（ガバナンスとエコシステム、保護、防御、レジリエンス）の5つです。これは管理策を別の切り口で並べ替えて分析するための仕組みで、属性による分類そのものが要求事項になっているわけではありません。',
         },
-        {
-          type: 'h2',
-          id: 'organizational-controls',
-          text: '組織的管理策（5.1〜5.37）の一覧',
-        },
-        {
-          type: 'p',
-          text: '37項目と最も数が多く、方針・体制・供給者管理・インシデント対応・法令順守までを含みます。2013年版で分野をまたいでいた管理策が、ここに集約されている点が特徴です。文書として整備する対象が多いテーマでもあり、必要な文書の全体像は[ISMSで必要な文書一覧](/guide/isms-required-documents)にまとめています。',
-        },
-        controlTable('organizational', 'ja', JA_HEADERS, JA_MARK),
-        {
-          type: 'h2',
-          id: 'people-controls',
-          text: '人的管理策（6.1〜6.8）の一覧',
-        },
-        {
-          type: 'p',
-          text: '採用から退職までの人に関わる管理策です。8項目と少ないものの、就業規則・雇用契約・入退社手続きといった既存の人事プロセスと重なるため、情報システム部門だけでは完結しません。リモートワークが独立した管理策になっている点は、2013年版との実務上の差が出やすいところです。',
-        },
-        controlTable('people', 'ja', JA_HEADERS, JA_MARK),
-        {
-          type: 'h2',
-          id: 'physical-controls',
-          text: '物理的管理策（7.1〜7.14）の一覧',
-        },
-        {
-          type: 'p',
-          text: '入退管理、装置、記憶媒体、廃棄までを扱います。自社サーバールームを持たずクラウドのみで運用する企業でも、オフィスの入退室、社用PCの持ち出し、返却と廃棄は対象に残ります。適用範囲の切り方によって関係する項目が変わるテーマです。',
-        },
-        controlTable('physical', 'ja', JA_HEADERS, JA_MARK),
-        {
-          type: 'h2',
-          id: 'technological-controls',
-          text: '技術的管理策（8.1〜8.34）の一覧',
-        },
-        {
-          type: 'p',
-          text: '34項目とテーマ別では2番目に多く、新設11のうち7項目がここに含まれます。アクセス制御、暗号、ログ、ネットワーク、開発ライフサイクルが対象で、IT企業では既存の開発・運用ルールと重複する部分が大きくなります。',
-        },
-        controlTable('technological', 'ja', JA_HEADERS, JA_MARK),
         {
           type: 'h2',
           id: 'soa-usage',
@@ -132,7 +136,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: '附属書Aの93管理策が最終的に集約されるのが、箇条6.1.3 d)が求める適用宣言書（SoA）です。SoAは93行の表として作られることが多く、各行に次の情報を持たせます。',
+          text: '箇条6.1.3 d)の適用宣言書（SoA）には必要な管理策、採用理由、実施状況と、附属書Aから除外した管理策の理由を記録します。次は一覧表にした場合の記入欄です。',
         },
         {
           type: 'ol',
@@ -226,7 +230,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'ツールの評価では、リスク・管理策・文書の参照をたどれるか、理由や証跡の不足を確認できるかを試してください。[公開デモ](/dev-login)は架空データでの操作確認に使えます。[5問のセルフチェック](/research)は準備状況を大まかに整理するもので、93管理策の実施状況や適合性は評価しません。',
+          text: 'Riscalaの[デモログイン](/dev-login)で初回登録の組織管理者を選び、[管理策の画面](/settings/controls)で登録済みの管理策と関連するリスク対応策を確認できます。適用・除外の理由の書き分けは[適用宣言書の記入例](/guide/isms-statement-of-applicability)で確認できます。 [5問のセルフチェック](/research)は準備状況を大まかに整理するもので、93管理策の実施状況や適合性は評価しません。',
         },
         {"type": "p", "text": "規格の現行情報は[ISOのISO/IEC 27001案内](https://www.iso.org/standard/27001)と[ISMS-ACの制度概要](https://isms.jp/isms/about.html)で確認できます（2026年10月9日）。2022年版のほか、追補Amd 1:2024も確認してください。本記事の記載例は規格本文ではなく、独自の整理例です。"},
       ],
@@ -274,8 +278,52 @@ export const iso27001AnnexAControls: GuideArticle = {
       description:
         'All 93 Annex A controls of ISO/IEC 27001:2022 by theme: 37 organizational, 8 people, 14 physical, 34 technological, plus the 11 new controls and SoA use.',
       lead:
-        'Annex A of ISO/IEC 27001:2022 contains 93 controls arranged into four themes: 37 organizational, 8 people, 14 physical and 34 technological. Eleven of them are new in the 2022 revision. The part most often misread is what Annex A is for. It is not a menu you pick from. You determine the controls you need through risk treatment, and then compare that set against Annex A to verify that nothing has been overlooked. That comparison is what clause 6.1.3 c) asks for. Reverse the order and you end up implementing controls to fill in a table. This guide lists all 93 by theme, covers what changed from the 2013 edition, and explains how the list feeds your Statement of Applicability.',
+        'Jump to any of the 93 controls: [37 organizational](#organizational-controls), [8 people](#people-controls), [14 physical](#physical-controls) or [34 technological](#technological-controls). Use Find on page for a number such as A.5.18. See [Japanese and international editions](#jis-editions) if your records cite JIS.',
       blocks: [
+        {
+          type: 'h2',
+          id: 'organizational-controls',
+          text: 'Organizational controls (5.1 to 5.37)',
+        },
+        {
+          type: 'p',
+          text: 'At 37 items this is the largest theme, spanning policy, roles, supplier management, incident handling and legal compliance. Much of what was spread across several 2013 domains now sits here. It is also the theme that generates the most documentation; for the full picture see [required ISMS documents](/guide/isms-required-documents).',
+        },
+        controlTable('organizational', 'en', EN_HEADERS, EN_MARK),
+        {
+          type: 'h2',
+          id: 'people-controls',
+          text: 'People controls (6.1 to 6.8)',
+        },
+        {
+          type: 'p',
+          text: 'Eight controls covering the employment lifecycle. The count is small, but these overlap with employment terms, onboarding and offboarding, so IT cannot own them alone. For example, consult 6.7 for remote work and 6.5 for responsibilities after termination or a change of role.',
+        },
+        controlTable('people', 'en', EN_HEADERS, EN_MARK),
+        {
+          type: 'h2',
+          id: 'physical-controls',
+          text: 'Physical controls (7.1 to 7.14)',
+        },
+        {
+          type: 'p',
+          text: 'Entry management, equipment, storage media and disposal. Even a company with no server room of its own still has office entry, laptops leaving the building, and returns and disposal to account for. Which items apply depends heavily on how you drew your scope.',
+        },
+        controlTable('physical', 'en', EN_HEADERS, EN_MARK),
+        {
+          type: 'h2',
+          id: 'technological-controls',
+          text: 'Technological controls (8.1 to 8.34)',
+        },
+        {
+          type: 'p',
+          text: 'Thirty-four controls, the second largest theme, holding 7 of the 11 new ones. Access control, cryptography, logging, networks and the development life cycle are covered here, and for an engineering organization most of it overlaps with rules you already run.',
+        },
+        controlTable('technological', 'en', EN_HEADERS, EN_MARK),
+        { type: 'h2', id: 'jis-editions', text: 'Match Japanese JIS and international editions' },
+        { type: 'p', text: 'JIS Q 27001:2014 corresponds to ISO/IEC 27001:2013. The current base texts are JIS Q 27001:2023 and ISO/IEC 27001:2022. Read the Japanese base text alongside JIS Q 27001:2025, the climate amendment corresponding to Amd 1:2024. The amendment keeps the Annex A numbering.' },
+        { type: 'p', text: 'For implementation guidance, look up the corresponding number (e.g. 5.18) in JIS Q 27002:2024 or ISO/IEC 27002:2022. For an older control, use the correspondence table in 27002 to check its scope before carrying the number forward.' },
+        { type: 'p', text: '[Certification criteria and amendments (ISMS-AC)](https://isms.jp/isms/about.html) · [Edition references (JIPDEC)](https://www.jipdec.or.jp/library/smpo_doc.html) · [Japanese revision of 27002 (METI)](https://www.meti.go.jp/press/2024/06/20240620002/20240620002-d-2.pdf)' },
         {
           type: 'h2',
           id: 'what-is-annex-a',
@@ -320,48 +368,8 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'The other change is **attributes**. Each 2022 control carries five: control type (preventive, detective, corrective), information security properties (confidentiality, integrity, availability), cybersecurity concepts (identify, protect, detect, respond, recover), operational capabilities, and security domains. They exist so you can re-sort and analyse the control set from a different angle. Using them is not itself a requirement.',
+          text: 'The other change is **attributes**. ISO/IEC 27002:2022 describes each control using five attributes: control type (preventive, detective, corrective), information security properties (confidentiality, integrity, availability), cybersecurity concepts (identify, protect, detect, respond, recover), operational capabilities, and security domains. They exist so you can re-sort and analyse the control set from a different angle. Using them is not itself a requirement.',
         },
-        {
-          type: 'h2',
-          id: 'organizational-controls',
-          text: 'Organizational controls (5.1 to 5.37)',
-        },
-        {
-          type: 'p',
-          text: 'At 37 items this is the largest theme, spanning policy, roles, supplier management, incident handling and legal compliance. Much of what was spread across several 2013 domains now sits here. It is also the theme that generates the most documentation; for the full picture see [required ISMS documents](/guide/isms-required-documents).',
-        },
-        controlTable('organizational', 'en', EN_HEADERS, EN_MARK),
-        {
-          type: 'h2',
-          id: 'people-controls',
-          text: 'People controls (6.1 to 6.8)',
-        },
-        {
-          type: 'p',
-          text: 'Eight controls covering the employment lifecycle. The count is small, but these overlap with employment terms, onboarding and offboarding, so IT cannot own them alone. Remote working now being a control of its own is where practice most often differs from the 2013 edition.',
-        },
-        controlTable('people', 'en', EN_HEADERS, EN_MARK),
-        {
-          type: 'h2',
-          id: 'physical-controls',
-          text: 'Physical controls (7.1 to 7.14)',
-        },
-        {
-          type: 'p',
-          text: 'Entry management, equipment, storage media and disposal. Even a company with no server room of its own still has office entry, laptops leaving the building, and returns and disposal to account for. Which items apply depends heavily on how you drew your scope.',
-        },
-        controlTable('physical', 'en', EN_HEADERS, EN_MARK),
-        {
-          type: 'h2',
-          id: 'technological-controls',
-          text: 'Technological controls (8.1 to 8.34)',
-        },
-        {
-          type: 'p',
-          text: 'Thirty-four controls, the second largest theme, holding 7 of the 11 new ones. Access control, cryptography, logging, networks and the development life cycle are covered here, and for an engineering organization most of it overlaps with rules you already run.',
-        },
-        controlTable('technological', 'en', EN_HEADERS, EN_MARK),
         {
           type: 'h2',
           id: 'soa-usage',
@@ -369,7 +377,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'All 93 controls converge in the Statement of Applicability required by clause 6.1.3 d). It is usually built as a 93-row table, with each row carrying the following.',
+          text: 'The Statement of Applicability in clause 6.1.3 d) identifies necessary controls, reasons for inclusion, implementation status and reasons for Annex A exclusions. A register can capture these in the following fields.',
         },
         {
           type: 'ol',
@@ -463,7 +471,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: 'When evaluating tooling, check whether you can follow risk, control and document references and identify missing reasons or evidence. Try the [public demo](/dev-login) with fictional data. The [five-question self-check](/research) offers a broad starting point; it does not assess the implementation or conformity of all 93 controls.',
+          text: 'At [demo login](/dev-login), select the initial-certification organization administrator. Open [controls](/settings/controls) to inspect a registered control and its linked risk treatments. See [worked SoA entries](/guide/isms-statement-of-applicability) for inclusion and exclusion decisions. The [five-question self-check](/research) offers a broad starting point; it does not assess the implementation or conformity of all 93 controls.',
         },
         {"type": "p", "text": "For current edition information, see [ISO’s standard page](https://www.iso.org/standard/27001) and [ISMS-AC’s scheme overview](https://isms.jp/isms/about.html), checked on 9 October 2026. Check Amendment 1:2024 alongside the 2022 edition. The fictional examples here are editorial illustrations, not standard text."},
       ],
@@ -511,8 +519,52 @@ export const iso27001AnnexAControls: GuideArticle = {
       description:
         '按组织37项、人员8项、物理14项、技术34项四大主题，完整列出ISO/IEC 27001:2022附录A的93项控制措施，并梳理2013版114项的合并情况、新增的11项控制措施以及适用性声明中的使用方式。',
       lead:
-        'ISO/IEC 27001:2022附录A包含四大主题共93项控制措施：组织37项、人员8项、物理14项、技术34项，其中11项为2022版新增。最容易被误解的是附录A的定位。它并不是一份可以随意挑选的菜单，而是在风险处置中确定了所需控制措施之后，用来核对是否有遗漏的参照清单。第6.1.3 c)条要求的正是这一比对，顺序一旦颠倒，就容易变成「为了填表而做的措施」。本文按四大主题列出全部93项，并梳理2013版以来的变更以及适用性声明中的使用方式。',
+        '附录A共93项，可直接查看[组织37项](#organizational-controls)、[人员8项](#people-controls)、[物理14项](#physical-controls)或[技术34项](#technological-controls)。已知编号时，用浏览器页内搜索查找A.5.18等编号。另见[日本JIS与国际标准版本对照](#jis-editions)。',
       blocks: [
+        {
+          type: 'h2',
+          id: 'organizational-controls',
+          text: '组织控制措施（5.1至5.37）清单',
+        },
+        {
+          type: 'p',
+          text: '共37项，是数量最多的主题，涵盖方针、职责、供应商管理、事件响应与合规。2013版中分散在多个领域的控制措施被集中到这里。该主题需要编制的文件也最多，整体清单见[ISMS所需文件一览](/guide/isms-required-documents)。',
+        },
+        controlTable('organizational', 'zh', ZH_HEADERS, ZH_MARK),
+        {
+          type: 'h2',
+          id: 'people-controls',
+          text: '人员控制措施（6.1至6.8）清单',
+        },
+        {
+          type: 'p',
+          text: '涵盖从招聘到离职的人员相关控制措施。虽然只有8项，但与劳动规章、雇佣合同、入离职手续重叠，信息系统部门无法独立完成。远程办公见6.7，离职或变更岗位后的责任见6.5。',
+        },
+        controlTable('people', 'zh', ZH_HEADERS, ZH_MARK),
+        {
+          type: 'h2',
+          id: 'physical-controls',
+          text: '物理控制措施（7.1至7.14）清单',
+        },
+        {
+          type: 'p',
+          text: '涵盖出入管理、设备、存储介质直至处置。即使不自建机房、完全使用云服务的企业，办公室出入、公司电脑的携出、归还与报废仍在范围之内。适用范围的划定方式不同，涉及的条目也会变化。',
+        },
+        controlTable('physical', 'zh', ZH_HEADERS, ZH_MARK),
+        {
+          type: 'h2',
+          id: 'technological-controls',
+          text: '技术控制措施（8.1至8.34）清单',
+        },
+        {
+          type: 'p',
+          text: '共34项，是数量第二多的主题，11项新增中有7项在此。涵盖访问控制、密码技术、日志、网络与开发生命周期，对IT企业而言与既有开发运维规则的重叠程度较高。',
+        },
+        controlTable('technological', 'zh', ZH_HEADERS, ZH_MARK),
+        { type: 'h2', id: 'jis-editions', text: '日本JIS与国际标准的版本对应关系' },
+        { type: 'p', text: '旧版JIS Q 27001:2014对应ISO/IEC 27001:2013。现行基础文本为JIS Q 27001:2023和ISO/IEC 27001:2022。日本2025年发布的JIS Q 27001:2025为气候变化修订件，对应国际版Amd 1:2024，须与2023年基础文本合用。此次修订保留了附录A的编号。' },
+        { type: 'p', text: '查询实施指南时，请在JIS Q 27002:2024或ISO/IEC 27002:2022中查找相应编号（如5.18）。旧编号应通过27002的对照表核实其覆盖范围。' },
+        { type: 'p', text: '[认证依据和修订件（ISMS-AC）](https://isms.jp/isms/about.html) · [版本对应资料（JIPDEC）](https://www.jipdec.or.jp/library/smpo_doc.html) · [日本27002修订说明（经产省）](https://www.meti.go.jp/press/2024/06/20240620002/20240620002-d-2.pdf)' },
         {
           type: 'h2',
           id: 'what-is-annex-a',
@@ -557,48 +609,8 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: '另一项变更是**属性**。2022版为每项控制措施赋予5类属性：控制措施类型（预防／检测／纠正）、信息安全特性（保密性／完整性／可用性）、网络安全概念（识别／保护／检测／响应／恢复）、运行能力、安全域。其作用是从不同角度重新排序与分析控制措施，按属性分类本身并非要求事项。',
+          text: '另一项变更是**属性**。ISO/IEC 27002:2022用5类属性描述每项控制措施：控制措施类型（预防／检测／纠正）、信息安全特性（保密性／完整性／可用性）、网络安全概念（识别／保护／检测／响应／恢复）、运行能力、安全域。其作用是从不同角度重新排序与分析控制措施，按属性分类本身并非要求事项。',
         },
-        {
-          type: 'h2',
-          id: 'organizational-controls',
-          text: '组织控制措施（5.1至5.37）清单',
-        },
-        {
-          type: 'p',
-          text: '共37项，是数量最多的主题，涵盖方针、职责、供应商管理、事件响应与合规。2013版中分散在多个领域的控制措施被集中到这里。该主题需要编制的文件也最多，整体清单见[ISMS所需文件一览](/guide/isms-required-documents)。',
-        },
-        controlTable('organizational', 'zh', ZH_HEADERS, ZH_MARK),
-        {
-          type: 'h2',
-          id: 'people-controls',
-          text: '人员控制措施（6.1至6.8）清单',
-        },
-        {
-          type: 'p',
-          text: '涵盖从招聘到离职的人员相关控制措施。虽然只有8项，但与劳动规章、雇佣合同、入离职手续重叠，信息系统部门无法独立完成。远程办公成为独立的控制措施，是与2013版在实务上差异最明显之处。',
-        },
-        controlTable('people', 'zh', ZH_HEADERS, ZH_MARK),
-        {
-          type: 'h2',
-          id: 'physical-controls',
-          text: '物理控制措施（7.1至7.14）清单',
-        },
-        {
-          type: 'p',
-          text: '涵盖出入管理、设备、存储介质直至处置。即使不自建机房、完全使用云服务的企业，办公室出入、公司电脑的携出、归还与报废仍在范围之内。适用范围的划定方式不同，涉及的条目也会变化。',
-        },
-        controlTable('physical', 'zh', ZH_HEADERS, ZH_MARK),
-        {
-          type: 'h2',
-          id: 'technological-controls',
-          text: '技术控制措施（8.1至8.34）清单',
-        },
-        {
-          type: 'p',
-          text: '共34项，是数量第二多的主题，11项新增中有7项在此。涵盖访问控制、密码技术、日志、网络与开发生命周期，对IT企业而言与既有开发运维规则的重叠程度较高。',
-        },
-        controlTable('technological', 'zh', ZH_HEADERS, ZH_MARK),
         {
           type: 'h2',
           id: 'soa-usage',
@@ -606,7 +618,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: '附录A的93项控制措施最终汇集于第6.1.3 d)条要求的适用性声明（SoA）。SoA通常做成93行的表格，每行包含以下信息。',
+          text: '第6.1.3 d)条的适用性声明（SoA）记录所需措施、纳入理由、实施情况及排除附录A措施的理由。以下为采用表格时的填写栏。',
         },
         {
           type: 'ol',
@@ -700,7 +712,7 @@ export const iso27001AnnexAControls: GuideArticle = {
         },
         {
           type: 'p',
-          text: '评价工具时，请检查能否追踪风险、控制措施与文件引用，以及发现理由或证据缺失。可使用虚构数据体验[公开演示](/dev-login)。[五题自检](/research)仅概括准备情况，不评价93项控制措施的实施状况或符合性。',
+          text: '在[演示登录](/dev-login)选择初次认证场景的组织管理员，打开[控制措施](/settings/controls)查看已登记措施和关联的风险处置。如何说明适用或排除，请参阅[适用性声明填写示例](/guide/isms-statement-of-applicability)。 [五题自检](/research)仅概括准备情况，不评价93项控制措施的实施状况或符合性。',
         },
         {"type": "p", "text": "现行版本信息请参阅[ISO标准页面](https://www.iso.org/standard/27001)与[ISMS-AC制度概要](https://isms.jp/isms/about.html)（2026年10月9日确认）。除2022版外还应查看Amd 1:2024。本文虚构示例为编辑整理，不是标准原文。"},
       ],
