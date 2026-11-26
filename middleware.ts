@@ -13,7 +13,7 @@ import {
 const intlMiddleware = createIntlMiddleware(routing);
 const E2E_ADMIN_SETTINGS_PATH = /^\/(ja|en|zh)\/settings\/(assets|controls|structure|users)(\/|$)/;
 // 未認証でも閲覧できる公開ページ（トップ・料金・認証フロー・dev-login・研究セルフチェック・SEOガイド・公開リソース）
-const PUBLIC_PAGE_PATH = /^\/(ja|en|zh)(\/((auth|dev-login)(\/.*)?|pricing\/?|research\/?|isms-operations-impact\/?|guide(\/[a-z0-9-]+)?\/?|resources\/?|interviews\/isms-operations\/?))?$/;
+const PUBLIC_PAGE_PATH = /^\/(ja|en|zh)(\/((auth|dev-login)(\/.*)?|pricing\/?|research\/?|guide(\/[a-z0-9-]+)?\/?|resources\/?|interviews\/isms-operations\/?))?$/;
 const ADMIN_SETTINGS_ROLES = new Set(['system_operator', 'org_admin']);
 
 /**
@@ -32,6 +32,10 @@ function hasBetterAuthSession(request: NextRequest): boolean {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  // The retired public page must not redirect visitors or crawlers to login.
+  if (/^\/(?:(?:ja|en|zh)\/)?isms-operations-impact\/?$/.test(pathname)) {
+    return new NextResponse('410 Gone', { status: 410 });
+  }
   const isApiPath = pathname.startsWith('/api/');
   const isE2EServer = isTrustedE2EServerEnvironment();
 

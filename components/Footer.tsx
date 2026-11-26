@@ -25,7 +25,6 @@ export default function Footer() {
             <h3 className="mb-4 font-semibold text-text-primary">{t('landing.footer.support.title')}</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/dev-login" className="hover:text-accent">{t('landing.hero.demoButton')}</Link></li>
-              <li><Link href="/isms-operations-impact" className="hover:text-accent">{t('publicSeo.impact.nav')}</Link></li>
               <li><Link href="/guide" className="hover:text-accent">{t('landing.footer.product.guide')}</Link></li>
               <li><Link href="/research" className="hover:text-accent">{t('landing.cta.researchButton')}</Link></li>
             </ul>
