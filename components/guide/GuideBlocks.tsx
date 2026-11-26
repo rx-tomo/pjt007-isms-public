@@ -9,11 +9,11 @@ interface GuideBlocksProps {
 function TableBlock({ block, locale }: { block: Extract<GuideBlock, { type: 'table' }>; locale: string }) {
   return (
     <div className="my-6 overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[32rem] text-sm">
+      <table className={block.headers.length > 3 ? 'w-full min-w-[32rem] text-sm' : 'w-full text-sm'}>
         <thead className="bg-surface-elevated text-left text-text-primary">
           <tr>
             {block.headers.map((header, index) => (
-              <th key={index} scope="col" className="px-4 py-3 font-semibold">{renderInline(header, locale)}</th>
+              <th key={index} scope="col" className="px-2.5 py-3 font-semibold sm:px-4">{renderInline(header, locale)}</th>
             ))}
           </tr>
         </thead>
@@ -21,7 +21,7 @@ function TableBlock({ block, locale }: { block: Extract<GuideBlock, { type: 'tab
           {block.rows.map((row, rowIndex) => (
             <tr key={rowIndex} className="border-t border-border align-top">
               {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-4 py-3 leading-6 text-text-secondary">{renderInline(cell, locale)}</td>
+                <td key={cellIndex} className="px-2.5 py-3 leading-6 sm:px-4 text-text-secondary">{renderInline(cell, locale)}</td>
               ))}
             </tr>
           ))}

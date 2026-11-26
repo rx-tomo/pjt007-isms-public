@@ -19,7 +19,7 @@ const browser = await chromium.launch({
   ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : {}),
   args: ['--no-sandbox'],
 });
-const slugs = ['isms-certification-cost', 'iso27001-certification-process', 'isms-risk-assessment', 'isms-required-documents', 'isms-vs-privacy-mark', 'iso27001-annex-a-controls'];
+const slugs = ['isms-certification-cost', 'iso27001-certification-process', 'isms-risk-assessment', 'isms-required-documents', 'isms-vs-privacy-mark', 'iso27001-annex-a-controls', 'isms-statement-of-applicability', 'isms-corrective-action-example'];
 const evidence = { http: [], viewports: [] };
 async function capture(page, filename) {
   if (!output) return;
@@ -68,7 +68,7 @@ try {
     const body = await response.text();
     assert(body.includes(canonicalOrigin));
     if (endpoint === '/sitemap.xml') {
-      assert.equal((body.match(/<loc>/g) || []).length, 33);
+      assert.equal((body.match(/<loc>/g) || []).length, 3 * (5 + slugs.length));
       assert(!body.includes('/pricing') && !body.includes('/dev-login'));
     }
   }

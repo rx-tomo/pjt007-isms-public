@@ -29,7 +29,7 @@ export function renderInline(text: string, locale: string): ReactNode[] {
             {linkText}
           </Link>
         ) : (
-          <a key={key++} href={href} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-4 hover:text-primary-700">
+          <a key={key++} href={href} target={href.startsWith('#') ? undefined : '_blank'} rel="noreferrer" className="text-accent underline underline-offset-4 hover:text-primary-700">
             {linkText}
           </a>
         ),

@@ -21,6 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const description = t('metadata.description');
 
   return {
+    metadataBase: new URL(siteUrl),
     title,
     description,
     alternates: {
